@@ -2087,7 +2087,7 @@ def compute_zero_mask(imgarr, iterations=8, ext=0):
 
 def build_focus_dict(singlefiles, prodfile, sigma=2.0):
 
-    focus_dict = FOCUS_DICT.copy()
+    focus_dict = copy.deepcopy(FOCUS_DICT)
     focus_dict['expnames'] = singlefiles
     focus_dict['prodname'] = prodfile
 
@@ -2122,6 +2122,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
                            'min': exparr.min(), 'max': exparr.max()}
     log.debug("Focus results for {}: \n{}".format(prodfile, focus_dict))
     log.info("Mean Focus computed for {}: {}".format(prodfile, focus_dict['stats']['mean']))
+    log.info("Focus for product: {}".format(focus_val))
 
     return focus_dict
 
@@ -2136,7 +2137,9 @@ def evaluate_focus(focus_dict, tolerance=0.8):
     min_prob = compute_prob(min_3sig, s['mean'], s['std'])
     max_prob = compute_prob(max_3sig, s['mean'], s['std'])
     drz_prob = np.array([compute_prob(d, s['mean'], s['std']) for d in focus_dict['prod']])
-
+    log.debug('FOCUS values:\n\tdrizzle: {}  min: {}  max: {}'.format(drz_prob, min_prob, max_prob))
+    log.debug('FOCUS stats:\n\t STD: {}  MIN: {}'.format(s['std'], s['min']))
+    log.debug('FOCUS full stats:\n {}'.format(s))
     if (drz_prob < min_prob).any() or (drz_prob > max_prob).any() or s['std'] > s['min']:
         alignment_verified = False
     else:

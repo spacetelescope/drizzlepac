@@ -933,7 +933,6 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             # Create trailer marker message for start of align_to_GAIA processing
             trlmsg = _timestamp("Align_to_GAIA started ")
             _updateTrlFile(trlfile, trlmsg)
-            import pdb;pdb.set_trace()
             # Evaluate all input exposures and, if necessary, reset WCSs to a common WCS
             update_wcs_in_list(alignfiles, logfile=trlfile)
 
@@ -1046,6 +1045,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             # Interpret the overlap differences computed for this alignment
             dkeys = [k for k in diff_dicts.keys()]
             diff_verification, max_diff = amutils.evaluate_overlap_diffs(diff_dicts[dkeys[-1]])
+            _trlmsg += "Fraction of sources matched: {}  out of {} sources\n".format(fraction_matched, num_sources)
 
             # For any borderline situation with alignment, perform an extra check on alignment
             if fraction_matched < 0.1 or -1 < num_sources < 10:
