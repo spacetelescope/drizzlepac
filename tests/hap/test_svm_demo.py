@@ -122,14 +122,15 @@ def svm_setup(gather_data_for_processing):
     input_names = gather_data_for_processing
 
     # Run the SVM processing
+    path = os.path.join(os.path.dirname(__file__), POLLER_FILE)
     try:
-        status = runsinglehap.perform(POLLER_FILE)
+        status = runsinglehap.perform(path)
 
     # Catch anything that happens and report it.  This is meant to catch unexpected errors and
     # generate sufficient output exception information so algorithmic problems can be addressed.
     except Exception as except_details:
         print(except_details)
-        pytest.fail("\nsvm_setup. Exception Visit: {}\n", POLLER_FILE)
+        pytest.fail("\nsvm_setup. Exception Visit: {}\n", path)
 
     current_dt = datetime.datetime.now()
     print(str(current_dt))
