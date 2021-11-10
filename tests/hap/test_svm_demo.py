@@ -26,7 +26,7 @@ from pathlib import Path
 """
 
 WCS_SUB_NAME = "FIT_SVM_GAIA"
-POLLER_FILE = "acs_8f6_61_input.out"
+POLLER_FILE = "acs_e28_1u_input.out"
 
 @pytest.fixture(scope="module")
 def read_csv_for_filenames():
@@ -42,23 +42,27 @@ def read_csv_for_filenames():
 
 @pytest.fixture(scope="module")
 def gather_data_for_processing(read_csv_for_filenames):
-    # Establish FLC/FLT lists and obtain the requested data 
+    # Establish FLC/FLT lists and obtain the requested data
     flc_flag = ""
     flt_flag = ""
-    # In order to obtain individual images from MAST (as necessary) which may be part of an
-    # ASN, use only IPPPSS with a wildcard and then remove the unwanted images - just check
-    # if both FLC and FLT images are to be used
+    # In order to obtain individual FLC or FLT images from MAST (if the files are not reside on disk) which
+    # may be part of an ASN, use only IPPPSS with a wildcard.  The unwanted images have to be removed
+    # after-the-fact.
     for fn in read_csv_for_filenames:
         if fn.lower().endswith("flc.fits") and flc_flag == "":
             flc_flag = fn[0:6] + "*"
         elif fn.lower().endswith("flt.fits") and flt_flag == "":
             flt_flag = fn[0:6] + "*"
      
+        # If both flags have been set, then break out the loop early.  It may be
+        # that all files have to be checked which means the for loop continues
+        # until its natural completion.
         if flc_flag and flt_flag:
             break
 
-    # Get test data through astroquery - only retrieve the pipeline processed FLC/FLT files
-    # (e.g., j*_flc.fits).  Soon the SVM and MVM products will be pipeline produced!
+    # Get test data through astroquery - only retrieve the pipeline processed FLC and/or FLT files
+    # (e.g., j*_flc.fits) as necessary. The logic here and the above for loop is an attempt to
+    # avoid downloading too many images which are not needed for processing.
     flcfiles = []
     fltfiles = []
     if flc_flag:
