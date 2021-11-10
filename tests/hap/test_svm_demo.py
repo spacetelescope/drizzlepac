@@ -1,4 +1,4 @@
-""" This module tests full pipeline SVM processing - visit has one detector and uses one filter.
+""" This module tests full pipeline SVM processing as a demonstration template.
 
 """
 import datetime
@@ -43,27 +43,48 @@ def read_csv_for_filenames():
 @pytest.fixture(scope="module")
 def gather_data_for_processing(read_csv_for_filenames):
     # Establish FLC/FLT lists and obtain the requested data 
-    flc_list = []
-    flt_list = []
-    flcfiles = []
-    fltfiles = []
+    flc_flag = ""
+    flt_flag = ""
+    # In order to obtain individual images from MAST (as necessary) which may be part of an
+    # ASN, use only IPPPSS with a wildcard and then remove the unwanted images - just check
+    # if both FLC and FLT images are to be used
     for fn in read_csv_for_filenames:
-        if fn.lower().endswith("flc.fits"):
-            flc_list.append(fn.split("_")[0])
-        elif fn.lower().endswith("flt.fits"):
-            flt_list.append(fn.split("_")[0])
+        if fn.lower().endswith("flc.fits") and flc_flag == "":
+            flc_flag = fn[0:6] + "*"
+        elif fn.lower().endswith("flt.fits") and flt_flag == "":
+            flt_flag = fn[0:6] + "*"
+     
+        if flc_flag and flt_flag:
+            break
 
     # Get test data through astroquery - only retrieve the pipeline processed FLC/FLT files
     # (e.g., j*_flc.fits).  Soon the SVM and MVM products will be pipeline produced!
-    if flc_list:
-        flcfiles = aqutils.retrieve_observation(flc_list, suffix=["FLC"], product_type="pipeline")
-    if flt_list:
-        fltfiles = aqutils.retrieve_observation(flt_list, suffix=["FLT"], product_type="pipeline")
+    flcfiles = []
+    fltfiles = []
+    if flc_flag:
+        flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
+    if flt_flag:
+        fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
 
     flcfiles.extend(fltfiles)
-    print("\ngather_data_for_processing. Gathered data: {}".format(flcfiles))
 
-    return flcfiles
+    # Keep only the files which exist in BOTH lists for processing
+    files_to_process= set(read_csv_for_filenames).intersection(set(flcfiles))
+
+    # Identify unwanted files from the download list and remove from disk
+    files_to_remove = set(read_csv_for_filenames).symmetric_difference(set(flcfiles))
+    try:
+        for ftr in files_to_remove:
+           os.remove(ftr)
+    except Exception as x_cept:
+        print("")
+        print("Exception encountered: {}.".format(x_cept))
+        print("The file {} could not be deleted from disk. ".format(ftr))
+        print("Remove files which are not used for processing from disk manually.")
+
+    print("\ngather_data_for_processing. Gathered data: {}".format(files_to_process))
+
+    return files_to_process
 
 
 @pytest.fixture(scope="module")
@@ -116,7 +137,6 @@ def svm_setup(gather_data_for_processing):
 
 # TESTS
 
-#def test_svm_manifest_name(gather_data_for_processing):
 def test_svm_manifest_name(construct_manifest_filename):
     # Construct the manifest filename from the header of an input file in the list and check it exists.
     path = Path(construct_manifest_filename)
