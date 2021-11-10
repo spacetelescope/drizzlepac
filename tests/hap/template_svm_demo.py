@@ -153,7 +153,7 @@ def test_svm_manifest_name(construct_manifest_filename):
 
 def test_svm_wcs(gather_output_data):
     # Check the output primary WCSNAME includes FIT_SVM_GAIA as part of the string value
-    tdp_files = [files for files in gather_output_data if files.lower().find("total") and files.lower().endswith(".fits")]
+    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith(".fits")]
 
     for tdp in tdp_files:
         wcsname = fits.getval(tdp, "WCSNAME", ext=1).upper()
