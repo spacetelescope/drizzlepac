@@ -316,7 +316,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
         must be in angular units.
 
     output_dir : str
-        Default value '.'. The directory to save the cutout file(s) to.
+        Default value '.'. The directory where the cutout file(s) will be saved.
 
     log_level : int, optional
         The desired level of verbosity in the log statements displayed on the screen and written to the
@@ -364,6 +364,11 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
     if type(input_files) == str:
         input_files = [input_files]
 
+    # Retain the fully qualified pathname for each file
+    input_paths = {}
+    for files in input_files:
+        input_paths[os.path.basename(files)] = os.path.dirname(files)
+
     # If the cutout_size is not an astropy.units.Quantity object, the scalar(s)
     # are assumed to be arcseconds.  The variable must be cast as a Quantity.
     if not isinstance(cutout_size, Quantity):
@@ -384,7 +389,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
         try:
             tmp_HDUList = fits_cut(infile, sky_coord, cutout_size, correct_wcs=CORRECT_WCS,
                                    extension=EXTENSION, single_outfile=SINGLE_OUTFILE, cutout_prefix=OUTPUT_PREFIX,
-                                   output_dir=".", memory_only=MEMORY_ONLY, verbose=True)
+                                   output_dir=output_dir, memory_only=MEMORY_ONLY, verbose=True)
    
             # Copy and append the first (and it turns out the only) entry/list in the list
             out_HDUList.append(copy.deepcopy(tmp_HDUList[0]))
@@ -465,7 +470,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
                 # Replace the minimal primary header written by the astrocut
                 # software with the primary header from the corresponding input file,
                 # so we can retain a lot of information from the observation
-                HDU[0].header = fits.getheader(input_filename)
+                HDU[0].header = fits.getheader(os.path.join(input_paths[input_filename], input_filename))
 
                 # Put the new RA/DEC_OBJ keywords back
                 HDU[0].header["RA_OBJ"] = (ra_obj, "[deg] right ascension")
