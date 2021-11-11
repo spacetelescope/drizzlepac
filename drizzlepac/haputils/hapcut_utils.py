@@ -4,7 +4,7 @@ from astrocut import fits_cut
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
-from astropy.table import Table, vstack
+from astropy.table import Table, vstack, unique
 from astropy.units.quantity import Quantity
 from astroquery.mast import Observations
 from drizzlepac.haputils import cell_utils as cu
@@ -12,6 +12,7 @@ from pprint import pprint
 from stsci.tools import logutil
 
 import astrocut
+import copy
 import glob
 import math
 import numpy as np
@@ -31,8 +32,8 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
     """
     This function retrieves a table of MVM drizzled image filenames with additional
     information from the archive.  The user can then further cull the table to use as
-    input to obtain a list of files from the archive.  This function will return filter-level,
-    as well as exposure-level products.
+    input to obtain a list of files from the archive.  This function will return filter-level
+    products. At this time, both ACS and WFC3 are searched by default.
 
     Parameters
     ----------
@@ -53,8 +54,13 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
 
     Returns
     -------
-    filtered_dp_table : `~astropy.table.Table` object
+    final_table : `~astropy.table.Table` object
 
+    This utility also writes an output ECSV file version of the in-memory filtered data product table,
+    final_table.  The output filename is in the form: 
+    mvm_query-ra<###>d<####>-dec<n|s><##>d<####>_<radius>_cutout.ecsv 
+    (e.g., mvm_query-ra84d8208-decs69d8516_354_cutout.ecsv, where radius has been computed from the
+    cutout dimensions.
     """
 
     # set logging level to user-specified level
@@ -81,15 +87,14 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
 
     # Careful - the radius must be a str or Quantity
     radius *= u.arcsec
-    log.info("Performing query for ACS images. Radius: {}.".format(radius))
+    log.info("Radius for query: {}.".format(radius))
+    log.info("Performing query for ACS images.")
 
-    # Note: calib_level does not seem to work
     acs_query_table = Observations.query_criteria(coordinates=sky_coord,
                                                   radius=radius,
                                                   dataproduct_type="IMAGE",
                                                   instrument_name="ACS*",
                                                   project="HAP", 
-                                                  calib_level=3,
                                                   obs_collection="HST") 
 
     log.info("Performing query for WFC3 images.")
@@ -98,7 +103,6 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
                                                    dataproduct_type="IMAGE",
                                                    instrument_name="WFC3*",
                                                    project="HAP", 
-                                                   calib_level=3,
                                                    obs_collection="HST") 
 
     query_table = vstack([acs_query_table, wfc3_query_table])
@@ -116,8 +120,8 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
     ra_max = sky_coord.ra.degree + deg_cutout_size.value[0]
     dec_min = sky_coord.dec.degree - deg_cutout_size.value[1]
     dec_max = sky_coord.dec.degree + deg_cutout_size.value[1]
-    str_ra = "{:.6f}".format(sky_coord.ra.degree)
-    str_dec = "{:.6f}".format(sky_coord.dec.degree)
+    str_ra = "{:.4f}".format(sky_coord.ra.degree)
+    str_dec = "{:.4f}".format(sky_coord.dec.degree)
 
     # Filter the output as necessary to include only MVM filenames (MVM prefix: hst_skycell).
     # Also, filter out images which are not actually in the requested cutout region as the
@@ -169,23 +173,37 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
         log.warning("After filtering datasets there are NO RESULTS within {} of {}!".format(radius, (str_ra, str_dec)))
         return output_table
     
-    # Make the final output table
+    # Make the output table
     output_table = Table(rows=good_rows, names=filtered_dp_table.colnames)
     del filtered_dp_table
 
-    # Write the output table to a file.  This allows for further manipulation of
+    # Finally, make sure the entries are unique
+    final_table = None
+    final_table = unique(output_table, keys="productFilename")
+    del output_table
+
+    # Write the table to a file.  This allows for further manipulation of
     # the information before a list of filenames is distilled from the table.
-    # Output filename in the form: mvm_query_ra.dddd_sdec.dddd_radius_cutout.ecsv.
-    #                              mvm_query_84.9208_s69.1483_71_cutout.ecsv
+    # Output filename in the form: mvm_query-ra<###>d<####>-dec<n|s><##>d<####>_<radius>_cutout.ecsv
+    # (e.g., mvm_query-ra84d9208-decs69d1483_71_cutout.ecsv), where radius has been computed from the
+    # cutout dimensions.
+    #
+    # Get the whole number and fractional components of the RA and Dec
     ns = "s" if sky_coord.dec.degree < 0.0 else "n"
-    query_filename = "mvm_query_" + "{:.6f}".format(sky_coord.ra.degree) + "_" + ns + \
-                     "{:.6f}".format(abs(sky_coord.dec.degree)) + \
-                     "_{:.0f}_cutout".format(radius.value) + ".ecsv" 
+    ra_whole = int(sky_coord.ra.value)
+    ra_frac  = str(sky_coord.ra.value).split(".")[1][0:4]
+    dec_whole = abs(int(sky_coord.dec.value))
+    dec_frac = str(sky_coord.dec.value).split(".")[1][0:4]
+    log.info("coords2. {} {} {}".format(sky_coord.ra.value, sky_coord.dec.value, dec_frac))
 
-    log.info("Writing out the filter product list table to {}.".format(query_filename))
-    output_table.write(query_filename, format="ascii.ecsv")
+    query_filename = "mvm_query-ra" + str(ra_whole) + "d" + ra_frac + "-dec" + ns + \
+                     str(dec_whole) + "d" + dec_frac + "_{:.0f}".format(radius.value) + "_cutout.ecsv"
 
-    return output_table
+    log.info("Writing out the MVM product list table to {}.".format(query_filename))
+    log.info("Number of entries in table: {}.".format(len(final_table)))
+    final_table.write(query_filename, format="ascii.ecsv")
+
+    return final_table
 
 
 def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil.logging.INFO):
@@ -196,7 +214,7 @@ def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil
 
     Parameters
     ----------
-    products : Table
+    products : `~astropy.table.Table` object
         A Table of products as returned by the mvm_id_filenames function. 
 
     archive : Boolean, optional
@@ -273,19 +291,18 @@ def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil
         # Remove astroquery created sub-directories
         shutil.rmtree('mastDownload')
 
-    return(local_files)
+    return local_files
 
 
 def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=logutil.logging.INFO, verbose=False):
     """
-    This function makes the actual cut in the input MVM drizzled filter-level images. As such it is
-    a high-level interface for the `˜astrocut.cutouts.fits_cut` functionality.
+    This function makes the actual cut in the input MVM drizzled filter- and exposure-level FITS
+    files. As such it is a high-level interface for the `˜astrocut.cutouts.fits_cut` functionality.
 
     Parameters
     ----------
     input_files : list
-        List of fits image filenames from which to create cutouts. The SCI image is assumed to be
-        in the first extension with the weight image in the second extension.
+        List of fits image filenames from which to create cutouts.
 
     sky_coord : str or `~astropy.coordinates.SkyCoord` object
         The position around which to cutout. It may be specified as a string ("ra dec" in degrees)
@@ -299,7 +316,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
         must be in angular units.
 
     output_dir : str
-        Default value '.'. The directory to save the cutout file(s) to.
+        Default value '.'. The directory where the cutout file(s) will be saved.
 
     log_level : int, optional
         The desired level of verbosity in the log statements displayed on the screen and written to the
@@ -317,13 +334,19 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
 
     Note: For each input file designated for a cutout, there will be a corresponding output file.
         Since both the SCI and WHT extensions of the input files are actually cut, individual fits files
-        will contain two image extensions, a SCI followed by the WHT.  Each filter-level output
-        filename will be of the form:
+        will contain two image extensions, a SCI followed by the WHT.
+
+        While the standard pipeline processing does not produce an MVM exposure-level drizzled
+        product, it is possible for a user to turn on this capability in the pipeline while performing
+        custom processing.  As such this routine will perform cutouts of the exposure-level drizzled files.
+
+        Each filter-level output filename will be of the form:
           hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_instrument_detector_filter[_platescale].fits
         Each exposure-level filename will be of the form:
           hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_instrument_detector_filter[_platescale]-ipppssoo.fits
 
-        where platescale is not present representing the default of "fine" or has the value of "coarse".
+        where platescale has the value of "coarse" representing 0.12"/pixel for WFC3/IR, or there
+        is no platescale value present which is the default and represents a "fine" platescale of 0.04"/pixel.
 
     """
 
@@ -341,6 +364,11 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
     if type(input_files) == str:
         input_files = [input_files]
 
+    # Retain the fully qualified pathname for each file
+    input_paths = {}
+    for files in input_files:
+        input_paths[os.path.basename(files)] = os.path.dirname(files)
+
     # If the cutout_size is not an astropy.units.Quantity object, the scalar(s)
     # are assumed to be arcseconds.  The variable must be cast as a Quantity.
     if not isinstance(cutout_size, Quantity):
@@ -350,29 +378,38 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
         sky_coord = SkyCoord(sky_coord, unit="deg")
 
     # Call the cutout workhorse
-    # MULTIPLE FILES: For each file cutout, there is an HDUList comprised of a PHDU and one or more EHDUs. 
-    # The out_HDUList is then a list of HDULists.
-    # SINGLE FILES: There is one bare minimum PHDU followed by all of the EHDUs.
+    # SINGLE_OUTFILE = FALSE ==> MULTIPLE FILES: For each file cutout, there is an HDUList
+    # comprised of a PHDU and one or more EHDUs.  The out_HDUList is then a list of HDULists.
+    #
+    # Loop over the input list so if there is an exception with a file, the
+    # remaining files can still be used to generate cutout images.
+    tmp_HDUList = []
     out_HDUList = []
-    try:
-        out_HDUList = fits_cut(input_files, sky_coord, cutout_size, correct_wcs=CORRECT_WCS,
-                               extension=EXTENSION, single_outfile=SINGLE_OUTFILE, cutout_prefix=OUTPUT_PREFIX,
-                               output_dir=".", memory_only=MEMORY_ONLY, verbose=True)
-    except Exception as x_cept:
-        log.error("")
-        log.error("Exception encountered during the cutout process: {}".format(x_cept))
-        log.error("No cutout files were created.")
+    for infile in input_files:
+        try:
+            tmp_HDUList = fits_cut(infile, sky_coord, cutout_size, correct_wcs=CORRECT_WCS,
+                                   extension=EXTENSION, single_outfile=SINGLE_OUTFILE, cutout_prefix=OUTPUT_PREFIX,
+                                   output_dir=output_dir, memory_only=MEMORY_ONLY, verbose=True)
+   
+            # Copy and append the first (and it turns out the only) entry/list in the list
+            out_HDUList.append(copy.deepcopy(tmp_HDUList[0]))
+        except Exception as x_cept:
+            log.error("")
+            log.error("Exception encountered during the cutout process: {}".format(x_cept))
+            log.error("No cutout files were created for file: {}.".format(infile))
 
-    # hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_detector_filter[_platescale][-ipppssoo].fits
+    # hst_cutout_skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>_instrument_detector_filter[_platescale][-ipppssoo].fits
     # Get the whole number and fractional components of the RA and Dec
     ra_whole = int(sky_coord.ra.value)
-    ra_frac  = str(sky_coord.ra.value % 1).split(".")[1][0:4]
+    ra_frac  = str(sky_coord.ra.value).split(".")[1][0:4]
     dec_whole = abs(int(sky_coord.dec.value))
-    dec_frac = str(sky_coord.dec.value % 1).split(".")[1][0:4]
+    dec_frac = str(sky_coord.dec.value).split(".")[1][0:4]
     ns = "s" if sky_coord.dec.degree < 0.0 else "n"
 
     filename_list = []
     for HDU in out_HDUList:
+   
+        # Update only the image extensions
         extlist = HDU[1:]
         
         # Update the EXTNAME for all of the EHDUs
@@ -380,12 +417,12 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
             input_filename = extlist[index].header["ORIG_FLE"]
             tokens = input_filename.split("_")
             skycell = tokens[1].split("-")[1]
+            instr = tokens[2]
             detector = tokens[3]
             filter = tokens[4]
             label_plus = tokens[5]
             old_extname= extlist[index].header["O_EXT_NM"].strip().upper()
-            extlist[index].header["EXTNAME"] = old_extname + "_CUTOUT_" + skycell + "_" + \
-                                               detector + "_" + filter
+            extlist[index].header["EXTNAME"] = old_extname
 
             # Determine if the file is WFC3/IR which has both a "fine" (default) and
             # "coarse" platescale.
@@ -401,7 +438,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
                 # Construct an MVM-style output filename with detector and filter
                 output_filename = OUTPUT_PREFIX + skycell + "-ra" + str(ra_whole) + \
                                   "d" + ra_frac + "-dec" + ns + str(dec_whole) + "d" + \
-                                  dec_frac + "_" + detector + "_" + filter + plate_scale + ".fits"
+                                  dec_frac + "_" + instr + "_" + detector + "_" + filter + plate_scale + ".fits"
 
                 # Determine if the original file were a filter-level or exposure-level MVM product
                 # ORIG_FLE filter-level: hst_skycell-p1253x05y09_acs_wfc_f658n_all_drc.fits
@@ -417,10 +454,10 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
                     product_type="FILTER"
 
                 # Examples of output cutout filenames:
-                # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_uvis_f275w.fits
-                # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_wfc_f814w-jbp505jg.fits
-                # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_ir_f128n_coarse.fits
-                # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_ir_f128n_coarse-ibp505mf.fits
+                # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_wfc3_uvis_f275w.fits
+                # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_acs_wfc_f814w-jbp505jg.fits
+                # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_wfc3_ir_f128n_coarse.fits
+                # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_wfc3_ir_f128n_coarse-ibp505mf.fits
                 cutout_path = os.path.join(output_dir, output_filename)
 
                 log.info("Cutout FITS filename: {}".format(cutout_path))
@@ -433,7 +470,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
                 # Replace the minimal primary header written by the astrocut
                 # software with the primary header from the corresponding input file,
                 # so we can retain a lot of information from the observation
-                HDU[0].header = fits.getheader(input_filename)
+                HDU[0].header = fits.getheader(os.path.join(input_paths[input_filename], input_filename))
 
                 # Put the new RA/DEC_OBJ keywords back
                 HDU[0].header["RA_OBJ"] = (ra_obj, "[deg] right ascension")
@@ -487,11 +524,8 @@ def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
         List of fits image cutout filenames where the cutouts are presumed to have been created
         with `drizzlepac.haputils.hapcut_utils.make_the_cut`.
 
-    # img_combiner : func 
-    #     The function to be used to combine the images
-
     output_dir : str
-        Default value '.'. The directory to save the cutout file(s) to.
+        Default value '.' - The directory where the output combined files will be saved.
 
     log_level : int, optional
         The desired level of verbosity in the log statements displayed on the screen and written to the
@@ -519,11 +553,11 @@ def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
 
     # Examples of input cutout filenames
     # Filter-level
-    # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_uvis_f275w.fits
-    # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_ir_f128n_coarse.fits
+    # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_wfc3_uvis_f275w.fits
+    # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_wfc3_ir_f128n_coarse.fits
     # Exposure-level
-    # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_wfc_f814w-jbp505jg.fits
-    # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_ir_f128n_coarse-ibp505mf.fits
+    # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_acs_wfc_f814w-jbp505jg.fits
+    # hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8516_wfc3_ir_f128n_coarse-ibp505mf.fits
     #
     # Combined filter-level files will be generated for each detector/filter combination
     # Combined exposure-level files will be generated for each detector/filter combination
@@ -540,8 +574,9 @@ def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
 
         # Parse to get the important information
         tokens = cf.split("_")
-        detector = tokens[3]
-        filter = tokens[4].split("-")[0]
+        instr = tokens[3]
+        detector = tokens[4]
+        filter = tokens[5].split("-")[0]
         str_tmp = tokens[-1].split("-")
         ipppssoo = ""
         if len(str_tmp) > 1:
@@ -549,20 +584,20 @@ def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
 
         # Based upon type of input file, filter-level or exposure-level, populate
         # the appropriate dictionary
-        det_filt_ippp = ""
-        det_filt = ""
+        instr_det_filt_ippp = ""
+        instr_det_filt = ""
         if ipppssoo:
-            det_filt_ippp = detector + "_" + filter + "_" + ipppssoo
-            if det_filt_ippp not in exposure_dict:
-                exposure_dict[det_filt_ippp] = [cfile]
+            instr_det_filt_ippp = instr + "_" + detector + "_" + filter + "_" + ipppssoo
+            if instr_det_filt_ippp not in exposure_dict:
+                exposure_dict[instr_det_filt_ippp] = [cfile]
             else:
-                exposure_dict[det_filt_ippp].append(cfile)
+                exposure_dict[instr_det_filt_ippp].append(cfile)
         else:
-            det_filt = detector + "_" + filter
-            if det_filt not in filter_dict:
-                filter_dict[det_filt] = [cfile]
+            instr_det_filt = instr + "_" + detector + "_" + filter
+            if instr_det_filt not in filter_dict:
+                filter_dict[instr_det_filt] = [cfile]
             else:
-                filter_dict[det_filt].append(cfile)
+                filter_dict[instr_det_filt].append(cfile)
 
     # FILTER-LEVEL COMBINATION
     # For each detector/filter, generate the output filename and perform the combine
@@ -585,7 +620,7 @@ def __combine_cutouts(input_dict, type="FILTER", img_combiner=None, output_dir="
     Parameters
     ----------
     input_dict : dictionary 
-        A dictionary where the key is the detector_filter or detector_filter_ipppssoo string and
+        A dictionary where the key is the instr_detector_filter or instr_detector_filter_ipppssoo string and
         the corresponding value is a list of filenames corresponding to the key.
 
     type : string
@@ -616,7 +651,7 @@ def __combine_cutouts(input_dict, type="FILTER", img_combiner=None, output_dir="
         if len(file_list) > 1:
 
             # Construct the combined filename based on the first file in the list
-            # Example: hst_combined_skycells-ra84d9207-decs69d8516_uvis_f275w.fits
+            # Example: hst_combined_skycells-ra84d9207-decs69d8516_wfc3_uvis_f275w.fits
             filename = fits.getheader(file_list[0], ext=0)['FILENAME']
             fname = filename.replace(".fits", "")
             sky_tokens = fname.split("_")[2].split("-")
@@ -624,28 +659,45 @@ def __combine_cutouts(input_dict, type="FILTER", img_combiner=None, output_dir="
             ra = sky_tokens[2]
             dec = sky_tokens[3]
 
-            detector = key.split("_")[0]
-            filter = key.split("_")[1]
+            instr = key.split("_")[0]
+            detector = key.split("_")[1]
+            filter = key.split("_")[2]
             if type.upper() == "EXPOSURE":
-                exposure = key.split("_")[2]
+                exposure = key.split("_")[3]
                 output_filename = os.path.join(output_dir, OUTPUT_PREFIX + ra + "-" + dec + "_" + \
-                                               detector + "_" + filter + "_" + exposure + ".fits")
+                                               instr + "_" + detector + "_" + filter + "_" + exposure + ".fits")
             else:
                 output_filename = os.path.join(output_dir, OUTPUT_PREFIX + ra + "-" + dec + "_" + \
-                                               detector + "_" + filter + ".fits")
+                                               instr + "_" + detector + "_" + filter + ".fits")
     
+
             # Combine the SCI and then the WHT extensions in the specified files
             log.info("Combining the SCI and then the WHT extensions of the input cutout files.")
             try:
-                combined_cutout = astrocut.CutoutsCombiner(file_list, img_combiner=img_combiner).combine(output_file=output_filename)
+                combined_cutout = astrocut.CutoutsCombiner(file_list, img_combiner=img_combiner).combine(output_file=output_filename, \
+                                                           memory_only=True)
             except Exception as x_cept:
                 log.warning("The cutout combine was not successful for files, {}, due to {}.".format(file_list, x_cept))
                 log.warning("Processing continuuing on next possible set of data.")
                 continue
-            log.info("The combined output filename is {}.".format(output_filename))
+
+            log.info("The combined output filename is {}.\n".format(output_filename))
+
+            # Add the FILENAME keyword to the PHDU of the in-memory output
+            if output_filename.startswith("./"):
+                output_filename = output_filename.replace("./", "")
+            combined_cutout[0].header["FILENAME"] = output_filename
+ 
+            # Update the EXTNAMEs of the EHDUs
+            combined_cutout[1].header["EXTNAME"] = "SCI"
+            combined_cutout[2].header["EXTNAME"] = "WHT"
+
+            # Write out the file
+            combined_cutout.writeto(output_filename, overwrite=True)
 
         # Only a single file 
         else:
             log.warning("There is only one file for this detector/filter[/ipppssoo] combination, so there" \
                         " is nothing to combine.")
-            log.warning("File {} will be ignored for combination purposes.".format(file_list))
+            log.warning("File {} will be ignored for combination purposes.\n".format(file_list))
+
