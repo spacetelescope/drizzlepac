@@ -1061,11 +1061,11 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
                                         'input_mag': None, 'ref_mag': None, 'input_idx': None}
 
                 # Perform checks to insure that fit was successful
-                # Namely, rot < 0.1 degree and scale < 1%.
-                if abs(tinfo['<scale>'] - 1) > 0.01 or abs(tinfo['<rot>']) > 0.1 or \
+                # Namely, (rot < 0.1 degree or scale < 1%) and skew < 1%
+                if (abs(tinfo['<scale>'] - 1) > 0.01 or abs(tinfo['<rot>']) > 0.1) and \
                     tinfo['skew'] > 0.01:
                     # fit is bad
-                    tinfo['status'] = 'FAILED: singularity in fit'
+                    tinfo['status'] = 'FAILED: potential singularity in fit'
 
                 log.debug("fit_info: {}".format(item.meta['fit_info']))
 

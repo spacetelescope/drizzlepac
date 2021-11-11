@@ -401,6 +401,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
         best_fit_rms = -99999.0
         best_fit_status_dict = {}
         best_fit_qual = 5
+        best_num_matches = -1
         best_fit_label = [None, None]
         # create pristine copy of imglist that will be used to restore imglist back so it always starts exactly the same
         # for each run.
@@ -488,6 +489,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also total_rms
                         if fit_quality < 5:
+                            best_matches = fit_num > best_num_matches
                             if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
                                 best_fit_label = (catalog_name, algorithm_name)
@@ -495,21 +497,26 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
                                 break  # break out of while loop
-                            elif fit_quality < best_fit_qual:  # better solution found. keep looping but with the better solution as "best" for now.
+                            elif fit_quality < best_fit_qual:
+                                # better solution found. keep looping but with the better solution as "best" for now.
                                 log.info("Better solution found!")
                                 best_fit_rms = fit_rms
+                                best_num_matches = fit_num
                                 best_fit_label = (catalog_name, algorithm_name)
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
-                            elif fit_quality == best_fit_qual:  # new solution same level of fit_quality. Choose whichever one has the lowest total rms as "best" and keep looping.
+                            elif fit_quality == best_fit_qual:
+                                # new solution same level of fit_quality. Choose whichever one has the lowest total rms as "best" and keep looping.
                                 if best_fit_rms >= 0.:
-                                    if fit_rms < best_fit_rms:
+                                    if best_matches and fit_rms < best_fit_rms:
                                         best_fit_rms = fit_rms
+                                        best_num_matches = fit_num
                                         best_fit_label = (catalog_name, algorithm_name)
 
                                         best_fit_status_dict = fit_status_dict.copy()
                                         best_fit_qual = fit_quality
+
                             else:  # new solution has worse fit_quality. discard and continue looping.
                                 continue
 
@@ -699,6 +706,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     overall_comp = False
 
     do_consistency_check = align_pars['determine_fit_quality'].get('consistency_check', True)
+    auto_good_rms = float(align_pars['determine_fit_quality']['MAX_FIT_RMS'])
 
     for item in imglist:
         if item.meta['fit_info']['status'].startswith('REFERENCE'):
@@ -798,7 +806,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
 
         consistency_check = True
         if do_consistency_check:
-            rms_limit = max(fit_info['TOTAL_RMS'], 10.)
+            rms_limit = max(fit_info['TOTAL_RMS'], auto_good_rms)
             if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
                              np.asarray(yshifts)) ** 2) <= (rms_limit / align_pars['determine_fit_quality']['MAS_TO_ARCSEC']) / (item.wcs.pscale):  # \
                              # or rms_ratio > MAX_RMS_RATIO:
@@ -875,27 +883,27 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     else:
         for ctr in range(0, len(filtered_table)):
             filtered_table[ctr]['processMsg'] = ""
-        if overall_comp is False and max_rms_val < 10.:
-            log.info("Valid solution with RMS < 10 mas found!")
+        if overall_comp is False and max_rms_val < auto_good_rms:
+            log.info("Valid solution with RMS < {} mas found!".format(auto_good_rms))
             fit_quality = 1
-        elif overall_comp is True and max_rms_val < 10.:
-            log.info("Valid but compromised solution with RMS < 10 mas found!")
+        elif overall_comp is True and max_rms_val < auto_good_rms:
+            log.info("Valid but compromised solution with RMS < {} mas found!".format(auto_good_rms))
             fit_quality = 2
-        elif overall_comp is False and 1000. >= max_rms_val >= 10.:
-            log.info("Valid solution with RMS >= 10 mas found!")
+        elif overall_comp is False and 1000. >= max_rms_val >= auto_good_rms:
+            log.info("Valid solution with RMS >= {} mas found!".format(auto_good_rms))
             fit_quality = 3
         else:
-            log.info("Valid but compromised solution with RMS >= 10 mas found!")
+            log.info("Valid but compromised solution with RMS >= {} mas found!".format(auto_good_rms))
             fit_quality = 4
 
     if print_fit_parameters:
         for item in imglist: log.info(fit_status_dict["{},{}".format(item.meta['name'], item.meta['chip'])])
 
-    if max_rms_val > align_pars['determine_fit_quality']['MAX_FIT_RMS']:
-        log.info("Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(max_rms_val, align_pars['determine_fit_quality']['MAX_FIT_RMS']))
+    if max_rms_val > auto_good_rms:
+        log.info("Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(max_rms_val, auto_good_rms))
     if not overall_valid:
         log.info("The fit solution for some or all of the images is not valid.")
-    if max_rms_val > align_pars['determine_fit_quality']['MAX_FIT_RMS'] or not overall_valid:
+    if max_rms_val > auto_good_rms or not overall_valid:
         log.info("Try again with the next catalog")
     else:
         log.info("Fit calculations successful.")
