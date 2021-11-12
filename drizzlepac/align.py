@@ -493,6 +493,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                             if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
                                 best_fit_label = (catalog_name, algorithm_name)
+                                best_num_matches = fit_num
 
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
