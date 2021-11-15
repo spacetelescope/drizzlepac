@@ -494,7 +494,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     logname = proc_utils.build_logname(input_filename)
 
     # Initialize total trailer filename as temp logname
-    logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+    logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT, force=True)
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))

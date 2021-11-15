@@ -1,4 +1,4 @@
-""" This module tests full pipeline SVM processing as a demonstration template.
+""" This module tests full pipeline SVM processing for an ACS WFC, full-frame, one filter dataset.
 
 """
 import datetime
@@ -12,11 +12,11 @@ from astropy.io import fits, ascii
 from pathlib import Path
 
 """
-    test_svm_demo.py
+    test_svm_je281u.py
 
     This test file can be executed in the following manner:
-        $ pytest -s --basetemp=/internal/hladata/yourUniqueDirectoryHere test_svm.py >& test_svm.log &
-        $ tail -f test_svm.log
+        $ pytest -s --basetemp=/internal/hladata/yourUniqueDirectoryHere test_svm_je281u.py >& je281u.log &
+        $ tail -f je281u.log
       * Note: When running this test, the `--basetemp` directory should be set to a unique
         existing directory to avoid deleting previous test output.
       * The POLLER_FILE exists in the tests/hap directory.

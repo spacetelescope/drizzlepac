@@ -12,11 +12,11 @@ from astropy.io import fits, ascii
 from pathlib import Path
 
 """
-    test_svm_demo.py
+    template_svm_demo.py
 
     This test file can be executed in the following manner:
-        $ pytest -s --basetemp=/internal/hladata/yourUniqueDirectoryHere test_svm.py >& test_svm.log &
-        $ tail -f test_svm.log
+        $ pytest -s --basetemp=/internal/hladata/yourUniqueDirectoryHere template_svm.py >& template_svm.log &
+        $ tail -f template_svm.log
       * Note: When running this test, the `--basetemp` directory should be set to a unique
         existing directory to avoid deleting previous test output.
       * The POLLER_FILE exists in the tests/hap directory.
