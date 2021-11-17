@@ -20,8 +20,8 @@ from pathlib import Path
       * Note: When running this test, the `--basetemp` directory should be set to a unique
         existing directory to avoid deleting previous test output.
       * The POLLER_FILE exists in the tests/hap directory.
-
-    *** The --basetemp does not seem to be working at this time!!!
+      * If running manually with `--basetemp`, the template_svm.log file will still be written to the 
+        originating directory.
 
 """
 
@@ -41,7 +41,11 @@ def read_csv_for_filenames():
 
 
 @pytest.fixture(scope="module")
-def gather_data_for_processing(read_csv_for_filenames):
+def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
+    # Create working directory specified for the test
+    curdir = tmp_path_factory.mktemp(os.path.basename(__file__)) 
+    os.chdir(curdir)
+
     # Establish FLC/FLT lists and obtain the requested data
     flc_flag = ""
     flt_flag = ""

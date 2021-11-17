@@ -20,8 +20,8 @@ from pathlib import Path
       * Note: When running this test, the `--basetemp` directory should be set to a unique
         existing directory to avoid deleting previous test output.
       * The POLLER_FILE exists in the tests/hap directory.
-
-    *** The --basetemp does not seem to be working at this time!!!
+      * If running manually with `--basetemp`, the je281u.log file will still be written to the 
+        originating directory.
 
 """
 
@@ -41,7 +41,11 @@ def read_csv_for_filenames():
 
 
 @pytest.fixture(scope="module")
-def gather_data_for_processing(read_csv_for_filenames):
+def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
+    # Create working directory specified for the test
+    curdir = tmp_path_factory.mktemp(os.path.basename(__file__)) 
+    os.chdir(curdir)
+
     # Establish FLC/FLT lists and obtain the requested data
     flc_flag = ""
     flt_flag = ""
@@ -94,9 +98,11 @@ def gather_data_for_processing(read_csv_for_filenames):
 @pytest.fixture(scope="module")
 def gather_output_data(construct_manifest_filename):
     # Determine the filenames of all the output files from the manifest
-    table = ascii.read(construct_manifest_filename, format="no_header")
-    file_col = table.colnames[0]
-    files = list(table[file_col])
+    print("\nManifest Filename: {}".format(construct_manifest_filename))
+    files = []
+    with open(construct_manifest_filename, 'r') as fout:
+        for line in fout.readlines():
+            files.append(line)
     print("\ngather_output_data. Output data files: {}".format(files))
 
     return files
