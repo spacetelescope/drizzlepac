@@ -168,6 +168,17 @@ def test_svm_wcs(gather_output_data):
         assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp}."
 
 
+def test_svm_samewcs(gather_output_data):
+    # Check that products for both detectors are aligned to the same catalog
+    # The assumption is that if they are all aligned to the same catalog, they are
+    # correctly aligned to each other.
+    tdp_files = [files for files in gather_output_data if
+                 files.lower().find("total") > -1 and files.lower().endswith(".fits")]
+
+    wcsnames = [fits.getval(tdp, "WCSNAME", ext=1).upper().split('-')[1] for tdp in tdp_files]
+    assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same: {wcsnames}"
+
+
 def test_svm_empty_cats(gather_output_data):
     # Check the output catalogs should contain > 0 measured sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("-cat.ecsv")]
