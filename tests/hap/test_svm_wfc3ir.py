@@ -179,7 +179,7 @@ def test_svm_empty_cats(gather_output_data):
 def test_svm_point_cats(gather_output_data):
     # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("point-cat.ecsv")]
-    expected_sources = {'ir': 100}  # {'ir': 357}
+    expected_sources = {'ir': 358}
 
     num_sources = {cat:len(ascii.read(cat, format="ecsv")) for cat in cat_files}
     valid_cats = {}
