@@ -100,9 +100,11 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
 @pytest.fixture(scope="module")
 def gather_output_data(construct_manifest_filename):
     # Determine the filenames of all the output files from the manifest
-    table = ascii.read(construct_manifest_filename, format="no_header")
-    file_col = table.colnames[0]
-    files = list(table[file_col])
+    print(f"\nManifest Filename: {construct_manifest_filename}")
+    files = []
+    with open(construct_manifest_filename, 'r') as fout:
+        for line in fout.readlines():
+            files.append(line.rstrip('\n'))
     print("\ngather_output_data. Output data files: {}".format(files))
 
     return files
@@ -174,6 +176,8 @@ def test_svm_samewcs(gather_output_data):
     # correctly aligned to each other.
     tdp_files = [files for files in gather_output_data if
                  files.lower().find("total") > -1 and files.lower().endswith(".fits")]
+
+    print(f'TDP_FILES: \n{tdp_files}')
 
     wcsnames = [fits.getval(tdp, "WCSNAME", ext=1).upper().split('-')[1] for tdp in tdp_files]
     assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same: {wcsnames}"
