@@ -43,7 +43,11 @@ def read_csv_for_filenames():
 
 
 @pytest.fixture(scope="module")
-def gather_data_for_processing(read_csv_for_filenames):
+def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
+    # create working directory specified for the test
+    curdir = tmp_path_factory.mktemp(os.path.basename(__file__))
+    os.chdir(curdir)
+
     # Establish FLC/FLT lists and obtain the requested data
     flc_flag = ""
     flt_flag = ""
@@ -186,10 +190,10 @@ def test_svm_point_cats(gather_output_data):
     for cat in expected_sources.keys():
         for file in cat_files:
             if cat in file and "total" in file:
-                valid_cats[cat] = np.isclose(num_sources[file], expected_sources[cat], rtol=0.1)
+                valid_cats[cat] = (np.isclose(num_sources[file], expected_sources[cat], rtol=0.1), num_sources[file])
                 break
-    bad_cats = [cat for cat in valid_cats if not valid_cats[cat]]
-    assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} do not have the expected number of sources"
+    bad_cats = [cat for cat in valid_cats if not valid_cats[cat][0]]
+    assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_sources}"
 
 
 def test_svm_segment_cats(gather_output_data):
@@ -202,7 +206,7 @@ def test_svm_segment_cats(gather_output_data):
     for cat in expected_sources.keys():
         for file in cat_files:
             if cat in file and "total" in file:
-                valid_cats[cat] = np.isclose(num_sources[file], expected_sources[cat], rtol=0.1)
+                valid_cats[cat] = (np.isclose(num_sources[file], expected_sources[cat], rtol=0.1), num_sources[file])
                 break
-    bad_cats = [cat for cat in valid_cats if not valid_cats[cat]]
-    assert len(bad_cats) == 0, f"Segment Catalog(s) {bad_cats} do not have the expected number of sources"
+    bad_cats = [cat for cat in valid_cats if not valid_cats[cat][0]]
+    assert len(bad_cats) == 0, f"Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_sources}"
