@@ -10,6 +10,7 @@ import pytest
 from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runsinglehap
 from astropy.io import fits, ascii
+from astropy.table import Table
 from pathlib import Path
 
 """
@@ -115,7 +116,7 @@ def gather_data_for_processing(read_csv_for_filenames):
 @pytest.fixture(scope="module")
 def gather_output_data(construct_manifest_filename):
     # Determine the filenames of all the output files from the manifest
-    table = ascii.read(construct_manifest_filename, format="no_header")
+    table = Table.read(construct_manifest_filename, format="ascii.no_header")
     file_col = table.colnames[0]
     files = list(table[file_col])
     print("\ngather_output_data. Output data files: {}".format(files))
@@ -208,7 +209,7 @@ def test_svm_point_cat_meanmag(gather_output_data):
     # Compute the mean of the MagAp1 in the filtered catalogs and do not include flagged bad data
     for cat in cat_files:
         table = ascii.read(cat)
-        Mag1_array = table['MagAp1'].data 
+        Mag1_array = table['MagAp1'].data
         Mag1_mean = -9999.0
         if len(Mag1_array[Mag1_array > -9999.0]) > 0:
             Mag1_mean = Mag1_array[Mag1_array > -9999.0].mean()
@@ -223,7 +224,7 @@ def test_svm_segment_cat_meanmag(gather_output_data):
     # Compute the mean of the MagAp1 in the filtered catalogs and do not include flagged bad data
     for cat in cat_files:
         table = ascii.read(cat)
-        Mag1_array = table['MagAp1'].data 
+        Mag1_array = table['MagAp1'].data
         Mag1_mean = -9999.0
         if len(Mag1_array[Mag1_array > -9999.0]) > 0:
             Mag1_mean = Mag1_array[Mag1_array > -9999.0].mean()
