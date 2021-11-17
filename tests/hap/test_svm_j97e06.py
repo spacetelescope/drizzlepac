@@ -118,13 +118,9 @@ def gather_output_data(construct_manifest_filename):
     # Determine the filenames of all the output files from the manifest
     print("\nManifest Filename: {}".format(construct_manifest_filename))
     files = []
-    with open('acs_97e_06_manifest.txt', 'r') as fout:
+    with open(construct_manifest_filename, 'r') as fout:
         for line in fout.readlines():
-            print("Line: {}".format(line))
             files.append(line)
-    #table = Table.read(construct_manifest_filename, format="ascii.no_header")
-    #file_col = table.colnames[0]
-    #files = list(table[file_col])
     print("\ngather_output_data. Output data files: {}".format(files))
 
     return files
@@ -189,7 +185,6 @@ def test_svm_wcs(gather_output_data):
         assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp}."
 
 
-@pytest.mark.slow
 def test_svm_point_cat_numsources(gather_output_data):
     # Check the output catalog length
     cat_files = [files for files in gather_output_data if files.lower().endswith("point-cat.ecsv")]
@@ -200,7 +195,6 @@ def test_svm_point_cat_numsources(gather_output_data):
         assert table_length > MIN_CAT_LENGTH and table_length < MAX_CAT_LENGTH_POINT, f"Catalog file {cat} is unexpectedly empty"
 
 
-@pytest.mark.slow
 def test_svm_segment_cat_numsources(gather_output_data):
     # Check the output catalog length
     cat_files = [files for files in gather_output_data if files.lower().endswith("segment-cat.ecsv")]
@@ -226,7 +220,6 @@ def test_svm_point_cat_meanmag(gather_output_data):
         assert math.isclose(Mag1_mean, MEAN_CAT_MAGAP1_POINT[cat], abs_tol=MEAN_CAT_MAGAP1_POINT_DIFF), f"Catalog file {cat} has mean MagAp1 too different from expected"
 
 
-@pytest.mark.slow
 def test_svm_segment_cat_meanmag(gather_output_data):
     cat_files = [files for files in gather_output_data if files.lower().endswith("segment-cat.ecsv") and files.lower().find("total") < 0]
 
