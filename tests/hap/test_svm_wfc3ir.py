@@ -99,9 +99,11 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
 @pytest.fixture(scope="module")
 def gather_output_data(construct_manifest_filename):
     # Determine the filenames of all the output files from the manifest
-    table = ascii.read(construct_manifest_filename, format="no_header")
-    file_col = table.colnames[0]
-    files = list(table[file_col])
+    print("\nManifest Filename: {}".format(construct_manifest_filename))
+    files = []
+    with open(construct_manifest_filename, 'r') as fout:
+        for line in fout.readlines():
+            files.append(line.rstrip("\n"))
     print("\ngather_output_data. Output data files: {}".format(files))
 
     return files
