@@ -280,7 +280,7 @@ class HAPProduct:
 
                                 # turn off consistency check for SVM and MVM processing since filter-to-filter
                                 # or visit-to-visit offsets could be large relative to measurement RMS.
-                                alignment_pars['determine_fit_quality']['consistency_check'] = False
+                                alignment_pars['determine_fit_quality']['do_consistency_check'] = False
 
                                 # Evaluate the quality of the fit
                                 is_good_fit, _, _, _, _, _ = align.determine_fit_quality_mvm_interface(align_table.imglist,

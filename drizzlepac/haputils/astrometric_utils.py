@@ -1243,6 +1243,15 @@ def classify_sources(catalog, fwhm, sources=None):
     num_sources = sources[1] - sources[0]
     srctype = np.zeros((num_sources,), np.int32)
 
+    # remove entries where moments are undefined or np.nan
+    mxmax = np.array([moments[src].max() for src in range(num_sources)])
+    nan_ids = np.where(np.isnan(mxmax))[0]
+    for src in nan_ids:
+        # Reset np.nan values to -1 so that subsequent lines will
+        # recognize these sources as 'bad' and include them in the values of 'mx' and 'my'
+        # This will also prevent an Exception from the comparison with '.max()'
+        moments[src] = np.nan_to_num(moments[src], -1)
+
     # Find which moment is the peak moment for all sources
     mx = np.array([np.where(moments[src] == moments[src].max())[0][0] for src in range(num_sources)], np.int32)
     my = np.array([np.where(moments[src] == moments[src].max())[1][0] for src in range(num_sources)], np.int32)
@@ -1253,14 +1262,14 @@ def classify_sources(catalog, fwhm, sources=None):
 
     # Define descriptors of CRs
     # First: look for sources where the moment in X and Y is the first moment
-    valid_src = np.bitwise_and(mx > 1, my > 1)[valid_xy]
+    valid_src = np.bitwise_and(mx > 1, my > 1)
     # Second: look for sources where the width of the source is less than the PSF FWHM
-    valid_width = (semiminor_axis < (0.75 * fwhm))[valid_xy]
+    valid_width = (semiminor_axis < (0.75 * fwhm))
     # Third: identify sources which are elongated at least 2:1
-    valid_elon = (elon > 2)[valid_xy]
+    valid_elon = (elon > 2)
     # Now combine descriptors into a single value
     valid_streak = ~np.bitwise_and(valid_width, valid_elon)
-    src_cr = np.bitwise_and(valid_src, valid_streak)
+    src_cr = np.bitwise_and(np.bitwise_and(valid_src, valid_streak), valid_xy)
     # Flag identified sources as CRs with a value of 1
     srctype[src_cr] = 1
 
@@ -2078,7 +2087,7 @@ def compute_zero_mask(imgarr, iterations=8, ext=0):
 
 def build_focus_dict(singlefiles, prodfile, sigma=2.0):
 
-    focus_dict = FOCUS_DICT.copy()
+    focus_dict = copy.deepcopy(FOCUS_DICT)
     focus_dict['expnames'] = singlefiles
     focus_dict['prodname'] = prodfile
 
@@ -2113,6 +2122,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
                            'min': exparr.min(), 'max': exparr.max()}
     log.debug("Focus results for {}: \n{}".format(prodfile, focus_dict))
     log.info("Mean Focus computed for {}: {}".format(prodfile, focus_dict['stats']['mean']))
+    log.info("Focus for product: {}".format(focus_val))
 
     return focus_dict
 
@@ -2127,7 +2137,9 @@ def evaluate_focus(focus_dict, tolerance=0.8):
     min_prob = compute_prob(min_3sig, s['mean'], s['std'])
     max_prob = compute_prob(max_3sig, s['mean'], s['std'])
     drz_prob = np.array([compute_prob(d, s['mean'], s['std']) for d in focus_dict['prod']])
-
+    log.debug('FOCUS values:\n\tdrizzle: {}  min: {}  max: {}'.format(drz_prob, min_prob, max_prob))
+    log.debug('FOCUS stats:\n\t STD: {}  MIN: {}'.format(s['std'], s['min']))
+    log.debug('FOCUS full stats:\n {}'.format(s))
     if (drz_prob < min_prob).any() or (drz_prob > max_prob).any() or s['std'] > s['min']:
         alignment_verified = False
     else:
