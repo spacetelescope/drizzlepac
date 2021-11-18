@@ -162,8 +162,8 @@ def run(configobj, wcsmap=None):
 
     # Build name of output trailer file
     logging_handlers = logging.getLogger().handlers
-    log_name = [lh.name for lh in logging_handlers if lh.level > 0][0]
-    logfile = log_name if log_name else "{}.tra".format(def_logname)
+    log_name = [lh.name for lh in logging_handlers if lh.level > 0]
+    logfile = log_name[0] if log_name else "{}.tra".format(def_logname)
     print("AstroDrizzle log file: {}".format(logfile))
 
     clean = configobj['STATE OF INPUT FILES']['clean']

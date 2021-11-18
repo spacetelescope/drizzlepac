@@ -18,6 +18,10 @@ from stwcs import wcsutil
 from stwcs.distortion import coeff_converter, utils
 from stwcs.wcsutil import altwcs
 
+from stsci.tools.fileutil import countExtn
+
+from drizzlepac.haputils import processing_utils as proc_utils
+
 DEFAULT_WCS_PARS = {'ra': None, 'dec': None, 'scale': None, 'rot': None,
                     'outnx': None, 'outny': None,
                     'crpix1': None, 'crpix2': None}
@@ -1145,3 +1149,33 @@ def get_extns(fimg, extname='SCI'):
         fimg.close()
 
     return extns
+
+def verify_sci_hdrname(filename):
+    """Insures that HDRNAME keyword is populated in SCI extensions.
+
+    This function checks to make sure the HDRNAME keyword in the SCI
+    extension of the science image `filename` is populated with a valid
+    non-empty string.
+    """
+    fhdu, closefits = proc_utils._process_input(filename)
+
+    # Find all extensions to be updated
+    numext = countExtn(fhdu, extname='SCI')
+
+    for ext in range(1, numext + 1):
+        sciext = ('sci', ext)
+        scihdr = fhdu[sciext].header
+        if 'hdrname' not in scihdr or scihdr['hdrname'].rstrip() == '':
+            # We need to create a valid value for the keyword
+            # Define new HDRNAME value in case it is needed.
+            # Same value for all SCI extensions, so just precompute it and be ready.
+            # This code came from 'stwcs.updatewcs.astrometry_utils'
+            hdrname = "{}_{}".format(filename.replace('.fits', ''), scihdr['wcsname'])
+            # Create full filename for headerlet:
+            hfilename = "{}_hlet.fits".format(hdrname)
+            # Update the header with the new value, inserting after WCSNAME
+            scihdr.set('hdrname', hfilename, 'Name of headerlet file', after='wcsname')
+
+    if closefits:
+        fhdu.close()
+        del fhdu
