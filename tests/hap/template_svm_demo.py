@@ -144,7 +144,7 @@ def svm_setup(gather_data_for_processing):
     print(str(current_dt))
 
 
-# TESTS
+# TESTS - Avoid doing an assert in a loop as the test could exit before all the data has processed
 
 def test_svm_manifest_name(construct_manifest_filename):
     # Construct the manifest filename from the header of an input file in the list and check it exists.
@@ -159,17 +159,20 @@ def test_svm_wcs(gather_output_data):
     # Check the output primary WCSNAME includes FIT_SVM_GAIA as part of the string value
     tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith(".fits")]
 
-    for tdp in tdp_files:
-        wcsname = fits.getval(tdp, "WCSNAME", ext=1).upper()
-        print("\ntest_svm_wcs.  WCSNAME: {} Output file: {}".format(wcsname, tdp))
-        assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp}."
+    # This check is for all total data products which have the same "type" of WCSNAME -
+    # in this case a name akin to *-FIT_SVM_GAIA*.
+    wcsnames = [fits.getval(tdp, "WCSNAME", ext=1).upper().split('-')[1] for tdp in tdp_files]
+    assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same: {wcsnames}"
 
 
 def test_svm_cat_sources(gather_output_data):
     # Check the output catalogs should contain > 0 measured sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("-cat.ecsv")]
 
+    valid_tables = {}
     for cat in cat_files:
         table_length = len(ascii.read(cat, format="ecsv"))
         print("\ntest_svm_cat_sources. Number of sources in catalog {} is {}.".format(cat, table_length))
-        assert table_length > 0, f"Catalog file {cat} is unexpectedly empty"
+        valid_tables[cat] = table_length > 0
+    bad_tables = [cat for cat in cat_files if not valid_tables[cat]]
+    assert len(bad_tables) == 0, f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
