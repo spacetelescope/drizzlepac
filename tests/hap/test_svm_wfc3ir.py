@@ -21,12 +21,14 @@ from pathlib import Path
         existing directory to avoid deleting previous test output.
       * The POLLER_FILE exists in the tests/hap directory.
 
-    *** The --basetemp does not seem to be working at this time!!!
-
 """
 
 WCS_SUB_NAME = "FIT_SVM_GAIA"
 POLLER_FILE = "wfc3_ir_ib6807_input.out"
+
+# Gather all expected values used for determining pass/fail criteria here
+expected_point_sources = {'ir': 358}
+expected_seg_sources = {'ir': 298}
 
 
 @pytest.fixture(scope="module")
@@ -184,30 +186,28 @@ def test_svm_empty_cats(gather_output_data):
 def test_svm_point_cats(gather_output_data):
     # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("point-cat.ecsv")]
-    expected_sources = {'ir': 358}
 
     num_sources = {cat:len(ascii.read(cat, format="ecsv")) for cat in cat_files}
     valid_cats = {}
-    for cat in expected_sources.keys():
+    for cat in expected_point_sources.keys():
         for file in cat_files:
             if cat in file and "total" in file:
-                valid_cats[cat] = (np.isclose(num_sources[file], expected_sources[cat], rtol=0.1), num_sources[file])
+                valid_cats[cat] = (np.isclose(num_sources[file], expected_point_sources[cat], rtol=0.1), num_sources[file])
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][0]]
-    assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_sources}"
+    assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_point_sources}"
 
 
 def test_svm_segment_cats(gather_output_data):
     # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("segment-cat.ecsv")]
-    expected_sources = {'ir': 298}
 
     num_sources = {cat: len(ascii.read(cat, format="ecsv")) for cat in cat_files}
     valid_cats = {}
-    for cat in expected_sources.keys():
+    for cat in expected_seg_sources.keys():
         for file in cat_files:
             if cat in file and "total" in file:
-                valid_cats[cat] = (np.isclose(num_sources[file], expected_sources[cat], rtol=0.1), num_sources[file])
+                valid_cats[cat] = (np.isclose(num_sources[file], expected_seg_sources[cat], rtol=0.1), num_sources[file])
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][0]]
-    assert len(bad_cats) == 0, f"Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_sources}"
+    assert len(bad_cats) == 0, f"Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_seg_sources}"
