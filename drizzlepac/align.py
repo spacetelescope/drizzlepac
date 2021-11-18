@@ -508,7 +508,9 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                                 best_fit_status_dict = fit_status_dict.copy()
                                 best_fit_qual = fit_quality
                             elif fit_quality == best_fit_qual:
-                                # new solution same level of fit_quality. Choose whichever one has the lowest total rms as "best" and keep looping.
+                                # new solution same level of fit_quality.
+                                # Choose whichever one has the most matches and lowest total rms as "best"
+                                # and keep looping to see if another fit is better.
                                 if best_fit_rms >= 0.:
                                     if best_matches and fit_rms < best_fit_rms:
                                         best_fit_rms = fit_rms
@@ -706,7 +708,10 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     overall_valid = True
     overall_comp = False
 
-    do_consistency_check = align_pars['determine_fit_quality'].get('consistency_check', True)
+    # See whether or not 'consistency_check' should be performed.
+    # This will only be turned on for pipeline processing due to the potentially extreme
+    # variations in photometry across a visit or in a SkyCell.
+    do_consistency_check = align_pars['determine_fit_quality'].get('do_consistency_check', True)
     auto_good_rms = float(align_pars['determine_fit_quality']['MAX_FIT_RMS'])
 
     for item in imglist:
