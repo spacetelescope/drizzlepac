@@ -511,7 +511,7 @@ class baseImageObject:
     def getGain(self, exten):
         return self._image[exten]._gain
 
-    def getflat(self, chip):
+    def getflat(self, chip, flat_ext=None):
         """
         Method for retrieving a detector's flat field.
 
@@ -522,6 +522,8 @@ class baseImageObject:
             **units of electrons**.
 
         """
+        if flat_ext is None:
+            flat_ext = self.scienceExt
         sci_chip = self._image[self.scienceExt, chip]
         # The keyword for ACS flat fields in the primary header of the flt
         # file is pfltfile.  This flat file is already in the required
@@ -533,8 +535,8 @@ class baseImageObject:
         hdulist = None
         try:
             hdulist = fileutil.openImage(filename, mode='readonly',
-                                         memmap=False)
-            data = hdulist[(self.scienceExt, chip)].data
+                                         memmap=False, writefits=False)
+            data = hdulist[(flat_ext, chip)].data
 
             if data.shape[0] != sci_chip.image_shape[0]:
                 ltv2 = int(np.round(sci_chip.ltv2))

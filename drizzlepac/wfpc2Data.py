@@ -164,7 +164,7 @@ class WFPC2InputImage (imageObject):
         # Convert the science data to electrons
         self.doUnitConversions()
 
-    def getflat(self,chip):
+    def getflat(self, chip, flat_ext=None):
         """
         Method for retrieving a detector's flat field.
 
@@ -176,7 +176,14 @@ class WFPC2InputImage (imageObject):
         """
         # For the WFPC2 flat we need to invert
         # for use in Multidrizzle
-        flat = 1.0 / super().getflat(chip)
+        if flat_ext is None:
+            filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
+            h = fileutil.openImage(filename, mode='readonly', memmap=False,
+                                   writefits=False)
+            flat_ext = h[0].header.get('FILETYPE', '')
+            flat_ext = h[1].header.get('EXTNAME', flat_ext)
+            h.close()
+        flat = 1.0 / super().getflat(chip, flat_ext)
         return flat
 
     def doUnitConversions(self):
