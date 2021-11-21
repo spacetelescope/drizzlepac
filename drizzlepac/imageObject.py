@@ -511,9 +511,22 @@ class baseImageObject:
     def getGain(self, exten):
         return self._image[exten]._gain
 
-    def getflat(self, chip, flat_ext=None):
+    def getflat(self, chip, flat_file=None, flat_ext=None):
         """
         Method for retrieving a detector's flat field.
+
+        Parameters
+        ----------
+        chip : int
+            Chip number. Same as FITS ``EXTVER``.
+
+        flat_file : str, None
+            Flat field file name. If not specified, it will be determined
+            automatically from image header.
+
+        flat_ext : str, None
+            Flat field extension name (same as FITS ``EXTNAME``). Specifies
+            extension name containing flat field data.
 
         Returns
         -------
@@ -531,11 +544,11 @@ class baseImageObject:
 
         # The use of fileutil.osfn interprets any environment variable, such as
         # jref$, used in the specification of the reference filename
-        filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
+        if flat_file is None:
+            flat_file = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
         hdulist = None
         try:
-            hdulist = fileutil.openImage(filename, mode='readonly',
-                                         memmap=False, writefits=False)
+            hdulist = fileutil.openImage(flat_file, mode='readonly', memmap=False)
             data = hdulist[(flat_ext, chip)].data
 
             if data.shape[0] != sci_chip.image_shape[0]:
@@ -554,7 +567,7 @@ class baseImageObject:
 
         except FileNotFoundError:
             flat = np.ones(sci_chip.image_shape, dtype=sci_chip.image_dtype)
-            log.warning("Cannot find flat field file '{}'".format(filename))
+            log.warning("Cannot find flat field file '{}'".format(flat_file))
             log.warning("Treating flatfield as a constant value of '1'.")
 
         finally:

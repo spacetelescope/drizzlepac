@@ -15,7 +15,7 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-3.3.1 (unreleased)
+3.3.2 (unreleased)
 ==================
 
 - Detect extension name from WFPC2 flatfield files. [#1193]
