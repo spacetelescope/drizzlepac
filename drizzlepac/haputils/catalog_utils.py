@@ -1453,6 +1453,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._ratio_bigsource_limit = self.param_dict["sourcex"]["ratio_bigsource_limit"]
         self._kron_scaling_radius = self.param_dict["sourcex"]["kron_scaling_radius"]
         self._kron_minimum_radius = self.param_dict["sourcex"]["kron_minimum_radius"]
+        self._ratio_bigsource_deblend_limit = self.param_dict["sourcex"]["ratio_bigsource_deblend_limit"]
 
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
@@ -2624,14 +2625,43 @@ class HAPSegmentCatalog(HAPCatalogBase):
         deb_limit = self.kernel.size
         log.debug("Deblending limit set at: {} pixels".format(deb_limit))
         # add as attribute to SegmentationImage for use later
-        segm_img.big_segments = np.where(segm_img.areas >= deb_limit)[0] + 1  # Segment labels are 1-based
+        big_segments = np.where(segm_img.areas >= deb_limit)[0] + 1  # Segment labels are 1-based
 
         biggest_source = n.max()/float(real_pixels)
         log.info("Biggest_source: %f", biggest_source)
         if biggest_source > max_biggest_source:
             log.info("Biggest source %.4f percent exceeds %f percent of the image", (100.0*biggest_source), (100.0*max_biggest_source))
             is_poor_quality = True
+            # Sort the areas and get the indices of the sorted areas
+            area_indices = np.argsort(segm_img.areas)
+            areas = np.sort(segm_img.areas)
+            # Extract only the largest areas which are at least 10x size of next largest segment
+            # Value of 10x is set in config file as "ratio_bigsource_deblend_limit"
+            # Initialize with largest source, then look for any smaller ones that meet the
+            # criteria.  This guarantees that the largest source will always be ignored.
+            big_areas = [area_indices[-1] + 1]
+            for (i, a), (j, ind) in zip(enumerate(areas[::-1]), enumerate(area_indices[::-1])):
+                # skip the first/largest segment, since it was used to initialize the list already
+                if i == 0:
+                    continue
+                # determine ratio of area with next smallest area
+                r = a / areas[-1*(i+2)]
+                if r >= self._ratio_bigsource_deblend_limit :
+                    # Record the segmentation ID of large area to be ignored during deblending
+                    big_areas.append(ind + 1)
+                else:
+                    #  we are done with these areas
+                    break
+            # Remove largest segments from list of 'large' segments to be deblended
+            big_segments = big_segments.tolist()
+            for b in big_areas:
+                big_segments.remove(b)
+            log.debug("Ignoring {} sources exceeding the deblending limit in size".format(len(big_areas)))
+            # Convert back to ndarray
+            big_segments = np.array(big_segments)
 
+        segm_img.big_segments = big_segments
+        log.info("Total number of sources suitable for deblending: {}".format(len(big_segments)))
         # Always compute the source_fraction so the value can be reported.  Setting the
         # big_island_only parameter allows control over whether the source_fraction should
         # or should not be ignored.
