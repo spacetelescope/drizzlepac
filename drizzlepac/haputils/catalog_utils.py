@@ -144,12 +144,12 @@ class CatalogImage:
                                     nsigma_clip=nsigma_clip,
                                     maxiters=maxiters)
 
-        log.info("Attempt to determine FWHM based upon input data within a good FWHM range of {:.1f} to {:.1f}.".format(good_fwhm[0], good_fwhm[1]))
-        log.info("If no good FWHM candidate is identified, a value of {:.1f} will be used instead.".format(fwhmpsf / self.imgwcs.pscale))
+        log.info("Attempt to determine FWHM based upon input data within a good FWHM range of {:.2f} to {:.2f}.".format(good_fwhm[0], good_fwhm[1]))
+        log.info("If no good FWHM candidate is identified, a value of {:.2f} will be used instead.".format(fwhmpsf / self.imgwcs.pscale))
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                   self.wht_image,
                                                                   good_fwhm=good_fwhm,
-                                                                  num_fwhm=30,
+                                                                  num_fwhm=50,
                                                                   threshold=self.bkg_rms_ra,
                                                                   fwhm=fwhmpsf / self.imgwcs.pscale)
         (self.kernel, self.kernel_psf) = k
@@ -1516,7 +1516,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
-
+            log.debug("IMG stats: min/max: {}, {}".format(imgarr.min(), imgarr.max()))
             # Custom or Gaussian kernel depending upon the results of CatalogImage build_kernel()
             g2d_kernel = self.image.kernel
 
@@ -1559,10 +1559,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 log.info("")
                 log.info("The segmentation map contains big sources/islands or a large source fraction of segments.")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
-                rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm,
+                rw2dk = RickerWavelet2DKernel(self.image.kernel_fwhm,
                                                     x_size=self._rw2d_size,
                                                     y_size=self._rw2d_size)
-                rw2d_kernel.normalize()
+                rw2dk.normalize()
+                # Only pass along the array to be consistent with the g2d_kernel object
+                rw2d_kernel = rw2dk.array
+
+                log.debug("IMG stats AFTER G2D iteration 1: min/max: {}, {}".format(imgarr.min(), imgarr.max()))
 
                 # Detect segments and evaluate the detection in terms of big sources/islands or crowded fields
                 # Round 1
@@ -1624,11 +1628,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # kernel when the background type changes
                         g2d_kernel = self.image.kernel
 
-                        rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm,
+                        rw2dk = RickerWavelet2DKernel(self.image.kernel_fwhm,
                                                             x_size=self._rw2d_size,
                                                             y_size=self._rw2d_size)
-                        rw2d_kernel.normalize()
-
+                        rw2dk.normalize()
+                        rw2d_kernel = rw2dk.array
                         sigma_for_threshold = self._nsigma
                         rw2d_sigma_for_threshold = self._rw2d_nsigma
 
@@ -1953,12 +1957,25 @@ class HAPSegmentCatalog(HAPCatalogBase):
            segm_img : `~photutils.segmentation.SegmentationImage` or None
 
         """
-
         log.info("Detecting sources in total image product.")
+        # Insure that regions with negative flux after background subtraction do not
+        # cause the segmentation to create a scene filled with segments, especially with RickerWavelet kernel,
+        # the imgarr needs to be background-subtracted, then clipped at zero before feeding to
+        # 'photutils.detect_sources'.
+        if filter_kernel.min() < 0:  # Found in normalized RickerWavelet kernels
+            img_bkg_sub = imgarr - threshold
+            img_bkg_sub = np.clip(img_bkg_sub, 0, img_bkg_sub.max())
+            # Now set threshold to 0, since it has already been applied to the input data array
+            thresh0 = np.zeros_like(img_bkg_sub)
+        else:
+            # Use inputs provided with the kernel
+            img_bkg_sub = imgarr
+            thresh0 = threshold
+
         # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
         segm_img = None
-        segm_img = detect_sources(imgarr,
-                                  threshold,
+        segm_img = detect_sources(img_bkg_sub,
+                                  thresh0,
                                   npixels=source_box,
                                   filter_kernel=filter_kernel,
                                   mask=mask)
