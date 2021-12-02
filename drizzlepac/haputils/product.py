@@ -1005,6 +1005,7 @@ class SkyCellProduct(HAPProduct):
 
         self.info = '_'.join(['hst', skycell_name, instrument, detector, filter_str, layer_str])
         self.exposure_name = skycell_name
+        self.cell_id = skycell_name.strip('skycell-')
         self.product_basename = self.info
 
         # Trailer names .txt or .log
@@ -1165,11 +1166,12 @@ class SkyCellProduct(HAPProduct):
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
 
-        # Update product with SVM-specific keywords based on the footprint
+        # Update product with MVM-specific keywords based on the footprint
         with fits.open(self.drizzle_filename, mode='update') as hdu:
             for kw in self.mask_kws:
                 hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
-
+            # Add SCELLID keyword to MVM product
+            hdu[0].header['SCELLID'] = self.cell_id
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Sky-cell layer image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         try:

@@ -190,7 +190,7 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
 
     # Define dataset-specific rules filenames for each input exposure
     for imgname in edp_names:
-        rules_files[imgname] = proc_utils.get_rules_file(imgname)
+        rules_files[imgname] = proc_utils.get_rules_file(imgname, rules_type='MVM')
 
     print('Generated RULES_FILE names of: \n{}\n'.format(rules_files))
 
