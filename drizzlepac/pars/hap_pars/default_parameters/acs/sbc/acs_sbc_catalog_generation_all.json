@@ -1,5 +1,5 @@
 {
-    "bkg_box_size": 27,
+    "bkg_box_size": 13,
     "bkg_filter_size": 3,
     "good_fwhm": [1.5, 3.5],
     "nsigma": 6.0,
@@ -18,8 +18,8 @@
     "simple_bkg": false,
     "zero_percent": 25.0,
     "negative_percent": 15.0,
-    "nsigma_clip": 3.0,
-    "maxiters": 3,
+    "nsigma_clip": 6.0,
+    "maxiters": 1,
     "bkg_skew_threshold": 0.5,
     "dao": {
         "bkgsig_sf": 4.0,
@@ -31,12 +31,12 @@
     "sourcex": {
         "fwhm": 0.065,
         "source_box": 5,
-        "segm_nsigma": 3.0,
+        "segm_nsigma": 10.0,
         "nlevels": 64,
         "contrast": 0.001,
         "border": 10,
-        "rw2d_size": 15,
-        "rw2d_nsigma": 3.0,
+        "rw2d_size": 24,
+        "rw2d_nsigma": 10.0,
         "rw2d_biggest_source": 0.045,
         "rw2d_source_fraction": 0.15,
         "biggest_source_deblend_limit": 0.15,

@@ -1,5 +1,5 @@
 {
-    "bkg_box_size": 27,
+    "bkg_box_size": 13,
     "bkg_filter_size": 3,
     "good_fwhm": [1.5, 3.5],
     "nsigma": 5,

@@ -33,6 +33,8 @@ class WFPC2InputImage (imageObject):
 
     SEPARATOR = '_'
 
+    flat_file_map = {}
+
     def __init__(self, filename, output=None, group=None):
         super().__init__(filename, output=output, group=group)
         # define the cosmic ray bits value to use in the dq array
@@ -164,19 +166,53 @@ class WFPC2InputImage (imageObject):
         # Convert the science data to electrons
         self.doUnitConversions()
 
-    def getflat(self,chip):
+    def getflat(self, chip, flat_file=None, flat_ext=None):
         """
         Method for retrieving a detector's flat field.
 
+        Parameters
+        ----------
+        chip : int
+            Chip number. Same as FITS ``EXTVER``.
+
+        flat_file : str, None
+            Flat field file name. If not specified, it will be determined
+            automatically from image header.
+
+        flat_ext : str, None
+            Flat field extension name (same as FITS ``EXTNAME``). Specifies
+            extension name containing flat field data.
+
         Returns
         -------
-        flat : array
+        flat : numpy.ndarray
             The flat-field array in the same shape as the input image.
 
         """
         # For the WFPC2 flat we need to invert
         # for use in Multidrizzle
-        flat = 1.0 / super().getflat(chip)
+        if flat_file is None:
+            filename = fileutil.osfn(self._image["PRIMARY"].header[self.flatkey])
+            if filename in WFPC2InputImage.flat_file_map:
+                flat_file, mef_flat_ext = WFPC2InputImage.flat_file_map[filename]
+            else:
+                h = fileutil.openImage(filename, mode='readonly', memmap=False)
+                flat_file = h.filename()
+                mef_flat_ext = h[0].header.get('FILETYPE', '')
+                mef_flat_ext = h[1].header.get('EXTNAME', mef_flat_ext)
+                h.close()
+                WFPC2InputImage.flat_file_map[filename] = (flat_file, mef_flat_ext)
+            if flat_ext is None:
+                flat_ext = mef_flat_ext
+
+        elif flat_ext is None:
+            h = fileutil.openImage(flat_file, mode='readonly', memmap=False,
+                                   writefits=False)
+            flat_ext = h[0].header.get('FILETYPE', '')
+            flat_ext = h[1].header.get('EXTNAME', flat_ext)
+            h.close()
+
+        flat = 1.0 / super().getflat(chip, flat_file, flat_ext)
         return flat
 
     def doUnitConversions(self):
