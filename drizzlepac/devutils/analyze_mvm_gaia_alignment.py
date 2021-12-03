@@ -9,6 +9,7 @@ NOTE: daostarfinder coords are 0-indexed."""
 import argparse
 from datetime import datetime
 import os
+import pdb
 import random
 import string
 import sys
@@ -35,6 +36,20 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+# ============================================================================================================
+
+
+def apply_gaia_pm_correction(gaia_table, correction_epoch):
+    """apply RA and Dec proper motion correction to RA and Dec columns in gaia table. """
+    n_years = gaia_table['ref_epoch'] - correction_epoch
+    print(n_years)
+
+    gaia_table['RA'] += n_years * gaia_table['pmra']/3600000.0
+    gaia_table['DEC'] += n_years * gaia_table['pmdec'] / 3600000.0
+
+    return(gaia_table)
+
+
 # ============================================================================================================
 
 
@@ -81,9 +96,9 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     mosaic_wcs = stwcs.wcsutil.HSTWCS(mosaic_imgname, ext=1)
 
     # 2a: generate table of all gaia sources in frame
-    gaia_table = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs,
+    gaia_table = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs, full_catalog=True,
                                                     catalog='GAIAedr3', use_footprint=True)
-
+    gaia_table = apply_gaia_pm_correction(gaia_table, 2002.0)
     # 2b: Remove gaia sources outside footprint of input flc/flt images, add X and Y coord columns
     mosaic_hdu = fits.open(mosaic_imgname)
     x, y = mosaic_wcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 0)
@@ -155,7 +170,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
             if os.path.exists(item):
                 log.debug("Removing temp coord file {}".format(item))
                 os.remove(item)
-
+    gcol=['X','Y','ref_epoch','RA','RA_error','DEC','DEC_error','pm','pmra','pmra_error','pmdec','pmdec_error']
     # 5b: Isolate sources common to both the gaia table and the detection table
     matched_values_dict = {}
     for col_title in ['X', 'Y', 'RA', 'DEC']:
