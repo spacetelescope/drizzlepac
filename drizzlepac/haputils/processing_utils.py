@@ -217,6 +217,8 @@ def compute_sregion(image, extname='SCI'):
             for corner in footprint:
                 sregion_str += '{} {} '.format(corner[0], corner[1])
         else:
+            if hdu[(extname, extnum)].data.min() == 0 and hdu[(extname, extnum)].data.max() == 0:
+                continue
             # Working with a drizzled image, so we need to
             # get all the corners from each of the input files
             footprint = find_footprint(hdu, extname=extname, extnum=extnum)
