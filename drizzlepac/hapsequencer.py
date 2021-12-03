@@ -79,7 +79,7 @@ __taskname__ = 'hapsequencer'
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
-                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT, force=True)
 __version__ = 0.1
 __version_date__ = '07-Nov-2019'
 
@@ -1204,14 +1204,7 @@ def update_active_wcs(filename, wcsname):
         extensions = []
         extensions = wcsutil.headerlet.find_headerlet_HDUs(filename, hdrname=hdrname)
 
-        # It is possible the hdrname is not unique, so need to delete the dups
-        for ext in reversed(extensions[1:]):
-            wcsutil.headerlet.delete_headerlet(filename, hdrext=ext)
-            log.info("Delete duplicate headerlet extension {} in filename {}.".format(ext, filename))
-
-        log.info("Desired active WCS solution {} has an HDRNAME of {}.".format(wcsname, hdrname))
-
-        # Finally, install the desired WCS as the active WCS solution
+        # Install the desired WCS as the active WCS solution
         # Since all the alternate WCS solutions have been made into headerlet extensions,
         # just restore the desired solution from the headerlet.
         try:
@@ -1247,10 +1240,9 @@ def archive_alternate_wcs(filename):
     -------
     Nothing
 
-    Note: There is no strong coupling between the WCSNAME and the HDRNAME.  For HAP,
-    the HDRNAME is of the form 
-    hst_proposid_visit_instrument_detector_filter_ipppssoo_fl_wcsname-hlet.fits.
-    Ex. hst_9029_01_acs_wfc_f775w_j8ca01at_fl_IDC_0461802ej-FIT_SVM_GAIAeDR3-hlet.fits
+    Note: There is no strict form for the HDRNAME.  For HAP, HDRNAME is of the form 
+    hst_proposid_visit_instrument_detector_filter_ipppssoo_fl[t|c]_wcsname-hlet.fits.
+    Ex. hst_9029_01_acs_wfc_f775w_j8ca01at_flc_IDC_0461802ej-FIT_SVM_GAIAeDR3-hlet.fits
 
     """
     # Get all the alternate WCSNAMEs in the science header
