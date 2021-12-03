@@ -15,8 +15,14 @@ The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).
 
-3.3.0 (28-Sep-2021)
+3.3.2 (unreleased)
 ==================
+
+- Detect extension name from WFPC2 flatfield files. [#1193]
+
+
+3.3.0 (28-Sep-2021)
+===================
 This version includes all the functionality needed to generate
 source catalogs, both point source and extended (segment) source
 catalogs, during single-visit mosaic (SVM) processing.  In fact,
