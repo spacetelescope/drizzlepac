@@ -89,6 +89,13 @@ class CatalogImage:
         self.data = self.imghdu[('SCI', 1)].data
         self.wht_image = self.imghdu['WHT'].data.copy()
 
+        # Add blank/empty flag
+        self.blank = False
+        data_vals = np.nan_to_num(self.data, 0)
+        if data_vals.min() == 0 and data_vals.max() == 0:
+            self.blank = True
+        del data_vals
+
         # Get the HSTWCS object from the first extension
         self.imgwcs = HSTWCS(self.imghdu, 1)
 
@@ -98,6 +105,7 @@ class CatalogImage:
         self.bkg_background_ra = None
         self.bkg_rms_ra = None
         self.bkg_rms_median = None
+        self.bkg_median = None
         self.footprint_mask = None
         self.inv_footprint_mask = None
         self.bkg_type = ""
@@ -125,6 +133,8 @@ class CatalogImage:
                      maxiters=3,
                      good_fwhm=[1.5, 3.5]):
 
+        if self.blank:
+            return
         if self.bkg_background_ra is None:
             self.compute_background(box_size, win_size,
                                     simple_bkg=simple_bkg,
@@ -219,6 +229,12 @@ class CatalogImage:
             Inverse of the footprint_mask
 
         """
+        if self.blank:
+            self.bkg_type = 'empty'
+            log.info("")
+            log.info("*** Background image EMPTY. ***")
+            return
+
         # Negative allowance in sigma
         negative_sigma = -1.0
 
@@ -766,11 +782,13 @@ class HAPCatalogBase:
         # make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11))
         self_scale = (self.image.keyword_dict['ndrizim'] - 1) / 2
         scale = max(self.param_dict['scale'], self_scale)
-        self.tp_masks = make_wht_masks(self.image.wht_image, self.image.inv_footprint_mask,
-                                       scale=scale,
-                                       sensitivity=self.param_dict['sensitivity'],
-                                       kernel=(self.param_dict['region_size'],
-                                               self.param_dict['region_size']))
+        self.tp_masks = None
+        if not self.image.blank:
+            self.tp_masks = make_wht_masks(self.image.wht_image, self.image.inv_footprint_mask,
+                                           scale=scale,
+                                           sensitivity=self.param_dict['sensitivity'],
+                                           kernel=(self.param_dict['region_size'],
+                                                   self.param_dict['region_size']))
 
     def identify_sources(self, **pars):
         pass
@@ -904,6 +922,11 @@ class HAPPointCatalog(HAPCatalogBase):
     def identify_sources(self, **pars):
         """Create a master coordinate list of sources identified in the specified total detection product image
         """
+        # Recognize empty/blank images and treat gracefully
+        if self.image.blank:
+            self._define_empty_table()
+            log.info('Total Detection Product - Point-source catalog is EMPTY')
+            return
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
         image = np.nan_to_num(self.image.data, copy=True, nan=0.0)
@@ -1459,6 +1482,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
             Two-dimensional segmentation image where found source regions are labeled with
             unique, non-zero positive integers.
         """
+        # Recognize empty/blank images and treat gracefully
+        if self.image.blank:
+            self._define_empty_table(None)
+            log.info('Total Detection Product - Segmentation source catalog is EMPTY')
+            return
 
         # If the total product sources have not been identified, then this needs to be done!
         if not self.tp_sources:
