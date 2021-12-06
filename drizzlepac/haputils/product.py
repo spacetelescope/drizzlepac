@@ -1171,7 +1171,7 @@ class SkyCellProduct(HAPProduct):
             for kw in self.mask_kws:
                 hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
             # Add SCELLID keyword to MVM product
-            hdu[0].header['SCELLID'] = self.cell_id
+            hdu[("SCI", 1)].header['SCELLID'] = self.cell_id
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Sky-cell layer image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         try:
