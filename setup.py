@@ -80,7 +80,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'astropy>=4.0.0',
+        'astropy<5.0.0',
         'fitsblender',
         'nictools',
         'numpy>=1.19',
