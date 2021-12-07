@@ -79,7 +79,7 @@ __taskname__ = 'hapsequencer'
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
-                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT, force=True)
+                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 __version__ = 0.1
 __version_date__ = '07-Nov-2019'
 
@@ -494,7 +494,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     logname = proc_utils.build_logname(input_filename)
 
     # Initialize total trailer filename as temp logname
-    logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+    logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT, force=True)
     # start processing
     starting_dt = datetime.datetime.now()
     log.info("Run start time: {}".format(str(starting_dt)))
