@@ -36,12 +36,13 @@
         "contrast": 0.001,
         "border": 10,
         "rw2d_size": 11,
-        "rw2d_nsigma": 3.0,
+        "rw2d_nsigma": 10.0,
         "rw2d_biggest_source": 0.045,
         "rw2d_source_fraction": 0.15,
         "biggest_source_deblend_limit": 0.15,
         "source_fraction_deblend_limit": 0.20,
         "ratio_bigsource_limit": 2,
+        "ratio_bigsource_deblend_limit": 10,
         "kron_scaling_radius": 2.5,
         "kron_minimum_radius": 3.5
     }
