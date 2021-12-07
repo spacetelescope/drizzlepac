@@ -1007,10 +1007,10 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
     # viable, it should not be included in the output "poller" table.
     # NOTE: The "all_mvm_exposures" variable does not need to be checked for "usable" datasets
     # as it is used to create a WCS/footprint to accommodate *all* exposures in an MVM visit.
-    usable_datasets = analyze.analyze_wrapper(datasets)
+    usable_datasets, return_code = analyze.analyze_wrapper(datasets, use_sbchrc=include_small, type=poller_type)
     if not usable_datasets:
         log.warning("No usable images in poller file or input list for drizzling. The processing of this data is ending.")
-        sys.exit(0)
+        sys.exit(return_code)
 
     cols = OrderedDict()
     for cname in poller_colnames:
