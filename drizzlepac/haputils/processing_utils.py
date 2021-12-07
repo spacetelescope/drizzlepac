@@ -157,18 +157,24 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
     # Convert input_exposure filenames into HAP product filenames
     name_col = []
     orig_tab = image['hdrtab'].data
+    # get the name of the product so it can be selected from
+    # the total_obj_list for updating
+    update_filename = image[0].header['filename']
+    for tot_obj in total_obj_list:
+        if tot_obj.drizzle_filename != update_filename:
+            continue
+        # Only for the total_obj_list entry that matches the input image
+        # should we build the list of new rootnames
+        for row in orig_tab:
+            rootname = str(row['rootname'])
 
-    for row in orig_tab:
-        rootname = str(row['rootname'])
+            # The rootname is ipppssoot, but the expname is only contains ipppssoo,
+            # so remove the last character for the comparisons
+            rootname = rootname[0:-1]
 
-        # The rootname is ipppssoot, but the expname is only contains ipppssoo,
-        # so remove the last character for the comparisons
-        rootname = rootname[0:-1]
-
-        for expname in input_exposures:
-            if rootname in expname:
-                # Convert input exposure names into HAP names
-                for tot_obj in total_obj_list:
+            for expname in input_exposures:
+                if rootname in expname:
+                    # Convert input exposure names into HAP names
                     for exposure in tot_obj.edp_list:
                         if rootname in exposure.full_filename:
                             name_col.append(exposure.product_basename)
