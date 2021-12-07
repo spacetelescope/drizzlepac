@@ -53,7 +53,7 @@ bc3.nodetype = 'linux'
 bc3.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc3.name = '3.10-dev'
 bc3.conda_channels = ['http://ssb.stsci.edu/astroconda']
-bc3.conda_packages = ['python=3.8']
+bc3.conda_packages = ['python=3.10']
 bc3.build_cmds = ["pip install numpy astropy codecov pytest-cov",
 		 "pip install -r requirements-dev.txt --upgrade -e '.[test]'",
                  "pip freeze"]
