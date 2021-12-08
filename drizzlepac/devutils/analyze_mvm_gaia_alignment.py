@@ -3,13 +3,12 @@
 """Quantify how well MVM products are aligned to GAIA sources found in the image footprint
 
 
-NOTE: daostarfinder coords are 0-indexed."""
+NOTE: UserStarFinder coords are 0-indexed."""
 
 # Standard library imports
 import argparse
 from datetime import datetime
 import os
-import pdb
 import random
 import string
 import sys
@@ -48,21 +47,21 @@ def apply_gaia_pm_correction(gaia_table, correction_epoch):
         Table containing positions of GAIA sources found in the image footprint
 
     correction_epoch : float
-        epoch to correct GAIA PM uncertanties to
+        epoch to correct GAIA PM uncertainties to
 
     Returns
     -------
     gaia_table : astropy table object
-        input gaia_table with updated uncertanties
+        input gaia_table with updated uncertainties
     """
-    # TODO: Update this subroutine as required to accomidate Rick's GAIA proper motion unvcertenty correction code
+    # TODO: Update this subroutine as required to work with Rick's GAIA PM uncertainty correction code
     n_years = gaia_table['ref_epoch'] - correction_epoch
     print(n_years)
 
     gaia_table['RA'] += n_years * gaia_table['pmra']/3600000.0
     gaia_table['DEC'] += n_years * gaia_table['pmdec'] / 3600000.0
 
-    return(gaia_table)
+    return gaia_table
 
 
 # ============================================================================================================
@@ -158,7 +157,8 @@ def find_and_match_sources(fwhm, mosaic_hdu, mosaic_wcs, mosaic_imgname, dao_mas
 # ============================================================================================================
 
 
-def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=logutil.logging.INFO, plot_output_dest="none"):
+def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=logutil.logging.INFO,
+            plot_output_dest="none"):
     """ Statistically quantify quality of GAIA MVM alignment
 
     Parameters
@@ -188,7 +188,8 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     """
     log.setLevel(log_level)
     if plot_output_dest not in ['file', 'none', 'screen']:
-        errmsg = "'{}' is not a valid input for argument 'plot_output_dest'. Valid inputs are 'file', 'none', or 'screen'.".format(plot_output_dest)
+        errmsg = "'{}' is not a valid input for argument 'plot_output_dest'. Valid inputs are 'file', " \
+                 "'none', or 'screen'.".format(plot_output_dest)
         log.error(errmsg)
         raise ValueError(errmsg)
     # 0: read in flc/flt fits files from user-specified fits file
@@ -222,7 +223,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     if diagnostic_mode:
         write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['RA', 'DEC'], log_level=log_level)
 
-    # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid
+    # 3: feed x, y coords into photutils.detection.userstarfinder() as initial guesses to get actual centroid
     # positions of gaia sources
     # create mask image for source detection. Pixels with value of "0" are to processed, and those with value
     # of "1" will be omitted from processing.
@@ -230,12 +231,11 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64),
                             gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
     # compute FWHM for source finding based on sources in image
-    mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array),
-                                                def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
-                                                diagnostic_mode=diagnostic_mode)
+    mpeaks, fwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array),
+                                               def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
+                                               diagnostic_mode=diagnostic_mode)
     # Attempt to find matching gaia sources and userStarFinder sources first using computed FWHM value then hard-wired value.
-    fwhm_values = [mfwhm, 25.0]
-
+    fwhm_values = [fwhm, 25.0]
     for item in enumerate(fwhm_values):
         ctr = item[0]
         fwhm_value = item[1]
@@ -257,7 +257,8 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
                 err_msg = "Error: not enough matching sources found."
                 log.error(err_msg)
                 raise Exception(err_msg)
-    gcol=['X','Y','ref_epoch','RA','RA_error','DEC','DEC_error','pm','pmra','pmra_error','pmdec','pmdec_error']
+    gcol = ['X', 'Y', 'ref_epoch', 'RA', 'RA_error', 'DEC', 'DEC_error',
+            'pm', 'pmra', 'pmra_error', 'pmdec', 'pmdec_error']
     # 5b: Isolate sources common to both the gaia table and the detection table
     matched_values_dict = {}
     for col_title in ['X', 'Y', 'RA', 'DEC']:
@@ -368,7 +369,8 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
 # ============================================================================================================
 
 
-def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False, log_level=logutil.logging.INFO, verbose=True):
+def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False,
+                      log_level=logutil.logging.INFO, verbose=True):
     """Write out columns from user-specified table to ds9 region file
 
     Parameters
@@ -377,7 +379,7 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
         name of the output region file to be created
 
     table_data : astropy.Table
-        Table continaing values to be written out
+        Table containing values to be written out
 
     colnames : list
         list of the columns from table_data to write out
