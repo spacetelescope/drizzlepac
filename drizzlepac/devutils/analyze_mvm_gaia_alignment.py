@@ -40,7 +40,22 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 
 def apply_gaia_pm_correction(gaia_table, correction_epoch):
-    """apply RA and Dec proper motion correction to RA and Dec columns in gaia table. """
+    """apply RA and Dec proper motion correction to RA and Dec columns in gaia table.
+
+    Parameters
+    ----------
+    gaia_table : astropy table object
+        Table containing positions of GAIA sources found in the image footprint
+
+    correction_epoch : float
+        epoch to correct GAIA PM uncertanties to
+
+    Returns
+    -------
+    gaia_table : astropy table object
+        input gaia_table with updated uncertanties
+    """
+    # TODO: Update this subroutine as required to accomidate Rick's GAIA proper motion unvcertenty correction code
     n_years = gaia_table['ref_epoch'] - correction_epoch
     print(n_years)
 
@@ -53,8 +68,8 @@ def apply_gaia_pm_correction(gaia_table, correction_epoch):
 # ============================================================================================================
 
 
-def find_and_match_sources(mfwhm, xy_gaia_coords, mosaic_hdu, dao_mask_array, gaia_table, mosaic_wcs,
-                           diagnostic_mode, log_level, mosaic_imgname):
+def find_and_match_sources(fwhm, mosaic_hdu, mosaic_wcs, mosaic_imgname, dao_mask_array, gaia_table,
+                           xy_gaia_coords,  diagnostic_mode=False, log_level=logutil.logging.INFO):
     """Runs decutils.UserStarFinder to find sources in the image, then runs cu.getMatchedLists() to identify
     sources both ID'd as a source by daofind and ID'd as a GAIA sources. It should be noted here that this
     subroutine exists because the FWHM value returned by decutils.find_point_sources() doesn't always result
@@ -62,24 +77,34 @@ def find_and_match_sources(mfwhm, xy_gaia_coords, mosaic_hdu, dao_mask_array, ga
 
     Parameters
     ----------
-    mfwhm : float
+    fwhm : float
         FWHM value, in pixels, that decutils.UserStarFinder() will use as input
 
-    xy_gaia_coords :
+    mosaic_hdu : astropy fits.io.hdu object
+        FITS HDU of the user-specified MVM-processed mosaic image
 
-    mosaic_hdu :
+    mosaic_wcs : stwcs HSTWCS object
+        The WCS information of the user-specified MVM-processed mosaic image
 
-    dao_mask_array :
+    mosaic_imgname : str
+        Name of the user-specified MVM-processed mosaic image
 
-    gaia_table :
+    dao_mask_array : numpy.ndarray
+        image mask that defines where UserStarFinder should look for sources, and where it should not.
 
-    mosaic_wcs :
+    gaia_table : astropy table object
+        Table containing positions of GAIA sources found in the image footprint
 
-    diagnostic_mode :
+    xy_gaia_coords : astropy table object
+        Table containing X, Y positions of GAIA sources found in the image footprint
 
-    log_level :
+    diagnostic_mode : bool, optional
+        If set to logical 'True', additional log messages will be displayed and additional files will be
+        created during the course of the run. Default value is logical 'False'.
 
-    mosaic_imgname :
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'INFO'.
 
     Returns
     -------
@@ -91,9 +116,9 @@ def find_and_match_sources(mfwhm, xy_gaia_coords, mosaic_hdu, dao_mask_array, ga
 
     matches_det_to_gaia : list
         A list of the indices of detected sources that match GAIA sources
-
     """
-    daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords,
+    log.setLevel(log_level)
+    daofind = decutils.UserStarFinder(fwhm=fwhm, threshold=0.0, coords=xy_gaia_coords,
                                       sharplo=0.4, sharphi=0.9)
     detection_table = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
     detection_table.rename_column('xcentroid', 'X')
@@ -104,7 +129,7 @@ def find_and_match_sources(mfwhm, xy_gaia_coords, mosaic_hdu, dao_mask_array, ga
     log.info("Found {} peaks from {} GAIA source(s)".format(n_detection, n_gaia))
     log.info("{}% of GAIA sources detected".format(pct_detection))
 
-    # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
+    # 4: convert UserStarFinder output x, y centroid positions to RA, DEC using step 1 WCS info
     ra, dec = mosaic_wcs.all_pix2world(detection_table['X'], detection_table['Y'], 0)
     ra_col = Column(name="RA", data=ra, dtype=np.float64)
     dec_col = Column(name="DEC", data=dec, dtype=np.float64)
@@ -124,10 +149,6 @@ def find_and_match_sources(mfwhm, xy_gaia_coords, mosaic_hdu, dao_mask_array, ga
                                                                       [mosaic_imgname, mosaic_imgname],
                                                                       [n_gaia, n_detection],
                                                                       log_level)
-        # if len(matches_gaia_to_det) == 0:
-        #     err_msg = "Error: No matching sources found."
-        #     log.error(err_msg)
-        #     raise Exception(err_msg)
     finally:
         for item in [det_coo_filename, gaia_coo_filename]:
             if os.path.exists(item):
@@ -208,60 +229,34 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     dao_mask_array = np.where(footprint.total_mask == 0, 1, 0)
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64),
                             gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
-    # the below line computes a FWHM value based on detected sources (not the gaia sources). The FWHM value
-    # doesn't kick out a lot of sources.
-    # mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array),
-    #                                             def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
-    #                                             diagnostic_mode=False)
-    mfwhm = 25.0 # If it fails due to a lack of sources, use mfwhm = 25.0 instead.
-    detection_table, matches_gaia_to_det, matches_det_to_gaia = find_and_match_sources(mfwhm, xy_gaia_coords,
-                                                                                       mosaic_hdu,
-                                                                                       dao_mask_array,
-                                                                                       gaia_table, mosaic_wcs,
-                                                                                       diagnostic_mode,
-                                                                                       log_level,
-                                                                                       mosaic_imgname)
-    # daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords,
-    #                                   sharplo=0.4, sharphi=0.9)
-    # # TODO: encapsulate from here down to finally statement in subroutine so that if no matches are found, it can go back and re-run with hard-wired mfwhm value of 25.0.
-    # detection_table = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
-    # detection_table.rename_column('xcentroid', 'X')
-    # detection_table.rename_column('ycentroid', 'Y')
-    # n_detection = len(detection_table)
-    # n_gaia = len(gaia_table)
-    # pct_detection = 100.0 * (float(n_detection) / float(n_gaia))
-    # log.info("Found {} peaks from {} GAIA source(s)".format(n_detection, n_gaia))
-    # log.info("{}% of GAIA sources detected".format(pct_detection))
-    #
-    # # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
-    # ra, dec = mosaic_wcs.all_pix2world(detection_table['X'], detection_table['Y'], 0)
-    # ra_col = Column(name="RA", data=ra, dtype=np.float64)
-    # dec_col = Column(name="DEC", data=dec, dtype=np.float64)
-    # detection_table.add_columns([ra_col, dec_col], indexes=[3, 3])
-    # if diagnostic_mode:
-    #     write_region_file("test_detection.reg", detection_table, ['RA', 'DEC'], log_level=log_level)
-    #
-    # # 5: Identify and isolate X, Y, RA and DEC values common to both the gaia and detection tables.
-    # # 5a: find sources common to both the gaia table and the detection table
-    # try:
-    #     coo_prefix_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
-    #     gaia_coo_filename = "{}_gaia.coo".format(coo_prefix_string)
-    #     det_coo_filename = "{}_det.coo".format(coo_prefix_string)
-    #     write_region_file(gaia_coo_filename, gaia_table, ['X', 'Y'], verbose=False)
-    #     write_region_file(det_coo_filename, detection_table, ['X', 'Y'], verbose=False)
-    #     matches_gaia_to_det, matches_det_to_gaia = cu.getMatchedLists([gaia_coo_filename, det_coo_filename],
-    #                                                                   [mosaic_imgname, mosaic_imgname],
-    #                                                                   [n_gaia, n_detection],
-    #                                                                   log_level)
-    #     if len(matches_gaia_to_det) == 0:
-    #         err_msg = "Error: No matching sources found."
-    #         log.error(err_msg)
-    #         raise Exception(err_msg)
-    # finally:
-    #     for item in [det_coo_filename, gaia_coo_filename]:
-    #         if os.path.exists(item):
-    #             log.debug("Removing temp coord file {}".format(item))
-    #             os.remove(item)
+    # compute FWHM for source finding based on sources in image
+    mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array),
+                                                def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
+                                                diagnostic_mode=diagnostic_mode)
+    # Attempt to find matching gaia sources and userStarFinder sources first using computed FWHM value then hard-wired value.
+    fwhm_values = [mfwhm, 25.0]
+
+    for item in enumerate(fwhm_values):
+        ctr = item[0]
+        fwhm_value = item[1]
+        detection_table, matches_gaia_to_det, matches_det_to_gaia = find_and_match_sources(fwhm_value,
+                                                                                           mosaic_hdu,
+                                                                                           mosaic_wcs,
+                                                                                           mosaic_imgname,
+                                                                                           dao_mask_array,
+                                                                                           gaia_table,
+                                                                                           xy_gaia_coords,
+                                                                                           diagnostic_mode=diagnostic_mode,
+                                                                                           log_level=log_level)
+        if len(matches_gaia_to_det) > 10:
+            break
+        else:
+            if ctr == 0:
+                log.info("Not enough matching sources found. Trying again with {}".format(fwhm_values[1]))
+            if ctr == 1:
+                err_msg = "Error: not enough matching sources found."
+                log.error(err_msg)
+                raise Exception(err_msg)
     gcol=['X','Y','ref_epoch','RA','RA_error','DEC','DEC_error','pm','pmra','pmra_error','pmdec','pmdec_error']
     # 5b: Isolate sources common to both the gaia table and the detection table
     matched_values_dict = {}
