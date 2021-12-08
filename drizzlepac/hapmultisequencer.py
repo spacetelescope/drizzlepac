@@ -48,6 +48,8 @@ import sys
 import traceback
 
 from astropy.io import ascii
+from guppy import hpy  # For memory profiling only...
+
 from astropy.table import Table
 import numpy as np
 import drizzlepac
@@ -163,7 +165,7 @@ def rename_output_products(filter_obj, output_file_prefix=None):
 # --------------------------------------------------------------------------------------------------------------
 
 
-def create_drizzle_products(total_obj_list, custom_limits=None):
+def create_drizzle_products(total_obj_list, custom_limits=None, heap=None, heapdict=None):
     """
     Run astrodrizzle to produce products specified in the total_obj_list.
 
@@ -183,6 +185,7 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
     product_list: list
         A list of output products
     """
+    hp = heap
     # Get rules files
     rules_files = {}
 
@@ -202,6 +205,10 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
     # Keep track of all the products created for the output manifest
     product_list = []
 
+    heapindex = 4
+    h = hp.heap()
+    heapdict[heapindex] = {'log': str(h), 'indisize': h.indisize}
+
     # For each detector (as the total detection product are instrument- and detector-specific),
     # create the drizzle-combined filtered image, the drizzled exposure (aka single) images,
     # and finally the drizzle-combined total detection image.
@@ -212,11 +219,17 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
         # Get the common WCS for all images which are part of a total detection product,
         # where the total detection product is detector-dependent.
         meta_wcs = filt_obj.generate_metawcs(custom_limits=custom_limits)
+        heapindex += 1
+        h = hp.heap()
+        heapdict[heapindex] = {'log': str(h), 'indisize': h.indisize}
 
         log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
         filt_obj.wcs_drizzle_product(meta_wcs)
         product_list.append(filt_obj.drizzle_filename)
         product_list.append(filt_obj.trl_filename)
+        heapindex += 1
+        h = hp.heap()
+        heapdict[heapindex] = {'log': str(h), 'indisize': h.indisize}
 
         # Add individual single input images with updated WCS headers to manifest
         for exposure_obj in filt_obj.edp_list:
@@ -317,6 +330,11 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
     return_value: integer
         A return exit code used by the calling Condor/OWL workflow code: 0 (zero) for success, 1 for error
     """
+    # Initialize memory profiler
+    hp = hpy()
+    hp.setrelheap()
+    heapdict = {}  # structure used to keep track of memory usage results
+
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
@@ -348,6 +366,8 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                                                                          layer_method='all',
                                                                          include_small=cat_switches['MVM_INCLUDE_SMALL'],
                                                                          only_cte=cat_switches['MVM_ONLY_CTE'])
+        h = hp.heap()
+        heapdict[1] = {'log': str(h), 'indisize': h.indisize}
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
@@ -384,6 +404,8 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                                                             input_custom_pars_file=input_custom_pars_file,
                                                             output_custom_pars_file=output_custom_pars_file)
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
+        h = hp.heap()
+        heapdict[2] = {'log': str(h), 'indisize': h.indisize}
 
         # TODO: This is the place where updated WCS info is migrated from drizzlepac params to filter objects
         if skip_gaia_alignment:
@@ -395,11 +417,17 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                                                   diagnostic_mode=diagnostic_mode)
             if reference_catalog:
                 product_list += [reference_catalog]
+        h = hp.heap()
+        heapdict[3] = {'log': str(h), 'indisize': h.indisize}
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
-        driz_list = create_drizzle_products(total_obj_list, custom_limits=custom_limits)
+        driz_list = create_drizzle_products(total_obj_list, custom_limits=custom_limits, heap=hp, heapdict=heapdict)
         product_list += driz_list
+
+        h = hp.heap()
+        heapdict[-1] = {'log': str(h), 'indisize': h.indisize}
+        pickle.dump(heapdict, open('heapy_memory_log.pickle', 'wb'))
 
         # Store total_obj_list to a pickle file to speed up development
         if False:
