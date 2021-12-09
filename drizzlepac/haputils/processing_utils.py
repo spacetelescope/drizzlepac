@@ -24,15 +24,53 @@ __taskname__ = 'processing_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
-def get_rules_file(product):
-    """Copies default HAP rules file to local directory."""
+def get_rules_file(product, rules_type=""):
+    """Copies default HAP rules file to local directory.
+
+    This function enforces the naming convention for rules files
+    provided as part of this package; namely,
+
+        <instrument name>_{<rules type>_}_header_hap.rules
+
+    where <instrument name> is the lower-case value of the INSTRUME keyword
+          for the exposure, and, optionally, <rules type> is the lower-case
+          value of the `rules_type` parameter.
+
+    The default rules file will be found in the package's installation directory,
+    renamed for the input exposure and copied into the local working directory.
+    This will allow AstroDrizzle to find the rules file when drizzling the exposure.
+
+    Parameters
+    ----------
+    product : str
+        Filename of the input exposure that the rules file applies to
+
+    rules_type : str, optional
+        Specifies the type of processing being performed on the input
+        exposure.  Valid values: blank/empty string (''), 'SVM' or 'svm'
+        for SVM processing (default) and 'MVM' or 'mvm' for MVM processing.
+
+    Returns
+    -------
+    new_rules_name : str
+        filename of the new rules file copied into the current working directory
+    """
+    # Interpret rules_type to guard against a variety of possible inputs
+    # and to insure all values are converted to lower-case for use in
+    # filenames
+    rules_type = "" if rules_type == None else rules_type.strip(' ').lower()
+
     hdu, closefits = _process_input(product)
     rootname = '_'.join(product.split("_")[:-1])
     phdu = hdu[0].header
     instrument = phdu['instrume']
+    # Create rules name prefix here
+    # The trailing rstrip guards against a blank rules_type, which
+    # is the default for SVM processing.
+    rules_prefix = '_'.join([instrument.lower(), rules_type]).rstrip('_')
     code_dir = os.path.abspath(__file__)
     base_dir = os.path.dirname(os.path.dirname(code_dir))
-    def_rules_name = "{}_header_hap.rules".format(instrument.lower())
+    def_rules_name = "{}_header_hap.rules".format(rules_prefix)
     new_rules_name = "{}_header_hap.rules".format(rootname)
     rules_filename = os.path.join(base_dir, 'pars', def_rules_name)
     new_rules_filename = os.path.join(os.getcwd(), new_rules_name)
