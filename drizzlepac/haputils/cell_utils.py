@@ -3,6 +3,8 @@ import pdb
 import shutil
 from itertools import chain, combinations
 
+from guppy import hpy  # For memory profiling only...
+
 from matplotlib import path
 from matplotlib import pyplot as plt
 from matplotlib.path import Path
@@ -285,13 +287,14 @@ class SkyFootprint(object):
             in the PRIMARY header.
 
         """
+        if scale:
+            # Only assign memory for this array if requested.
+            self.scaled_mask = np.zeros(self.meta_wcs.array_shape, dtype=np.float32)
 
         for exposure in expnames:
             self.exp_masks[exposure] = {'sky_corners': [], 'xy_corners': [], 'mask': {}}
             exp = fits.open(exposure)
-            if scale:
-                # Only assign memory for this array if requested.
-                self.scaled_mask = np.zeros(self.meta_wcs.array_shape, dtype=np.float32)
+
             scale_val = exp[0].header[scale_kw]
 
             sci_extns = wcs_functions.get_extns(exp)
@@ -363,9 +366,14 @@ class SkyFootprint(object):
                 if scale:
                     scaled_blank = blank * scale_val
                     self.scaled_mask[tuple(scell_slice)] += scaled_blank
+                    del scaled_blank
 
                 self.total_mask[tuple(scell_slice)] += blank
                 del blank
+
+            # clean up any open fits handles
+            exp.close()
+            del exp
 
             # Only add members which contributed to this footprint
             if exposure not in self.members:

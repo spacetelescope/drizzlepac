@@ -101,7 +101,7 @@ class HAPProduct:
         # This mask actually represents the number of chips per pixel, not True/False.
         # To have the True/False mask it should be self.mask = footprint.footprint.
         # Do not fix this until it can be verified that a change will not have repercussions.
-        self.mask = footprint.total_mask
+        self.mask = copy.deepcopy(footprint.total_mask)
 
         # Compute footprint-based SVM-specific keywords for product image header
         good_pixels = self.mask > 0
@@ -110,6 +110,7 @@ class HAPProduct:
         self.mask_kws['MEDEXPT'][0] = np.median(footprint.scaled_mask[good_pixels])
         self.mask_kws['MEANNEXP'][0] = np.mean(self.mask[good_pixels])
         self.mask_kws['MEDNEXP'][0] = np.median(self.mask[good_pixels])
+        del footprint
 
     def generate_metawcs(self):
         """ A method to build a unique WCS for each TotalProduct product which is
@@ -1130,10 +1131,13 @@ class SkyCellProduct(HAPProduct):
         # as exposures which have been previously processed (all are listed in the original
         # poller file).
         mvm_footprint = cell_utils.SkyFootprint(wcs)
+        print(self.all_mvm_exposures)
         mvm_footprint.build(self.all_mvm_exposures)
 
         # This is the exposure-dependent WCS.
-        self.meta_bounded_wcs = mvm_footprint.bounded_wcs
+        self.meta_bounded_wcs = copy.deepcopy(mvm_footprint.bounded_wcs)
+        del mvm_footprint
+
         return self.meta_bounded_wcs
 
     def wcs_drizzle_product(self, meta_wcs):
