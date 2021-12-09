@@ -50,8 +50,8 @@ class Ret_code(Enum):
     Define return status codes for Operations 
     """
     OK = 0
-    SBCHRC_ONLY = 55 
-    NOPROC_ONLY = 65
+    SBCHRC_DATA = 55 
+    NO_VIABLE_DATA = 65
 
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
@@ -144,7 +144,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     """
     # Set logging level to user-specified level
     log.setLevel(log_level)
-
+ 
     # Analyze the input file list and get the full table assessment
     filtered_table = analyze_data(input_file_list, type=type)
 
@@ -155,7 +155,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     good_table = None
     good_rows = []
     process_list = []
-    return_value = Ret_code.OK
+    return_value = Ret_code.OK.value
 
     # MVM processing, but excluding SBC/HRC data
     if use_sbchrc == False and type.upper() == "MVM": 
@@ -168,19 +168,19 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
             # The entire filtered_table contains only SBC or HRC data
             if not good_rows:
                 log.warning("Only non-viable or SBC/HRC images in the multi-visit table - no processing done.\n")
-                return_value = Ret_code.SBCHRC_ONLY
+                return_value = Ret_code.SBCHRC_DATA.value
             # Table contains some non-SBC/non-HRC data for processing
             else:
                 good_table = Table(rows=good_rows, names=filtered_table.colnames)
 
                 # Get the list of all "good" files to use for the alignment
                 process_list = good_table['imageName'].tolist()
-                return_value = Ret_code.OK
+                return_value = Ret_code.OK.value
 
         # There is already nothing to process based upon the analysis criteria
         else:
             log.warning("No viable images in multi-visit table - no processing done.\n")
-            return_value = Ret_code.NOPROC_ONLY
+            return_value = Ret_code.NO_VIABLE_DATA.value
  
     # SVM processing or MVM processing with SBC/HRC data included in the MVM processing
     else:
@@ -189,7 +189,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
             process_list = filtered_table['imageName'].tolist()
         else:
             log.warning("No viable images in single/multi-visit table - no processing done.\n")
-            return_value = Ret_code.NOPROC_ONLY
+            return_value = Ret_code.NO_VIABLE_DATA.value
 
     return process_list, return_value
 

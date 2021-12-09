@@ -920,10 +920,8 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
                         raise Exception(err_msg)
                     # Apply logic for ignoring additional data, based on which environment variables are defined
                     # when defining what output SkyCell layers to generate from a poller file
-                    # start with removing ACS/HRC and ACS/SBC from input list
-                    if not include_small and input_table[tbl_ctr]['detector'].upper() in ['HRC', 'SBC']:
-                        rows_to_drop.append(tbl_ctr)
-                    # Also need to ignore non-CTE-corrected UVIS data
+                    # Need to ignore non-CTE-corrected UVIS data
+                    # Note: ignoring ACS/HRC and ACS/SBC from input list for MVM processing is done in analyze.analyze_wrapper().
                     cte_flag = input_table[tbl_ctr]['filename'][-6] == 'c'
                     # for WFC3 data, if UVIS and not CTE-corrected, flag for removal from processing
                     wf3_cte = input_table[tbl_ctr]['detector'].upper() == 'UVIS' and not cte_flag
@@ -1011,6 +1009,8 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
     if not usable_datasets:
         log.warning("No usable images in poller file or input list for drizzling. The processing of this data is ending.")
         sys.exit(return_code)
+    else:
+        log.info("There are {} usable images identified in the poller file for processing.".format(len(usable_datasets)))
 
     cols = OrderedDict()
     for cname in poller_colnames:
