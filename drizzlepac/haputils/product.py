@@ -41,8 +41,7 @@ MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEANEXPT": [None, "Mean exposure time per pixel with data"],
             "MEDEXPT": [None, "Median exposure time per pixel with data"],
             "MEANNEXP": [None, "Mean number of exposures per pixel with data"],
-            "MEDNEXP": [None, "Median number of exposures per pixel with data"],
-            "computed": False
+            "MEDNEXP": [None, "Median number of exposures per pixel with data"]
             }
 
 
@@ -82,6 +81,7 @@ class HAPProduct:
         self.meta_wcs = None
         self.mask = None
         self.mask_kws = MASK_KWS.copy()
+        self.mask_computed = False
 
     # def print_info(self):
         # """ Generic print at this time to indicate the information used in the
@@ -107,7 +107,7 @@ class HAPProduct:
 
         # Compute footprint-based SVM-specific keywords for product image header
         good_pixels = footprint.total_mask > 0
-        self.mask_kws['computed'] = True
+        self.mask_computed = True
         self.mask_kws['NPIXFRAC'][0] = good_pixels.sum() / footprint.total_mask.size
         self.mask_kws['MEANEXPT'][0] = np.mean(footprint.scaled_mask[good_pixels])
         self.mask_kws['MEDEXPT'][0] = np.median(footprint.scaled_mask[good_pixels])
@@ -565,7 +565,7 @@ class FilterProduct(HAPProduct):
         # This insures that keywords related to the footprint are generated for this
         # specific object to use in updating the output drizzle product.
         self.meta_wcs = meta_wcs
-        if self.mask is None:
+        if self.mask_computed is False:
             self.generate_footprint_mask()
 
         # Retrieve the configuration parameters for astrodrizzle
@@ -1150,7 +1150,7 @@ class SkyCellProduct(HAPProduct):
         # This insures that keywords related to the footprint are generated for this
         # specific object to use in updating the output drizzle product.
         self.meta_wcs = meta_wcs
-        if self.mask is None:
+        if self.mask_computed is False:
             self.generate_footprint_mask()
 
         # Retrieve the configuration parameters for astrodrizzle
