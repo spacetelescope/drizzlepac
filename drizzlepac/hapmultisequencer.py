@@ -375,7 +375,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         # Update the SkyCellProduct objects with their associated configuration information.
         for filter_item in total_obj_list:
             _ = filter_item.generate_metawcs(custom_limits=custom_limits)
-            filter_item.generate_footprint_mask()
+            filter_item.generate_footprint_mask(save_mask=False)
 
             # Optionally rename output products
             if output_file_prefix or custom_limits:

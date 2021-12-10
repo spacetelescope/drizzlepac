@@ -42,6 +42,7 @@ MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEDEXPT": [None, "Median exposure time per pixel with data"],
             "MEANNEXP": [None, "Mean number of exposures per pixel with data"],
             "MEDNEXP": [None, "Median number of exposures per pixel with data"],
+            "computed": False
             }
 
 
@@ -88,7 +89,7 @@ class HAPProduct:
         # """
         # print("Object information: {}".format(self.info))
 
-    def generate_footprint_mask(self):
+    def generate_footprint_mask(self, save_mask=True):
         """ Create a footprint mask for a set of exposure images
 
             Create a mask which is True/1/on for the illuminated portion of the image, and
@@ -101,15 +102,17 @@ class HAPProduct:
         # This mask actually represents the number of chips per pixel, not True/False.
         # To have the True/False mask it should be self.mask = footprint.footprint.
         # Do not fix this until it can be verified that a change will not have repercussions.
-        self.mask = copy.deepcopy(footprint.total_mask)
+        if save_mask:
+            self.mask = copy.deepcopy(footprint.total_mask)
 
         # Compute footprint-based SVM-specific keywords for product image header
-        good_pixels = self.mask > 0
-        self.mask_kws['NPIXFRAC'][0] = good_pixels.sum() / self.mask.size
+        good_pixels = footprint.total_mask > 0
+        self.mask_kws['computed'] = True
+        self.mask_kws['NPIXFRAC'][0] = good_pixels.sum() / footprint.total_mask.size
         self.mask_kws['MEANEXPT'][0] = np.mean(footprint.scaled_mask[good_pixels])
         self.mask_kws['MEDEXPT'][0] = np.median(footprint.scaled_mask[good_pixels])
-        self.mask_kws['MEANNEXP'][0] = np.mean(self.mask[good_pixels])
-        self.mask_kws['MEDNEXP'][0] = np.median(self.mask[good_pixels])
+        self.mask_kws['MEANNEXP'][0] = np.mean(footprint.total_mask[good_pixels])
+        self.mask_kws['MEDNEXP'][0] = np.median(footprint.total_mask[good_pixels])
         del footprint
 
     def generate_metawcs(self):
