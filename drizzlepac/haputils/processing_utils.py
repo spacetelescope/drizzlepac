@@ -199,8 +199,16 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
     # the total_obj_list for updating
     update_filename = image[0].header['filename']
     for tot_obj in total_obj_list:
-        if tot_obj.drizzle_filename != update_filename:
+        # Get the HAPProduct object for the input image to be updated
+        # The '.find_member()' method looks for exposure, filter and
+        # total level product.
+        img_obj = tot_obj.find_member(update_filename)
+        if img_obj is None:
+            # Didn't find the input image in this total_obj instance,
+            # try another...
             continue
+        # if tot_obj.drizzle_filename != update_filename:
+        #     continue
         # Only for the total_obj_list entry that matches the input image
         # should we build the list of new rootnames
         for row in orig_tab:
@@ -218,13 +226,16 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
                             name_col.append(exposure.product_basename)
                             break
 
-    # define new column with HAP expname
-    max_len = min(max([len(name) for name in name_col]), 51)
-    hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len + 4))
-    newcol = fits.ColDefs([hapcol])
+    hdrtab_cols = orig_tab.columns
+    if name_col:
+        # define new column with HAP expname
+        max_len = min(max([len(name) for name in name_col]), 51)
+        hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len + 4))
+        newcol = fits.ColDefs([hapcol])
+        hdrtab_cols += newcol
 
     # define new extension
-    haphdu = fits.BinTableHDU.from_columns(orig_tab.columns + newcol)
+    haphdu = fits.BinTableHDU.from_columns(hdrtab_cols)
     haphdu.header['extname'] = 'HDRTAB'
     haphdu.header['extver'] = 1
     # remove old extension
