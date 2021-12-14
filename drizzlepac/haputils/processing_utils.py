@@ -24,15 +24,53 @@ __taskname__ = 'processing_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
-def get_rules_file(product):
-    """Copies default HAP rules file to local directory."""
+def get_rules_file(product, rules_type=""):
+    """Copies default HAP rules file to local directory.
+
+    This function enforces the naming convention for rules files
+    provided as part of this package; namely,
+
+        <instrument name>_{<rules type>_}_header_hap.rules
+
+    where <instrument name> is the lower-case value of the INSTRUME keyword
+          for the exposure, and, optionally, <rules type> is the lower-case
+          value of the `rules_type` parameter.
+
+    The default rules file will be found in the package's installation directory,
+    renamed for the input exposure and copied into the local working directory.
+    This will allow AstroDrizzle to find the rules file when drizzling the exposure.
+
+    Parameters
+    ----------
+    product : str
+        Filename of the input exposure that the rules file applies to
+
+    rules_type : str, optional
+        Specifies the type of processing being performed on the input
+        exposure.  Valid values: blank/empty string (''), 'SVM' or 'svm'
+        for SVM processing (default) and 'MVM' or 'mvm' for MVM processing.
+
+    Returns
+    -------
+    new_rules_name : str
+        filename of the new rules file copied into the current working directory
+    """
+    # Interpret rules_type to guard against a variety of possible inputs
+    # and to insure all values are converted to lower-case for use in
+    # filenames
+    rules_type = "" if rules_type == None else rules_type.strip(' ').lower()
+
     hdu, closefits = _process_input(product)
     rootname = '_'.join(product.split("_")[:-1])
     phdu = hdu[0].header
     instrument = phdu['instrume']
+    # Create rules name prefix here
+    # The trailing rstrip guards against a blank rules_type, which
+    # is the default for SVM processing.
+    rules_prefix = '_'.join([instrument.lower(), rules_type]).rstrip('_')
     code_dir = os.path.abspath(__file__)
     base_dir = os.path.dirname(os.path.dirname(code_dir))
-    def_rules_name = "{}_header_hap.rules".format(instrument.lower())
+    def_rules_name = "{}_header_hap.rules".format(rules_prefix)
     new_rules_name = "{}_header_hap.rules".format(rootname)
     rules_filename = os.path.join(base_dir, 'pars', def_rules_name)
     new_rules_filename = os.path.join(os.getcwd(), new_rules_name)
@@ -157,30 +195,47 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
     # Convert input_exposure filenames into HAP product filenames
     name_col = []
     orig_tab = image['hdrtab'].data
+    # get the name of the product so it can be selected from
+    # the total_obj_list for updating
+    update_filename = image[0].header['filename']
+    for tot_obj in total_obj_list:
+        # Get the HAPProduct object for the input image to be updated
+        # The '.find_member()' method looks for exposure, filter and
+        # total level product.
+        img_obj = tot_obj.find_member(update_filename)
+        if img_obj is None:
+            # Didn't find the input image in this total_obj instance,
+            # try another...
+            continue
+        # if tot_obj.drizzle_filename != update_filename:
+        #     continue
+        # Only for the total_obj_list entry that matches the input image
+        # should we build the list of new rootnames
+        for row in orig_tab:
+            rootname = str(row['rootname'])
 
-    for row in orig_tab:
-        rootname = str(row['rootname'])
+            # The rootname is ipppssoot, but the expname is only contains ipppssoo,
+            # so remove the last character for the comparisons
+            rootname = rootname[0:-1]
 
-        # The rootname is ipppssoot, but the expname is only contains ipppssoo,
-        # so remove the last character for the comparisons
-        rootname = rootname[0:-1]
-
-        for expname in input_exposures:
-            if rootname in expname:
-                # Convert input exposure names into HAP names
-                for tot_obj in total_obj_list:
+            for expname in input_exposures:
+                if rootname in expname:
+                    # Convert input exposure names into HAP names
                     for exposure in tot_obj.edp_list:
                         if rootname in exposure.full_filename:
                             name_col.append(exposure.product_basename)
                             break
 
-    # define new column with HAP expname
-    max_len = min(max([len(name) for name in name_col]), 51)
-    hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len + 4))
-    newcol = fits.ColDefs([hapcol])
+    hdrtab_cols = orig_tab.columns
+    if name_col:
+        # define new column with HAP expname
+        max_len = min(max([len(name) for name in name_col]), 51)
+        hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len + 4))
+        newcol = fits.ColDefs([hapcol])
+        hdrtab_cols += newcol
 
     # define new extension
-    haphdu = fits.BinTableHDU.from_columns(orig_tab.columns + newcol)
+    haphdu = fits.BinTableHDU.from_columns(hdrtab_cols)
     haphdu.header['extname'] = 'HDRTAB'
     haphdu.header['extver'] = 1
     # remove old extension
@@ -217,6 +272,8 @@ def compute_sregion(image, extname='SCI'):
             for corner in footprint:
                 sregion_str += '{} {} '.format(corner[0], corner[1])
         else:
+            if hdu[(extname, extnum)].data.min() == 0 and hdu[(extname, extnum)].data.max() == 0:
+                continue
             # Working with a drizzled image, so we need to
             # get all the corners from each of the input files
             footprint = find_footprint(hdu, extname=extname, extnum=extnum)

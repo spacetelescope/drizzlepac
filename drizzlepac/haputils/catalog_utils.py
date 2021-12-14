@@ -89,6 +89,13 @@ class CatalogImage:
         self.data = self.imghdu[('SCI', 1)].data
         self.wht_image = self.imghdu['WHT'].data.copy()
 
+        # Add blank/empty flag
+        self.blank = False
+        data_vals = np.nan_to_num(self.data, 0)
+        if data_vals.min() == 0 and data_vals.max() == 0:
+            self.blank = True
+        del data_vals
+
         # Get the HSTWCS object from the first extension
         self.imgwcs = HSTWCS(self.imghdu, 1)
 
@@ -98,6 +105,7 @@ class CatalogImage:
         self.bkg_background_ra = None
         self.bkg_rms_ra = None
         self.bkg_rms_median = None
+        self.bkg_median = None
         self.footprint_mask = None
         self.inv_footprint_mask = None
         self.bkg_type = ""
@@ -125,6 +133,8 @@ class CatalogImage:
                      maxiters=3,
                      good_fwhm=[1.5, 3.5]):
 
+        if self.blank:
+            return
         if self.bkg_background_ra is None:
             self.compute_background(box_size, win_size,
                                     simple_bkg=simple_bkg,
@@ -134,12 +144,12 @@ class CatalogImage:
                                     nsigma_clip=nsigma_clip,
                                     maxiters=maxiters)
 
-        log.info("Attempt to determine FWHM based upon input data within a good FWHM range of {:.1f} to {:.1f}.".format(good_fwhm[0], good_fwhm[1]))
-        log.info("If no good FWHM candidate is identified, a value of {:.1f} will be used instead.".format(fwhmpsf / self.imgwcs.pscale))
+        log.info("Attempt to determine FWHM based upon input data within a good FWHM range of {:.2f} to {:.2f}.".format(good_fwhm[0], good_fwhm[1]))
+        log.info("If no good FWHM candidate is identified, a value of {:.2f} will be used instead.".format(fwhmpsf / self.imgwcs.pscale))
         k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
                                                                   self.wht_image,
                                                                   good_fwhm=good_fwhm,
-                                                                  num_fwhm=30,
+                                                                  num_fwhm=50,
                                                                   threshold=self.bkg_rms_ra,
                                                                   fwhm=fwhmpsf / self.imgwcs.pscale)
         (self.kernel, self.kernel_psf) = k
@@ -219,6 +229,12 @@ class CatalogImage:
             Inverse of the footprint_mask
 
         """
+        if self.blank:
+            self.bkg_type = 'empty'
+            log.info("")
+            log.info("*** Background image EMPTY. ***")
+            return
+
         # Negative allowance in sigma
         negative_sigma = -1.0
 
@@ -766,11 +782,13 @@ class HAPCatalogBase:
         # make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11,11))
         self_scale = (self.image.keyword_dict['ndrizim'] - 1) / 2
         scale = max(self.param_dict['scale'], self_scale)
-        self.tp_masks = make_wht_masks(self.image.wht_image, self.image.inv_footprint_mask,
-                                       scale=scale,
-                                       sensitivity=self.param_dict['sensitivity'],
-                                       kernel=(self.param_dict['region_size'],
-                                               self.param_dict['region_size']))
+        self.tp_masks = None
+        if not self.image.blank:
+            self.tp_masks = make_wht_masks(self.image.wht_image, self.image.inv_footprint_mask,
+                                           scale=scale,
+                                           sensitivity=self.param_dict['sensitivity'],
+                                           kernel=(self.param_dict['region_size'],
+                                                   self.param_dict['region_size']))
 
     def identify_sources(self, **pars):
         pass
@@ -904,6 +922,11 @@ class HAPPointCatalog(HAPCatalogBase):
     def identify_sources(self, **pars):
         """Create a master coordinate list of sources identified in the specified total detection product image
         """
+        # Recognize empty/blank images and treat gracefully
+        if self.image.blank:
+            self._define_empty_table()
+            log.info('Total Detection Product - Point-source catalog is EMPTY')
+            return
         source_fwhm = self.image.kernel_fwhm
         # read in sci, wht extensions of drizzled product
         image = np.nan_to_num(self.image.data, copy=True, nan=0.0)
@@ -1430,6 +1453,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._ratio_bigsource_limit = self.param_dict["sourcex"]["ratio_bigsource_limit"]
         self._kron_scaling_radius = self.param_dict["sourcex"]["kron_scaling_radius"]
         self._kron_minimum_radius = self.param_dict["sourcex"]["kron_minimum_radius"]
+        self._ratio_bigsource_deblend_limit = self.param_dict["sourcex"]["ratio_bigsource_deblend_limit"]
 
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
@@ -1459,6 +1483,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
             Two-dimensional segmentation image where found source regions are labeled with
             unique, non-zero positive integers.
         """
+        # Recognize empty/blank images and treat gracefully
+        if self.image.blank:
+            self._define_empty_table(None)
+            log.info('Total Detection Product - Segmentation source catalog is EMPTY')
+            return
 
         # If the total product sources have not been identified, then this needs to be done!
         if not self.tp_sources:
@@ -1487,7 +1516,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
-
+            log.debug("IMG stats: min/max: {}, {}".format(imgarr.min(), imgarr.max()))
             # Custom or Gaussian kernel depending upon the results of CatalogImage build_kernel()
             g2d_kernel = self.image.kernel
 
@@ -1530,10 +1559,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 log.info("")
                 log.info("The segmentation map contains big sources/islands or a large source fraction of segments.")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
-                rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm,
+                rw2dk = RickerWavelet2DKernel(self.image.kernel_fwhm,
                                                     x_size=self._rw2d_size,
                                                     y_size=self._rw2d_size)
-                rw2d_kernel.normalize()
+                rw2dk.normalize()
+                # Only pass along the array to be consistent with the g2d_kernel object
+                rw2d_kernel = rw2dk.array
+
+                log.debug("IMG stats AFTER G2D iteration 1: min/max: {}, {}".format(imgarr.min(), imgarr.max()))
 
                 # Detect segments and evaluate the detection in terms of big sources/islands or crowded fields
                 # Round 1
@@ -1595,11 +1628,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # kernel when the background type changes
                         g2d_kernel = self.image.kernel
 
-                        rw2d_kernel = RickerWavelet2DKernel(self.image.kernel_fwhm,
+                        rw2dk = RickerWavelet2DKernel(self.image.kernel_fwhm,
                                                             x_size=self._rw2d_size,
                                                             y_size=self._rw2d_size)
-                        rw2d_kernel.normalize()
-
+                        rw2dk.normalize()
+                        rw2d_kernel = rw2dk.array
                         sigma_for_threshold = self._nsigma
                         rw2d_sigma_for_threshold = self._rw2d_nsigma
 
@@ -1924,12 +1957,25 @@ class HAPSegmentCatalog(HAPCatalogBase):
            segm_img : `~photutils.segmentation.SegmentationImage` or None
 
         """
-
         log.info("Detecting sources in total image product.")
+        # Insure that regions with negative flux after background subtraction do not
+        # cause the segmentation to create a scene filled with segments, especially with RickerWavelet kernel,
+        # the imgarr needs to be background-subtracted, then clipped at zero before feeding to
+        # 'photutils.detect_sources'.
+        if filter_kernel.min() < 0:  # Found in normalized RickerWavelet kernels
+            img_bkg_sub = imgarr - threshold
+            img_bkg_sub = np.clip(img_bkg_sub, 0, img_bkg_sub.max())
+            # Now set threshold to 0, since it has already been applied to the input data array
+            thresh0 = np.zeros_like(img_bkg_sub)
+        else:
+            # Use inputs provided with the kernel
+            img_bkg_sub = imgarr
+            thresh0 = threshold
+
         # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
         segm_img = None
-        segm_img = detect_sources(imgarr,
-                                  threshold,
+        segm_img = detect_sources(img_bkg_sub,
+                                  thresh0,
                                   npixels=source_box,
                                   filter_kernel=filter_kernel,
                                   mask=mask)
@@ -2596,14 +2642,43 @@ class HAPSegmentCatalog(HAPCatalogBase):
         deb_limit = self.kernel.size
         log.debug("Deblending limit set at: {} pixels".format(deb_limit))
         # add as attribute to SegmentationImage for use later
-        segm_img.big_segments = np.where(segm_img.areas >= deb_limit)[0] + 1  # Segment labels are 1-based
+        big_segments = np.where(segm_img.areas >= deb_limit)[0] + 1  # Segment labels are 1-based
 
         biggest_source = n.max()/float(real_pixels)
         log.info("Biggest_source: %f", biggest_source)
         if biggest_source > max_biggest_source:
             log.info("Biggest source %.4f percent exceeds %f percent of the image", (100.0*biggest_source), (100.0*max_biggest_source))
             is_poor_quality = True
+            # Sort the areas and get the indices of the sorted areas
+            area_indices = np.argsort(segm_img.areas)
+            areas = np.sort(segm_img.areas)
+            # Extract only the largest areas which are at least 10x size of next largest segment
+            # Value of 10x is set in config file as "ratio_bigsource_deblend_limit"
+            # Initialize with largest source, then look for any smaller ones that meet the
+            # criteria.  This guarantees that the largest source will always be ignored.
+            big_areas = [area_indices[-1] + 1]
+            for (i, a), (j, ind) in zip(enumerate(areas[::-1]), enumerate(area_indices[::-1])):
+                # skip the first/largest segment, since it was used to initialize the list already
+                if i == 0:
+                    continue
+                # determine ratio of area with next smallest area
+                r = a / areas[-1*(i+2)]
+                if r >= self._ratio_bigsource_deblend_limit :
+                    # Record the segmentation ID of large area to be ignored during deblending
+                    big_areas.append(ind + 1)
+                else:
+                    #  we are done with these areas
+                    break
+            # Remove largest segments from list of 'large' segments to be deblended
+            big_segments = big_segments.tolist()
+            for b in big_areas:
+                big_segments.remove(b)
+            log.debug("Ignoring {} sources exceeding the deblending limit in size".format(len(big_areas)))
+            # Convert back to ndarray
+            big_segments = np.array(big_segments)
 
+        segm_img.big_segments = big_segments
+        log.info("Total number of sources suitable for deblending: {}".format(len(big_segments)))
         # Always compute the source_fraction so the value can be reported.  Setting the
         # big_island_only parameter allows control over whether the source_fraction should
         # or should not be ignored.
