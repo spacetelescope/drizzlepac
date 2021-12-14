@@ -43,13 +43,16 @@ import fnmatch
 import logging
 import os
 import pickle
+import re
 import sys
 import traceback
 
+from astropy.io import ascii
 from astropy.table import Table
 import numpy as np
 import drizzlepac
 
+from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import poller_utils
 from drizzlepac.haputils import product
@@ -76,6 +79,8 @@ envvar_qa_svm = "SVM_QUALITY_TESTING"
 # Default values for these environment variables set to include all available data
 envvar_cat_mvm = {"MVM_INCLUDE_SMALL": 'true',
                   "MVM_ONLY_CTE": 'false'}
+
+MATCH_STRING = "skycell-p\d{4}x\d{2}y\d{2}_input\.out"
 
 # --------------------------------------------------------------------------------------------------------------
 
@@ -330,6 +335,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
     log.info("Run start time: {}".format(str(starting_dt)))
     total_obj_list = []
     product_list = []
+    manifest_name = ""
     try:
         # Parse the MVM poller file and generate the the obs_info_dict, as well as the total detection
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
@@ -471,12 +477,53 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         logging.exception("message")
+    # This except handles sys.exit() which raises the SystemExit exception which inherits from BaseException.
+    except BaseException:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        formatted_lines = traceback.format_exc().splitlines()
+        log.info(formatted_lines[-1])
+        return_value = exc_value
+
+        # If an exception were raised in the poller_utils, it is possible the manifest_name
+        # has not been defined.  Create a manifest_name now to create the expected file which
+        # will be empty.
+        if manifest_name == "":
+            try:
+                # If the input filename is a string, it could be a poller file or it could
+                # be a file containing filenames.  If it is a poller file, the necessary skycell
+                # information is in column 8 (1-based), and only the first entry is needed.
+                if type(input_filename) == str:
+                    output_skycell = ascii.read(input_filename, format='no_header')["col8"][0]
+                    manifest_name = "hst_"+ output_skycell.lower() + "_manifest.txt"
+
+                # Maybe the input filename was actually a Python list
+                elif type(input_filename) == list:
+                    skycell_dict = cell_utils.get_sky_cells([input_filename[0]])
+                    output_skycell = next(iter(skycell_dict.keys()))
+                    manifest_name = "hst_"+ output_skycell.lower() + "_manifest.txt"
+
+                # Problem case - try to use the name of the input file
+                else:
+                    if re.search(MATCH_STRING, input_filename.lower()):
+                        manifest_name = "hst_" + input_filename.lower().replace("input.out", "manifest.txt")
+                    else:
+                        manifest_name = "hst_skycell-p0000x00y00_manifest.txt"
+                # Bigger problem case - try to use the name of the input file
+            except Exception:
+                if re.search(MATCH_STRING, input_filename.lower()):
+                    manifest_name = "hst_" + input_filename.lower().replace("input.out", "manifest.txt")
+                else:
+                    manifest_name = "hst_skycell-p0000x00y00_manifest.txt"
+
+        log.info("Writing empty manifest file: {}".format(manifest_name))
+
+        with open(manifest_name, mode="a"): pass
 
     finally:
         end_dt = datetime.datetime.now()
         log.info('Processing completed at {}'.format(str(end_dt)))
         log.info('Total processing time: {} sec'.format((end_dt - starting_dt).total_seconds()))
-        log.info("Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error ")
+        log.info("Return code for use by calling Condor/OWL workflow code: 0 (zero) for success, non-zero for error or exit. ")
         log.info("Return condition {}".format(return_value))
         logging.shutdown()
         # Append total trailer file (from astrodrizzle) to all total log files
