@@ -761,7 +761,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         # fit_rms_ra = fit_info['RMS_RA']
         # fit_rms_dec = fit_info['RMS_DEC']
         # rms_ratio = abs(fit_rms_ra - fit_rms_dec) / min(fit_rms_ra, fit_rms_dec)
-        num_xmatches = fit_info['nmatches']
+        num_xmatches = len(fit_info['ref_mag'])  # fit_info['nmatches']
         fit_status_dict[dict_key]['max_rms'] = max_rms_val
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
 
