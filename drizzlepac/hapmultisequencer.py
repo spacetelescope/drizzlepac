@@ -368,7 +368,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                                                                          only_cte=cat_switches['MVM_ONLY_CTE'])
         h = hp.heap()
         heapdict[1] = {'log': str(h), 'indisize': h.indisize}
-
+        log.info("[HEAPY][1] indisize: {}".format(h.indisize))
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
 
@@ -406,6 +406,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
         h = hp.heap()
         heapdict[2] = {'log': str(h), 'indisize': h.indisize}
+        log.info("[HEAPY][2] indisize: {}".format(h.indisize))
 
         # TODO: This is the place where updated WCS info is migrated from drizzlepac params to filter objects
         if skip_gaia_alignment:
@@ -419,6 +420,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                 product_list += [reference_catalog]
         h = hp.heap()
         heapdict[3] = {'log': str(h), 'indisize': h.indisize}
+        log.info("[HEAPY][3] indisize: {}".format(h.indisize))
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -428,6 +430,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         h = hp.heap()
         heapdict[-1] = {'log': str(h), 'indisize': h.indisize}
         pickle.dump(heapdict, open('heapy_memory_log.pickle', 'wb'))
+        log.info("[HEAPY][-1] indisize: {}".format(h.indisize))
 
         # Store total_obj_list to a pickle file to speed up development
         if False:
