@@ -461,7 +461,7 @@ class SkyFootprint(object):
             if member not in self.exp_masks:
                 raise ValueError("Member {} not added to footprint".format(member))
             # Recompute mask specifically for this member
-            #mask = self.exp_masks[member]['mask']
+            # mask = self.exp_masks[member]['mask']
             exp_mask = self.exp_masks[member]['mask']
             mask = np.zeros(self.meta_wcs.array_shape, dtype=np.int16)
 
