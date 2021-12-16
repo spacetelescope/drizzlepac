@@ -1134,7 +1134,7 @@ class SkyCellProduct(HAPProduct):
         # as exposures which have been previously processed (all are listed in the original
         # poller file).
         mvm_footprint = cell_utils.SkyFootprint(wcs)
-        print(self.all_mvm_exposures)
+        log.debug(self.all_mvm_exposures)
         mvm_footprint.build(self.all_mvm_exposures)
 
         # This is the exposure-dependent WCS.
