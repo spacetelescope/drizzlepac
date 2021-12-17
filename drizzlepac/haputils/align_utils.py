@@ -1233,12 +1233,14 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
             hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
             hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else 0
+            hdulist[sci_extn].header['FITGEOM'] = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
         else:
             hdulist[sci_extn].header['RMS_RA'] = -1.0
             hdulist[sci_extn].header['RMS_DEC'] = -1.0
             hdulist[sci_extn].header['CRDER1'] = -1.0
             hdulist[sci_extn].header['CRDER2'] = -1.0
             hdulist[sci_extn].header['NMATCHES'] = 0
+            hdulist[sci_extn].header['FITGEOM'] = "N/A"
 
         # Update value of 'nmatches' in fit_info so that this value will get
         # used in writing out the headerlet as a file.
