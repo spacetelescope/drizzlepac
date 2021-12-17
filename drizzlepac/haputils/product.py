@@ -41,7 +41,7 @@ MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEANEXPT": [None, "Mean exposure time per pixel with data"],
             "MEDEXPT": [None, "Median exposure time per pixel with data"],
             "MEANNEXP": [None, "Mean number of exposures per pixel with data"],
-            "MEDNEXP": [None, "Median number of exposures per pixel with data"],
+            "MEDNEXP": [None, "Median number of exposures per pixel with data"]
             }
 
 
@@ -81,6 +81,7 @@ class HAPProduct:
         self.meta_wcs = None
         self.mask = None
         self.mask_kws = MASK_KWS.copy()
+        self.mask_computed = False
 
     # def print_info(self):
         # """ Generic print at this time to indicate the information used in the
@@ -88,7 +89,7 @@ class HAPProduct:
         # """
         # print("Object information: {}".format(self.info))
 
-    def generate_footprint_mask(self):
+    def generate_footprint_mask(self, save_mask=True):
         """ Create a footprint mask for a set of exposure images
 
             Create a mask which is True/1/on for the illuminated portion of the image, and
@@ -101,15 +102,18 @@ class HAPProduct:
         # This mask actually represents the number of chips per pixel, not True/False.
         # To have the True/False mask it should be self.mask = footprint.footprint.
         # Do not fix this until it can be verified that a change will not have repercussions.
-        self.mask = footprint.total_mask
+        if save_mask:
+            self.mask = copy.deepcopy(footprint.total_mask)
 
         # Compute footprint-based SVM-specific keywords for product image header
-        good_pixels = self.mask > 0
-        self.mask_kws['NPIXFRAC'][0] = good_pixels.sum() / self.mask.size
+        good_pixels = footprint.total_mask > 0
+        self.mask_computed = True
+        self.mask_kws['NPIXFRAC'][0] = good_pixels.sum() / footprint.total_mask.size
         self.mask_kws['MEANEXPT'][0] = np.mean(footprint.scaled_mask[good_pixels])
         self.mask_kws['MEDEXPT'][0] = np.median(footprint.scaled_mask[good_pixels])
-        self.mask_kws['MEANNEXP'][0] = np.mean(self.mask[good_pixels])
-        self.mask_kws['MEDNEXP'][0] = np.median(self.mask[good_pixels])
+        self.mask_kws['MEANNEXP'][0] = np.mean(footprint.total_mask[good_pixels])
+        self.mask_kws['MEDNEXP'][0] = np.median(footprint.total_mask[good_pixels])
+        del footprint
 
     def generate_metawcs(self):
         """ A method to build a unique WCS for each TotalProduct product which is
@@ -561,7 +565,7 @@ class FilterProduct(HAPProduct):
         # This insures that keywords related to the footprint are generated for this
         # specific object to use in updating the output drizzle product.
         self.meta_wcs = meta_wcs
-        if self.mask is None:
+        if self.mask_computed is False:
             self.generate_footprint_mask()
 
         # Retrieve the configuration parameters for astrodrizzle
@@ -1130,10 +1134,13 @@ class SkyCellProduct(HAPProduct):
         # as exposures which have been previously processed (all are listed in the original
         # poller file).
         mvm_footprint = cell_utils.SkyFootprint(wcs)
+        log.debug(self.all_mvm_exposures)
         mvm_footprint.build(self.all_mvm_exposures)
 
         # This is the exposure-dependent WCS.
-        self.meta_bounded_wcs = mvm_footprint.bounded_wcs
+        self.meta_bounded_wcs = copy.deepcopy(mvm_footprint.bounded_wcs)
+        del mvm_footprint
+
         return self.meta_bounded_wcs
 
     def wcs_drizzle_product(self, meta_wcs):
@@ -1143,7 +1150,7 @@ class SkyCellProduct(HAPProduct):
         # This insures that keywords related to the footprint are generated for this
         # specific object to use in updating the output drizzle product.
         self.meta_wcs = meta_wcs
-        if self.mask is None:
+        if self.mask_computed is False:
             self.generate_footprint_mask()
 
         # Retrieve the configuration parameters for astrodrizzle
