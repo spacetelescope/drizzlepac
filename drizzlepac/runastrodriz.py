@@ -122,8 +122,8 @@ from drizzlepac import wcs_functions
 __taskname__ = "runastrodriz"
 
 # Local variables
-__version__ = "2.3.1"
-__version_date__ = "(29-Aug-2020)"
+__version__ = "2.4.0"
+__version_date__ = "(17-Dec-2021)"
 
 # Implement WIN specific check
 RM_LOGFILES = False if sys.platform.startswith('win') else True
@@ -934,7 +934,11 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             trlmsg = _timestamp("Align_to_GAIA started ")
             _updateTrlFile(trlfile, trlmsg)
             # Evaluate all input exposures and, if necessary, reset WCSs to a common WCS
-            update_wcs_in_list(alignfiles, logfile=trlfile)
+            # This is necessary in order to avoid imprinting zero point differences between
+            # coordinate systems into the final fit which would result in mis-alignment of the
+            # sources in the final combined output images.
+            if len(alignfiles) > 1:
+                update_wcs_in_list(alignfiles, logfile=trlfile)
 
             instdet_pars = align.get_default_pars(inst, det)
 
@@ -1334,10 +1338,25 @@ def update_wcs_in_list(exp_list, logfile=None):
     msg = "\n***** Processing List for Consistent WCS's *****"
     print(msg)
     update_msg = msg
+    primary_wcsnames = set([fits.getval(fname, 'wcsname', ext=('SCI',1)) for fname in exp_list])
 
+    if len(primary_wcsnames) == 1:
+        msg = "\nAll Primary WCS's confirmed as consistent as {}.".format(primary_wcsnames)
+        print(msg)
+        update_msg += msg
+        # Update trailer file with log messages
+        if logfile:
+            _updateTrlFile(logfile, update_msg)
+        return
+
+    # We have detected inconsistent WCSs...
     # Loop over all the direct images for this detector in the visit to update the WCS
+    primary_idctabs = []
     for filename in exp_list:
         hdu = fits.open(filename)
+        idctab = hdu[0].header['idctab'].split('$')[1]
+        idcroot = idctab.split('_')[0]
+        primary_idctabs.append('IDC_{}*'.format(idcroot))  # Add all WCS that start with IDC_<idctab> as desired WCSs
 
         # Make sure the WCS is up-to-date - doing the update for the
         # direct images here so there is no need to modify a
@@ -1355,6 +1374,28 @@ def update_wcs_in_list(exp_list, logfile=None):
     msg = "WCS solutions common to all viable direct images: {}\n".format(final_wcs_set)
     print(msg)
     update_msg += msg
+
+    # At this point, the IDCTAB points to the most current reference file
+    # for these exposures.
+    primary_idctabs = set(primary_idctabs)
+    # Remove all WCSs from final_wcs_set that do not use the most recent IDCTAB
+    primary_wcs_set = []
+    for pidc in primary_idctabs:
+        match_list = fnmatch.filter(final_wcs_set, pidc)
+        if match_list:
+            primary_wcs_set.extend(match_list)
+    # Redefine using only those WCSs based on most recent distortion model
+    # Should never need this logic, but just to be safe...
+    if len(primary_wcs_set) == 0:
+        # Simply rely on WCS solutions already in the headers
+        msg = "NO Common WCS solutions for images: {}\n".format(final_wcs_set)
+        msg += "  for the latest calibration IDCTAB: {}\n".format(primary_idctabs)
+        print(msg)
+        update_msg += msg
+        if logfile:
+            _updateTrlFile(logfile, update_msg)
+        return
+    final_wcs_set = set(primary_wcs_set)
 
     # There is a preference for the active WCS for the viable images in the visit
     # Check the final_wcs_set for the preferential solutions
