@@ -3,8 +3,6 @@ import pdb
 import shutil
 from itertools import chain, combinations
 
-from guppy import hpy  # For memory profiling only...
-
 from matplotlib import path
 from matplotlib import pyplot as plt
 from matplotlib.path import Path
