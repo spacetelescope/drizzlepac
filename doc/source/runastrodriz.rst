@@ -161,7 +161,7 @@ The pipeline processing code starts out by looking to see whether the user has d
 Values that can be provided for setting these variables are:
 
   * 'on', 'yes', 'true': Any of these values will turn **on** the processing controlled by the variable
-  * 'off', 'no', 'false': Any of these values will turn **off** the processing controleed by the variable
+  * 'off', 'no', 'false': Any of these values will turn **off** the processing controlled by the variable
 
 By default, all the processing steps are turned **on** during pipeline processing in order to maximize the chances of aligning the data as closely as possible to the absolute astrometry standard coordinate system defined through the use of the GAIA catalogs.  However, these controls are provided to support those observations which would not be suitable for such alignment, including observations of single sources.
 
