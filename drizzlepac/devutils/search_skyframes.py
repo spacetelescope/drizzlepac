@@ -42,7 +42,7 @@
         - The '-s' option allows users to specify the skycell name to search for. Only full skycell names are
         accepted. Expected format is lowercase; Example: "-s p0797x13y05"
 
-        - The '-v' opition allows users to visualize the footprints of the images returned by the query
+        - The '-v' option allows users to visualize the footprints of the images returned by the query
         results. If turned on, footprint fits files will be generated that show the footprints of the images
         returned by the query result in the skycell in which they reside. Additional footprint images are
         created for each skycell-instrument/detector/filter combination present in the query results. This
