@@ -10,8 +10,8 @@ inst_det = "acs_wfc"
 code_dir = os.path.abspath(__file__)
 base_dir = os.path.dirname(os.path.dirname(code_dir))
 pars_dir = os.path.join(base_dir,"drizzlepac","pars")
-cfg_index_fileanme = inst_det+"_index.cfg"
-cfg_index_filename = os.path.join(pars_dir,cfg_index_fileanme)
+cfg_index_filename = inst_det+"_index.cfg"
+cfg_index_filename = os.path.join(pars_dir,cfg_index_filename)
 
 
 with open(cfg_index_filename) as jsonFile:
