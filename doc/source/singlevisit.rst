@@ -272,7 +272,7 @@ input exposures using these header keywords for the stated rejection criteria.
     - Explanation
   * - OBSTYPE
     - (not IMAGING)
-    - Tyically only Imaging mode data is processed with the
+    - Typically only Imaging mode data is processed with the
   * -
     -
     - exception of SPECTROSCOPIC Grism and Prism images
