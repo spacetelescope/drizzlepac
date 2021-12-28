@@ -6,7 +6,7 @@ the number of tests found along with stats on the number of various types of
 WCS solutions in the final drizzle products.  A separate page will then be generated
 for each dataset with either a DRZ or DRC product.  That page will contain:
     - a full-frame view of the final product image
-    - a view of the centeral 256x256 region from the final product image
+    - a view of the central 256x256 region from the final product image
     - positions of any GAIA catalog sources overplotted on both images
     - a summary of the product; including:
         * WCSNAME
