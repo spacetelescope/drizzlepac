@@ -930,7 +930,7 @@ def buildEmptyDRZ(input, output):
     Create an empty DRZ file.
 
     This module creates an empty DRZ file in a valid FITS format so that the HST
-    pipeline can handle the Multidrizzle zero expossure time exception
+    pipeline can handle the Multidrizzle zero exposure time exception
     where all data has been excluded from processing.
 
     Parameters
