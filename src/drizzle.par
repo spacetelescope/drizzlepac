@@ -1,6 +1,6 @@
 data,f,a,"",,,Input data image 
 outdata,f,a,"",,,Output data image 
-outweig,f,h,"",,,Output weighting image 
+outweigh,f,h,"",,,Output weighting image 
 outcont,f,h,"",,,Output context image 
 in_mask,f,h,"",,,Input weighting mask 
 wt_scl,s,h,"exptime",,,"Weighting factor for input data image"
