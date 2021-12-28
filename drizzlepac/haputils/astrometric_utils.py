@@ -926,7 +926,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     source_box : int
         Size of box (in pixels) which defines the minimum size of a valid source.
     classify : bool
-        Specify whether or not to apply classification based on invarient moments
+        Specify whether or not to apply classification based on invariant moments
         of each source to determine whether or not a source is likely to be a
         cosmic-ray, and not include those sources in the final catalog.
     centering_mode : str
