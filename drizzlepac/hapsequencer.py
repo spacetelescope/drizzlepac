@@ -933,7 +933,7 @@ def update_wcs_in_visit(tdp):
 
     """
     log.info("\n***** Grism/Prism Image Processing *****")
-    # The TotalProduct (tdp) for this instrument/dectector has both a Grism/Prism
+    # The TotalProduct (tdp) for this instrument/detector has both a Grism/Prism
     # exposure list and a direct exposure list - both with contents.
     # Every image should (!) have an IDC_?????????-GSC240 solution.
     wcs_preference = ['IDC_?????????-GSC240', 'IDC_?????????']
