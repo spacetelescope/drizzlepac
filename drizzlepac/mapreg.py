@@ -303,7 +303,7 @@ def _regwrite(shapelist,outfile):
     # 3. ShapeList.write does not support mixed coordinate systems in a
     #    region list.
     #
-    # NOTE: This function is provided as a temoprary workaround for the above
+    # NOTE: This function is provided as a temporary workaround for the above
     #    listed problems of the ShapeList.write. We hope that a future version
     #    of pyregion will address all these issues.
     #
