@@ -128,7 +128,7 @@ def preserve_orig_files(hff_inputs,source_path,dest_path,verbose):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def resursive_print_all_nested_dict_values(old_dict,new_dict,recursion_level=0,recursion_limit=20):
-    """recursively print all elemnets of dictionary and highlight any changes.
+    """recursively print all elements of dictionary and highlight any changes.
     NOTE: This is a recursive subroutine.
 
     Parameters
