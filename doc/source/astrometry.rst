@@ -4,7 +4,7 @@
 Headerlets and You: Astrometry in Drizzle Products
 ===================================================
 
-The astrometry for any given observation relies upon accurate pointing information from the telescope.   However, HST has evolved over time since it was put into orbit, with the focus changing over time as the telescope desorbs.  The instruments have also changed positions over time relative to the FGS guides, and the coordinates for the guide stars were orginally determined using ground-based information.  All this has limited the calculation of the pointing of any given observation on the sky (absolute astrometry) to no better than 1-2 arc-seconds.
+The astrometry for any given observation relies upon accurate pointing information from the telescope.   However, HST has evolved over time since it was put into orbit, with the focus changing over time as the telescope desorbs.  The instruments have also changed positions over time relative to the FGS guides, and the coordinates for the guide stars were originally determined using ground-based information.  All this has limited the calculation of the pointing of any given observation on the sky (absolute astrometry) to no better than 1-2 arc-seconds.
 
 Calibration of the distortion model for each instrument has been done well enough to allow observations to be combined (relative astrometry) with an accuracy of better than 5 milli-arcseconds.  This has made the absolute astrometry inaccuracy stand out even more, making it more difficult to compare observations taken at different times or to compare HST data with observations from other telescopes (like Chandra).
 
