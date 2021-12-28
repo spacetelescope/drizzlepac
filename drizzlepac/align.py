@@ -490,7 +490,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                         # Figure out which fit solution to go with based on fit_quality value and maybe also total_rms
                         if fit_quality < 5:
                             best_matches = fit_num > best_num_matches
-                            if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
+                            if fit_quality == 1:  # valid, non-compromised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
                                 best_fit_label = (catalog_name, algorithm_name)
                                 best_num_matches = fit_num
