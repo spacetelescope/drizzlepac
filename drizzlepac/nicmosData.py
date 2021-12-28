@@ -177,7 +177,7 @@ class NICMOSInputImage(imageObject):
 
         """
 
-        # Read the temperature dependeant dark file.  The name for the file is taken from
+        # Read the temperature dependent dark file.  The name for the file is taken from
         # the TEMPFILE keyword in the primary header.
         tddobj = readTDD.fromcalfile(self.name)
 
