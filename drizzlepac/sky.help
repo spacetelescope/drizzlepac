@@ -248,7 +248,7 @@ Second, two new methods have been introduced: ``'globalmin'`` and
 
 - The ``'match'`` algorithm is somewhat
   similar to the traditional sky subtraction method (`skymethod`\ =\
-  ``'localmin'``\ ) in the sense that it measures the sky indipendently
+  ``'localmin'``\ ) in the sense that it measures the sky independently
   in input images (or detector chips). The major differences are that,
   unlike the traditional method,
 
