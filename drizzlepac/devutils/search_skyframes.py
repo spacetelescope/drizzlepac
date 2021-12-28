@@ -46,7 +46,7 @@
         results. If turned on, footprint fits files will be generated that show the footprints of the images
         returned by the query result in the skycell in which they reside. Additional footprint images are
         created for each skycell-instrument/detector/filter combination present in the query results. This
-        input arguemnt does not expect any additional information. Simply specifying "-v" turns on the
+        input argument does not expect any additional information. Simply specifying "-v" turns on the
         footprint generation.
 
         - The '--output_columns' option allows users to specify which columns to display (and optionally
