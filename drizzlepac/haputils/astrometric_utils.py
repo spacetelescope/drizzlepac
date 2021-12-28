@@ -930,7 +930,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         of each source to determine whether or not a source is likely to be a
         cosmic-ray, and not include those sources in the final catalog.
     centering_mode : str
-        "segmentaton" or "starfind"
+        "segmentation" or "starfind"
         Algorithm to use when computing the positions of the detected sources.
         Centering will only take place after `threshold` has been determined, and
         sources are identified using segmentation.  Centering using `segmentation`
