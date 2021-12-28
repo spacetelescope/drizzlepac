@@ -195,7 +195,7 @@ For example,
      1  SCI           1 ImageHDU       167   (250, 250)   float64   
      2  WHT           1 ImageHDU        70   (250, 250)   float64   
 
-   where the first extention or combined SCI extension header contains
+   where the first extension or combined SCI extension header contains
    O_EXT_NM= 'SCI     '           / Original extension name.                       
    ORIG_EXT=                    1 / Extension in original file.                    
    F01_K01 = 'EXTNAME '           / Keyword                                        
