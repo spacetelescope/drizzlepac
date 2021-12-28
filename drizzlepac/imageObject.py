@@ -254,7 +254,7 @@ class baseImageObject:
 
             Ok, I added another option. If you want to get all the data
             extensions EXCEPT a particular one, leave extname=NONE and
-            set exclude=EXTNAME. This is helpfull cause you might not know
+            set exclude=EXTNAME. This is helpful cause you might not know
             all the extnames the image has, this will find out and exclude
             the one you do not want overwritten.
         """
