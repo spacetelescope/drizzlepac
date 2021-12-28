@@ -109,7 +109,7 @@ outpath : string (Default = ``./regions``)
 
 filter : string {'None', 'fast', or 'precise' } (Default = 'None')
     Specify whether or not to remove the regions in the transformed region files
-    that are outside the image array. With the 'fast' mehod only intersection
+    that are outside the image array. With the 'fast' method only intersection
     of the bounding boxes is being checked.
 
     .. note::
