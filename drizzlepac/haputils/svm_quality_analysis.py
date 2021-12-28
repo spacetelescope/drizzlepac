@@ -1603,7 +1603,7 @@ def run_hla_sourcelist_comparison(total_list, diagnostic_mode=False, json_timest
     """
     log.setLevel(log_level)
     log.info('\n\n*****     Begin Quality Analysis Test: run_hla_sourcelist_comparison.     *****\n')
-    # get HLA classic path details from envroment variables
+    # get HLA classic path details from environment variables
     hla_classic_basepath = os.getenv('HLA_CLASSIC_BASEPATH')
     hla_build_ver = os.getenv("HLA_BUILD_VER")
     for tot_obj in total_list:
