@@ -41,7 +41,7 @@ def read_ci_apcorr_file(ci_lookup_file_path, diagnostic_mode=False, infile_name=
 
     Returns
     -------
-    ci_table : dicitonary
+    ci_table : dictionary
         CI information
     """
     code_dir = os.path.abspath(__file__)

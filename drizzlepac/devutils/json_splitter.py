@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""searches through hap_pars subdirectory tree and splits the json file 'default_values' dictinary into one
+"""searches through hap_pars subdirectory tree and splits the json file 'default_values' dictionary into one
 file, and the 'parameter_values' into another."""
 
 import json
