@@ -168,7 +168,7 @@ def recursive_print_all_nested_dict_values(old_dict,new_dict,recursion_level=0,r
 # ----------------------------------------------------------------------------------------------------------------------
 
 def run_compare_sourcelists(hff_inputs, log_level):
-    """locate HLA classic image and sourcelists, convert HLA classic sorucelist X, Y, RA and Dec to HAP ref frame for
+    """locate HLA classic image and sourcelists, convert HLA classic sourcelist X, Y, RA and Dec to HAP ref frame for
     apples-to-apples comparison, and run comparison code
 
     Parameters

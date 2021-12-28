@@ -1335,7 +1335,7 @@ class HAPPointCatalog(HAPCatalogBase):
         """Transform lists of X and Y coordinates to lists of RA and Dec coordinates
         This is a temporary solution until something like pix2sky or pix2world can be implemented in measure_sources.
 
-        directly lifted from hla classic subroutine hla_sorucelist.Transform_list_xy_to_RA_Dec()
+        directly lifted from hla classic subroutine hla_sourcelist.Transform_list_xy_to_RA_Dec()
 
         Tested.
 
