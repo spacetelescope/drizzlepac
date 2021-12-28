@@ -665,9 +665,9 @@ def make_flag_mask(matched_flag_values, good_flag_sum, missing_mask):
         bad_bit_list = np.invert(good_bit_list.astype(bool)) # invert good bit list to make bad bit list
     ctr = 0
     for refFlagVal, compFlagVal in zip(matched_flag_values[0], matched_flag_values[1]):
-        refFlag_list = deconstruct_flag(refFlagVal) # break ref flag bit sum into list of componant bits
+        refFlag_list = deconstruct_flag(refFlagVal) # break ref flag bit sum into list of component bits
         full_refFlag_list.append(refFlag_list)
-        compFlag_list = deconstruct_flag(compFlagVal) # break comp flag bit sum into list of componant bits
+        compFlag_list = deconstruct_flag(compFlagVal) # break comp flag bit sum into list of component bits
         full_compFlag_list.append(compFlag_list)
         if good_flag_sum != 255:
             merged_flag_val = np.logical_or(refFlag_list, compFlag_list) # merge comp and ref flag lists
