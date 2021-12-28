@@ -129,7 +129,7 @@ class Image:
         # Need to count number of SCI extensions
         #  (assume a valid WCS with each SCI extension)
         #TODO: current check for a valid WCS may need a revision to
-        # implement a more robust/rigurous check.
+        # implement a more robust/rigorous check.
         # This verification has already been done when finding 'wcsextn'
 
 
