@@ -116,7 +116,7 @@ def calc_aperture_mmm(data, mask, sigma_clip):
 
     Returns
     -------
-    mean : flaot
+    mean : float
         Mean pixel value
 
     median : float
