@@ -210,7 +210,7 @@ if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Compare Sourcelists')
     # required positional input arguments
     PARSER.add_argument('sourcelistNames', nargs=2,help='A space-separated pair of sourcelists to compare. The first sourcelist is assumed to be the reference sourcelist that the second is being compared to.')
-    PARSER.add_argument('-c', '--coordsys',required=False,default='xy',choices=['xy','radec'],help='Coordinate system to use for plotting sources. Choices are either "xy" for simple x-y coords, or "radec" for fk5 right ascention and declination values in degrees. Default is "xy".')
+    PARSER.add_argument('-c', '--coordsys',required=False,default='xy',choices=['xy','radec'],help='Coordinate system to use for plotting sources. Choices are either "xy" for simple x-y coords, or "radec" for fk5 right ascension and declination values in degrees. Default is "xy".')
     PARSER.add_argument('-i', '--imageName', required=True, help='Image to overplot flags on in ds9')
     ARGS = PARSER.parse_args()
 

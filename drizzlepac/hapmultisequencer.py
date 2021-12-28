@@ -99,7 +99,7 @@ def rename_output_products(filter_obj, output_file_prefix=None):
         during the MVM custom mosaic generation process. If not explicitly specified, all output files will
         start with the following formatted text string:
         "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
-        ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+        ra<##>d<####> are the whole-number and decimal portions of the right ascension, respectively, and
         dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
         that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
         skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
@@ -118,7 +118,7 @@ def rename_output_products(filter_obj, output_file_prefix=None):
         log.info("Generating output file prefix based on skycell, RA and Dec info from WCS...")
         # Start with the projection cell name
         output_file_prefix = "hst_" + filter_obj.exposure_name.split("x")[0] + "-"
-        # add right ascention
+        # add right ascension
         text_ra = str(filter_obj.meta_wcs.wcs.crval[0])
         ra_string = "ra{}d{}-".format(text_ra.split(".")[0], text_ra.split(".")[1])
         output_file_prefix += ra_string
@@ -302,7 +302,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         during the MVM custom mosaic generation process. If not explicitly specified, all output files will
         start with the following formatted text string:
         "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
-        ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+        ra<##>d<####> are the whole-number and decimal portions of the right ascension, respectively, and
         dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
         that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
         skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be

@@ -51,7 +51,7 @@ USAGE:
       files created by hapmultisequencer.py during the MVM custom mosaic generation process. If not
       explicitly specified, all output files will start with the following formatted text string:
       "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
-      ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+      ra<##>d<####> are the whole-number and decimal portions of the right ascension, respectively, and
       dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
       that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
       skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
@@ -354,7 +354,7 @@ def perform(input_image_source, log_level='info', output_file_prefix=None, skip_
         during the MVM custom mosaic generation process. If not explicitly specified, all output files will
         start with the following formatted text string:
         "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where p<pppp> is the projection cell ID,
-        ra<##>d<####> are the whole-number and decimal portions of the right ascention, respectively, and
+        ra<##>d<####> are the whole-number and decimal portions of the right ascension, respectively, and
         dec<n|s><##>d<####> are the whole-number and decimal portions of the declination, respectively. Note
         that the "<n|s>" denotes if the declination is north (positive) or south (negative). Example: For
         skycell = 1974, ra = 201.9512, and dec = +26.0012, The filename prefix would be
@@ -463,7 +463,7 @@ def main():
                              'explicitly specified, all output files will start with the following formatted '
                              'text string: "hst-skycell-p<pppp>-ra<##>d<####>-dec<n|s><##>d<####>", where '
                              'p<pppp> is the projection cell ID, ra<##>d<####> are the whole-number and '
-                             'decimal portions of the right ascention, respectively, and dec<n|s><##>d<####> '
+                             'decimal portions of the right ascension, respectively, and dec<n|s><##>d<####> '
                              'are the whole-number and decimal portions of the declination, respectively. '
                              'Note that the "<n|s>" denotes if the declination is north (positive) or south '
                              '(negative). Example: For skycell = 1974, ra = 201.9512, and dec = +26.0012, '
