@@ -1583,7 +1583,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                              rw2d_source_fraction=self._rw2d_source_fraction)
 
                 # Compute the ratio of big sources/islands using Custom/Gaussian kernel vs Rickerwavelet kernel
-                # This value can be used as a discriminant between overlapping point sources and nebulousity fields
+                # This value can be used as a discriminant between overlapping point sources and nebulosity fields
                 ratio_cg2rw_bigsource = 3.0
                 if rw_bs > 0.0:
                     ratio_cg2rw_bigsource = g_bs / rw_bs
@@ -1693,14 +1693,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # deblending for an unreasonable amount of time (days).
                         #
                         # Also, the ratio_cg2rw_bigsource is indicative of overlapping PSFs versus large
-                        # areas of nebulousity. If this ratio is approximately > 2, then deblending can be
+                        # areas of nebulosity. If this ratio is approximately > 2, then deblending can be
                         # quite efficient and successful for the overlapping PSF case.
                         #
                         # Use the Round 2 RickerWavelet segmentation image
                         if not rw_is_big_crowded or (rw_is_big_crowded and (ratio_cg2rw_bigsource > self._ratio_bigsource_limit)):
                             log.info("The Round 2 of segmentation images may still contain big sources/islands.\n"
                                      "However, the ratio between the Custom/Gaussian and Rickerwavelet biggest source is\n"
-                                     "indicative of overlapping PSFs vs nebulousity.")
+                                     "indicative of overlapping PSFs vs nebulosity.")
                             log.info("Proceeding as the time to deblend should be nominal.")
                             self.kernel = rw2d_kernel
                             segm_img = copy.deepcopy(rw_segm_img)
