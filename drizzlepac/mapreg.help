@@ -15,7 +15,7 @@ input_reg : string or list of strings (Default = '')
     in this release. Regions specified in image-like coordinates (e.g., image,
     physical) will be ignored.
 
-    This paramater can be provided in any of several forms:
+    This parameter can be provided in any of several forms:
 
      - filename of a single image
      - comma-separated list of filenames
@@ -29,7 +29,7 @@ images : string or list of strings (Default = ``*.fits``)
     FITS images onto which the region files `input_reg` will be mapped. These
     image files must contain WCS information in their headers in order to
     convert `input_reg` from sky coordinates to correct image coordinates.
-    This paramater can be provided in any of several forms:
+    This parameter can be provided in any of several forms:
 
      - filename of a single image
      - filename of an association (ASN)table
@@ -87,7 +87,7 @@ chip_reg : string or list of strings (Default = '')
     regions to exclude parts of the image specific to the detector **chip**
     (e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
     images) from being used for source finding.
-    This paramater can be provided in one of the following forms:
+    This parameter can be provided in one of the following forms:
 
      - filename of a single image (if ``img_wcs_ext`` specifies a single FITS
        extension);

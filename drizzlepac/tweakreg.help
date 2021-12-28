@@ -10,7 +10,7 @@ Parameters
 ----------
 file : str or list of str  (Default = ``'*flt.fits'``)
     Input files (passed in from *files* parameter)
-    This paramater can be provided in any of several forms:
+    This parameter can be provided in any of several forms:
 
      - filename of a single image
      - filename of an association (ASN)table
