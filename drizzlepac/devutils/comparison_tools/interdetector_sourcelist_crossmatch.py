@@ -197,7 +197,7 @@ def compute_stats(diff_ra, title):
     
 # =======================================================================================================================
 def generate_sorted_region_file(diff_ra, ref_xy, comp_xy, ref_flags, comp_flags):
-    # #subtact off 3x3 sigma-clipped mean to eliminate any large-scale systemic offsets
+    # #subtract off 3x3 sigma-clipped mean to eliminate any large-scale systemic offsets
     # sigma = 3
     # n_iters = 3
     # clipped_stats = sigma_clipped_stats(diff_ra, sigma=sigma, maxiters=n_iters)
