@@ -195,7 +195,7 @@ and save the files in image CS as, e.g., ``img1_chip_sci2.reg`` (in our example
 this will be the only chip that needs "special" treatment).
 
 Finally, let's say we want to "replicate" the "master" region file to all SCI
-exctensions of the ``img*.fits`` images as well as to the 2nd DQ extension and to
+extensions of the ``img*.fits`` images as well as to the 2nd DQ extension and to
 the 8th extension of the ``img*.fits`` images.
 
 To do this we run:
