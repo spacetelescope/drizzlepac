@@ -62,7 +62,7 @@
 
     Search for all ACS/WFC F814W observations located in skycell p0123x45y67 taken during 2015; return
     date and exposure name; sort by date; write results to file 'query_results.csv'; generate footprint
-    visualization footprint fits imaages
+    visualization footprint fits images
 
         >>> search_skyframes -c ACS/WFC -d 2015-01-01 2015-12-31 -f f814w -s p0123x45y67 -o query_results.csv -v --output_columns dateobs, exposure --output_sorting dateobs
     """
