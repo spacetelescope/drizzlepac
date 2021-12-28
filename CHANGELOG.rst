@@ -268,7 +268,7 @@ were also implemented.
   for exposures with 'drz' in the rootname. [#523]
 
 - Implement multiple levels of verification for the drizzle products generated
-  during pipeline processing (using runastrodriz); including overlapp difference
+  during pipeline processing (using runastrodriz); including overlap difference
   computations [#520], and magnitude correlation [#512].
 
 - Replace alignimages module with O-O based align [#512]
