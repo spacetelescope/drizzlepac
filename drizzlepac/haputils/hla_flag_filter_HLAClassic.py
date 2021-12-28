@@ -78,8 +78,8 @@ y_limit = 2051.
 
 
 @util.with_logging
-def run_source_list_flaging(all_drizzled_filelist, filter_sorted_flt_dict,param_dict, exp_dictionary_scis,
-                            dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, drz_root_dir, debug=True):
+def run_source_list_flagging(all_drizzled_filelist, filter_sorted_flt_dict,param_dict, exp_dictionary_scis,
+                             dict_newTAB_matched2drz, phot_table_matched2drz, proc_type, drz_root_dir, debug=True):
     """Simple calling subroutine that executes the other flagging subroutines.
 
     Parameters
@@ -1332,10 +1332,10 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
 
 # +++++++++++++++++++++++++++++++++++++++ OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # These subroutines are the older versions of the subroutines that did not use persistant in-memory storage of the catalogs.
-def run_source_list_flaging_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict,
-                                readnoise_dictionary_drzs, scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
-                                detection_image, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type,
-                                drz_root_dir,rms_dict):
+def run_source_list_flagging_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict,
+                                 readnoise_dictionary_drzs, scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
+                                 detection_image, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type,
+                                 drz_root_dir,rms_dict):
     """Simple calling subroutine that executes the other flagging subroutines. OLDER FILE-BASED VERSIONS!
 
     Parameters
