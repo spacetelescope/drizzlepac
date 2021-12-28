@@ -255,7 +255,7 @@ class staticMask:
     def saveToFile(self,imageObjectList):
         """ Saves the static mask to a file
             it uses the signatures associated with each
-            mask to contruct the filename for the output mask image.
+            mask to construct the filename for the output mask image.
         """
         virtual = imageObjectList[0].inmemory
 
