@@ -175,7 +175,7 @@ match(const integer_t* a /*[n]*/, const integer_t* b /*[n]*/,
   return 1;
 }
 
-/* A comparision predicate for use with qsort, used by update_context */
+/* A comparison predicate for use with qsort, used by update_context */
 static int
 _compare_integer_t(const void* a, const void* b) {
   integer_t ad = *(integer_t*)a;

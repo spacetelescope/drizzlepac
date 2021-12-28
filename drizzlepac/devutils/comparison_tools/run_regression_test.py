@@ -88,7 +88,7 @@ def find_matched_sourcelists(ref_path,comp_path):
     Generate a list of sourcelists found in both ref_path/logs and comp_path/logs.
 
     :param ref_path: input reference path
-    :param comp_path: input comparision path
+    :param comp_path: input comparison path
     :type ref_path: string
     :type comp_path: sting
     :return: list of sourcelists found in both ref_path/logs and comp_path/logs.
@@ -111,13 +111,13 @@ if __name__ == "__main__":
     # required positional input arguments
     PARSER.add_argument('pathNames', nargs=2, help='A space-separated pair of paths where images to compare can be found.')
 
-    # optional sourcelist comparision input arguments
+    # optional sourcelist comparison input arguments
     PARSER.add_argument('-m', '--diffMode', required=False, choices=["absolute", "pmean","pdynamic"], default="pmean",
                         help='How should the comp-ref difference be calculated? "absolute" is simply the stright comp-ref difference. "peman" is the mean percent difference ((C-R)/avg(R)) x 100. "pdynamic" is the dynamic percent difference ((C-R)/R) x 100. Default value is "pmean".')
     PARSER.add_argument('-p', '--plotGen', required=False, choices=["screen", "file", "none"], default="none",
                         help='Generate Plots? "screen" displays plots on-screen. "file" saves them to a .pdf file, and "none" skips all plot generation.')
 
-    # optional image comparision input arguments
+    # optional image comparison input arguments
     PARSER.add_argument('-c', '--comparisonType', required=False, choices=["pixel data", "header data", "both"],
                         default="both",
                         help='Compare just image pixel data, just image header data, or both image pixel and image header data? Default value is "both".')

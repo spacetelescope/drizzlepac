@@ -101,7 +101,7 @@ def preserve_orig_files(hff_inputs,source_path,dest_path,verbose):
             if len(found_files) > 0:
                 files_to_move = files_to_move + found_files
 
-        found_files = glob.glob("*_comparision_plots.pdf")
+        found_files = glob.glob("*_comparison_plots.pdf")
         if len(found_files) > 0:
             files_to_move = files_to_move + found_files
         if not os.path.exists(dest_path):
@@ -169,7 +169,7 @@ def resursive_print_all_nested_dict_values(old_dict,new_dict,recursion_level=0,r
 
 def run_compare_sourcelists(hff_inputs, log_level):
     """locate HLA classic image and sourcelists, convert HLA classic sorucelist X, Y, RA and Dec to HAP ref frame for
-    apples-to-apples comparision, and run comparision code
+    apples-to-apples comparison, and run comparison code
 
     Parameters
     ----------
@@ -236,7 +236,7 @@ def run_compare_sourcelists(hff_inputs, log_level):
     log.info("HAP catalog:                 {}".format(os.path.basename(hap_sourcelist_name)))
     log.info("HLA Classic catalog:         {}".format(os.path.basename(updated_hla_sourcelist_name)))
 
-    # once all file exist checks are passed, execute sourcelist comparision
+    # once all file exist checks are passed, execute sourcelist comparison
 
     return_status = compare_sourcelists.comparesourcelists([updated_hla_sourcelist_name, hap_sourcelist_name],
                                                            [hla_imgname, hap_imgname], good_flag_sum=255,
