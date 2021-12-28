@@ -1039,7 +1039,7 @@ def readcols(infile, cols=[0, 1, 2, 3], hms=False):
     Returns
     -------
     outarr : list of numpy arrays
-        Simple list of numpy arrays in the order as specifed in the 'cols' parameter.
+        Simple list of numpy arrays in the order as specified in the 'cols' parameter.
 
     """
 

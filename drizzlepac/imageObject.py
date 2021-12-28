@@ -929,7 +929,7 @@ class baseImageObject:
             value = None
 
         if value and (keyword is not None and keyword.strip() != ''):
-            exceptionMessage = "ERROR: Your input is ambiguous!  Please specify either a value or a keyword.\n  You specifed both " + str(value) + " and " + str(keyword)
+            exceptionMessage = "ERROR: Your input is ambiguous!  Please specify either a value or a keyword.\n  You specified both " + str(value) + " and " + str(keyword)
             raise ValueError(exceptionMessage)
 
         elif value is not None and value != '':

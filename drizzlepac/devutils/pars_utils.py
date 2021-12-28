@@ -98,7 +98,7 @@ def batch_run_cfg2json():
 
 
 def reformat_json_file(infilename, outfilename, clobber=False):
-    """Reformat user-specifed input json file to use standard (indent = 4) format
+    """Reformat user-specified input json file to use standard (indent = 4) format
 
     Parameters
     ----------
