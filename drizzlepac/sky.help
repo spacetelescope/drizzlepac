@@ -1,4 +1,4 @@
-Function for computing and subtracting (or equalizing/matching) the backgroud
+Function for computing and subtracting (or equalizing/matching) the background
 in input images. The algorithm for sky subtraction can be selected through
 the `skymethod` parameter. This function will update the ``MDRIZSKY`` keyword
 in the headers of the input files.

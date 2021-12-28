@@ -186,7 +186,7 @@ class AlignmentTable:
                                               bkg_estimator=self.alignment_pars['bkg_estimator'],
                                               rms_estimator=self.alignment_pars['rms_estimator'],
                                               threshold_flag=self.alignment_pars['threshold'])
-                    log.info("Finished computing revised BACKROUND")
+                    log.info("Finished computing revised BACKGROUND")
                     catimg.build_kernel(fwhmpsf)
                     log.info("Finished determining revised kernel")
 
