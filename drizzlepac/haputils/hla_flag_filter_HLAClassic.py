@@ -267,8 +267,8 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
         # Write out list of ONLY failed rows to to file
         catalog_name_failed = catalog_name_root + '_Failed-CI.txt'
         catalog_data_failed = catalog_data.copy()
-        all_indicies = range(0, len(catalog_data))
-        rows_to_remove = [z for z in all_indicies if z not in failed_index_list]
+        all_indices = range(0, len(catalog_data))
+        rows_to_remove = [z for z in all_indices if z not in failed_index_list]
         catalog_data_failed.remove_rows(rows_to_remove)
         catalog_data_failed.write(catalog_name_failed,delimiter=",",format='ascii')
 
@@ -2914,7 +2914,7 @@ def xymatch(cat1, cat2, sep, multiple=False, stack=True, verbose=True):
 
     Returns
     -------
-    Varies; Depending on inputs, either just 'p2', or 'p1' and 'p2'. p1 and p2 are lists of matched indicies
+    Varies; Depending on inputs, either just 'p2', or 'p1' and 'p2'. p1 and p2 are lists of matched indices
     """
     if not (isinstance(cat1, numpy.ndarray) and len(cat1.shape)==2 and cat1.shape[1]==2):
         raise ValueError("cat1 must be a [N,2] array")

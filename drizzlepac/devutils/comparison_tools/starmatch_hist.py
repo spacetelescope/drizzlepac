@@ -55,7 +55,7 @@ def run(source_list_dict, log_level,minimum_match=10, xref=0.0, yref=0.0, postar
     :type xref: float
     :type yref: float
     :type postarg: dictionary
-    :returns: dictionary of lists of matching sourcelist indicies indexed by coo filename.
+    :returns: dictionary of lists of matching sourcelist indices indexed by coo filename.
     """
     log.setLevel(log_level)
     out_dict={}

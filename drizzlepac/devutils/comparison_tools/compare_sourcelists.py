@@ -905,7 +905,7 @@ def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, catalog_names, 
                 xBinMax = xBinMin + binSize
                 yBinMin = yBinCtr
                 yBinMax = yBinMin + binSize
-                # get indicies of x and y within bounding box
+                # get indices of x and y within bounding box
                 ix0 = np.where((x[0, :] >= xBinMin) & (x[0, :] < xBinMax) & (y[0, :] >= yBinMin) & (y[0, :] < yBinMax))
                 if len(dx[ix0]) > 0 and len(dy[ix0]) > 0:  # ignore empty bins
                     p_x = np.append(p_x, xBinCtr + 0.5 * binSize)  # X and Y position at center of bin.

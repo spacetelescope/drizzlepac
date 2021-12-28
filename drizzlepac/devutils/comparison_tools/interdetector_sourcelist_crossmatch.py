@@ -203,7 +203,7 @@ def generate_sorted_region_file(diff_ra, ref_xy, comp_xy, ref_flags, comp_flags)
     # clipped_stats = sigma_clipped_stats(diff_ra, sigma=sigma, maxiters=n_iters)
     # diff_ra_meansub = diff_ra - clipped_stats[0]
     #
-    # # get indicies of above array sorted by absolute value
+    # # get indices of above array sorted by absolute value
     # # actual array still maintains sign (i.e. positive or negitve value)
     # sorted_idx = np.argsort(abs(diff_ra_meansub))[::-1]
     sorted_idx = np.argsort(abs(diff_ra))[::-1]
