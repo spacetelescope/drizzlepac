@@ -72,7 +72,7 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
     Parameters
     ----------
     phot_apertures : photutils PixelAperture object (or subclass)
-        The PhotUtils apertures object to compute the photometry. i.e. the object returned via CirularAperture.
+        The PhotUtils apertures object to compute the photometry. i.e. the object returned via CircularAperture.
 
     bg_apertures : photutils PixelAperture object (or subclass)
         The phoutils aperture object to measure the background in. i.e. the object returned via CircularAnnulus.

@@ -61,7 +61,7 @@ def aperture_stats_tbl(data, apertures, method='exact', sigma_clip=True):
         The data for the image to be measured.
 
     apertures : photutils PixelAperture object (or subclass)
-        The phoutils aperture object to measure the stats in. i.e. the object returned via CirularAperture,
+        The phoutils aperture object to measure the stats in. i.e. the object returned via CircularAperture,
         CircularAnnulus, or RectangularAperture etc.
 
     method : sting
