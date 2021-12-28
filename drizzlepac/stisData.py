@@ -145,7 +145,7 @@ class CCDInputImage(STISInputImage):
 
         :units: DN
 
-        This should work on a chip, since different chips to be consistant with other
+        This should work on a chip, since different chips to be consistent with other
         detector classes where different chips have different gains.
 
         """
