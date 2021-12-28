@@ -1331,7 +1331,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
 
 
 # +++++++++++++++++++++++++++++++++++++++ OLD VERSIONS +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# These subroutines are the older versions of the subroutines that did not use persistant in-memory storage of the catalogs.
+# These subroutines are the older versions of the subroutines that did not use persistent in-memory storage of the catalogs.
 def run_source_list_flagging_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_dict, param_dict,
                                  readnoise_dictionary_drzs, scale_dict_drzs, zero_point_AB_dict, exp_dictionary_scis,
                                  detection_image, dict_newTAB_matched2drz, phot_table_matched2drz, proc_type,
