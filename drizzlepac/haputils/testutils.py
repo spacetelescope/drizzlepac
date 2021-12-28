@@ -20,7 +20,7 @@ def compare_wcs_alignment(dataset, force=False):
         This code will ALWAYS make sure the ASTROMETRY_STEP_CONTROL variable
         is set to "ON" when running and will reset to the original state when
         completed.  This insures that the code ALWAYS queries the astrometry
-        database to apply all avaialable a priori WCS solutions.
+        database to apply all available a priori WCS solutions.
 
         Parameters
         -----------
