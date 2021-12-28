@@ -734,7 +734,7 @@ def buildASNList(rootnames, asnname, check_for_duplicates=True):
         errstr += ('\nNew association files have been generated for each '
                    'version of these files.\n    %s\n    %s\n\nPlease '
                    're-start astrodrizzle using of these new ASN files or '
-                   'use widlcards for the input to only select one type of '
+                   'use wildcards for the input to only select one type of '
                    'input file.' % (dupasn, origasn))
 
         print(textutil.textbox(errstr), file=sys.stderr)
