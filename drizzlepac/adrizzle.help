@@ -112,7 +112,7 @@ driz_sep_bits : int (Default = 0)
     on Selecting the `Bits` Parameter for a more detailed discussion.
 
 driz_sep_wcs : bool (Default = No)
-    Define custom WCS for seperate output images?
+    Define custom WCS for separate output images?
 
 driz_sep_refimage : str (Default = '')
     Reference image from which a WCS solution can be obtained.
@@ -171,7 +171,7 @@ already taken care of backing up their original datafiles as the input
 file with be directly altered.
 
 There are two user interface function for this task, one to allow you to
-create seperately drizzled images of each image in your list and the other
+create separately drizzled images of each image in your list and the other
 to create one single output drizzled image, which is the combination of all
 of them::
 

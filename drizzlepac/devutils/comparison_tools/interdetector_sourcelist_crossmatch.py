@@ -262,7 +262,7 @@ if __name__ == "__main__":
                         help='A space-separated pair of sourcelists to compare. The first sourcelist is '
                              'assumed to be the reference sourcelist that the second is being compared to.')
     parser.add_argument('-i', '--img_list', nargs=2, required=True,
-                        help='A space-seperated list of containing the reference and comparison images '
+                        help='A space-separated list of containing the reference and comparison images '
                              'that correspond to reference and comparison sourcelists')
     parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true',
                         help='If this option is turned on, region files will be created to test the quality '

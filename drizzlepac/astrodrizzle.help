@@ -130,7 +130,7 @@ group : int (Default = None)
 build : bool (Default = No)
     When this parameter is set to ``'Yes'`` (`True`), AstroDrizzle will combine
     the separate 'drizzle' output files into a single multi-extension format
-    ``FITS`` file. This combined output file will contain seperate
+    ``FITS`` file. This combined output file will contain separate
     ``SCI`` (science), ``WHT`` (weight), and ``CTX`` (context) extensions.
     If this parameter is set to ``'No'`` (`False`), a separate simple ``FITS``
     file will be created for each aforementioned extension.
@@ -493,7 +493,7 @@ driz_sep_bits : int, str, or None (Default = 0)
 **STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS**
 
 driz_sep_wcs : bool (Default = No)
-    Define custom ``WCS`` for seperate output images?
+    Define custom ``WCS`` for separate output images?
 
 driz_sep_refimage : str (Default = '')
     Reference image from which a ``WCS`` solution can be obtained.

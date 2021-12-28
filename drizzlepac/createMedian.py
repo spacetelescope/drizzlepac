@@ -36,7 +36,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 # this is the user access function
 def median(input=None, configObj=None, editpars=False, **inputDict):
     """
-    Create a median image from the seperately drizzled images.
+    Create a median image from the separately drizzled images.
     """
     if input is not None:
         inputDict["input"] = input

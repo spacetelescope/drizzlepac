@@ -29,7 +29,7 @@
 
         - The '-f' option allows users to specify filter name(s) to search for. To search for ACS
         observations that use two spectral elements, enter the names of both spectral elements in any order
-        seperated by a dash. The expected format is filter name(s), lower-case; Example ACS two-spectral
+        separated by a dash. The expected format is filter name(s), lower-case; Example ACS two-spectral
         element input: "-f f606w-pol60v", Example single-filter input: "-f f814w"
 
         - The '-m' option allows users to specify the name of the master observations .csv file containing

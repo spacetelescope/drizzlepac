@@ -6,7 +6,7 @@ more than `static_sig` RMS below the mode for a given chip or extension.
 Those severely negative, or low pixels, might result from oversubtraction
 of bad pixels in the dark image, or high sky levels during calibration.
 For example, each ACS WFC image contains a separate image for each of 2 CCDs,
-and seperate masks will be generated for each chip accordingly.
+and separate masks will be generated for each chip accordingly.
 
 The final static mask for each chip contains all of the bad pixels that meet
 this criteria from all of the input images along with any bad pixels that
