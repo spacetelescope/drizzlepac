@@ -1185,7 +1185,7 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                 epadu=self.gain)
 
         # calculate and add RA and DEC columns to table
-        ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["X-Center"], photometry_tbl["Y-Center"], self.imgname)  # TODO: replace with all_pix2sky or somthing at a later date
+        ra, dec = self.transform_list_xy_to_ra_dec(photometry_tbl["X-Center"], photometry_tbl["Y-Center"], self.imgname)  # TODO: replace with all_pix2sky or something at a later date
         ra_col = Column(name="RA", data=ra, dtype=np.float64)
         dec_col = Column(name="DEC", data=dec, dtype=np.float64)
         photometry_tbl.add_column(ra_col, index=2)
@@ -1333,7 +1333,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
     def transform_list_xy_to_ra_dec(self, list_of_x, list_of_y, drizzled_image):
         """Transform lists of X and Y coordinates to lists of RA and Dec coordinates
-        This is a temporary solution until somthing like pix2sky or pix2world can be implemented in measure_sources.
+        This is a temporary solution until something like pix2sky or pix2world can be implemented in measure_sources.
 
         directly lifted from hla classic subroutine hla_sorucelist.Transform_list_xy_to_RA_Dec()
 
