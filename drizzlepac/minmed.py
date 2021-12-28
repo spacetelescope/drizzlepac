@@ -19,7 +19,7 @@ or median image based up bad pixel identification.
 #        MDRIZTAB -- CJH/WJH -- 07/08/04
 #      Version 0.1.2: Improve error message handing in the case where
 #        the boxcar convolution step fails.  --CJH -- 10/13/04
-#      Version 0.2.0: The creation of the median image will now more closesly
+#      Version 0.2.0: The creation of the median image will now more closely
 #        replicate the IRAF IMCOMBINE behavior of nkeep = 1 and nhigh = 1.
 #        -- CJH -- 03/29/05
 #      Version 0.3.0: Rewritten to optimize the code and to bring
