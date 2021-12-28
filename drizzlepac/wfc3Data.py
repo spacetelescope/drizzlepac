@@ -124,17 +124,17 @@ class WFC3UVISInputImage(WFC3InputImage):
             darkcurrent = self._image[self.scienceExt, chip].header['MEANDARK']
 
         except:
-            msg =  "#############################################\n"
-            msg += "#                                           #\n"
-            msg += "# Error:                                    #\n"
-            msg += "#   Cannot find the value for 'MEANDARK'    #\n"
-            msg += "#   in the image header.  WFC3 input images #\n"
-            msg += "#   are expected to have this header        #\n"
-            msg += "#   keyword.                                #\n"
-            msg += "#                                           #\n"
-            msg += "# Error occured in WFC3UVISInputImage class #\n"
-            msg += "#                                           #\n"
-            msg += "#############################################\n"
+            msg =  "##############################################\n"
+            msg += "#                                            #\n"
+            msg += "# Error:                                     #\n"
+            msg += "#   Cannot find the value for 'MEANDARK'     #\n"
+            msg += "#   in the image header.  WFC3 input images  #\n"
+            msg += "#   are expected to have this header         #\n"
+            msg += "#   keyword.                                 #\n"
+            msg += "#                                            #\n"
+            msg += "# Error occurred in WFC3UVISInputImage class #\n"
+            msg += "#                                            #\n"
+            msg += "##############################################\n"
             raise ValueError(msg)
 
         return darkcurrent
@@ -304,7 +304,7 @@ class WFC3IRInputImage(WFC3InputImage):
             str += "#   are expected to have this header        #\n"
             str += "#   keyword.                                #\n"
             str += "#                                           #\n"
-            str += "# Error occured in WFC3IRInputImage class   #\n"
+            str += "# Error occurred in WFC3IRInputImage class  #\n"
             str += "#                                           #\n"
             str += "#############################################\n"
             raise ValueError(str)

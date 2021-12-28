@@ -151,17 +151,17 @@ class NICMOSInputImage(imageObject):
             darkcurrent = self._image[0].header['exptime'] * \
                             self._image[self.scienceExt,1]._darkrate
         except:
-            str =  "#############################################\n"
-            str += "#                                           #\n"
-            str += "# Error:                                    #\n"
-            str += "#   Cannot find the value for 'EXPTIME'     #\n"
-            str += "#   in the image header.  NICMOS input      #\n"
-            str += "#   images are expected to have this header #\n"
-            str += "#   keyword.                                #\n"
-            str += "#                                           #\n"
-            str += "#Error occured in the NICMOSInputImage class#\n"
-            str += "#                                           #\n"
-            str += "#############################################\n"
+            str =  "###############################################\n"
+            str += "#                                             #\n"
+            str += "# Error:                                      #\n"
+            str += "#   Cannot find the value for 'EXPTIME'       #\n"
+            str += "#   in the image header.  NICMOS input        #\n"
+            str += "#   images are expected to have this header   #\n"
+            str += "#   keyword.                                  #\n"
+            str += "#                                             #\n"
+            str += "#Error occurred in the NICMOSInputImage class #\n"
+            str += "#                                             #\n"
+            str += "###############################################\n"
             raise ValueError(str)
 
         return darkcurrent

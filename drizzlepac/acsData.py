@@ -79,7 +79,7 @@ class ACSInputImage(imageObject):
             str += "#   are expected to have this header        #\n"
             str += "#   keyword.                                #\n"
             str += "#                                           #\n"
-            str += "# Error occured in the ACSInputImage class  #\n"
+            str += "# Error occurred in the ACSInputImage class #\n"
             str += "#                                           #\n"
             str += "#############################################\n"
             raise ValueError(str)
