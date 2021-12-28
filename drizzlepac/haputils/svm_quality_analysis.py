@@ -908,7 +908,7 @@ def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logg
     # Initiate logging!
     log.setLevel(log_level)
 
-    # 1: stack up xcentroid and ycentorid columns from sources table
+    # 1: stack up xcentroid and ycentroid columns from sources table
     xy_centroid_values = np.stack((filtobj_subdict['sources']['xcentroid'],
                                    filtobj_subdict['sources']['ycentroid']), axis=1)
 
