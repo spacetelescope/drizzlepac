@@ -713,7 +713,7 @@ class baseImageObject:
 
         We should overload this function in the instrument specific
         implementations so that we can add other stuff to the badpixel
-        mask? Like vignetting areas and chip boundries in nicmos which
+        mask? Like vignetting areas and chip boundaries in nicmos which
         are camera dependent? these are not defined in the DQ masks, but
         should be masked out to get the best results in multidrizzle.
         """
