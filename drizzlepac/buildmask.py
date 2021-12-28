@@ -58,7 +58,7 @@ def run(configObj=None, input_dict={}, loadOnly=False):
     if configObj is None:
         return
     # Define list of imageObject instances and output WCSObject instance
-    # based on input paramters
+    # based on input parameters
     imgObjList,outwcs = processInput.setCommonInput(configObj)
 
     # Build DQ masks for all input images.

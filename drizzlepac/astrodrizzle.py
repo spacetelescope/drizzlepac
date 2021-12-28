@@ -182,7 +182,7 @@ def run(configobj, wcsmap=None):
 
     try:
         # Define list of imageObject instances and output WCSObject instance
-        # based on input paramters
+        # based on input parameters
         imgObjList = None
         procSteps.addStep('Initialization')
         imgObjList, outwcs = processInput.setCommonInput(configobj)
