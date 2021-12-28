@@ -1051,7 +1051,7 @@ def interpret_fit_rms(tweakwcs_output, reference_catalog):
             tinfo = item.meta['fit_info']
             # When status = FAILED (fit failed) or REFERENCE (relative alignment done with first image
             # as the reference), skip to the beginning of the loop as there is no 'fit_info'.
-            if tinfo['status'] != 'SUCCESS' or (tinfo['status'] == 'SUCCESSS' and \
+            if tinfo['status'] != 'SUCCESS' or (tinfo['status'] == 'SUCCESS' and \
                 'fitmask' not in tinfo):
                 continue
             # Make sure to store data for any particular group_id only once.
