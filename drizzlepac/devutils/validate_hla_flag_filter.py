@@ -134,7 +134,7 @@ def resursive_print_all_nested_dict_values(old_dict,new_dict,recursion_level=0,r
     Parameters
     ----------
     old_dict : dictionary
-        origional dictionary whose elements will be printed and compared to corresponding new_dict elements
+        original dictionary whose elements will be printed and compared to corresponding new_dict elements
 
     new_dict : dictionary
         new dictionary whose elements will be printed and compared to corresponding old_dict elements
