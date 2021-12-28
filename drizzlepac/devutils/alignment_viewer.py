@@ -31,7 +31,7 @@ Alternatively, a single dataset can be summarized by simply using:
 
 >>> from drizzlepac.devutils import alignment_viewer
 >>> figure = create_product_page("iaal01hxq/iaal01hxq_drc.fits")
->>> figure.savefig("iaal01hxq_summmary.pdf")  # to write out a PDF file
+>>> figure.savefig("iaal01hxq_summary.pdf")  # to write out a PDF file
 
 
 """
