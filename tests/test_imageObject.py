@@ -22,7 +22,7 @@ class TestimageObject():
 
     #not sure if this is the correct way to do it
     def test_NoFilename(self,filename=''):
-        self.assertRaises(IOError,imageObject.imageObect,filename)
+        self.assertRaises(IOError,imageObject.imageObject,filename)
 
     def test_Attributes(self, filename="./j8uq10lbq_flt.fits"):
         image=imageObject.imageObject(filename)
