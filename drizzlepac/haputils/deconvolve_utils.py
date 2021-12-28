@@ -299,7 +299,7 @@ def rebuild_arr(block_arr, slices, new_shape, output_shape):
 
 
 def find_psf(imgname, path_root=None):
-    """Pull PSF from library based on unique combination of intrument/detector/filter.
+    """Pull PSF from library based on unique combination of instrument/detector/filter.
 
     Parameters
     ===========
