@@ -204,7 +204,7 @@ def generate_sorted_region_file(diff_ra, ref_xy, comp_xy, ref_flags, comp_flags)
     # diff_ra_meansub = diff_ra - clipped_stats[0]
     #
     # # get indices of above array sorted by absolute value
-    # # actual array still maintains sign (i.e. positive or negitve value)
+    # # actual array still maintains sign (i.e. positive or negative value)
     # sorted_idx = np.argsort(abs(diff_ra_meansub))[::-1]
     sorted_idx = np.argsort(abs(diff_ra))[::-1]
     region_filename = "testout.reg"
