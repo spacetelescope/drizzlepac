@@ -146,7 +146,7 @@ def _perform_deconv(img_block, psf, alpha):
     # U^H d
     D = np.fft.fft2(img_block)
 
-    # -dampped spectral components,
+    # -damped spectral components,
     # -also known as Wiener filtering
     # (conj(S)/(|S|^2 + alpha^2)) U^H d
     M = (np.conj(P) / (np.abs(P)**2.0 + alpha**2.0)) * D
