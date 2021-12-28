@@ -39,7 +39,7 @@ def read_csv_for_filenames():
     table = ascii.read(path, format="no_header")
     filename_column = table.colnames[0]
     filenames = list(table[filename_column])
-    print("\nread_csv_for_filenames. Filesnames from poller: {}".format(filenames))
+    print("\nread_csv_for_filenames. Filenames from poller: {}".format(filenames))
 
     return filenames
 
