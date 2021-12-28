@@ -185,7 +185,7 @@ class Image:
             catalog = catalogs.generateCatalog(wcs, mode=catalog_mode,
                         catalog=source, src_find_filters=excludefile, **kwargs)
 
-            # creaate DQ mask:
+            # create DQ mask:
             if self.dqbits is None:
                 mask = None
             else:
