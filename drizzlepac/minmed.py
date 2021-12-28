@@ -307,7 +307,7 @@ class minmed:
             del(rms_file)
             del(minimum_grow_file)
 
-            # Finally decide whether to use the minimim or the median (in counts/s),
+            # Finally decide whether to use the minimum or the median (in counts/s),
             # based on whether the median is more than 3 sigma above the minimum.
             #
             self.combArrObj = np.where(
@@ -317,7 +317,7 @@ class minmed:
             )
 
         else:
-            # Finally decide whether to use the minimim or the median (in counts/s),
+            # Finally decide whether to use the minimum or the median (in counts/s),
             # based on whether the median is more than 3 sigma above the minimum.
             #
             self.combArrObj = np.where(
@@ -620,7 +620,7 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
         )
         del rms_file, minimum_grow_file
 
-    # Finally decide whether to use the minimim or the median (in counts/s),
+    # Finally decide whether to use the minimum or the median (in counts/s),
     # based on whether the median is more than 3 sigma above the minimum.
     combined_array = np.where(
         np.less(minimum_file_weighted, median_rms_file),

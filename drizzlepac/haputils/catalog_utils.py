@@ -349,7 +349,7 @@ class CatalogImage:
                 # the larger of the two values.
                 if (bkg_rms < minimum_rms):
                     bkg_rms = minimum_rms
-                    log.info("Mimimum RMS of input based upon the readnoise, gain, number of exposures, and total exposure time: {}".format(minimum_rms))
+                    log.info("Minimum RMS of input based upon the readnoise, gain, number of exposures, and total exposure time: {}".format(minimum_rms))
                     log.info("Sigma-clipped RMS has been updated - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
                     log.info("")
 
