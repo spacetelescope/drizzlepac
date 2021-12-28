@@ -2116,7 +2116,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     focus_dict['prod'].append(float(focus_val))
     focus_dict['prod_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
 
-    # Determine statistics for evalaution
+    # Determine statistics for evaluation
     exparr = np.array(focus_dict['exp'])
     focus_dict['stats'] = {'mean': exparr.mean(), 'std': exparr.std(),
                            'min': exparr.min(), 'max': exparr.max()}
