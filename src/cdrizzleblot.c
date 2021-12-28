@@ -668,7 +668,7 @@ interpolate_sinc_(const float* data, const integer_t firstt,
                   struct driz_error_t* error UNUSED_PARAM) {
   const integer_t nconv = INTERPOLATE_SINC_NCONV;
   const integer_t nsinc = (nconv - 1) / 2;
-  /* TODO: This is to match Fortan, but is probably technically less precise */
+  /* TODO: This is to match Fortran, but is probably technically less precise */
   const float halfpi = 1.5707963267948966192f; /* M_PI / 2.0; */
   const float sconst = powf((halfpi / (float)nsinc), 2.0f);
   const float a2 = -0.49670f;
