@@ -270,7 +270,7 @@ class minmed:
             #      in an illegal boxshape kernel.  The dimensions of the kernel box *MUST*
             #      be integer and greater than zero.
             #
-            #   If the boxcar convolution has failed, try to give a meaningfull explanation
+            #   If the boxcar convolution has failed, try to give a meaningful explanation
             #   as to why based upon the conditionals described above.
 
             if (boxsize <= 0):
@@ -585,7 +585,7 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
         #      result in an illegal boxshape kernel. The dimensions of the
         #      kernel box *MUST* be integer and greater than zero.
         #
-        #   If the boxcar convolution has failed, try to give a meaningfull
+        #   If the boxcar convolution has failed, try to give a meaningful
         #   explanation as to why based upon the conditionals described above.
         if boxsize <= 0:
             errormsg1 = "############################################################\n"
