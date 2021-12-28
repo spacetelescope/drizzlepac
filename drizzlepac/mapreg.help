@@ -172,7 +172,7 @@ the NOTE 1 above.
 
 **NOTE 3:** :py:func:`~drizzlepac.MapReg` does not take into account pointing errors and thus the
 produced region files can be somewhat misaligned compared to their intended
-position around the sources identified in the "reference" image. Threfore, it is
+position around the sources identified in the "reference" image. Therefore, it is
 highly recommended that the produced region files be loaded into DS9 and their
 position be adjusted manually to include the sources of interest (or to avoid
 the regions that need to be avoided).

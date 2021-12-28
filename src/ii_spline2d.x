@@ -5,7 +5,7 @@
 # spacing of 1. The first element of each row of data is assumed to contain
 # the second derivative of the data at x = 1. The nxpix + 2-th element of each
 # row is assumed to contain the second derivative of the function at x = nxpix.
-# Therfore if each row of data contains nxpix points, nxpix+2 B-spline
+# Therefore if each row of data contains nxpix points, nxpix+2 B-spline
 # coefficients will be calculated. The univariate B-spline coefficients
 # for the i-th row of data are output to the i-th column of coeff.
 # Therefore two calls to II_SPLINE2D are required to calculate the 2D B-spline
