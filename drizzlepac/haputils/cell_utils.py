@@ -494,7 +494,7 @@ class SkyFootprint(object):
         the center of the footprint, then proceeds counter-clockwise
         (North to East).  The corners are initially identified using
         the `skimage.corner_harris` function on the footprint mask to
-        identify the starting corner which is closest to veritical.  The
+        identify the starting corner which is closest to vertical.  The
         edge pixels are then ordered counter-clockwise, and corners are
         finally confirmed in order where the slope along each edge changes
         sign.
