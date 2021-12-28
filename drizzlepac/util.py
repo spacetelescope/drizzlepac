@@ -1113,7 +1113,7 @@ def parse_colnames(colnames, coords=None):
 def createFile(dataArray=None, outfile=None, header=None):
     """
     Create a simple fits file for the given data array and header.
-    Returns either the FITS object in-membory when outfile==None or
+    Returns either the FITS object in-memory when outfile==None or
     None when the FITS file was written out to a file.
     """
     # Insure that at least a data-array has been provided to create the file
