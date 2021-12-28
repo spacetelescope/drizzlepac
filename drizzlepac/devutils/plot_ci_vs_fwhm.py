@@ -100,8 +100,8 @@ def process_data(data_table,bin_size):
         A 2 x n sized numpy array. Column 1: Binned CI values; Column 2: Mean FWHM values
     """
     processed_data_table = Table(names=("CI","FWHM"))
-    start_value = compare_sourcelists.round2ArbatraryBase(min(data_table['CI']), "down",bin_size)
-    stop_value = compare_sourcelists.round2ArbatraryBase(max(data_table['CI']), "down",bin_size)
+    start_value = compare_sourcelists.round2ArbitraryBase(min(data_table['CI']), "down",bin_size)
+    stop_value = compare_sourcelists.round2ArbitraryBase(max(data_table['CI']), "down",bin_size)
     print(start_value, stop_value)
     while start_value <= stop_value:
         bin_upper_limit = start_value + bin_size

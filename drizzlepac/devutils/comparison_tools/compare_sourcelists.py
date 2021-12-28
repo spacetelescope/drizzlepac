@@ -896,10 +896,10 @@ def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, catalog_names, 
         p_dx = np.empty(shape=[0])
         p_dy = np.empty(shape=[0])
         color_ra = []
-        for xBinCtr in range(int(round2ArbatraryBase(xmin, "down", binSize)),
-                             int(round2ArbatraryBase(max(x[0, :]), "up", binSize)), binSize):
-            for yBinCtr in range(int(round2ArbatraryBase(ymin, "down", binSize)),
-                                 int(round2ArbatraryBase(max(y[0, :]), "up", binSize)), binSize):
+        for xBinCtr in range(int(round2ArbitraryBase(xmin, "down", binSize)),
+                             int(round2ArbitraryBase(max(x[0, :]), "up", binSize)), binSize):
+            for yBinCtr in range(int(round2ArbitraryBase(ymin, "down", binSize)),
+                                 int(round2ArbitraryBase(max(y[0, :]), "up", binSize)), binSize):
                 # define bin box x,y upper and lower bounds
                 xBinMin = xBinCtr
                 xBinMax = xBinMin + binSize
@@ -965,7 +965,7 @@ def makeVectorPlot(x, y, plate_scale, plotDest, plotfile_prefix, catalog_names, 
 
 
 # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
-def round2ArbatraryBase(value, direction, roundingBase):
+def round2ArbitraryBase(value, direction, roundingBase):
     """Round value up or down to arbitrary base
 
     Parameters
