@@ -11,7 +11,7 @@ class TestWFPC2(BaseWFPC2):
 
     @pytest.mark.skip(reason="disable until truth files can be updated")
     def test_waiver_single(self):
-        """ This test confirms that drizzlepac can correcly process .
+        """ This test confirms that drizzlepac can correctly process .
         """
         # Prepare input files.
         raw_inputs = ["u40x010hm_c0f.fits", "u40x010hm_c1f.fits"]
@@ -53,7 +53,7 @@ class TestWFPC2(BaseWFPC2):
 
     @pytest.mark.skip(reason="disable until truth files can be updated")
     def test_waiver_asn(self):
-        """ This test confirms that drizzlepac can correcly process input
+        """ This test confirms that drizzlepac can correctly process input
         WFPC2 data stored in WAIVER fits format.
         """
 
@@ -90,7 +90,7 @@ class TestWFPC2(BaseWFPC2):
         self.compare_outputs(outputs)
 
     def test_wfpc2_single(self):
-        """ This test confirms that drizzlepac can correcly process single
+        """ This test confirms that drizzlepac can correctly process single
         WFPC2 exposures.
         """
 
@@ -128,7 +128,7 @@ class TestWFPC2(BaseWFPC2):
         self.compare_outputs(outputs)
 
     def test_mef_asn(self):
-        """ This test confirms that drizzlepac can correcly process input
+        """ This test confirms that drizzlepac can correctly process input
         WFPC2 data stored in Multi-extensions FITS(MEF) format.
         """
 

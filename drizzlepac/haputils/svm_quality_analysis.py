@@ -1712,7 +1712,7 @@ def correct_hla_classic_ra_dec(orig_hla_classic_sl_name, hap_imgname, cattype, l
         dataset = mod_sl_name.replace("_{}phot.txt".format(cattype), "")
         modcat = read_hla_catalog.read_hla_catalog(dataset, cattype=cattype, applyomega=True, multiwave=False,
                                                    verbose=True, trim=False, log_level=log_level)
-        # sort catalog with updated RA, DEC values so that ordering is the same as the uncorrected table and everything maps correclty.
+        # sort catalog with updated RA, DEC values so that ordering is the same as the uncorrected table and everything maps correctly.
         if cattype == "dao":
             sortcoltitle = "ID"
             x_coltitle = "X-Center"

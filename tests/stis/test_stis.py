@@ -12,7 +12,7 @@ from ..resources import BaseSTIS
 class TestSTIS(BaseSTIS):
 
     def test_fuv_mama(self):
-        """ This test confirms that drizzlepac can correcly apply the
+        """ This test confirms that drizzlepac can correctly apply the
         distortion model for STIS FUV MAMA data and create a combined product.
         """
 
@@ -60,7 +60,7 @@ class TestSTIS(BaseSTIS):
         self.compare_outputs(outputs)
 
     def test_nuv_mama(self):
-        """ This test confirms that drizzlepac can correcly apply the
+        """ This test confirms that drizzlepac can correctly apply the
         distortion model for STIS NUV MAMA data and create a combined product.
         """
 
@@ -103,7 +103,7 @@ class TestSTIS(BaseSTIS):
         self.compare_outputs(outputs)
 
     def test_stis_ccd(self):
-        """ This test confirms that drizzlepac can correcly apply the
+        """ This test confirms that drizzlepac can correctly apply the
         distortion model for STIS CCD data and create a combined product.
         """
 
@@ -150,7 +150,7 @@ class TestSTIS(BaseSTIS):
         self.compare_outputs(outputs)
 
     def test_stis_oiii_ccd(self):
-        """ This test confirms that drizzlepac can correcly apply the
+        """ This test confirms that drizzlepac can correctly apply the
         distortion model for STIS F28x50OIII CCD data and create a
         combined product.
         """
