@@ -195,7 +195,7 @@ This example comes from the 'ic0s1' visit where the columns are:
   #. program ID - ppp value from exposure filename
   #. obset_id - visit number from proposal
   #. exposure time of the exposure
-  #. filters used for the exposure, with muliple filters separated by a semicolon (e.g., F850LP;CLEAR2L)
+  #. filters used for the exposure, with multiple filters separated by a semicolon (e.g., F850LP;CLEAR2L)
   #. detector used to take the exposure
   #. location of the exposure in a local cache
 
