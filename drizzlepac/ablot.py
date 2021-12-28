@@ -174,7 +174,7 @@ def runBlot(imageObjectList, output_wcs, configObj={},
 
     blot_name = util.getSectionName(configObj, _blot_step_num_)
 
-    # This can be called directly from MultiDrizle, so only execute if
+    # This can be called directly from MultiDrizzle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[blot_name]['blot']:
         paramDict = buildBlotParamDict(configObj)

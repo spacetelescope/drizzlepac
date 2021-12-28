@@ -333,7 +333,7 @@ def drizSeparate(imageObjectList, output_wcs, configObj,
 
     # ConfigObj needs to be parsed specifically for driz_separate set of parameters
     single_step = util.getSectionName(configObj, _single_step_num_)
-    # This can be called directly from MultiDrizle, so only execute if
+    # This can be called directly from MultiDrizzle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[single_step]['driz_separate']:
         paramDict = buildDrizParamDict(configObj)
@@ -373,7 +373,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,
     # ConfigObj needs to be parsed specifically for driz_final set of parameters
     final_step = util.getSectionName(configObj, _final_step_num_)
 
-    # This can be called directly from MultiDrizle, so only execute if
+    # This can be called directly from MultiDrizzle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[final_step]['driz_combine']:
         paramDict = buildDrizParamDict(configObj, single=False)
