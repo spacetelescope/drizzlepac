@@ -76,7 +76,7 @@ def aperture_stats_tbl(data, apertures, method='exact', sigma_clip=True):
     Returns
     -------
     stats_tbl : astropy table
-        An astropy Table with the colums X, Y, aperture_mean, aperture_median, aperture_mode, aperture_std,
+        An astropy Table with the columns X, Y, aperture_mean, aperture_median, aperture_mode, aperture_std,
         aperture_area and a row for each of the positions of the apertures.
     """
 
