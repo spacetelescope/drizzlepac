@@ -21,7 +21,7 @@
         "-c WFC3/IR"
 
         - The '-d' option allows users to specify the Min and max date (inclusive) of dateobs search
-        window. The exected date format is "YYYY-MM-DD". Min amd max dates should be separated by a space;
+        window. The expected date format is "YYYY-MM-DD". Min amd max dates should be separated by a space;
         example: "-d 2011-06-15 2019-04-21"
 
         - The '-e' option allows users to specify an exposure name to search for. The expected format is a
