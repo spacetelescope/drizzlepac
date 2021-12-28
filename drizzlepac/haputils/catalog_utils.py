@@ -823,7 +823,7 @@ class HAPCatalogBase:
         Returns
         -------
         data_table : QTable
-            Table of source properties updatd to contain state metadata
+            Table of source properties updated to contain state metadata
 
         """
         data_table.meta["h00"] = [" #=================================================================================================="]
