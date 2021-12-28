@@ -58,7 +58,7 @@ editpars : bool (Default = False)
 
 Examples
 --------
-These tasks are designed to work together seemlessly when run in the full
+These tasks are designed to work together seamlessly when run in the full
 ``AstroDrizzle`` interface. More advanced users may wish to create specialized
 scripts for their own datasets, making use of only a subset of the predefined
 ``AstroDrizzle`` tasks, or add additional processing, which may be usefull for
