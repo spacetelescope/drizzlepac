@@ -355,7 +355,7 @@ aligned and combined images with correctly specified WCS keywords:
 - Now ``tolerance`` (in ``tweakreg``) is no longer ignored when ``use2dhist``
   is enabled. [#286]
 
-- Fixed VS compiler errors with pointer artithmetic on void pointers. [#273]
+- Fixed VS compiler errors with pointer arithmetic on void pointers. [#273]
 
 - Fix logic so that code no longer tries to update headers when no valid fit
   could be determined. [#241]
