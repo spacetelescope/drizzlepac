@@ -213,7 +213,7 @@ class HAPFigure:
                 `colormap` column in the input data `source`.  The default value for
                 this value is "colormap".  *** In particular, 'colormap' should be used when
                 wanting emphasize the data values which correspond to each instrument as this
-                will ensure consistency in all of the grahics.  Note: When 'colormap' is used,
+                will ensure consistency in all of the graphics.  Note: When 'colormap' is used,
                 the legend will be set by 'legend_group'.
 
             legend_label : str, optional
