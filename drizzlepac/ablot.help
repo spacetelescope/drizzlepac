@@ -80,7 +80,7 @@ in_units : str{'cps', 'counts'} (Default Value= 'cps')
     Valid options are **'cps'** and **'counts'**.
 
 out_units : str{'cps', 'counts'} (Default Value = 'counts')
-    Units of the ouput (blotted) image.
+    Units of the output (blotted) image.
     Valid options are **'cps'** and **'counts'**.
 
 expkey : str (Default Value = 'exptime)
