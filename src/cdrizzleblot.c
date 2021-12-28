@@ -81,7 +81,7 @@ ii_bipoly3(const float* coeff /* [len_coeff][len_coeff] */,
     /* loop over the 4 surrounding rows of data calculate the central
        differences at each value of y
 
-       If new data point calculate the central differnences in x for
+       If new data point calculate the central differences in x for
        each y */
     if (nx != nxold || ny != nyold) {
       for (j = 0, index = firstw; j < 4; ++j, index += len_coeff) {
