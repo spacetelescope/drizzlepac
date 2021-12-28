@@ -678,7 +678,7 @@ def __combine_cutouts(input_dict, type="FILTER", img_combiner=None, output_dir="
                                                            memory_only=True)
             except Exception as x_cept:
                 log.warning("The cutout combine was not successful for files, {}, due to {}.".format(file_list, x_cept))
-                log.warning("Processing continuuing on next possible set of data.")
+                log.warning("Processing continuing on next possible set of data.")
                 continue
 
             log.info("The combined output filename is {}.\n".format(output_filename))
