@@ -63,7 +63,7 @@ def hff_parameter_manager(hff_inputs,qc_json_filename):
     log.info("Summary of original hla_flag_filter parameters{}".format(extra_text_string))
     if qc_json_filename:
         log.info("NOTE: updated parameters listed with a exclamation point")
-    resursive_print_all_nested_dict_values(hff_params,new_params)
+    recursive_print_all_nested_dict_values(hff_params,new_params)
 
     if qc_json_filename:
         hff_inputs['param_dict']['quality control'] = new_params
@@ -127,7 +127,7 @@ def preserve_orig_files(hff_inputs,source_path,dest_path,verbose):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def resursive_print_all_nested_dict_values(old_dict,new_dict,recursion_level=0,recursion_limit=20):
+def recursive_print_all_nested_dict_values(old_dict,new_dict,recursion_level=0,recursion_limit=20):
     """recursively print all elements of dictionary and highlight any changes.
     NOTE: This is a recursive subroutine.
 
@@ -157,7 +157,7 @@ def resursive_print_all_nested_dict_values(old_dict,new_dict,recursion_level=0,r
         if isinstance(old_dict[item], dict):
             log.info("  {}{}\u2798".format("     "*recursion_level,item))
             recursion_level+=1
-            resursive_print_all_nested_dict_values(old_dict[item],new_dict[item],recursion_level=recursion_level)
+            recursive_print_all_nested_dict_values(old_dict[item],new_dict[item],recursion_level=recursion_level)
             recursion_level-=1
         else:
             if old_dict[item] == new_dict[item]:
