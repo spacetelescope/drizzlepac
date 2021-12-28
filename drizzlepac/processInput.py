@@ -513,7 +513,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
 
     # sort the list of input files
     # this ensures the list of input files has the same order on all platforms
-    # it can have ifferent order because listdir() uses inode order, not unix type order
+    # it can have different order because listdir() uses inode order, not unix type order
     #filelist.sort()
 
 
