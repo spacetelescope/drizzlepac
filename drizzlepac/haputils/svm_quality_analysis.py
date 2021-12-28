@@ -998,7 +998,7 @@ def find_gaia_sources(hap_obj, json_timestamp=None, json_time_since_epoch=None,
 
 
 def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
-    """Identifies point sources in HAP imagery products and returns a dictionary containg **filt_obj** and
+    """Identifies point sources in HAP imagery products and returns a dictionary containing **filt_obj** and
     a catalog of identified sources.
 
     Parameters

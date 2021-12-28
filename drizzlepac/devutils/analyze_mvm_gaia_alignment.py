@@ -275,7 +275,7 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
         name of the output region file to be created
 
     table_data : astropy.Table
-        Table continaing values to be written out
+        Table containing values to be written out
 
     colnames : list
         list of the columns from table_data to write out
