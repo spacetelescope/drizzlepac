@@ -1206,7 +1206,7 @@ def crclean_image(imgarr, segment_threshold, kernel, fwhm,
     imgarr[cr_mask] = background[cr_mask]
     del cr_segm
 
-    log.debug("Finshed zeroing out cosmic-rays")
+    log.debug("Finished zeroing out cosmic-rays")
 
     return imgarr
 
