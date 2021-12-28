@@ -75,7 +75,7 @@ class HAPFigure:
         Glyph attributes are also declared and set to default values.
 
         Careful: grid plot will collect all the tools onto one toolbar, but a tool
-        assciated with only one figure, will only work for that one figure.
+        associated with only one figure, will only work for that one figure.
 
         Parameters
         ----------
