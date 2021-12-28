@@ -19,7 +19,7 @@ all custom mosaic output product filenames will by default include projection ce
 cell reference right ascension and declination instead of the skycell name. Users can also optionally
 specify an output product filename prefix of their choosing.
 
-The output world cooordinate system (WCS) information is based on that of the projection cell in which the
+The output world coordinate system (WCS) information is based on that of the projection cell in which the
 observations reside. If the input observations happen to fall in a region of the sky where more than one
 projection cells overlap, the WCS information of the output products will be based on the projection cell
 whose center is closest to the geometric center of the input observations.
