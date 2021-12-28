@@ -112,7 +112,7 @@ class baseImageObject:
 
         self._image = empty_image
 
-        #we actuallly want to make sure that all the
+        #we actually want to make sure that all the
         #data extensions have been closed and deleted
         #since we could have the DQ,ERR and others read in
         #at this point, but I'd like there to be something
