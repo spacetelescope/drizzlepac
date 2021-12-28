@@ -126,7 +126,7 @@ class minmed:
             #    sceince image will be used to replace the existing value in the
             #    existing median_file.
             #
-            # This procuedure is being used to prevent too much data from being thrown
+            # This procedure is being used to prevent too much data from being thrown
             # out of the image.  Take for example the case of 3 input images.  In two
             # of the images the pixel locations have been masked out.  Now, if nhigh
             # is applied there will be no value to use for that position.  However,
