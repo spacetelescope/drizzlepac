@@ -54,7 +54,7 @@ class minmed:
         # median-pixel image, and compare with the minimum.
 
     In this version of the mimmed algorithm we assume that the units of all
-    input data is electons.
+    input data is electrons.
     """
     def __init__(self,
             imageList,              # list of input data to be combined.
@@ -354,7 +354,7 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
 
     .. note::
         In this version of the mimmed algorithm we assume that the units of
-        all input data is electons.
+        all input data is electrons.
 
     Parameters
     ----------
