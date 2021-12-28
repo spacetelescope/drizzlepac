@@ -1012,7 +1012,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                     else:
                         _trlmsg += "No absolute astrometric headerlet applied to {}\n".format(fltfile)
 
-            # Finally, append any further messages associated with alignement from this calling routine
+            # Finally, append any further messages associated with alignment from this calling routine
             _trlmsg += _timestamp('Align_to_GAIA completed ')
             _updateTrlFile(trlfile, _trlmsg)
 

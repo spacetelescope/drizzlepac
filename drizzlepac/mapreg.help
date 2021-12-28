@@ -190,7 +190,7 @@ quasars, stars, etc.). We save the file ``master.reg`` in sky CS (e.g., ``fk5``)
 Also, let's assume that we have a set of images ``img1.fits``, ``img2.fits``, etc.
 with four FITS extensions named 'SCI' and 'DQ'. For some of the extensions,
 after analizing the ``img*.fits`` images we have identified parts of the chips that
-cannot be used for image alighnment. We create region files for those extensions
+cannot be used for image alignment. We create region files for those extensions
 and save the files in image CS as, e.g., ``img1_chip_sci2.reg`` (in our example
 this will be the only chip that needs "special" treatment).
 
