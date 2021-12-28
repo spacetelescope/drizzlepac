@@ -309,7 +309,7 @@ aligned and combined images with correctly specified WCS keywords:
   crash while reading shift files. [#448]
 
 - Migration of the HAP portion of the package to an object-oriented
-  implemenation. [#427]
+  implementation. [#427]
 
 - Added support for providing HSTWCS object as input to 'final_refimage'
   or 'single_refimage' parameter. [#426]
