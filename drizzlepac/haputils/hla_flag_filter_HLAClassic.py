@@ -1208,7 +1208,7 @@ def HLANexpFlags(drizzled_image, flt_list, param_dict, catalog_name, catalog_dat
     if channel == 'SBC':
         ndrizim=getheader(drizzled_image,0)['NDRIZIM']
         ncombine = ndrizim
-    ctxarray = arrayfy_ctx(ctx, ncombine)
+    ctxarray = arrayify_ctx(ctx, ncombine)
 
     nexp_array_ctx = ctxarray.sum(axis=-1)
     nexp_image_ctx = drizzled_image.split('.')[0]+'_NCTX.fits'
@@ -2577,7 +2577,7 @@ def HLANexpFlags_OLD(all_drizzled_filelist, working_hla_red, filter_sorted_flt_d
         if channel == 'SBC':
             ndrizim = getheader(drizzled_image, 0)['NDRIZIM']
             ncombine = ndrizim
-        ctxarray = arrayfy_ctx(ctx, ncombine)
+        ctxarray = arrayify_ctx(ctx, ncombine)
 
         nexp_array_ctx = ctxarray.sum(axis=-1)
         nexp_image_ctx = drizzled_image.split('.')[0] + '_NCTX.fits'
@@ -3139,7 +3139,7 @@ def extract_name(stringWpath):
     return stringname
 
 # ======================================================================================================================
-def arrayfy_ctx(ctx, maxindex):
+def arrayify_ctx(ctx, maxindex):
 
     """Function to turn the context array returned by AstroDrizzle
     into a bit datacube with the third dimension equal to maxindex.
