@@ -144,8 +144,8 @@ if __name__ == "__main__":
     slCtr =1
 
     for slName in slList:
-        name_seperator = "{}> {}/{}: {} <{}".format("-" * 56, slCtr, len(slList), slName, "-" * 56)
-        print(name_seperator)
+        name_separator = "{}> {}/{}: {} <{}".format("-" * 56, slCtr, len(slList), slName, "-" * 56)
+        print(name_separator)
         slPair = [ARGS.pathNames[0] + "/logs/" + slName, ARGS.pathNames[1] + "/logs/" + slName]
         if slName.endswith("daophot.txt"): imgname=slName.replace("daophot.txt","drz.fits")
         if slName.endswith("sexphot.txt"): imgname = slName.replace("sexphot.txt", "drz.fits")

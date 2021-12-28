@@ -306,9 +306,9 @@ def run(pathNames,compType,drzOnly,verbose):
         imgHDU1 = fits.open(imgName1)
         imgHDU2 = fits.open(imgName2)
 
-        name_seperator = "{}> {}/{}: {} <{}".format("-"*58,imgCtr,numImgs,imgName,"-"*58)
-        if len(name_seperator) >maxNameSepLength: maxNameSepLength = len(name_seperator)
-        print(name_seperator)
+        name_separator = "{}> {}/{}: {} <{}".format("-"*58,imgCtr,numImgs,imgName,"-"*58)
+        if len(name_separator) >maxNameSepLength: maxNameSepLength = len(name_separator)
+        print(name_separator)
         check_status[0]=compareFileStructure(imgHDU1,imgHDU2,verbose)
         if compType in ["header data","both"]: check_status[1]=compareHeaderValues(imgHDU1,imgHDU2,verbose)
         if compType in ["pixel data", "both"]:check_status[2] = comparePixelValues(imgHDU1, imgHDU2,verbose)
