@@ -197,7 +197,7 @@ class HAPProduct:
                     source_nums.append(sources)
                 min_sources = min(source_nums)
 
-                # Loop for available catlogs, the first successful fit for a
+                # Loop for available catalogs, the first successful fit for a
                 # (catalog, fitting method, and fit geometry) is satisfactory to break out of the looping.
                 for index_cat, catalog_item in enumerate(mosaic_catalog_list):
 
