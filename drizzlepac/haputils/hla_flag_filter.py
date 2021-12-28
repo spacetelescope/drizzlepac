@@ -1384,10 +1384,10 @@ def get_component_drz_list(drizzled_image, drz_root_dir, flt_file_names):
     rv : list
         a list of drizzled exposure images associated with the specified combined drizzled image
     """
-    drizzle_file_suffex = drizzled_image[-8:-5]
-    drz_img_split = drizzled_image.split('/')[-1].split("_"+drizzle_file_suffex)
+    drizzle_file_suffix = drizzled_image[-8:-5]
+    drz_img_split = drizzled_image.split('/')[-1].split("_"+drizzle_file_suffix)
     component_drz_img_list = glob.glob(os.path.join(drz_root_dir,
-                                                    drz_img_split[0])+'*_{}.fits'.format(drizzle_file_suffex))
+                                                    drz_img_split[0])+'*_{}.fits'.format(drizzle_file_suffix))
     component_drz_img_list.sort()
     for item in component_drz_img_list:
         if item.endswith(drizzled_image):
