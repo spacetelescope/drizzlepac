@@ -435,7 +435,7 @@ class ImageCatalog(Catalog):
         #   for source finding ("exclude" regions). If it is None - the entire
         #   image will be used for source finding.
         # - 'region_file_mode': 'exclude only' or 'normal' - if 'exclude only' then regular regions are
-        #   interpretted as 'exclude' regions and exclude regions (with '-' in front)
+        #   interpreted as 'exclude' regions and exclude regions (with '-' in front)
         #   are ignored. If 'region_file_mode' = 'normal' then normal DS9 interpretation
         #   of the regions will be applied.
         self.src_find_filters = src_find_filters
