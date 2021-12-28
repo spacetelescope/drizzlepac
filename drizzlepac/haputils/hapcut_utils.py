@@ -233,7 +233,7 @@ def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil
     local_files : list
         List of filenames
 
-    Note: Code here cribbed from retrieve_obsevation in astroquery_utils module.
+    Note: Code here cribbed from retrieve_observation in astroquery_utils module.
     """
 
     # set logging level to user-specified level
