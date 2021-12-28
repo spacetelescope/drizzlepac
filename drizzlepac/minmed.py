@@ -1,5 +1,5 @@
 """
-Create an image combination algroithm that chooses between a minimum
+Create an image combination algorithm that chooses between a minimum
 or median image based up bad pixel identification.
 
 :Authors: Christopher Hanley
@@ -10,7 +10,7 @@ or median image based up bad pixel identification.
 #   PROGRAM: numcombine.py
 #   AUTHOR: Christopher Hanley (based upon original code of Anton Koekemoer)
 #   DATE:    February 11, 2004
-#   PURPOSE: Create an image combination algroithm that chooses between
+#   PURPOSE: Create an image combination algorithm that chooses between
 #            a minimum or median image based up bad pixel identification.
 #   HISTORY:
 #      Version 0.1.0: Initial Development -- CJH -- 02/11/04
