@@ -127,7 +127,7 @@ get_spitzer_coefficients(fitsfile* input_data_file,
   x_coeffs[*num_coeffs-1] = crpix1;
   y_coeffs[*num_coeffs-1] = crpix2;
 
-  /* Read all the coefficients and set any ommitted ones to zero */
+  /* Read all the coefficients and set any omitted ones to zero */
   /* X first */
   nc = 0;
   for (n = 1; n <= order + 1; ++n) {
