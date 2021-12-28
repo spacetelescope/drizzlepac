@@ -1341,7 +1341,7 @@ def register_photutils_function(name):
 # Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de>         #
 # Octave/Matlab normxcorr2 implementation in python 3.5                                #
 # Details:                                                                             #
-# Normalized cross-correlation. Similiar results upto 3 significant digits.            #
+# Normalized cross-correlation. Similar results upto 3 significant digits.             #
 # https://github.com/Sabrewarrior/normxcorr2-python/master/norxcorr2.py                #
 # http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html    #
 ########################################################################################
