@@ -731,7 +731,7 @@ tblot(PyObject *obj, PyObject *args)
 }
 
 
-/* To replace the default prinf log; instead log to a pythonic log */
+/* To replace the default printf log; instead log to a pythonic log */
 void cdriz_log_func(const char *format, ...) {
   static PyObject *logging = NULL;
   va_list args;
