@@ -145,7 +145,7 @@ Notes
 **NOTE 1:** This task takes a region file (or multiple files) that describe(s)
 what regions of sky should be used for source finding (*include* regions) and
 what regions should be avoided (*exclude* regions) and transforms/maps
-this region file onto a number of image files that need to be alighned.
+this region file onto a number of image files that need to be aligned.
 
 The idea behind this task is automate the creation of region files that then can
 be passed to *exclusions* parameter of the ``TweakReg`` task.
