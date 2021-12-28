@@ -119,7 +119,7 @@ ii_bipoly3(const float* coeff /* [len_coeff][len_coeff] */,
 
 /**
 Procedure to evaluate a biquintic polynomial.  The array coeff
-contains the coefficents of the 2D interpolant.  The routine assumes
+contains the coefficients of the 2D interpolant.  The routine assumes
 that 0 <= x < p->dnx and 0 <= y < p->dny. The interpolant is evaluated
 using Everett's central difference formula.
 
