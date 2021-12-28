@@ -202,7 +202,7 @@ class HAPFigure:
                 data of interest where the data can be referenced by column name.
 
             name : str, optional
-                Indentification of the glyph - useful when using HoverTool where the
+                Identification of the glyph - useful when using HoverTool where the
                 value of the name is a dictionary key as the value itself is variable.
                 TODO: No longer works at this time.
 
