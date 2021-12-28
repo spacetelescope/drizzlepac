@@ -121,11 +121,11 @@ def run_source_list_flagging(all_drizzled_filelist, filter_sorted_flt_dict,param
     # -----------------------
     log.info("************************** * * * HLA_FLAG_FILTER * * * **************************")
 
-    drizzled_image = all_drizzled_filelist[0] # TODO: remove once all code is dictionary-independant
-    catalog_name = dict_newTAB_matched2drz[drizzled_image] # TODO: remove once all code is dictionary-independant
-    catalog_data = phot_table_matched2drz[drizzled_image] # TODO: remove once all code is dictionary-independant
-    for filt_key in filter_sorted_flt_dict.keys(): flt_list = filter_sorted_flt_dict[filt_key] # TODO: remove once all code is dictionary-independant
-    exptime = exp_dictionary_scis[drizzled_image] # TODO: remove once all code is dictionary-independant
+    drizzled_image = all_drizzled_filelist[0] # TODO: remove once all code is dictionary-independent
+    catalog_name = dict_newTAB_matched2drz[drizzled_image] # TODO: remove once all code is dictionary-independent
+    catalog_data = phot_table_matched2drz[drizzled_image] # TODO: remove once all code is dictionary-independent
+    for filt_key in filter_sorted_flt_dict.keys(): flt_list = filter_sorted_flt_dict[filt_key] # TODO: remove once all code is dictionary-independent
+    exptime = exp_dictionary_scis[drizzled_image] # TODO: remove once all code is dictionary-independent
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
