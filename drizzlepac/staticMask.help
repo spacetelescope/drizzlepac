@@ -16,7 +16,7 @@ DQ mask.
 Users should consider the details of their science image and decide whether
 or not creating this mask is appropriate for their resulting science.
 For example, if your field is very crowded, or contains mostly nebulous
-or extended objects, then the statistcs could be heavily skewed and the mask
+or extended objects, then the statistics could be heavily skewed and the mask
 could end up containing sources.
 
 The generated static masks are saved to disk for use in later steps with
