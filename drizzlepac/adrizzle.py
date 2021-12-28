@@ -567,7 +567,7 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
 
     outwcs = copy.deepcopy(output_wcs)
 
-    # Check for existance of output file.
+    # Check for existence of output file.
     if (not single and build and
         fileutil.findFile(imageObjectList[0].outputNames['outFinal'])):
         log.info('Removing previous output product...')
