@@ -123,7 +123,7 @@ class minmed:
             # 2) The science data will be summed.
             # 3) In the locations of the summed mask where the sum is 1 less than the
             #    the total number of images, the value of that location in the summed
-            #    sceince image will be used to replace the existing value in the
+            #    science image will be used to replace the existing value in the
             #    existing median_file.
             #
             # This procedure is being used to prevent too much data from being thrown
