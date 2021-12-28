@@ -48,7 +48,7 @@ begin
 	    do i = 3, nxpix + 1
 		coeff[j,i] = Memr[diag+i-1] * (coeff[j,i] - coeff[j,i-1])
 
-	    # back subsitution
+	    # back substitution
 	    coeff[j,nxpix+2] = ((Memr[diag+nxpix-1] + 2.) * coeff[j,nxpix+1] -
 		coeff[j,nxpix] + coeff[j,nxpix+2] / 6.) /
 		(1. + Memr[diag+nxpix] * (Memr[diag+nxpix-1] + 2.))
