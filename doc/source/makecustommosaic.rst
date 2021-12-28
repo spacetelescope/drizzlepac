@@ -17,7 +17,7 @@ Frequently Asked Questions
       images that are segmented at skycell boundaries. This code simplifies this process. It creates seamless
       multi-visit mosaics for input datasets that span one or more skycell boundaries.
 
-- What are the required and opitonal inputs? What do they do?
+- What are the required and optional inputs? What do they do?
     - The only required to make_custom_mosaic.py is either the name of a text file containing a list of calibrated ACS
       or WFC _flc.fits or _flt.fits files process or a search search sting that will be used to  find input files.
       Optional input arguments control the level of verbosity in the log statements that are displayed to the screen
