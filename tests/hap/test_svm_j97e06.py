@@ -204,6 +204,7 @@ def test_svm_point_cat_numsources(gather_output_data):
     assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {EXPECTED_POINT_SOURCES}"
 
 
+@pytest.mark.skip
 def test_svm_segment_cat_numsources(gather_output_data):
    # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("segment-cat.ecsv")]
