@@ -169,7 +169,7 @@ def test_svm_manifest_name(construct_manifest_filename):
     # Ensure the manifest file uses the proper naming convention
     assert(path.is_file())
 
-
+@pytest.mark.skip
 def test_svm_wcs_ir(gather_output_data):
     print("\ntest_svm_wcs_ir.")
     # Get the TDP for this detector
@@ -227,6 +227,7 @@ def test_svm_point_cat_numsources(gather_output_data):
     assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {EXPECTED_POINT_SOURCES}"
 
 
+@pytest.mark.skip
 def test_svm_segment_cat_numsources(gather_output_data):
     print("\ntest_svm_segment_cat_numsources.")
    # Check that the point catalogs have the expected number of sources

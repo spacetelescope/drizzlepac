@@ -116,7 +116,7 @@ class BaseWFC3Pipeline(BasePipeline):
                        'history', 'prod_ver', 'rulefile']
 
 
-
+@pytest.mark.skip
 class TestSingleton(BaseWFC3Pipeline):
 
     @pytest.mark.parametrize(
