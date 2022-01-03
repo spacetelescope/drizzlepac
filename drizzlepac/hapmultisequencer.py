@@ -365,7 +365,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                 # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
                 # to use only one of the SkyCellProducts to generate the manifest name as the name
                 # is only dependent on the sky cell.
-                # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
+                # Example: skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., skycell-p0797x12y05_manifest.txt)
                 manifest_name = total_obj_list[0].manifest_name
                 log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
                 log.info("The manifest will contain the names of all the output products.")
@@ -494,26 +494,26 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                 # information is in column 8 (1-based), and only the first entry is needed.
                 if type(input_filename) == str:
                     output_skycell = ascii.read(input_filename, format='no_header')["col8"][0]
-                    manifest_name = "hst_"+ output_skycell.lower() + "_manifest.txt"
+                    manifest_name = output_skycell.lower() + "_manifest.txt"
 
                 # Maybe the input filename was actually a Python list
                 elif type(input_filename) == list:
                     skycell_dict = cell_utils.get_sky_cells([input_filename[0]])
                     output_skycell = next(iter(skycell_dict.keys()))
-                    manifest_name = "hst_"+ output_skycell.lower() + "_manifest.txt"
+                    manifest_name = output_skycell.lower() + "_manifest.txt"
 
                 # Problem case - try to use the name of the input file
                 else:
                     if re.search(MATCH_STRING, input_filename.lower()):
-                        manifest_name = "hst_" + input_filename.lower().replace("input.out", "manifest.txt")
+                        manifest_name = input_filename.lower().replace("input.out", "manifest.txt")
                     else:
-                        manifest_name = "hst_skycell-p0000x00y00_manifest.txt"
+                        manifest_name = "skycell-p0000x00y00_manifest.txt"
                 # Bigger problem case - try to use the name of the input file
             except Exception:
                 if re.search(MATCH_STRING, input_filename.lower()):
-                    manifest_name = "hst_" + input_filename.lower().replace("input.out", "manifest.txt")
+                    manifest_name = input_filename.lower().replace("input.out", "manifest.txt")
                 else:
-                    manifest_name = "hst_skycell-p0000x00y00_manifest.txt"
+                    manifest_name = "skycell-p0000x00y00_manifest.txt"
 
         log.info("Writing empty manifest file: {}".format(manifest_name))
 
