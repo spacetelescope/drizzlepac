@@ -116,13 +116,13 @@ class BaseWFC3Pipeline(BasePipeline):
                        'history', 'prod_ver', 'rulefile']
 
 
-@pytest.mark.skip
 class TestSingleton(BaseWFC3Pipeline):
 
     @pytest.mark.parametrize(
         'dataset_names', ['iaaua1n4q', 'iacs01t4q']
     )
 
+    @pytest.mark.skip
     def test_astrometric_singleton(self, dataset_names):
         """ Tests pipeline-style processing of a singleton exposure using runastrodriz.
         """
