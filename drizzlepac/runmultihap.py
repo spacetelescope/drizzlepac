@@ -108,7 +108,7 @@ def main():
                              'Specifying "critical" will only record/display "critical" log statements, and '
                              'specifying "error" will record/display both "error" and "critical" log '
                              'statements, and so on.')
-    parser.add_argument('-s', '--skip_gaia_alignment', required=False, action='store_true',
+    parser.add_argument('-s', '--skip_gaia_alignment', required=False, default=True, action='store_true',
                         help='Skip alignment of all input images to known Gaia/HSC sources in the input '
                              'image footprint? If this option is turned on, the existing input image '
                              'alignment solution will be used instead. The default is False.')
