@@ -210,6 +210,7 @@ def test_svm_wcs_uvis_all(gather_output_data):
     assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same for the UVIS detector: {wcsnames}"
 
 
+@pytest.mark.skip
 def test_svm_point_cat_numsources(gather_output_data):
    # Check that the point catalogs have the expected number of sources
     print("\ntest_svm_point_cat_numsources.")
