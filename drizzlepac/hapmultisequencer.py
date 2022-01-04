@@ -81,6 +81,8 @@ envvar_qa_svm = "SVM_QUALITY_TESTING"
 envvar_cat_mvm = {"MVM_INCLUDE_SMALL": 'true',
                   "MVM_ONLY_CTE": 'false'}
 
+DEFAULT_MANIFEST_NAME = "skycell-p0000x00y00_manifest.txt"
+
 MATCH_STRING = "skycell-p\d{4}x\d{2}y\d{2}_input\.out"
 
 # --------------------------------------------------------------------------------------------------------------
@@ -352,6 +354,15 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
 
+        # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
+        # to use only one of the SkyCellProducts to generate the manifest name as the name
+        # is only dependent on the sky cell.
+        # Example: skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., skycell-p0797x12y05_manifest.txt)
+        manifest_defined = hasattr(total_obj_list[0], "manifest_name") and total_obj_list[0].manifest_name not in ["", None]
+        manifest_name = total_obj_list[0].manifest_name if manifest_defined else DEFAULT_MANIFEST_NAME
+        log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
+        log.info("The manifest will contain the names of all the output products.")
+
         # Update the SkyCellProduct objects with their associated configuration information.
         for filter_item in total_obj_list:
             _ = filter_item.generate_metawcs(custom_limits=custom_limits)
@@ -360,15 +371,6 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
             # Optionally rename output products
             if output_file_prefix or custom_limits:
                 filter_item = rename_output_products(filter_item, output_file_prefix=output_file_prefix)
-
-            if 'manifest_name' not in locals():
-                # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
-                # to use only one of the SkyCellProducts to generate the manifest name as the name
-                # is only dependent on the sky cell.
-                # Example: skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., skycell-p0797x12y05_manifest.txt)
-                manifest_name = total_obj_list[0].manifest_name
-                log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
-                log.info("The manifest will contain the names of all the output products.")
 
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
@@ -507,13 +509,13 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                     if re.search(MATCH_STRING, input_filename.lower()):
                         manifest_name = input_filename.lower().replace("input.out", "manifest.txt")
                     else:
-                        manifest_name = "skycell-p0000x00y00_manifest.txt"
+                        manifest_name = DEFAULT_MANIFEST_NAME
                 # Bigger problem case - try to use the name of the input file
             except Exception:
                 if re.search(MATCH_STRING, input_filename.lower()):
                     manifest_name = input_filename.lower().replace("input.out", "manifest.txt")
                 else:
-                    manifest_name = "skycell-p0000x00y00_manifest.txt"
+                    manifest_name = DEFAULT_MANIFEST_NAME
 
         log.info("Writing empty manifest file: {}".format(manifest_name))
 
