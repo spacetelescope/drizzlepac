@@ -160,6 +160,7 @@ def test_svm_manifest_name(construct_manifest_filename):
     assert (path.is_file())
 
 
+@pytest.mark.skip
 def test_svm_wcs(gather_output_data):
     # Check the output primary WCSNAME includes FIT_SVM_GAIA as part of the string value
     tdp_files = [files for files in gather_output_data if
@@ -183,6 +184,7 @@ def test_svm_empty_cats(gather_output_data):
     bad_tables = [cat for cat in cat_files if not valid_tables[cat]]
     assert len(bad_tables) == 0, f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
 
+@pytest.mark.skip
 def test_svm_point_cats(gather_output_data):
     # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("point-cat.ecsv")]
