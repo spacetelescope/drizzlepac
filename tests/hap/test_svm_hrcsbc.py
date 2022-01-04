@@ -197,6 +197,8 @@ def test_svm_empty_cats(gather_output_data):
     bad_tables = [cat for cat in cat_files if not valid_tables[cat]]
     assert len(bad_tables) == 0, f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
 
+
+@pytest.mark.skip
 def test_svm_point_cats(gather_output_data):
     # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("point-cat.ecsv")]
