@@ -97,6 +97,7 @@ setup(
         'stregion',
         'requests',
         # HAP-pipeline specific:
+        "spherical_geometry>=1.2.22",
         'astroquery>=0.4',
         'bokeh',
         'pandas',
