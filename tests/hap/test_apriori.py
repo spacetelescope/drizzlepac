@@ -30,6 +30,7 @@ def compare_apriori(dataset):
     # Perform alignment of all WCS solutions with GAIA
     results_dict = testutils.compare_wcs_alignment(dataset)
     limit = 0.001
+    abs_limit = 0.1  # absolute limit above which fit may be suspect
 
     # Now compare results to see whether the a priori solutions succeeded
     # in improving the astrometry compared to default telescope pointing
@@ -65,9 +66,9 @@ def compare_apriori(dataset):
 
         # Check that rotation and scale are within
         rot = np.allclose(results['rotation'], pipeline_results['rotation'],
-                          rtol=limit, atol=0)
+                          rtol=limit, atol=abs_limit)
         scale = np.allclose(results['scale'], pipeline_results['scale'],
-                            rtol=limit, atol=0)
+                            rtol=limit, atol=abs_limit)
 
         # Determine success/failure of this dataset's fit
         if all([status, fit_qual, delta, rot, scale]):
@@ -79,14 +80,25 @@ def compare_apriori(dataset):
             print("FAILED  due to:")
             if not status:
                 print("\t* invalid STATUS")
+                print(results['status'])
             if not fit_qual:
                 print("\t* invalid fit quality")
+                print(results['fit_qual'])
             if not delta:
                 print("\t* increased offset from GAIA.")
+                print(offset)
+                print(pipeline_offset)
+                print(delta)
             if not rot:
                 print("\t* larger rotation from fit.")
+                print(results['rotation'])
+                print(pipeline_results['rotation'])
+                print(rot)
             if not scale:
                 print("\t* larger scale from fit.")
+                print(results['scale'])
+                print(pipeline_results['scale'])
+                print(scale)
 
     assert success
 
