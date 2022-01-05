@@ -178,7 +178,7 @@ def test_svm_manifest_name(construct_manifest_filename):
     # Ensure the manifest file uses the proper naming convention
     assert(path.is_file())
 
-
+@pytest.mark.skip
 def test_svm_wcs_ir(gather_output_data):
     print("\ntest_svm_wcs_ir.")
     # Get the TDP for this detector
@@ -218,7 +218,7 @@ def test_svm_wcs_uvis_all(gather_output_data):
     wcsnames = [fits.getval(uvis, "WCSNAME", ext=1).upper() for uvis in uvis_files]
     assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same for the UVIS detector: {wcsnames}"
 
-
+@pytest.mark.skip
 def test_svm_point_cat_numsources(gather_output_data):
    # Check that the point catalogs have the expected number of sources
     print("\ntest_svm_point_cat_numsources.")
