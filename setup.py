@@ -83,7 +83,7 @@ setup(
         'astropy<5.0.0',
         'fitsblender',
         'nictools',
-        'numpy<1.22',
+        'numpy>=1.19',
         'scipy',
         'matplotlib',
         'scikit-learn>=0.20',
@@ -97,6 +97,7 @@ setup(
         'stregion',
         'requests',
         # HAP-pipeline specific:
+        "spherical_geometry>=1.2.22",
         'astroquery>=0.4',
         'bokeh',
         'pandas',
