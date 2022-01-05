@@ -44,10 +44,17 @@ FGSKEY = 'FGSLOCK'
 CHINKEY = 'CHINJECT'
 DRIZKEY = 'DRIZCORR'
 
+# Return codes 
+class Ret_code(Enum):
+    """
+    Define return status codes for Operations 
+    """
+    OK = 0
+    SBCHRC_DATA = 55 
+    NO_VIABLE_DATA = 65
+
 # Annotates level to which image can be aligned according observational parameters
 # as described through FITS keywords
-
-
 class Messages(Enum):
     """
     Define a local classification for OK, Warning, and NoProcess messages
@@ -70,6 +77,9 @@ def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.DEBUG):
     use_for_mvm : boolean
         Boolean which indicates whether the input image should be used for MVM processing -
         True: use for MVM, False: do NOT use for MVM
+
+    Note: This routine is invoked externally by software used for operations.
+
     """
     # Set logging level to user-specified level
     log.setLevel(log_level)
@@ -90,7 +100,7 @@ def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.DEBUG):
     return use_for_mvm
 
 
-def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG):
+def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc=True, type=""):
     """
     Thin wrapper for the analyze_data function to return a list of viable images.
 
@@ -101,31 +111,87 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG):
         dataset where 'associated dataset' may be a single image, multiple images, an HST
         association, or a number of HST associations
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        Default value is 20, or 'info'.
+
+    use_sbchrc : bool, optional
+        Boolean based upon the environment variable setting of MVM_INCLUDE_SMALL which indicates whether
+        or not to generate MVM SkyCell layers from ACS/HRC and ACS/SBC data.  These exposures typically
+        only cover a miniscule fraction of a SkyCell and the plate scale of the SkyCell would result in
+        a degraded representation of the original ACS/HRC and ACS/SBC data.  A setting of 'False' turns off
+        the generation of layers from ACS/HRC and ACS/SBC data, and a setting of 'True' turns the generation on.
+        Default = True
+
+    type : string, optional
+        String indicating whether this file is for MVM or some other processing.
+        If type == "MVM", then Grism/Prism data is ignored.  If type == "" (default) or any
+        other string, the Grism/Prism data is considered available for processing unless there is
+        some other issue (i.e., exposure time of zero).
+        Default = ""
+
     Returns
     =======
     viable_images_list : list
        List of images which can be used in the drizzle process.
 
-    This routine returns a list containing only viable images instead of a table which
-    provides information, as well as a doProcess bool, regarding each image.
+    return_code : int
+        Numeric code indicative of the status of the analysis of the input data.
+        These return codes are defined in this module by class Ret_code.
+
+    Note: This routine returns a *list*, as well as a return code, containing only viable images
+    instead of a table which provides information, as well as a doProcess bool, regarding each image.
     """
     # Set logging level to user-specified level
     log.setLevel(log_level)
-
-    process_list = []
-
+ 
     # Analyze the input file list and get the full table assessment
-    filtered_table = analyze_data(input_file_list)
+    filtered_table = analyze_data(input_file_list, type=type)
 
-    # Extract only the filenames of viable images for processing (i.e., doProcess == 1)
-    if filtered_table['doProcess'].sum() == 0:
-        log.warning("No viable images in single/multiple visit table - no processing done.\n")
+    # Reduce table to only the data which should be processed (doProcess == 1)
+    mask = filtered_table["doProcess"] > 0
+    filtered_table = filtered_table[mask]
+
+    good_table = None
+    good_rows = []
+    process_list = []
+    return_value = Ret_code.OK.value
+
+    # MVM processing, but excluding SBC/HRC data
+    if use_sbchrc == False and type.upper() == "MVM": 
+        # Check the table to determine presence of SBC/HRC data
+        if filtered_table:
+            for i, old_row in enumerate(filtered_table):
+                if old_row["detector"].upper() != "SBC" and old_row["detector"].upper() != "HRC":
+                    good_rows.append(old_row)
+
+            # The entire filtered_table contains only SBC or HRC data
+            if not good_rows:
+                log.warning("Only non-viable or SBC/HRC images in the multi-visit table - no processing done.\n")
+                return_value = Ret_code.SBCHRC_DATA.value
+            # Table contains some non-SBC/non-HRC data for processing
+            else:
+                good_table = Table(rows=good_rows, names=filtered_table.colnames)
+
+                # Get the list of all "good" files to use for the alignment
+                process_list = good_table['imageName'].tolist()
+                return_value = Ret_code.OK.value
+
+        # There is already nothing to process based upon the analysis criteria
+        else:
+            log.warning("No viable images in multi-visit table - no processing done.\n")
+            return_value = Ret_code.NO_VIABLE_DATA.value
+ 
+    # SVM processing or MVM processing with SBC/HRC data included in the MVM processing
     else:
-        # Get the list of all "good" files to use for the alignment
-        process_list = filtered_table['imageName'][np.where(filtered_table['doProcess'])]
-        process_list = list(process_list)  # Convert process_list from numpy list to regular python list
+        if filtered_table:
+            # Get the list of all "good" files to use for the alignment
+            process_list = filtered_table['imageName'].tolist()
+        else:
+            log.warning("No viable images in single/multi-visit table - no processing done.\n")
+            return_value = Ret_code.NO_VIABLE_DATA.value
 
-    return process_list
+    return process_list, return_value
 
 
 def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):

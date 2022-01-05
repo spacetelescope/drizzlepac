@@ -16,7 +16,7 @@
         "MAX_FIT_LIMIT": 150,
         "mosaic_catalog_list": ["GAIAeDR3", "GSC242", "2MASS"],
         "mosaic_fit_list": ["match_relative_fit", "match_2dhist_fit", "match_default_fit"],
-        "mosaic_fitgeom_list": {"shift": 1, "rshift": 3, "rscale": 4, "general": 6}
+        "mosaic_fitgeom_list": {"shift": 3, "rshift": 4, "rscale": 6, "general": 6}
       },
     "generate_source_catalogs":
       {

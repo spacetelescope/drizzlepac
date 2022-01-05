@@ -43,13 +43,17 @@ import fnmatch
 import logging
 import os
 import pickle
+import re
 import sys
 import traceback
+
+from astropy.io import ascii
 
 from astropy.table import Table
 import numpy as np
 import drizzlepac
 
+from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import poller_utils
 from drizzlepac.haputils import product
@@ -76,6 +80,10 @@ envvar_qa_svm = "SVM_QUALITY_TESTING"
 # Default values for these environment variables set to include all available data
 envvar_cat_mvm = {"MVM_INCLUDE_SMALL": 'true',
                   "MVM_ONLY_CTE": 'false'}
+
+DEFAULT_MANIFEST_NAME = "skycell-p0000x00y00_manifest.txt"
+
+MATCH_STRING = "skycell-p\d{4}x\d{2}y\d{2}_input\.out"
 
 # --------------------------------------------------------------------------------------------------------------
 
@@ -330,6 +338,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
     log.info("Run start time: {}".format(str(starting_dt)))
     total_obj_list = []
     product_list = []
+    manifest_name = ""
     try:
         # Parse the MVM poller file and generate the the obs_info_dict, as well as the total detection
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
@@ -342,27 +351,26 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                                                                          layer_method='all',
                                                                          include_small=cat_switches['MVM_INCLUDE_SMALL'],
                                                                          only_cte=cat_switches['MVM_ONLY_CTE'])
-
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
+
+        # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
+        # to use only one of the SkyCellProducts to generate the manifest name as the name
+        # is only dependent on the sky cell.
+        # Example: skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., skycell-p0797x12y05_manifest.txt)
+        manifest_defined = hasattr(total_obj_list[0], "manifest_name") and total_obj_list[0].manifest_name not in ["", None]
+        manifest_name = total_obj_list[0].manifest_name if manifest_defined else DEFAULT_MANIFEST_NAME
+        log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
+        log.info("The manifest will contain the names of all the output products.")
 
         # Update the SkyCellProduct objects with their associated configuration information.
         for filter_item in total_obj_list:
             _ = filter_item.generate_metawcs(custom_limits=custom_limits)
-            filter_item.generate_footprint_mask()
+            filter_item.generate_footprint_mask(save_mask=False)
 
             # Optionally rename output products
             if output_file_prefix or custom_limits:
                 filter_item = rename_output_products(filter_item, output_file_prefix=output_file_prefix)
-
-            if 'manifest_name' not in locals():
-                # Generate the name for the manifest file which is for the entire multi-visit.  It is fine
-                # to use only one of the SkyCellProducts to generate the manifest name as the name
-                # is only dependent on the sky cell.
-                # Example: hst_skycell-p<PPPP>x<XX>y<YY>_manifest.txt (e.g., hst_skycell-p0797x12y05_manifest.txt)
-                manifest_name = total_obj_list[0].manifest_name
-                log.info("\nGenerate the manifest name for this multi-visit: {}.".format(manifest_name))
-                log.info("The manifest will contain the names of all the output products.")
 
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
@@ -471,12 +479,53 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         logging.exception("message")
+    # This except handles sys.exit() which raises the SystemExit exception which inherits from BaseException.
+    except BaseException:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        formatted_lines = traceback.format_exc().splitlines()
+        log.info(formatted_lines[-1])
+        return_value = exc_value
+
+        # If an exception were raised in the poller_utils, it is possible the manifest_name
+        # has not been defined.  Create a manifest_name now to create the expected file which
+        # will be empty.
+        if manifest_name == "":
+            try:
+                # If the input filename is a string, it could be a poller file or it could
+                # be a file containing filenames.  If it is a poller file, the necessary skycell
+                # information is in column 8 (1-based), and only the first entry is needed.
+                if type(input_filename) == str:
+                    output_skycell = ascii.read(input_filename, format='no_header')["col8"][0]
+                    manifest_name = output_skycell.lower() + "_manifest.txt"
+
+                # Maybe the input filename was actually a Python list
+                elif type(input_filename) == list:
+                    skycell_dict = cell_utils.get_sky_cells([input_filename[0]])
+                    output_skycell = next(iter(skycell_dict.keys()))
+                    manifest_name = output_skycell.lower() + "_manifest.txt"
+
+                # Problem case - try to use the name of the input file
+                else:
+                    if re.search(MATCH_STRING, input_filename.lower()):
+                        manifest_name = input_filename.lower().replace("input.out", "manifest.txt")
+                    else:
+                        manifest_name = DEFAULT_MANIFEST_NAME
+                # Bigger problem case - try to use the name of the input file
+            except Exception:
+                if re.search(MATCH_STRING, input_filename.lower()):
+                    manifest_name = input_filename.lower().replace("input.out", "manifest.txt")
+                else:
+                    manifest_name = DEFAULT_MANIFEST_NAME
+
+        log.info("Writing empty manifest file: {}".format(manifest_name))
+
+        with open(manifest_name, mode="a"): pass
 
     finally:
         end_dt = datetime.datetime.now()
         log.info('Processing completed at {}'.format(str(end_dt)))
         log.info('Total processing time: {} sec'.format((end_dt - starting_dt).total_seconds()))
-        log.info("Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error ")
+        log.info("Return code for use by calling Condor/OWL workflow code: 0 (zero) for success, non-zero for error or exit. ")
         log.info("Return condition {}".format(return_value))
         logging.shutdown()
         # Append total trailer file (from astrodrizzle) to all total log files
