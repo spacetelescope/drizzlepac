@@ -15,7 +15,7 @@ dependencies:
       - sphinx_rtd_theme
       - sphinx_automodapi
       - matplotlib
-      - spherical_geometry
+      - "spherical_geometry>=1.2.22"
       - fitsblender
       - nictools
       - pyregion
