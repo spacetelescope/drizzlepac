@@ -1,5 +1,6 @@
 import sys
 import os
+import traceback
 
 from astropy.io import fits
 
@@ -128,6 +129,9 @@ def compare_wcs_alignment(dataset, force=False):
                                               product_type='pipeline')
             results = align_table.filtered_table
             alignment[wcs] = extract_results(results)
+    except Exception as err:
+        print(traceback.format_exc())
+        raise err
 
     finally:
         # Regardless of what happens, always reset the environment variable
