@@ -1165,19 +1165,92 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
     out_headerlet_dict = {}
     for item in tweakwcs_output:
         image_name = item.meta['filename']
-        # Now look to see whether this information needs to be copied to a DRZ file
-        # if this exposure was a DRC exposure
-        drz_name = None
-        if image_name.endswith('drc.fits'):
-            # Look for corresponding DRZ file and open for updating as well.
-            drz_name = image_name.replace('drc.fits', 'drz.fits')
-            if not os.path.exists(drz_name):
-                drz_name = None
+        chipnum = item.meta['chip']
+        hdulist = fits.open(image_name, mode='update')
+        # start by insuring that the current version of STWCS and Astropy are recorded
+        # in the header, not the versions used to create the previous WCS
+        # This logic comes from STWCS in order to be compatible with STWCS in
+        # terms of where these keywords should be found in the PRIMARY header.
+        upwcsver = stwcs.__version__
+        pywcsver = astropy.__version__
 
-        hdulist = _get_updated_header_for_image(image_name, item, fit_label=fit_label)
-        if drz_name:
-            hdulist_drz = _get_updated_header_for_image(drz_name, item, fit_label=fit_label)
-            del hdulist_drz
+        log.info('Updating PRIMARY header with:')
+        log.info('    UPWCSVER = {}'.format(upwcsver))
+        log.info('    PYWCSVER = {}'.format(pywcsver))
+        if 'HISTORY' in hdulist[0].header:
+            after_kw = None
+            before_kw = 'HISTORY'
+        elif 'ASN_MTYP' in hdulist[0].header:
+            after_kw = 'ASN_MTYP'
+            before_kw = None
+        else:
+            after_kw = hdulist[0].header.cards[-1][0]
+            before_kw = None
+
+        hdulist[0].header.set('UPWCSVER', value=upwcsver,
+                        comment="Version of STWCS used to update the WCS",
+                        after=after_kw, before=before_kw)
+        hdulist[0].header.set('PYWCSVER', value=pywcsver,
+                        comment="Version of Astropy used to update the WCS",
+                        after='UPWCSVER')
+
+        if chipnum == 1:
+            chipctr = 1
+            num_sci_ext = amutils.countExtn(hdulist)
+
+            # generate wcs name for updated image header, headerlet
+            # Just in case header value 'wcs_name' is empty.
+            if fit_label is None:
+                if 'relative' in item.meta['fit method']:
+                    fit_label = 'REL'
+                else:
+                    fit_label = 'IMG'
+
+            if not hdulist['SCI', 1].header['WCSNAME'] or hdulist['SCI', 1].header['WCSNAME'] == "":
+                wcs_name = "FIT_{}_{}".format(fit_label, item.meta['catalog_name'])
+            else:
+                wname = hdulist['sci', 1].header['wcsname']
+                if "-" in wname:
+                    wcs_name = '{}-FIT_{}_{}'.format(wname[:wname.index('-')],
+                                                    fit_label,
+                                                    item.meta['fit_info']['catalog'])
+                else:
+                    wcs_name = '{}-FIT_{}_{}'.format(wname, fit_label, item.meta['fit_info']['catalog'])
+
+            # establish correct mapping to the science extensions
+            sci_ext_dict = {}
+            for sci_ext_ctr in range(1, num_sci_ext + 1):
+                sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
+
+        # update header with new WCS info
+        sci_extn = sci_ext_dict["{}".format(item.meta['chip'])]
+        hdr_name = "{}_{}-hlet.fits".format(image_name.rstrip(".fits"), wcs_name)
+        updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
+        info = item.meta['fit_info']
+        if info['catalog'] and info['catalog'] != '':
+            hdulist[sci_extn].header['RMS_RA'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
+            hdulist[sci_extn].header['RMS_DEC'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
+            hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
+            hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
+            hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else 0
+            hdulist[sci_extn].header['FITGEOM'] = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
+        else:
+            hdulist[sci_extn].header['RMS_RA'] = -1.0
+            hdulist[sci_extn].header['RMS_DEC'] = -1.0
+            hdulist[sci_extn].header['CRDER1'] = -1.0
+            hdulist[sci_extn].header['CRDER2'] = -1.0
+            hdulist[sci_extn].header['NMATCHES'] = 0
+            hdulist[sci_extn].header['FITGEOM'] = "N/A"
+
+        # Update value of 'nmatches' in fit_info so that this value will get
+        # used in writing out the headerlet as a file.
+        info['nmatches'] = hdulist[sci_extn].header['NMATCHES']
+
+        if 'HDRNAME' in hdulist[sci_extn].header:
+            del hdulist[sci_extn].header['HDRNAME']
+        hdulist[sci_extn].header['HDRNAME'] = hdr_name
+        hdulist.flush()
+        hdulist.close()
 
         # Create headerlet
         out_headerlet = headerlet.create_headerlet(image_name, hdrname=hdr_name, wcsname=wcs_name,
@@ -1205,97 +1278,6 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         chipctr += 1
     return (out_headerlet_dict)
 
-def _get_updated_header_for_image(image_name, item, fit_label=None):
-    """Update single image with information from fit"""
-
-    chipnum = item.meta['chip']
-    hdulist = fits.open(image_name, mode='update')
-    # start by insuring that the current version of STWCS and Astropy are recorded
-    # in the header, not the versions used to create the previous WCS
-    # This logic comes from STWCS in order to be compatible with STWCS in
-    # terms of where these keywords should be found in the PRIMARY header.
-    upwcsver = stwcs.__version__
-    pywcsver = astropy.__version__
-
-    log.info('Updating PRIMARY header with:')
-    log.info('    UPWCSVER = {}'.format(upwcsver))
-    log.info('    PYWCSVER = {}'.format(pywcsver))
-    if 'HISTORY' in hdulist[0].header:
-        after_kw = None
-        before_kw = 'HISTORY'
-    elif 'ASN_MTYP' in hdulist[0].header:
-        after_kw = 'ASN_MTYP'
-        before_kw = None
-    else:
-        after_kw = hdulist[0].header.cards[-1][0]
-        before_kw = None
-
-    hdulist[0].header.set('UPWCSVER', value=upwcsver,
-                          comment="Version of STWCS used to update the WCS",
-                          after=after_kw, before=before_kw)
-    hdulist[0].header.set('PYWCSVER', value=pywcsver,
-                          comment="Version of Astropy used to update the WCS",
-                          after='UPWCSVER')
-
-    if chipnum == 1:
-        chipctr = 1
-        num_sci_ext = amutils.countExtn(hdulist)
-
-        # generate wcs name for updated image header, headerlet
-        # Just in case header value 'wcs_name' is empty.
-        if fit_label is None:
-            if 'relative' in item.meta['fit method']:
-                fit_label = 'REL'
-            else:
-                fit_label = 'IMG'
-
-        if not hdulist['SCI', 1].header['WCSNAME'] or hdulist['SCI', 1].header['WCSNAME'] == "":
-            wcs_name = "FIT_{}_{}".format(fit_label, item.meta['catalog_name'])
-        else:
-            wname = hdulist['sci', 1].header['wcsname']
-            if "-" in wname:
-                wcs_name = '{}-FIT_{}_{}'.format(wname[:wname.index('-')],
-                                                 fit_label,
-                                                 item.meta['fit_info']['catalog'])
-            else:
-                wcs_name = '{}-FIT_{}_{}'.format(wname, fit_label, item.meta['fit_info']['catalog'])
-
-        # establish correct mapping to the science extensions
-        sci_ext_dict = {}
-        for sci_ext_ctr in range(1, num_sci_ext + 1):
-            sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
-
-    # update header with new WCS info
-    sci_extn = sci_ext_dict["{}".format(item.meta['chip'])]
-    hdr_name = "{}_{}-hlet.fits".format(image_name.rstrip(".fits"), wcs_name)
-    updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
-    info = item.meta['fit_info']
-    if info['catalog'] and info['catalog'] != '':
-        hdulist[sci_extn].header['RMS_RA'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
-        hdulist[sci_extn].header['RMS_DEC'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
-        hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
-        hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
-        hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else 0
-        hdulist[sci_extn].header['FITGEOM'] = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
-    else:
-        hdulist[sci_extn].header['RMS_RA'] = -1.0
-        hdulist[sci_extn].header['RMS_DEC'] = -1.0
-        hdulist[sci_extn].header['CRDER1'] = -1.0
-        hdulist[sci_extn].header['CRDER2'] = -1.0
-        hdulist[sci_extn].header['NMATCHES'] = 0
-        hdulist[sci_extn].header['FITGEOM'] = "N/A"
-
-    # Update value of 'nmatches' in fit_info so that this value will get
-    # used in writing out the headerlet as a file.
-    info['nmatches'] = hdulist[sci_extn].header['NMATCHES']
-
-    if 'HDRNAME' in hdulist[sci_extn].header:
-        del hdulist[sci_extn].header['HDRNAME']
-    hdulist[sci_extn].header['HDRNAME'] = hdr_name
-    hdulist.flush()
-    hdulist.close()
-
-    return hdulist
 # --------------------------------------------------------------------------------------------------------------
 def update_headerlet_phdu(tweakwcs_item, headerlet):
     """Update the primary header data unit keywords of a headerlet object in-place
