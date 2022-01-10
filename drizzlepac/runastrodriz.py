@@ -1702,7 +1702,7 @@ def _update_wcs_fit_keywords(fltfile, flcfile):
     hdulist[0].header.set('UPWCSVER', value=hdulist_flc[0].header['UPWCSVER'],
                           comment="Version of STWCS used to update the WCS",
                           after=after_kw, before=before_kw)
-    hdulist[0].header.set('PYWCSVER', value=hdulist_flc[0].header['UPWCSVER'],
+    hdulist[0].header.set('PYWCSVER', value=hdulist_flc[0].header['PYWCSVER'],
                           comment="Version of Astropy used to update the WCS",
                           after='UPWCSVER')
 
