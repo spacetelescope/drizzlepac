@@ -999,6 +999,8 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             if align_update_files and align_table:
                 # Apply headerlets from alignment to FLT version of the files
                 for fltfile, flcfile in zip(align_update_files, alignfiles):
+                    # Update non-headerlet-based keywords in fltfile
+                    _update_wcs_fit_keywords(fltfile, flcfile)
                     row = align_table[align_table['imageName'] == flcfile]
                     headerlet_file = row['headerletFile'][0]
                     if headerlet_file not in ["None", '']:
@@ -1677,6 +1679,45 @@ def update_active_wcs(filename, wcsname, logfile=None):
     if logfile:
         _updateTrlFile(logfile, update_msg)
 
+def _update_wcs_fit_keywords(fltfile, flcfile):
+    """Update the header of the FLT file with the a posteriori fit results"""
+    fit_kws_sci = [('RMS_RA', -1.0), ('RMS_DEC', -1.0),
+                   ('CRDER1', -1.0), ('CRDER2', -1.0),
+                   ('NMATCHES', 0), ('FITGEOM', 'N/A'),
+                   ('HDRNAME', '')]
+
+    hdulist = fits.open(fltfile, mode='update')
+    hdulist_flc = fits.open(flcfile)  # source header
+
+    if 'HISTORY' in hdulist[0].header:
+        after_kw = None
+        before_kw = 'HISTORY'
+    elif 'ASN_MTYP' in hdulist[0].header:
+        after_kw = 'ASN_MTYP'
+        before_kw = None
+    else:
+        after_kw = hdulist[0].header.cards[-1][0]
+        before_kw = None
+
+    hdulist[0].header.set('UPWCSVER', value=hdulist_flc[0].header['UPWCSVER'],
+                          comment="Version of STWCS used to update the WCS",
+                          after=after_kw, before=before_kw)
+    hdulist[0].header.set('PYWCSVER', value=hdulist_flc[0].header['PYWCSVER'],
+                          comment="Version of Astropy used to update the WCS",
+                          after='UPWCSVER')
+
+    num_sci_ext = amutils.countExtn(hdulist)
+    for extnum in range(1, num_sci_ext+1):
+        sci_extn = ('SCI', extnum)
+        for kw in fit_kws_sci:
+            src_hdr = hdulist_flc[sci_extn].header
+            hdulist[sci_extn].header.set(kw[0], value=src_hdr[kw[0]], after='WCSNAME')
+
+    hdulist.flush()
+    hdulist.close()
+    hdulist_flc.close()
+    del hdulist
+    del hdulist_flc
 
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
