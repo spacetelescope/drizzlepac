@@ -35,34 +35,6 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
-# ============================================================================================================
-
-
-def apply_gaia_pm_correction(gaia_table, correction_epoch):
-    """apply RA and Dec proper motion correction to RA and Dec columns in gaia table.
-
-    Parameters
-    ----------
-    gaia_table : astropy table object
-        Table containing positions of GAIA sources found in the image footprint
-
-    correction_epoch : float
-        epoch to correct GAIA PM uncertainties to
-
-    Returns
-    -------
-    gaia_table : astropy table object
-        input gaia_table with updated uncertainties
-    """
-    # TODO: Update this subroutine as required to work with Rick's GAIA PM uncertainty correction code
-    n_years = gaia_table['ref_epoch'] - correction_epoch
-    print(n_years)
-
-    gaia_table['RA'] += n_years * gaia_table['pmra']/3600000.0
-    gaia_table['DEC'] += n_years * gaia_table['pmdec'] / 3600000.0
-
-    return gaia_table
-
 
 # ============================================================================================================
 
