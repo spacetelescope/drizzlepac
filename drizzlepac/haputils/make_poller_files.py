@@ -103,7 +103,10 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         imghdr = imghdu[0].header
         linelist.append("{}".format(imghdr['proposid']))
         linelist.append(imgname.split("_")[-2][1:4].upper())
-        linelist.append(imghdr['linenum'].split(".")[0])
+        if imghdr['primesi'].lower() == imghdr['instrume']:
+            linelist.append(imghdr['linenum'].split(".")[0])
+        else:
+            linelist.append(imghdr['rootname'][-5:-3].upper())
         linelist.append("{}".format(imghdr['exptime']))
         if imghdr['INSTRUME'].lower() == "acs":
             filter = poller_utils.determine_filter_name("{};{}".format(imghdr['FILTER1'], imghdr['FILTER2']))
