@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-"""Quantify how well MVM products are aligned to GAIA sources found in the image footprint
-
-
-NOTE: UserStarFinder coords are 0-indexed."""
+"""Statistically quantify how well MVM products are aligned to GAIA sources found in the image footprint
+defined by the SVM-processed fl(c/t).fits input files. Statistics are reported on the differences in X, Y and
+RA, Dec positions of GAIA sources compared to positions of matching point-sources in the image footprint."""
 
 # Standard library imports
 import argparse
@@ -175,7 +174,8 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     log.info("Summary of input image WCSNAME values")
     log.info("Image Name{}WCSNAME".format(" "*(len(max(imglist, key=len)) - padding)))
     for imgname in imglist:
-        log.info("{}{}{}".format(imgname, " " * padding, fits.getval(imgname, keyword="WCSNAME", extname="SCI", extver=1)))
+        log.info("{}{}{}".format(imgname, " " * padding, fits.getval(imgname, keyword="WCSNAME",
+                                                                     extname="SCI", extver=1)))
 
     # 1: generate WCS obj. for custom mosaic image
     mosaic_wcs = stwcs.wcsutil.HSTWCS(mosaic_imgname, ext=1)
@@ -183,7 +183,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     # 2a: generate table of all gaia sources in frame
     gaia_table = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs, full_catalog=True,
                                                     catalog='GAIAedr3', use_footprint=True)
-    # gaia_table = apply_gaia_pm_correction(gaia_table, 2002.0)
+
     # 2b: Remove gaia sources outside footprint of input flc/flt images, add X and Y coord columns
     mosaic_hdu = fits.open(mosaic_imgname)
     x, y = mosaic_wcs.all_world2pix(gaia_table['RA'], gaia_table['DEC'], 0)
