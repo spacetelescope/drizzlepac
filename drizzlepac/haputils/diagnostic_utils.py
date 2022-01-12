@@ -176,7 +176,10 @@ class HapDiagnostic(object):
             self.out_dict['general information'][dict_keys[key]] = self.header[key]
         # Now, add items which require more interpretation
         try:
-            self.out_dict['general information']['visit'] = self.header['linenum'].split(".")[0]
+            if self.header['primesi'].lower() == self.header['instrume']:
+                self.out_dict['general information']['visit'] = self.header['linenum'].split(".")[0]
+            else:
+                self.out_dict['general information']['visit'] = self.header['filename'].split("_")[2]
         except:
             self.out_dict['general information']['visit'] = self.header['filename'].split("_")[2]
         # determine filter...
