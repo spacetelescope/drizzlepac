@@ -170,6 +170,13 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     for x in range(0, len(imglist)):
         imglist[x] = imglist[x].strip()
 
+    # 0a: report the WCS name for each input image
+    padding = 5
+
+    log.info("Image Name{}WCSNAME".format(" "*(len(max(imglist, key=len)) - padding)))
+    for imgname in imglist:
+        log.info("{}{}{}".format(imgname, " " * padding, fits.getval(imgname, keyword="WCSNAME", extname="SCI", extver=1)))
+
     # 1: generate WCS obj. for custom mosaic image
     mosaic_wcs = stwcs.wcsutil.HSTWCS(mosaic_imgname, ext=1)
 
