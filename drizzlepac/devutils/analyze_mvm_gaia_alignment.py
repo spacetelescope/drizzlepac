@@ -8,6 +8,7 @@ RA, Dec positions of GAIA sources compared to positions of matching point-source
 import argparse
 from datetime import datetime
 import os
+import pdb
 import random
 import string
 import sys
@@ -409,7 +410,12 @@ if __name__ == "__main__":
     # Parse command-line input args
     parser = argparse.ArgumentParser(description='Statistically quantify quality of GAIA MVM alignment')
     parser.add_argument('mosaic_imgname', help='Name of the MVM-processed mosaic image to process')
-    parser.add_argument('flcflt_list', help='list of calibrated flc.fits and/or flt.fits images to process')
+    g = parser.add_mutually_exclusive_group(required=True)
+    g.add_argument('-ff', '--flcflt_listfile', default='none',
+                   help='text file containing a list of calibrated flc.fits and/or flt.fits images to '
+                        'process, one per line')
+    g.add_argument('-fl', '--flcflt_list', default='none',
+                   help='list of calibrated flc.fits and/or flt.fits images to process')
     parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true',
                         help='If this option is turned on, additional log messages will be displayed and '
                              'additional files will be created during the course of the run.')
@@ -427,7 +433,7 @@ if __name__ == "__main__":
                         '"file" writes the plots and statistics to a single multi-page .pdf file, and "none" '
                         'option turns off all plot generation. Default value is "none".')
     input_args = parser.parse_args()
-
+    pdb.set_trace()
     # Perform analysis
     perform(input_args.mosaic_imgname, input_args.flcflt_list, diagnostic_mode=input_args.diagnostic_mode,
             log_level=log_level_dict[input_args.log_level], plot_output_dest=input_args.plot_output_dest)
