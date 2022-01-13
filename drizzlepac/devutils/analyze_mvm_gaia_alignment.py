@@ -433,6 +433,10 @@ if __name__ == "__main__":
                         '"file" writes the plots and statistics to a single multi-page .pdf file, and "none" '
                         'option turns off all plot generation. Default value is "none".')
     input_args = parser.parse_args()
+    if input_args.flcflt_listfile == 'none':
+        input_args.flcflt_listfile = None
+    else:
+        input_args.flcflt_list = None
     pdb.set_trace()
     # Perform analysis
     perform(input_args.mosaic_imgname, input_args.flcflt_list, diagnostic_mode=input_args.diagnostic_mode,
