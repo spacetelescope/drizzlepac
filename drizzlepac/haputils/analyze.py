@@ -415,7 +415,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         split_sfilter = sfilter.upper().split('_')
         for item in split_sfilter:
             # This is the only circumstance when Grism/Prism data WILL be processed.
-            if item.startswith(('G', 'PR')) and not is_zero and type.upper() != "MVM":
+            if item.startswith(('G', 'PR')) and not is_zero and type.upper() == "SVM":
                 no_proc_key = None
                 no_proc_value = None
                 log.info("The Grism/Prism data, {}, will be processed.".format(input_file))
