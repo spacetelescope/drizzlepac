@@ -68,7 +68,7 @@ class AlignmentTable:
         * **apply_fit** : Updates all input image WCSs with the result of the selected 'best' fit
 
     """
-    def __init__(self, input_list, clobber=False, dqname='DQ',
+    def __init__(self, input_list, clobber=False, dqname='DQ', process_type='',
                  log_level=logutil.logging.NOTSET, **alignment_pars):
         """
         Parameters
@@ -82,6 +82,10 @@ class AlignmentTable:
         dqname : str, optional
             Allows the user to customize the name of the extension (`extname`) containing the
             data quality flags to be applied to the data during source identification.
+
+        process_type : str, optional
+            Specifies what type of data processing is being done on the input data.
+            Values include: '' (default for pipeline processing), 'SVM', 'MVM'.
 
         log_level : int, optional
             Set the logging level for this processing
@@ -141,7 +145,7 @@ class AlignmentTable:
         # Apply filter to input observations to insure that they meet minimum criteria for being able to be aligned
         log.info(
             "{} AlignmentTable: Filter STEP {}".format("-" * 20, "-" * 63))
-        self.filtered_table = analyze.analyze_data(input_list, type="SVM")
+        self.filtered_table = analyze.analyze_data(input_list, type=process_type)
         log.debug("Input sorted as: \n{}".format(self.filtered_table))
 
         if self.filtered_table['doProcess'].sum() == 0:
