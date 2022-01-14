@@ -129,7 +129,8 @@ def find_and_match_sources(fwhm, mosaic_hdu, mosaic_wcs, mosaic_imgname, dao_mas
 # ============================================================================================================
 
 
-def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=logutil.logging.INFO,
+def perform(mosaic_imgname, flcflt_list=None, flcflt_listfile=None, diagnostic_mode=False,
+            log_level=logutil.logging.INFO,
             plot_output_dest="none"):
     """ Statistically quantify quality of GAIA MVM alignment
 
@@ -138,8 +139,15 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     mosaic_imgname : str
         Name of the MVM-processed mosaic image to process
 
-    flcflt_list : list
-        lList of calibrated flc.fits and/or flt.fits images to process
+    flcflt_list : list, optional
+        List of calibrated flc.fits and/or flt.fits images to process. If not explicitly specified, the
+        default value is logical 'None'. NOTE: Users must specify a value for either 'flcflt_list' or
+        'flcflt_listfile'. Both cannot be blank.
+
+    flcflt_listfile : str, optional
+        Name of a text file containing a list of calibrated flc.fits and/or flt.fits images to process, one
+        per line. If not explicitly specified, the default value is logical 'None'. NOTE: Users must
+        specify a value for either 'flcflt_list' or 'flcflt_listfile'. Both cannot be blank.
 
     diagnostic_mode : bool, optional
         If set to logical 'True', additional log messages will be displayed and additional files will be
@@ -159,18 +167,36 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     Nothing!
     """
     log.setLevel(log_level)
+    # Make sure either 'flcflt_list' or 'flcflt_listfile' is specified.
+    if flcflt_list is None and flcflt_listfile is None:
+        errmsg = "Users must specify a value for either 'flcflt_list' or 'flcflt_listfile'. " \
+                 "Both cannot be blank."
+        log.error(errmsg)
+        raise ValueError(errmsg)
+    if flcflt_list is not None and flcflt_listfile is not None:
+        errmsg = "Users must specify a value for either 'flcflt_list' or 'flcflt_listfile'. " \
+                 "Both cannot be specified."
+        log.error(errmsg)
+        raise ValueError(errmsg)
+
+    # make sure 'plot_output_dest' has a valid input value.
     if plot_output_dest not in ['file', 'none', 'screen']:
         errmsg = "'{}' is not a valid input for argument 'plot_output_dest'. Valid inputs are 'file', " \
                  "'none', or 'screen'.".format(plot_output_dest)
         log.error(errmsg)
         raise ValueError(errmsg)
-    # 0: read in flc/flt fits files from user-specified fits file
-    with open(flcflt_list, mode='r') as imgfile:
-        imglist = imgfile.readlines()
-    for x in range(0, len(imglist)):
-        imglist[x] = imglist[x].strip()
 
-    # 0a: report the WCS name for each input image
+    # -1: Get flc/flt list from user-specified list of files and/or user-specified list file read in flc/flt
+    # fits files from user-specified fits file
+    if flcflt_listfile:
+        with open(flcflt_listfile, mode='r') as imgfile:
+            imglist = imgfile.readlines()
+        for x in range(0, len(imglist)):
+            imglist[x] = imglist[x].strip()
+    if flcflt_list:
+        imglist = flcflt_list
+
+    # 0: report the WCS name for each input image
     padding = 5
     log.info("Summary of input image WCSNAME values")
     log.info("Image Name{}WCSNAME".format(" "*(len(max(imglist, key=len)) - padding)))
@@ -210,11 +236,12 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     dao_mask_array = np.where(footprint.total_mask == 0, 1, 0)
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64),
                             gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
-    # compute FWHM for source finding based on sources in image
+    # 4: compute FWHM for source finding based on sources in image
     mpeaks, fwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array),
                                                def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
                                                diagnostic_mode=diagnostic_mode)
-    # Attempt to find matching gaia sources and userStarFinder sources first using computed FWHM value then hard-wired value.
+    # 5: Attempt to find matching gaia sources and userStarFinder sources first using computed FWHM value then
+    # hard-wired value.
     fwhm_values = [fwhm, 25.0]
     for item in enumerate(fwhm_values):
         ctr = item[0]
@@ -346,6 +373,7 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
             final_plot_filename = "{}_{}".format(plotfile_prefix, final_plot_filename)
         csl.pdf_merger(final_plot_filename, pdf_file_list)
         log.info("Sourcelist comparison plots saved to file {}.".format(final_plot_filename))
+
 # ============================================================================================================
 
 
@@ -401,12 +429,6 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
 
 
 if __name__ == "__main__":
-
-    log_level_dict = {"critical": logutil.logging.CRITICAL,
-                      "error": logutil.logging.ERROR,
-                      "warning": logutil.logging.WARNING,
-                      "info": logutil.logging.INFO,
-                      "debug": logutil.logging.DEBUG}
     # Parse command-line input args
     parser = argparse.ArgumentParser(description='Statistically quantify quality of GAIA MVM alignment')
     parser.add_argument('mosaic_imgname', help='Name of the MVM-processed mosaic image to process')
@@ -414,7 +436,7 @@ if __name__ == "__main__":
     g.add_argument('-ff', '--flcflt_listfile', default='none',
                    help='text file containing a list of calibrated flc.fits and/or flt.fits images to '
                         'process, one per line')
-    g.add_argument('-fl', '--flcflt_list', default='none',
+    g.add_argument('-fl', '--flcflt_list', default='none', nargs="+",
                    help='list of calibrated flc.fits and/or flt.fits images to process')
     parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true',
                         help='If this option is turned on, additional log messages will be displayed and '
@@ -433,11 +455,21 @@ if __name__ == "__main__":
                         '"file" writes the plots and statistics to a single multi-page .pdf file, and "none" '
                         'option turns off all plot generation. Default value is "none".')
     input_args = parser.parse_args()
+
+    # Prep inputs for execution of perform()
     if input_args.flcflt_listfile == 'none':
         input_args.flcflt_listfile = None
-    else:
+    if input_args.flcflt_list == 'none':
         input_args.flcflt_list = None
-    pdb.set_trace()
+
+    log_level_dict = {"critical": logutil.logging.CRITICAL,
+                      "error": logutil.logging.ERROR,
+                      "warning": logutil.logging.WARNING,
+                      "info": logutil.logging.INFO,
+                      "debug": logutil.logging.DEBUG}
+    input_args.log_level = log_level_dict[input_args.log_level]
+
     # Perform analysis
-    perform(input_args.mosaic_imgname, input_args.flcflt_list, diagnostic_mode=input_args.diagnostic_mode,
-            log_level=log_level_dict[input_args.log_level], plot_output_dest=input_args.plot_output_dest)
+    perform(input_args.mosaic_imgname, flcflt_list=input_args.flcflt_list,
+            flcflt_listfile=input_args.flcflt_listfile, diagnostic_mode=input_args.diagnostic_mode,
+            log_level=input_args.log_level, plot_output_dest=input_args.plot_output_dest)
