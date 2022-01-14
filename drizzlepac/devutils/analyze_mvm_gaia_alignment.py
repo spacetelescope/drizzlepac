@@ -8,7 +8,6 @@ RA, Dec positions of GAIA sources compared to positions of matching point-source
 import argparse
 from datetime import datetime
 import os
-import pdb
 import random
 import string
 import sys
