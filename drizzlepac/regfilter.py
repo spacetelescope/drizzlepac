@@ -8,7 +8,6 @@
 """
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
-__version_date__ = '17-Nov-2013'
 __author__ = 'Mihai Cara'
 
 

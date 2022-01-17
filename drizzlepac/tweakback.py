@@ -32,7 +32,6 @@ __taskname__ = 'tweakback' # unless someone comes up with anything better
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.4.1'
-__version_date__ = '13-July-2020'
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
@@ -132,8 +131,8 @@ def tweakback(drzfile, input=None,  origwcs = None,
     stwcs.wcsutil.altwcs: Alternate WCS implementation
 
     """
-    print("TweakBack Version {:s}({:s}) started at: {:s}\n"
-          .format(__version__,__version_date__,util._ptime()[0]))
+    print("TweakBack Version {:s} started at: {:s}\n"
+          .format(__version__, util._ptime()[0]))
 
     # Interpret input list/string into list of filename(s)
     fltfiles = parseinput.parseinput(input)[0]
@@ -436,7 +435,7 @@ def getHelpAsString(docstring = False, show_ver = True):
         if show_ver:
             helpString = os.linesep + \
                 ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+                ' updated on ']) + os.linesep
         else:
             helpString = ''
         if os.path.exists(helpfile):

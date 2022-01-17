@@ -12,7 +12,6 @@ by ``AstroDrizzle``.
 __all__ = ['photeq']
 __taskname__ = 'drizzlepac.photeq'
 __version__ = '0.2'
-__version_date__ = '06-Nov-2015'
 __author__ = 'Mihai Cara'
 
 # HISTORY:
@@ -242,7 +241,7 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
 
     #  BEGIN:
     _mlinfo("***** {0} started on {1}".format(__taskname__, runtime_begin))
-    _mlinfo("      Version {0} ({1})".format(__version__, __version_date__))
+    _mlinfo("      Version {0} ".format(__version__))
 
     # check that extension names are strings (or None for error ext):
     if sciext is None:
@@ -641,7 +640,7 @@ def getHelpAsString(docstring = False, show_ver = True):
         if show_ver:
             helpString = os.linesep + \
                 ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+                ' updated on ']) + os.linesep
         else:
             helpString = ''
         if os.path.exists(helpfile):

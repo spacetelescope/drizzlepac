@@ -13,7 +13,7 @@ IS RETURNED BY :py:func:`quickderiv`.
 #   Version 0.1.0: created -- CJH
 #
 import numpy as np
-from .version import *
+from . import __version__
 
 def qderiv(array): # TAKE THE ABSOLUTE DERIVATIVE OF A NUMARRY OBJECT
     """Take the absolute derivate of an image in memory."""

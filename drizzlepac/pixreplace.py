@@ -63,7 +63,6 @@ from . import util
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
-__version_date__ = '27-May-2015'
 
 __taskname__ = 'pixreplace'
 
@@ -161,7 +160,7 @@ def getHelpAsString(docstring = False, show_ver = True):
         if show_ver:
             helpString = os.linesep + \
                 ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+                ' updated on ']) + os.linesep
         else:
             helpString = ''
         if os.path.exists(helpfile):

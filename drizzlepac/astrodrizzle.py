@@ -45,7 +45,7 @@ from . import sky
 from . import staticMask
 from . import util
 from . import wcs_functions
-from .version import *
+from . import __version__
 
 
 __taskname__ = "astrodrizzle"
@@ -169,8 +169,8 @@ def run(configobj, wcsmap=None):
     clean = configobj['STATE OF INPUT FILES']['clean']
     procSteps = util.ProcSteps()
 
-    print("AstroDrizzle Version {:s} ({:s}) started at: {:s}\n"
-          .format(__version__, __version_date__, util._ptime()[0]))
+    print("AstroDrizzle Version {:s} started at: {:s}\n"
+          .format(__version__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
     log.debug('')
@@ -296,7 +296,7 @@ def getHelpAsString(docstring = False, show_ver = True):
         if show_ver:
             helpString = os.linesep + \
                 ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+                ' updated on ']) + os.linesep
         else:
             helpString = ''
         if os.path.exists(helpfile):
