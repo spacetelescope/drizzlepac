@@ -25,11 +25,14 @@ from pathlib import Path
 """
 
 WCS_SUB_NAME = "FIT_SVM_GAIA"
-POLLER_FILE = "test_acs_hrc_sbc_input.out"
+POLLER_FILE = "acs_hrc_sbc_input.out"
 
 # Gather expected values for pass/fail criteria here
-expected_point_sources = {'hrc': 225, 'sbc': 72}
-expected_seg_sources = {'hrc': 680, 'sbc': 264}
+expected_total_point_sources = {'hrc': 268, 'sbc': 65}
+expected_total_segment_sources = {'hrc': 642, 'sbc': 283}
+expected_filter_point_sources = {'hrc': 269, 'sbc': 208}
+expected_filter_segment_sources = {'hrc': 642, 'sbc': 399}
+tolerance = 0.25 
 
 
 @pytest.fixture(scope="module")
@@ -198,32 +201,43 @@ def test_svm_empty_cats(gather_output_data):
     assert len(bad_tables) == 0, f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
 
 
-@pytest.mark.skip
-def test_svm_point_cats(gather_output_data):
-    # Check that the point catalogs have the expected number of sources
-    cat_files = [files for files in gather_output_data if files.lower().endswith("point-cat.ecsv")]
+# Due to the way the catalogs are filtered, check the size of the total catalog and one of the filter
+# catalogs separately.  The total catalog has the row removed for each source where the constituent 
+# filter catalogs *ALL* have flag>5 for the source.  Rows are NOT removed from the filter table based on
+# flag values.
+def test_svm_point_total_cat(gather_output_data):
+    # Check the output catalogs should contain the correct number of sources -- allows for a broad tolerance
+    print("\ntest_svm_point_total_cat.")
+    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")]
 
-    num_sources = {cat:len(ascii.read(cat, format="ecsv")) for cat in cat_files}
+    num_sources = {tdp:len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
     valid_cats = {}
-    for cat in expected_point_sources.keys():
-        for file in cat_files:
-            if cat in file and "total" in file:
-                valid_cats[cat] = (np.isclose(num_sources[file], expected_point_sources[cat], rtol=0.1), num_sources[file])
+    for tdp in expected_total_point_sources.keys():
+        for file in tdp_files:
+            if tdp in file:
+                tol_limit = tolerance * expected_total_point_sources[tdp]
+                lower_lim = expected_total_point_sources[tdp] - tol_limit
+                upper_lim = expected_total_point_sources[tdp] + tol_limit
+                valid_cats[tdp] = (file, lower_lim < num_sources[file] < upper_lim)
                 break
-    bad_cats = [cat for cat in valid_cats if not valid_cats[cat][0]]
-    assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_point_sources}"
+    bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
+    assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_point_sources}"
 
 
-def test_svm_segment_cats(gather_output_data):
-    # Check that the point catalogs have the expected number of sources
-    cat_files = [files for files in gather_output_data if files.lower().endswith("segment-cat.ecsv")]
+def test_svm_segment_total_cat(gather_output_data):
+    # Check the output catalogs should contain the correct number of sources -- allows for a broad tolerance
+    print("\ntest_svm_segment_total_cat.")
+    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("segment-cat.ecsv")]
 
-    num_sources = {cat: len(ascii.read(cat, format="ecsv")) for cat in cat_files}
+    num_sources = {tdp:len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
     valid_cats = {}
-    for cat in expected_seg_sources.keys():
-        for file in cat_files:
-            if cat in file and "total" in file:
-                valid_cats[cat] = (np.isclose(num_sources[file], expected_seg_sources[cat], rtol=0.1), num_sources[file])
+    for tdp in expected_total_segment_sources.keys():
+        for file in tdp_files:
+            if tdp in file:
+                tol_limit = tolerance * expected_total_segment_sources[tdp]
+                lower_lim = expected_total_segment_sources[tdp] - tol_limit
+                upper_lim = expected_total_segment_sources[tdp] + tol_limit
+                valid_cats[tdp] = (file, lower_lim < num_sources[file] < upper_lim)
                 break
-    bad_cats = [cat for cat in valid_cats if not valid_cats[cat][0]]
-    assert len(bad_cats) == 0, f"Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_seg_sources}"
+    bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
+    assert len(bad_cats) == 0,  f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_segment_sources}"

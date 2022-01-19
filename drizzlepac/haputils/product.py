@@ -288,13 +288,21 @@ class HAPProduct:
                                 alignment_pars['determine_fit_quality']['do_consistency_check'] = False
 
                                 # Evaluate the quality of the fit
+                                # Need to create this log file specifically for the PyTest testing environment
+                                # when a single Python session is running and the tests are looking for dataset-specific
+                                # log files.
+                                log_file = "temp_align.log"
                                 is_good_fit, _, _, _, _, _ = align.determine_fit_quality_mvm_interface(align_table.imglist,
                                                                                                        align_table.filtered_table,
                                                                                                        more_catalogs,
                                                                                                        num_cat,
                                                                                                        alignment_pars,
                                                                                                        print_fit_parameters=True,
-                                                                                                       loglevel=self.log_level)
+                                                                                                       loglevel=self.log_level,
+                                                                                                       runfile=log_file)
+                                
+                                # Clean up the temporary log file as the contents are captured
+                                os.remove(log_file)
 
                                 # Ensure the original parameters stay intact for the iterations
                                 # as the perform_fit() modifies the fitgeom

@@ -165,14 +165,19 @@ def test_svm_wcs(gather_output_data):
     assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same: {wcsnames}"
 
 
-def test_svm_cat_sources(gather_output_data):
-    # Check the output catalogs should contain > 0 measured sources
-    cat_files = [files for files in gather_output_data if files.lower().endswith("-cat.ecsv")]
+# Due to the way the catalogs are filtered, check the size of the total catalog and one of the filter
+# catalogs separately.  The total catalog has the row removed for each source where the constituent 
+# filter catalogs *ALL* have flag>5.
+def test_svm_point_total_cat(gather_output_data):
+    # Check the output catalogs should contain the correct number of sources
+    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")]
 
     valid_tables = {}
-    for cat in cat_files:
+    for cat in tdp_files:
         table_length = len(ascii.read(cat, format="ecsv"))
-        print("\ntest_svm_cat_sources. Number of sources in catalog {} is {}.".format(cat, table_length))
+        print("\ntest_svm_point_total_cat. Number of sources in catalog {} is {}.".format(cat, table_length))
         valid_tables[cat] = table_length > 0
     bad_tables = [cat for cat in cat_files if not valid_tables[cat]]
     assert len(bad_tables) == 0, f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
+
+
