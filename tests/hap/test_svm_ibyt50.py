@@ -222,10 +222,8 @@ def test_svm_point_total_cat(gather_output_data):
     for tdp in expected_total_point_sources.keys():
         for file in tdp_files:
             if tdp in file:
-                tol_limit = tolerance  * expected_total_point_sources[tdp]
-                lower_lim = expected_total_point_sources[tdp] - tol_limit
-                upper_lim = expected_total_point_sources[tdp] + tol_limit
-                valid_cats[tdp] = (file, lower_lim < num_sources[file] < upper_lim)
+                tol_limit = tolerance * expected_total_point_sources[tdp]
+                valid_cats[tdp] = (file, np.isclose(expected_total_point_sources[tdp], num_sources[file], atol=tol_limit))
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
     assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_point_sources}"
@@ -242,9 +240,7 @@ def test_svm_segment_total_cat(gather_output_data):
         for file in tdp_files:
             if tdp in file:
                 tol_limit = tolerance * expected_total_segment_sources[tdp]
-                lower_lim = expected_total_segment_sources[tdp] - tol_limit
-                upper_lim = expected_total_segment_sources[tdp] + tol_limit
-                valid_cats[tdp] = (file, lower_lim < num_sources[file] < upper_lim)
+                valid_cats[tdp] = (file, np.isclose(expected_total_segment_sources[tdp], num_sources[file], atol=tol_limit))
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
     assert len(bad_cats) == 0,  f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_segment_sources}"

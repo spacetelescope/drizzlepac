@@ -302,7 +302,11 @@ class HAPProduct:
                                                                                                        runfile=log_file)
                                 
                                 # Clean up the temporary log file as the contents are captured
-                                os.remove(log_file)
+                                try:
+                                    os.remove(log_file)
+                                except OSError as error:
+                                    log.warning("Unable to remove file {}.".format(log_file))
+                                    log.warning("Output trailer files may contain duplicate information.")
 
                                 # Ensure the original parameters stay intact for the iterations
                                 # as the perform_fit() modifies the fitgeom
