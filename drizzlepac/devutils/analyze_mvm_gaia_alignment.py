@@ -128,9 +128,8 @@ def find_and_match_sources(fwhm, mosaic_hdu, mosaic_wcs, mosaic_imgname, dao_mas
 # ============================================================================================================
 
 
-def perform(mosaic_imgname, flcflt_list=None, flcflt_listfile=None, diagnostic_mode=False,
-            log_level=logutil.logging.INFO,
-            plot_output_dest="none"):
+def perform(mosaic_imgname, flcflt_list=None, flcflt_listfile=None, min_n_matches=10, diagnostic_mode=False,
+            log_level=logutil.logging.INFO, plot_output_dest="none"):
     """ Statistically quantify quality of GAIA MVM alignment
 
     Parameters
@@ -147,6 +146,12 @@ def perform(mosaic_imgname, flcflt_list=None, flcflt_listfile=None, diagnostic_m
         Name of a text file containing a list of calibrated flc.fits and/or flt.fits images to process, one
         per line. If not explicitly specified, the default value is logical 'None'. NOTE: Users must
         specify a value for either 'flcflt_list' or 'flcflt_listfile'. Both cannot be blank.
+
+    min_n_matches : int, optional
+        Minimum acceptable number of cross-matches found between the GAIA catalog and the catalog of detected
+        sources in the FOV the input flc/flt images. If the number of cross-matching sources returned by
+        find_and_match_sources() is less than this value, a hard exit will be triggered.If not explicitly
+        specified, the default value is 10.
 
     diagnostic_mode : bool, optional
         If set to logical 'True', additional log messages will be displayed and additional files will be
@@ -254,13 +259,14 @@ def perform(mosaic_imgname, flcflt_list=None, flcflt_listfile=None, diagnostic_m
                                                                                            xy_gaia_coords,
                                                                                            diagnostic_mode=diagnostic_mode,
                                                                                            log_level=log_level)
-        if len(matches_gaia_to_det) > 10:
+        if len(matches_gaia_to_det) > min_n_matches:
             break
         else:
             if ctr == 0:
-                log.info("Not enough matching sources found. Trying again with {}".format(fwhm_values[1]))
+                log.info("Not enough matching sources found. Trying again with FWHM = {}".format(fwhm_values[1]))
             if ctr == 1:
-                err_msg = "Error: not enough matching sources found."
+                err_msg = "Error: not enough matching sources found. Maybe try adjusting the value of " \
+                          "'min_n_matches' (Current value: {}).".format(min_n_matches)
                 log.error(err_msg)
                 raise Exception(err_msg)
     gcol = ['X', 'Y', 'ref_epoch', 'RA', 'RA_error', 'DEC', 'DEC_error',
@@ -448,6 +454,12 @@ if __name__ == "__main__":
                         'Specifying "critical" will only record/display "critical" log statements, and '
                         'specifying "error" will record/display both "error" and "critical" log statements, '
                         'and so on.')
+    parser.add_argument('-m', '--min_n_matches', required=False, default=10, type=int,
+                        help='Minimum acceptable number of cross-matches found between the GAIA catalog and '
+                             'the catalog of detected sources in the FOV the input flc/flt images. If the '
+                             'number of cross-matching sources returned by find_and_match_sources() is less '
+                             'than this value, a hard exit will be triggered. If not explicitly specified, '
+                             'the default value is 10.')
     parser.add_argument('-p', '--plot_output_dest', required=False, default='none',
                         choices=['file', 'none', 'screen'],
                         help='Destination to direct plots, "screen" simply displays them to the screen. '
@@ -471,4 +483,5 @@ if __name__ == "__main__":
     # Perform analysis
     perform(input_args.mosaic_imgname, flcflt_list=input_args.flcflt_list,
             flcflt_listfile=input_args.flcflt_listfile, diagnostic_mode=input_args.diagnostic_mode,
-            log_level=input_args.log_level, plot_output_dest=input_args.plot_output_dest)
+            min_n_matches=input_args.min_n_matches, log_level=input_args.log_level,
+            plot_output_dest=input_args.plot_output_dest)
