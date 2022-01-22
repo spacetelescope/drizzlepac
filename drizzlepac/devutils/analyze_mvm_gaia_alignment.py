@@ -241,7 +241,7 @@ def perform(mosaic_imgname, flcflt_list=None, flcflt_listfile=None, min_n_matche
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64),
                             gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
     # 4: compute FWHM for source finding based on sources in image
-    mpeaks, fwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array),
+    mpeaks, fwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array.astype(bool)).astype(np.int16),
                                                def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
                                                diagnostic_mode=diagnostic_mode)
     # 5: Attempt to find matching gaia sources and userStarFinder sources first using computed FWHM value then
