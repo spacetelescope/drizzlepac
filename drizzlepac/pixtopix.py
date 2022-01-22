@@ -256,9 +256,7 @@ def getHelpAsString(docstring=False, show_ver=True):
 
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
-            helpString = '\n' + ' '.join(
-                [__taskname__, 'Version', __version__,
-                 ' updated on ']) + '\n'
+            helpString = f"\n{__taskname__} Version {__version__}\n"
         else:
             helpString = ''
         if os.path.exists(helpfile):

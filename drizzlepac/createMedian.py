@@ -509,8 +509,7 @@ def getHelpAsString(docstring=False, show_ver=True):
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
             helpString = os.linesep + \
-                ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ']) + os.linesep
+                ' '.join([__taskname__, 'Version', __version__]) + os.linesep
         else:
             helpString = ''
 
