@@ -10,7 +10,7 @@ from astropy.io import fits
 from stsci.tools import fileutil, logutil
 
 from . import wcs_functions
-from . import version
+from . import __version__
 from . import updatehdr
 
 from fitsblender import blendheaders
@@ -265,7 +265,7 @@ class OutputImage:
         prihdu.header.set('EXTEND', value=True, after='NAXIS')
         prihdu.header['NEXTEND'] = nextend
         prihdu.header['FILENAME'] = self.output
-        prihdu.header['PROD_VER'] = 'DrizzlePac {}'.format(version.__version__)
+        prihdu.header['PROD_VER'] = 'DrizzlePac {}'.format(__version__)
         prihdu.header['DRIZPARS'] = (logfile, "Logfile for processing")
 
         # Update the ROOTNAME with the new value as well

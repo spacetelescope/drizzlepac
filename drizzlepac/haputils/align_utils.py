@@ -4,8 +4,8 @@ import copy
 import sys
 import traceback
 import warnings
+from packaging.version import Version
 
-from distutils.version import LooseVersion
 from collections import OrderedDict
 
 import numpy as np
@@ -668,7 +668,7 @@ class HAPImage:
 
         # astropy's code returned the opposite bitmask from what was originally
         # defined by stsci.tools own bitmask code.
-        if LooseVersion(stsci.tools.__version__) >= '4.0.0':
+        if Version(stsci.tools.__version__) >= Version('4.0.0'):
             dqmask = ~dqmask
 
         return dqmask

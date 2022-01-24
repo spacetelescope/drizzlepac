@@ -30,7 +30,6 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 __version__ = 0.1
-__version_date__ = '08-Jun-2020'
 
 DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue',
                    'SBC': 'yellow', 'HRC': 'black'}
@@ -42,26 +41,26 @@ def get_pandas_data(storage_filename, data_columns, log_level=logutil.logging.NO
     ==========
     storage_filename : str
         Name of the file created by the harvester.
-        
+
     data_columns : list
         List of column names to be extracted from the input dataframe.
 
     Returns
     =======
     data_colsDF : Pandas dataframe
-        Dataframe which is a subset of the input Pandas dataframe.  
+        Dataframe which is a subset of the input Pandas dataframe.
         The subset dataframe consists of only the requested columns
         and rows where all of the requested columns did not contain NaNs.
 
     """
-    
+
     # Instantiate a Pandas Dataframe Reader (lazy instantiation)
     df_handle = PandasDFReader(storage_filename, log_level=log_level)
 
     # In this particular case, the names of the desired columns do not
     # have to be further manipulated, for example, to add dataset specific
     # names.
-    # 
+    #
     # Get the relevant column data, eliminating all rows which have NaNs
     # in any of the relevant columns.
     try:

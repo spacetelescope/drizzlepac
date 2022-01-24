@@ -20,6 +20,8 @@ of the list).
 
 - Detect extension name from WFPC2 flatfield files. [#1193]
 
+- Refactored the build system to be PEP-517 ad PEP-518 complient. [#1244]
+
 
 3.3.0 (28-Sep-2021)
 ===================

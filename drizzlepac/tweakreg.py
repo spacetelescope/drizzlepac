@@ -17,14 +17,13 @@ from stwcs import updatewcs
 
 from . import util
 
-# __version__ and __version_date__ are defined here, prior to the importing
-# of the modules below, so that those modules can use the values
-# from these variable definitions, allowing the values to be designated
+# __version__ is defined here, prior to the importing
+# of the modules below, so that those modules can use the value
+# from this variable definition, allowing the value to be designated
 # in one location only.
 #
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '1.4.7'
-__version_date__ = '18-April-2018'
 
 from . import tweakutils
 from . import imgclasses
@@ -96,8 +95,8 @@ def run(configobj):
     """ Primary Python interface for image registration code
         This task replaces 'tweakshifts'
     """
-    print('TweakReg Version %s(%s) started at: %s \n'%(
-                    __version__,__version_date__,util._ptime()[0]))
+    print('TweakReg Version %s started at: %s \n'%(
+                    __version__, util._ptime()[0]))
     util.print_pkg_versions()
 
     # make sure 'updatewcs' is set to False when running from GUI or if missing
@@ -878,9 +877,7 @@ def getHelpAsString(docstring = False, show_ver = True):
 
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
-            helpString = os.linesep + \
-                ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+            helpString = f"\n{__taskname__} Version {__version__}\n"
         else:
             helpString = ''
         if os.path.exists(helpfile):

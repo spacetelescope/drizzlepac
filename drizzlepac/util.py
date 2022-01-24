@@ -26,7 +26,7 @@ from stsci.tools import configobj
 from stwcs import wcsutil
 from stwcs.wcsutil import altwcs
 
-from .version import *
+#from .version import *
 
 __fits_version__ = astropy.__version__
 __numpy_version__ = np.__version__

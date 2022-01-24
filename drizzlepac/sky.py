@@ -26,7 +26,7 @@ from . import processInput
 from .imageObject import imageObject
 
 from . import util
-from .version import *
+from . import __version__
 
 
 __taskname__= "drizzlepac.sky" #looks in drizzlepac for sky.cfg
@@ -861,9 +861,7 @@ def getHelpAsString(docstring = False, show_ver = True):
 
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
-            helpString = os.linesep + \
-                ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+            helpString = f"\n{__taskname__} Version {__version__}\n"
         else:
             helpString = ''
         if os.path.exists(helpfile):

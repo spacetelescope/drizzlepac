@@ -81,7 +81,6 @@ from stwcs import distortion,wcsutil
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.1'
-__version_date__ = '25-Feb-2011'
 
 __taskname__ = 'skytopix'
 
@@ -213,9 +212,7 @@ def getHelpAsString(docstring = False, show_ver = True):
 
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
-            helpString = os.linesep + \
-                ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+            helpString = f"\n{__taskname__} Version {__version__}\n"
         else:
             helpString = ''
         if os.path.exists(helpfile):

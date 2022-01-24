@@ -6,10 +6,8 @@
 """
 import os, sys
 import copy
-from distutils.version import LooseVersion
 
 import numpy as np
-#import pywcs
 import astropy
 from astropy import wcs as pywcs
 import astropy.coordinates as coords

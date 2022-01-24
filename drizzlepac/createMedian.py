@@ -22,7 +22,7 @@ from .minmed import min_med
 from . import processInput
 from .adrizzle import _single_step_num_
 
-from .version import *
+from . import __version__
 
 # look in drizzlepac for createMedian.cfg:
 __taskname__ = "drizzlepac.createMedian"
@@ -509,8 +509,7 @@ def getHelpAsString(docstring=False, show_ver=True):
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
             helpString = os.linesep + \
-                ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+                ' '.join([__taskname__, 'Version', __version__]) + os.linesep
         else:
             helpString = ''
 

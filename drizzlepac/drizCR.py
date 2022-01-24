@@ -19,7 +19,7 @@ from stsci.tools import fileutil, logutil, mputil, teal
 from . import quickDeriv
 from . import util
 from . import processInput
-from . version import __version__, __version_date__
+from . import __version__
 
 if util.can_parallel:
     import multiprocessing
@@ -376,9 +376,7 @@ def getHelpAsString(docstring=False, show_ver=True):
 
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
-            helpString = "\n{:s} Version {:s} updated on {:s}\n\n".format(
-                __taskname__, __version__, __version_date__
-            )
+            helpString = f"\n{__taskname__} Version {__version__}\n"
         else:
             helpString = ''
 
