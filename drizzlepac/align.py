@@ -32,7 +32,6 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 
 __version__ = 0.0
-__version_date__ = '21-Aug-2019'
 
 def _init_logger():
     log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
@@ -265,8 +264,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
 
     log.addHandler(module_fh)
     log.setLevel(loglevel)
-
-    log.info("*** HAP PIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
+    log.info(f"{__taskname__} Version {__version__}\n")
 
     # 0: print git info
     if print_git_info:

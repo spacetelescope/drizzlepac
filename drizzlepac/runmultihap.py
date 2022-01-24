@@ -31,7 +31,6 @@ __taskname__ = "runmultihap"
 
 # Local variables
 __version__ = "0.1.1"
-__version_date__ = "(16-Oct-2019)"
 #
 # These lines (or something similar) will be needed in the HAP processing code
 #

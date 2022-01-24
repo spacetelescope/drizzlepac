@@ -10,7 +10,7 @@ Main program for running MultiDrizzle from the command line.
 import getopt
 import sys, os
 from drizzlepac.astrodrizzle import AstroDrizzle
-from drizzlepac.version import __version__
+from drizzlepac import __version__
 from drizzlepac import util
 
 

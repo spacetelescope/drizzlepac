@@ -4,7 +4,7 @@ aperture photometry and segmentation-map based photometry."""
 import copy
 import pickle  # FIX Remove
 import sys
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 from astropy.io import fits as fits
 from astropy.stats import sigma_clipped_stats
@@ -15,7 +15,7 @@ import numpy as np
 from scipy import ndimage, stats
 
 import photutils  # needed to check version
-if LooseVersion(photutils.__version__) < '1.1.0':
+if Version(photutils.__version__) < Version('1.1.0'):
     OLD_PHOTUTILS = True
     from photutils.segmentation import (detect_sources, source_properties,
                                         deblend_sources)
@@ -2726,7 +2726,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Fill the nans and masked values with numeric data
         self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=-9999.0)
- 
+
         # Write out catalog to ecsv file
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
         log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
