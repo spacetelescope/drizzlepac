@@ -22,7 +22,6 @@ from . import util
 from . import linearfit
 
 __version__ = '0.4.0'
-__version_date__ = '13-July-2020'
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 

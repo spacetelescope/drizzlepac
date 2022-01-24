@@ -90,7 +90,6 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __version__ = 0.1
-__version_date__ = '14-July-2021'
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -125,13 +124,13 @@ def calc_skycell_dist(x, y, x_ref, y_ref):
 
 def create_input_image_list(user_input):
     """Create list of input images based in user input from command-line
-    
+
     Parameters
     ----------
     user_input : str
-        Search pattern to be used to identify images to process or the name of a text file containing a list 
+        Search pattern to be used to identify images to process or the name of a text file containing a list
         of images to process
-    
+
     Returns
     -------
     img_list : list

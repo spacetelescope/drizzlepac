@@ -102,7 +102,6 @@ from . import util
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '0.2'
-__version_date__ = '19-Mar-2019'
 
 __taskname__ = 'pixtopix'
 
@@ -257,9 +256,7 @@ def getHelpAsString(docstring=False, show_ver=True):
 
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
-            helpString = '\n' + ' '.join(
-                [__taskname__, 'Version', __version__,
-                 ' updated on ', __version_date__]) + '\n\n'
+            helpString = f"\n{__taskname__} Version {__version__}\n"
         else:
             helpString = ''
         if os.path.exists(helpfile):

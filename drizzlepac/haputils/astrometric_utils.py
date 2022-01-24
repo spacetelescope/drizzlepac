@@ -19,8 +19,8 @@ import requests
 import inspect
 import sys
 import time
-from distutils.version import LooseVersion
 import copy
+from packaging.version import Version
 
 import numpy as np
 import scipy.stats as st
@@ -46,7 +46,7 @@ from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
 import photutils  # needed to check version
-if LooseVersion(photutils.__version__) < '1.1.0':
+if Version(photutils.__version__) < Version('1.1.0'):
     OLD_PHOTUTILS = True
     from photutils.segmentation import (detect_sources,
                                         deblend_sources, make_source_mask)
@@ -1377,7 +1377,7 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
             dqmask = np.bitwise_or(non_sat_mask, grown_sat_mask)
             # astropy's code returned the opposite bitmask from what was originally
             # defined by stsci.tools own bitmask code.
-            if LooseVersion(stsci.tools.__version__) >= '4.0.0':
+            if Version(stsci.tools.__version__) >= Version('4.0.0'):
                 dqmask = ~dqmask
 
         if numWht > 0:

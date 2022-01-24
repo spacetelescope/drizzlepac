@@ -123,7 +123,6 @@ __taskname__ = "runastrodriz"
 
 # Local variables
 __version__ = "2.4.0"
-__version_date__ = "(17-Dec-2021)"
 
 # Implement WIN specific check
 RM_LOGFILES = False if sys.platform.startswith('win') else True
@@ -161,7 +160,7 @@ apriori_priority = ['HSC', 'GSC', '']
 
 
 # default marker for trailer files
-__trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + __version_date__ + '***\n'
+__trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + '***\n'
 
 envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
 envvar_dict = {'off': 'off', 'on': 'on', 'yes': 'on', 'no': 'off', 'true': 'on', 'false': 'off'}
@@ -1926,7 +1925,7 @@ def main():
         newdir = args[-1]
     if (help):
         print(__doc__)
-        print("\t", __version__ + '(' + __version_date__ + ')')
+        print("\t", __version__)
     else:
         try:
             process(args[0], force=force, newpath=newdir, num_cores=num_cores,

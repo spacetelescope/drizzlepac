@@ -16,7 +16,7 @@ from astropy.io import fits
 from . import util
 from . import wcs_functions
 from . import buildmask
-from .version import *
+from . import __version__
 
 __all__ = ['baseImageObject', 'imageObject', 'WCSObject']
 

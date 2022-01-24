@@ -28,7 +28,7 @@ import warnings
 import numpy as np
 from scipy import signal
 from stsci.image.numcombine import numCombine, num_combine
-from .version import *
+from . import __version__
 
 class minmed:
     """ **DEPRECATED** Create a median array, rejecting the highest pixel and

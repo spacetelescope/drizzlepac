@@ -75,7 +75,6 @@ __taskname__ = "drizzlepac.resetbits"
 
 # This is specifically NOT intended to match the package-wide version information.
 __version__ = '1.0.1'
-__version_date__ = '23-March-2017'
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
@@ -185,7 +184,7 @@ def main():
 
     if (help):
         print(__doc__)
-        print("\t", __version__+'('+__version_date__+')')
+        print("\t", __version__)
     else:
         reset_dq_bits(args[0],args[1],args[2], args[3])
 
@@ -229,9 +228,7 @@ def getHelpAsString(docstring = False, show_ver = True):
 
     if docstring or (not docstring and not os.path.exists(htmlfile)):
         if show_ver:
-            helpString = os.linesep + \
-                ' '.join([__taskname__, 'Version', __version__,
-                ' updated on ', __version_date__]) + 2*os.linesep
+            helpString = f"\n{__taskname__} Version {__version__}\n"
         else:
             helpString = ''
         if os.path.exists(helpfile):
