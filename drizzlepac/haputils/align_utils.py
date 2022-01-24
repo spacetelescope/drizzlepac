@@ -1222,9 +1222,14 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
                     wcs_name = '{}-FIT_{}_{}'.format(wname, fit_label, item.meta['fit_info']['catalog'])
 
             # establish correct mapping to the science extensions
-            sci_ext_dict = {}
-            for sci_ext_ctr in range(1, num_sci_ext + 1):
-                sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
+            try:
+                sci_ext_dict = {}
+                for sci_ext_ctr in range(1, num_sci_ext + 1):
+                    sci_ext_dict["{}".format(sci_ext_ctr)] = fileutil.findExtname(hdulist, 'sci', extver=sci_ext_ctr)
+            except Exception:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+                logging.exception("message")
 
         # update header with new WCS info
         sci_extn = sci_ext_dict["{}".format(item.meta['chip'])]

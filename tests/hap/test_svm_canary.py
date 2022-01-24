@@ -5,6 +5,7 @@ import datetime
 import glob
 import os
 import pytest
+import numpy as np
 
 from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runsinglehap
@@ -12,23 +13,20 @@ from astropy.io import fits, ascii
 from pathlib import Path
 
 """
-    template_svm_demo.py
+    test_svm_demo.py
 
     This test file can be executed in the following manner:
-        $ pytest -s --basetemp=/internal/hladata/yourUniqueDirectoryHere template_svm.py >& template_svm.log &
-        $ tail -f template_svm.log
+        $ pytest -s --basetemp=/internal/hladata/yourUniqueDirectoryHere test_svm.py >& test_svm.log &
+        $ tail -f test_svm.log
       * Note: When running this test, the `--basetemp` directory should be set to a unique
         existing directory to avoid deleting previous test output.
       * The POLLER_FILE exists in the tests/hap directory.
-      * If running manually with `--basetemp`, the template_svm.log file will still be written to the 
-        originating directory.
 
 """
 
 WCS_SUB_NAME = "FIT_SVM_GAIA"
-POLLER_FILE = "acs_e28_1u_input.out"
+POLLER_FILE = "acs_hrc_sbc_input.out"
 
-@pytest.fixture(scope="module")
 def read_csv_for_filenames():
     # Read the CSV poller file residing in the tests directory to extract the individual visit FLT/FLC filenames
     path = os.path.join(os.path.dirname(__file__), POLLER_FILE)
@@ -40,10 +38,9 @@ def read_csv_for_filenames():
     return filenames
 
 
-@pytest.fixture(scope="module")
-def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
-    # Create working directory specified for the test
-    curdir = tmp_path_factory.mktemp(os.path.basename(__file__)) 
+def gather_data_for_processing(tmp_path_factory):
+    # create working directory specified for the test
+    curdir = tmp_path_factory.mktemp(os.path.basename(__file__))
     os.chdir(curdir)
 
     # Establish FLC/FLT lists and obtain the requested data
@@ -52,12 +49,14 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     # In order to obtain individual FLC or FLT images from MAST (if the files are not reside on disk) which
     # may be part of an ASN, use only IPPPSS with a wildcard.  The unwanted images have to be removed
     # after-the-fact.
-    for fn in read_csv_for_filenames:
+    filenames = read_csv_for_filenames()
+
+    for fn in filenames:
         if fn.lower().endswith("flc.fits") and flc_flag == "":
             flc_flag = fn[0:6] + "*"
         elif fn.lower().endswith("flt.fits") and flt_flag == "":
             flt_flag = fn[0:6] + "*"
-     
+
         # If both flags have been set, then break out the loop early.  It may be
         # that all files have to be checked which means the for loop continues
         # until its natural completion.
@@ -77,13 +76,13 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     flcfiles.extend(fltfiles)
 
     # Keep only the files which exist in BOTH lists for processing
-    files_to_process= set(read_csv_for_filenames).intersection(set(flcfiles))
+    files_to_process = set(filenames).intersection(set(flcfiles))
 
     # Identify unwanted files from the download list and remove from disk
-    files_to_remove = set(read_csv_for_filenames).symmetric_difference(set(flcfiles))
+    files_to_remove = set(filenames).symmetric_difference(set(flcfiles))
     try:
         for ftr in files_to_remove:
-           os.remove(ftr)
+            os.remove(ftr)
     except Exception as x_cept:
         print("")
         print("Exception encountered: {}.".format(x_cept))
@@ -92,25 +91,25 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
 
     print("\ngather_data_for_processing. Gathered data: {}".format(files_to_process))
 
-    return files_to_process
+    return list(files_to_process)
 
 
-@pytest.fixture(scope="module")
-def gather_output_data(construct_manifest_filename):
+def gather_output_data(manifest_filename):
     # Determine the filenames of all the output files from the manifest
-    table = ascii.read(construct_manifest_filename, format="no_header")
-    file_col = table.colnames[0]
-    files = list(table[file_col])
+    print(f"\nManifest Filename: {manifest_filename}")
+    files = []
+    with open(manifest_filename, 'r') as fout:
+        for line in fout.readlines():
+            files.append(line.rstrip('\n'))
     print("\ngather_output_data. Output data files: {}".format(files))
 
     return files
 
 
-@pytest.fixture(scope="module")
-def construct_manifest_filename(read_csv_for_filenames):
+def construct_manifest_filename(filenames):
     # Construct the output manifest filename from input file keywords
-    inst = fits.getval(read_csv_for_filenames[0], "INSTRUME", ext=0).lower()
-    root = fits.getval(read_csv_for_filenames[0], "ROOTNAME", ext=0).lower()
+    inst = fits.getval(filenames[0], "INSTRUME", ext=0).lower()
+    root = fits.getval(filenames[0], "ROOTNAME", ext=0).lower()
     tokens_tuple = (inst, root[1:4], root[4:6], "manifest.txt")
     manifest_filename = "_".join(tokens_tuple)
     print("\nconstruct_manifest_filename. Manifest filename: {}".format(manifest_filename))
@@ -118,21 +117,33 @@ def construct_manifest_filename(read_csv_for_filenames):
     return manifest_filename
 
 
-@pytest.fixture(scope="module", autouse=True)
-def svm_setup(gather_data_for_processing):
+def test_driver(tmp_path_factory):
     # Act: Process the input data by executing runsinglehap - time consuming activity
 
     current_dt = datetime.datetime.now()
     print(str(current_dt))
-    print("\nsvm_setup fixture")
 
     # Read the "poller file" and download the input files, as necessary
-    input_names = gather_data_for_processing
+    input_names = gather_data_for_processing(tmp_path_factory)
+
+    # Construct the manifest filename for later
+    manifest_filename = construct_manifest_filename(input_names)
 
     # Run the SVM processing
     path = os.path.join(os.path.dirname(__file__), POLLER_FILE)
     try:
-        status = runsinglehap.perform(path)
+        status = runsinglehap.perform(path, log_level="debug")
+
+        output_files = gather_output_data(manifest_filename)
+
+        # Check the output primary WCSNAME includes FIT_SVM_GAIA as part of the string value
+        tdp_files = [files for files in output_files if
+                     files.lower().find("total") > -1 and files.lower().endswith(".fits")]
+
+        for tdp in tdp_files:
+            wcsname = fits.getval(tdp, "WCSNAME", ext=1).upper()
+            print("\ntest_svm_wcs.  WCSNAME: {} Output file: {}".format(wcsname, tdp))
+            assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp}."
 
     # Catch anything that happens and report it.  This is meant to catch unexpected errors and
     # generate sufficient output exception information so algorithmic problems can be addressed.
@@ -142,42 +153,3 @@ def svm_setup(gather_data_for_processing):
 
     current_dt = datetime.datetime.now()
     print(str(current_dt))
-
-
-# TESTS - Avoid doing an assert in a loop as the test could exit before all the data has processed
-
-def test_svm_manifest_name(construct_manifest_filename):
-    # Construct the manifest filename from the header of an input file in the list and check it exists.
-    path = Path(construct_manifest_filename)
-    print("\ntest_svm_manifest. Filename: {}".format(path))
-
-    # Ensure the manifest file uses the proper naming convention
-    assert(path.is_file())
-
-
-def test_svm_wcs(gather_output_data):
-    # Check the output primary WCSNAME includes FIT_SVM_GAIA as part of the string value
-    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith(".fits")]
-
-    # This check is for all total data products which have the same "type" of WCSNAME -
-    # in this case a name akin to *-FIT_SVM_GAIA*.
-    wcsnames = [fits.getval(tdp, "WCSNAME", ext=1).upper().split('-')[1] for tdp in tdp_files]
-    assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same: {wcsnames}"
-
-
-# Due to the way the catalogs are filtered, check the size of the total catalog and one of the filter
-# catalogs separately.  The total catalog has the row removed for each source where the constituent 
-# filter catalogs *ALL* have flag>5.
-def test_svm_point_total_cat(gather_output_data):
-    # Check the output catalogs should contain the correct number of sources
-    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")]
-
-    valid_tables = {}
-    for cat in tdp_files:
-        table_length = len(ascii.read(cat, format="ecsv"))
-        print("\ntest_svm_point_total_cat. Number of sources in catalog {} is {}.".format(cat, table_length))
-        valid_tables[cat] = table_length > 0
-    bad_tables = [cat for cat in cat_files if not valid_tables[cat]]
-    assert len(bad_tables) == 0, f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
-
-
