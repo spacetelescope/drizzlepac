@@ -71,14 +71,14 @@ def get_rules_file(product, rules_type="", rules_root=None):
     instrument = phdu['instrume']
 
     # Append '_single' to rules_type if single image product
-    if rules_name is None:
+    if rules_root is None:
         if rules_type == "":
             rules_type = 'single'
         else:
             rules_type = '_'.join([rules_type, 'single'])
         rootname = '_'.join(product.split("_")[:-1])
     else:
-        rootname = '_'.join(rules_name.split("_")[:-1])
+        rootname = '_'.join(rules_root.split("_")[:-1])
 
 
     # Create rules name prefix here
