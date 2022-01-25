@@ -362,8 +362,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
             index = np.where(alignment_table.filtered_table['imageName'] == imgname)[0][0]
 
             # First ensure sources were found
-
-            if table is None or not table[1]:
+            if table is None:
                 log.warning("No sources found in image {}".format(imgname))
                 alignment_table.filtered_table[:]['status'] = 1
                 alignment_table.filtered_table[:]['processMsg'] = "No sources found"
