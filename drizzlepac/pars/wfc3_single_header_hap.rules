@@ -358,25 +358,10 @@ EQUINOX   EQUINOX   first
 # Header Keyword Rules
 #
 ################################################################################
-#
-# Keywords which need to be deleted for MVM products
-# These are not relevant for exposures from multiple proposals
-#
-################################################################################
-<delete>  IPPPSSOO
-<delete>  ASN_ID
-<delete>  ASN_MTYP
-<delete>  ASN_TAB
-<delete>  GYROMODE
-<delete>  SUNANGLE
-<delete>  MOONANGLE
-<delete>  EXPFLAG
-<delete>  LINENUM
-<delete>  QUALCOM1
-<delete>  QUALCOM2
-<delete>  QUALCOM3
-################################################################################
 APERTURE    APERTURE    multi
+ASN_ID    ASN_ID    first
+ASN_MTYP    ASN_MTYP    multi
+ASN_TAB    ASN_TAB    multi
 ATODCORR    ATODCORR    multi
 ATODGNA        ATODGNA        first
 ATODGNB        ATODGNB        first
@@ -437,6 +422,7 @@ DGEOFILE    DGEOFILE    multi
 DIRIMAGE    DIRIMAGE    multi
 DQICORR    DQICORR    multi
 DRIZCORR    DRIZCORR    multi
+EXPFLAG    EXPFLAG    multi
 EXPNAME    EXPNAME    first
 EXPSCORR    EXPSCORR    multi
 EXTVER    EXTVER    first
@@ -451,11 +437,13 @@ FLATCORR    FLATCORR    multi
 FLSHCORR    FLSHCORR    multi
 FLSHFILE    FLSHFILE    multi
 GRAPHTAB    GRAPHTAB    multi
+GYROMODE    GYROMODE    multi
 IDCTAB    IDCTAB    multi
 INHERIT    INHERIT    first # maintains IRAF compatibility
 INITGUES    INITGUES    multi
 INSTRUME    INSTRUME    first
 LFLTFILE    LFLTFILE    multi
+LINENUM    LINENUM    first
 LTM1_1    LTM1_1    float_one
 LTM2_2    LTM2_2    float_one
 LTV1    LTV1    first
@@ -463,6 +451,7 @@ LTV2    LTV2    first
 MDRIZTAB    MDRIZTAB    multi
 MEANEXP    MEANEXP    first
 MEANFLSH    MEANFLSH    first
+MOONANGL  MOONANGL      first
 MTFLAG      MTFLAG    first
 NCOMBINE    NCOMBINE    sum
 NLINCORR    NLINCORR    multi
@@ -508,6 +497,9 @@ PRIMESI        PRIMESI        multi
 PROCTIME    PROCTIME    first
 PROPAPER    PROPAPER    multi
 PROPOSID    PROPOSID    first
+QUALCOM1    QUALCOM1    multi
+QUALCOM2    QUALCOM2    multi
+QUALCOM3    QUALCOM3    multi
 QUALITY    QUALITY    multi
 RA_APER    RA_APER    first
 READNSEA    READNSEA    first
@@ -535,6 +527,7 @@ STDCFFF    STDCFFF    multi
 STDCFFP    STDCFFP    multi
 SUBARRAY    SUBARRAY    first
 SUBTYPE    SUBTYPE    multi
+SUNANGLE   SUNANGLE   first
 T_SGSTAR    T_SGSTAR    multi
 TARGNAME    TARGNAME    first
 TDFTRANS    TDFTRANS    sum

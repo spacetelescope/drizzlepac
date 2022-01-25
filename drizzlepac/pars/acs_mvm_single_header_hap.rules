@@ -398,26 +398,8 @@ REFFRAME  REFFRAME  multi
 MTFLAG    MTFLAG    first
 ################################################################################
 #
-# Header Keyword Rules for remaining keywords
+# Keywords which need to be kept in product header
 #
-################################################################################
-#
-# Keywords which need to be deleted for MVM products
-# These are not relevant for exposures from multiple proposals
-#
-################################################################################
-<delete>  IPPPSSOO
-<delete>  ASN_ID
-<delete>  ASN_MTYP
-<delete>  ASN_TAB
-<delete>  GYROMODE
-<delete>  SUNANGLE
-<delete>  MOONANGLE
-<delete>  EXPFLAG
-<delete>  LINENUM
-<delete>  QUALCOM1
-<delete>  QUALCOM2
-<delete>  QUALCOM3
 ################################################################################
 FILTER1   FILTER1   multi
 FILTER2   FILTER2   multi
@@ -437,93 +419,43 @@ SNRMAX    SNRMAX    max
 SNRMEAN   SNRMEAN   mean
 SNRMIN    SNRMIN    min
 TELESCOP  TELESCOP  first
-PA_V3     PA_V3     first
+PA_V3     PA_V3     zero
 ### rules below were added 05Jun2012,in response to Dorothy Fraquelli guidance re: DADS
-ATODCORR  ATODCORR  multi
 ATODGNA   ATODGNA   first
 ATODGNB   ATODGNB   first
 ATODGNC   ATODGNC   first
 ATODGND   ATODGND   first
-ATODTAB   ATODTAB   multi
 BADINPDQ  BADINPDQ  sum
-BIASCORR  BIASCORR  multi
-BIASFILE  BIASFILE  multi
-BLEVCORR  BLEVCORR  multi
-BPIXTAB   BPIXTAB   multi
 CCDCHIP   CCDCHIP   first
 CCDGAIN   CCDGAIN   first
 CCDOFSTA  CCDOFSTA  first
 CCDOFSTB  CCDOFSTB  first
 CCDOFSTC  CCDOFSTC  first
 CCDOFSTD  CCDOFSTD  first
-CCDTAB      CCDTAB    multi
-CFLTFILE  CFLTFILE  multi
-COMPTAB   COMPTAB   multi
-CRCORR      CRCORR    multi
 CRMASK      CRMASK    first
 CRRADIUS  CRRADIUS  first
-CRREJTAB  CRREJTAB  multi
 CRSPLIT   CRSPLIT   first
 CRTHRESH  CRTHRESH  first
 CTEDIR      CTEDIR    multi
 CTEIMAGE  CTEIMAGE  first
-DARKCORR  DARKCORR  multi
-DARKFILE  DARKFILE  multi
 DATE-OBS  DATE-OBS  first
 DEC_APER  DEC_APER  first
-DFLTFILE  DFLTFILE  multi
-DGEOFILE  DGEOFILE  multi
 DIRIMAGE  DIRIMAGE  multi
-DQICORR   DQICORR   multi
-DRIZCORR  DRIZCORR  multi
-EXPSCORR  EXPSCORR  multi
 FGSLOCK   FGSLOCK   multi
 FLASHCUR  FLASHCUR  multi
 FLASHDUR  FLASHDUR  first
 FLASHSTA  FLASHSTA  first
-FLATCORR  FLATCORR  multi
-FLSHCORR  FLSHCORR  multi
-FLSHFILE  FLSHFILE  multi
 FW1ERROR  FW1ERROR  multi
 FW1OFFST  FW1OFFST  first
 FW2ERROR  FW2ERROR  multi
 FW2OFFST  FW2OFFST  first
 FWSERROR  FWSERROR  multi
 FWSOFFST  FWSOFFST  first
-GRAPHTAB  GRAPHTAB  multi
-IDCTAB      IDCTAB    multi
-IMPHTTAB  IMPHTTAB  multi
-LFLGCORR  LFLGCORR  multi
-LFLTFILE  LFLTFILE  multi
+GYROMODE  GYROMODE  multi
 LTM1_1    LTM1_1    float_one
 LTM2_2    LTM2_2    float_one
-MDRIZTAB  MDRIZTAB  multi
 MEANEXP   MEANEXP   first
 NRPTEXP   NRPTEXP   first
-OSCNTAB   OSCNTAB   multi
-P1_ANGLE  P1_ANGLE  first
-P1_CENTR  P1_CENTR  multi
-P1_FRAME  P1_FRAME  multi
-P1_LSPAC  P1_LSPAC  first
-P1_NPTS   P1_NPTS   first
-P1_ORINT  P1_ORINT  first
-P1_PSPAC  P1_PSPAC  first
-P1_PURPS  P1_PURPS  multi
-P1_SHAPE  P1_SHAPE  multi
-P2_ANGLE  P2_ANGLE  first
-P2_CENTR  P2_CENTR  multi
-P2_FRAME  P2_FRAME  multi
-P2_LSPAC  P2_LSPAC  first
-P2_NPTS   P2_NPTS   first
-P2_ORINT  P2_ORINT  first
-P2_PSPAC  P2_PSPAC  first
-P2_PURPS  P2_PURPS  multi
-P2_SHAPE  P2_SHAPE  multi
-PATTERN1  PATTERN1  multi
-PATTERN2  PATTERN2  multi
-PATTSTEP  PATTSTEP  first
-PHOTCORR  PHOTCORR  multi
-PHOTTAB   PHOTTAB   multi
 POSTARG1  POSTARG1  first
 POSTARG2  POSTARG2  first
 PRIMESI   PRIMESI   multi
@@ -536,12 +468,9 @@ READNSED  READNSED  first
 REJ_RATE  REJ_RATE  first
 SCALENSE  SCALENSE  first
 SCLAMP      SCLAMP    multi
-SHADCORR  SHADCORR  multi
-SHADFILE  SHADFILE  multi
 SHUTRPOS  SHUTRPOS  multi
 SKYSUB      SKYSUB    multi
 SKYSUM      SKYSUM    sum
-SPOTTAB   SPOTTAB   multi
 SUBARRAY  SUBARRAY  first
 SUN_ALT   SUN_ALT   first
 TIME-OBS  TIME-OBS  first
