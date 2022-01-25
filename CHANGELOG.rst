@@ -6,24 +6,82 @@ DrizzlePac Release Notes
 
 The version of DrizzlePac can be identified using ::
 
-> python
->>> import drizzlepac
->>> drizzlepac.__version__
-
+  > python
+  >>> import drizzlepac
+  >>> drizzlepac.__version__
 
 The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
-of the list).
+of the list).  Numbers at the end of each item is the Github Pull Request (PR)
+number of the code change for that issue.  These PR's can be viewed at:
 
-3.3.2 (unreleased)
+    https://github.com/spacetelescope/drizzlepac/pulls
+
+
+3.4.0 (unreleased)
 ==================
+This major release adds support for multi-visit mosaic (MVM) processing, in
+addition to including numerous revisions to try to align more datasets
+successfully to GAIA during pipeline and (single-visit mosaic) SVM processing.
+Multi-visit mosaics introduce the concept of SkyCells with new code added to define
+these sections on the sky as standardized definitions of mosaics created
+from all HST observations taken of each part of the sky.
 
-- Detect extension name from WFPC2 flatfield files. [#1193]
+The most significant revisions and bug fixes that affect
+output products of this version of the code include:
 
-- Refactored the build system to be PEP-517 ad PEP-518 complient. [#1244]
+- Detect extension name from WFPC2 flat-field files. [#1193]
 
-- Fixed a bug in the drizzle algorithm due to which input pixels with
-  zero weights may still contribute to the output image. [#1222]
+- Refactored the build system to be PEP-517 ad PEP-518 compliant. [#1244]
+
+- Added Sphinx documentation describing tools used for working with
+  MVM products. [#1144, #1150]
+
+- Changed names of "ISO" columns in Segmentation catalog to be unique [#1155]
+
+- Add WCS keyword values to catalog metadata [#1160]
+
+- Enforced a minimum number of cross-matches for alignment to be 4 sources [#1187, #1218]
+
+- Revised 2D background determination for smaller detectors to improve source
+  detection during alignment. [#1187]
+
+- Create empty catalogs when exposures are effectively blank. [#1199]
+
+- Cut processing time from days to minutes for exposures of crowded fields of
+  faint sources or fields dominated by a single large extended source.  [#1198]
+
+- Report correct value of NMATCHES keyword for number of sources actually
+  used in alignment fit to GAIA. [#1217]
+
+- Prevent older distortion models from overriding new distortion models
+  when performing a posteriori alignment to GAIA. [#1220]
+
+- Add explicit dependency on spherical-geometry package. [#1232]
+
+
+3.3.1 (19-Nov-2021)
+===================
+This version provides bug fixes primarily
+for the single-visit mosaic (SVM) processing.
+
+- Insure a compatible version of photutils gets installed. [#1151]
+
+- Improve handling of segmentation catalog generation for
+  mostly or completely blank images. [#1152]
+
+- Changed default floating point value in catalogs
+  from -9999.9 to -9999.0.  [#1165]
+
+- Avoid creating an empty manifest file when no images
+  get drizzled by SVM processing, unless the visit was
+  comprised solely of Grism/Prism data. [#1174, #1181]
+
+- Update total catalog to only remove sources which were
+  not measured successfully in any filter. [#1175]
+
+- Fix the units of a few variables in the output Point and
+  Segmentation catalogs [#1178]
 
 
 3.3.0 (28-Sep-2021)
