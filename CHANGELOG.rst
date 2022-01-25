@@ -27,6 +27,17 @@ Multi-visit mosaics introduce the concept of SkyCells with new code added to def
 these sections on the sky as standardized definitions of mosaics created
 from all HST observations taken of each part of the sky.
 
+New features added in this version include:
+
+- Support for creating multi-visit mosaics (MVMs) as generated
+  by the 'drizzlepac/hapmultisequencer.py' module or using the
+  new command-line task `runmultihap`.
+
+- Tools for generating cutouts of MVM products found in the
+  `drizzlepac/haputils/hapcut_utils.py` module.
+
+
+
 The most significant revisions and bug fixes that affect
 output products of this version of the code include:
 
