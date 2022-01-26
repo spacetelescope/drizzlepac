@@ -6,10 +6,12 @@ Class used to model NICMOS specific instrument data.
 :License: :doc:`LICENSE`
 
 """
-from stsci.tools import fileutil
-from nictools import readTDD
 import numpy as np
+
+from stsci.tools import fileutil
+
 from .imageObject import imageObject
+
 
 class NICMOSInputImage(imageObject):
 
@@ -179,7 +181,7 @@ class NICMOSInputImage(imageObject):
 
         # Read the temperature dependeant dark file.  The name for the file is taken from
         # the TEMPFILE keyword in the primary header.
-        tddobj = readTDD.fromcalfile(self.name)
+        tddobj = fromcalfile(self.name)
 
         if tddobj is None:
             return np.ones(self.full_shape, dtype=self.image_dtype) * self.getdarkcurrent()
@@ -409,3 +411,63 @@ class NIC3InputImage(NICMOSInputImage):
 
         # Convert the science data to electrons if specified by the user.
         self.doUnitConversions()
+
+
+def fromcalfile(filename):
+    """
+    fromcalfile: function that returns a darkobject instance given the
+    name of a cal.fits file as input.  If there is no TEMPFILE keyword
+    in the primary header of the cal.fits file or if the file specified
+    by TEMPFILE cannot be found, a None object is returned.
+    """
+    hdulist = fileutil.openImage(filename)
+
+    if 'TEMPFILE' in hdulist[0].header:
+        if tddfile == 'N/A':
+            return None
+        else:
+            tddfile = hdulist[0].header['TEMPFILE']
+            tddhdulist = fileutil.openImage(tddfile)
+            return darkobject(tddhdulist)
+    else:
+        return None
+
+
+class darkobject(object):
+    def __init__(hdulist):
+        """
+        darkobject:  This class takes as input a pyfits hdulist object.
+        The linear dark and amp glow noise componenets are then extracted
+        from the hdulist.
+        """
+
+        self.lindark = hdulist['LIN']
+        self.ampglow = hdulist['AMPGLOW']
+
+    def getlindark(self):
+        """
+        getlindark: darkobject method which is used to return the linear
+        dark component from a NICMOS temperature dependent dark file.
+        """
+        return self.lindata.data
+
+    def getampglow(self):
+        """
+        getampglow: darkobject method which us used to return the amp
+        glow component from a NICMOS temperature dependent dark file.
+        """
+        return self.ampglow.data
+
+    def getlindarkheader(self):
+        """
+        getlindarkheader: darkobject method used to return the header
+        information of the linear dark entension of a TDD file.
+        """
+        return self.lindata.header
+
+    def getampglowheader(self):
+        """
+        getampglowheader: darkobject method used to return the header
+        information of the amp glow entension of a TDD file.
+        """
+        return self.ampglow.header

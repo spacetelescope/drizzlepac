@@ -81,7 +81,6 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 __version__ = 0.1
-__version_date__ = '07-Nov-2019'
 
 # Environment variable which controls the quality assurance testing
 # for the Single Visit Mosaic processing.
@@ -386,8 +385,9 @@ def create_drizzle_products(total_obj_list):
             # Create drizzle-combined filter image as well as the single exposure drizzled image
             for filt_obj in total_obj.fdp_list:
                 log.info("~" * 118)
-                filt_obj.rules_file = rules_files[filt_obj.edp_list[0].full_filename]
-
+                filt_obj.rules_file = proc_utils.get_rules_file(filt_obj.edp_list[0].full_filename,
+                                                                rules_root=filt_obj.drizzle_filename)
+                print(f"Filter RULES_FILE: {filt_obj.rules_file}")
                 log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
                 filt_obj.wcs_drizzle_product(meta_wcs)
                 product_list.append(filt_obj.drizzle_filename)
@@ -408,7 +408,9 @@ def create_drizzle_products(total_obj_list):
             # Create drizzle-combined total detection image after the drizzle-combined filter image and
             # drizzled exposure images in order to take advantage of the cosmic ray flagging.
             log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
-            total_obj.rules_file = total_obj.fdp_list[0].rules_file
+            total_obj.rules_file = proc_utils.get_rules_file(total_obj.edp_list[0].full_filename,
+                                                                rules_root=total_obj.drizzle_filename)
+            print(f"Total product RULES_FILE: {total_obj.rules_file}")
             total_obj.wcs_drizzle_product(meta_wcs)
             product_list.append(total_obj.drizzle_filename)
             product_list.append(total_obj.trl_filename)
@@ -667,7 +669,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             if h0:
                 co_inst = h0["INSTRUME"].lower()
                 co_root = h0["ROOTNAME"].lower()
-                tokens_tuple = (co_inst, co_root[1:4], co_root[4:6], "manifest.txt") 
+                tokens_tuple = (co_inst, co_root[1:4], co_root[4:6], "manifest.txt")
                 manifest_name = "_".join(tokens_tuple)
 
             # Problem case - just give it the base name
@@ -1240,14 +1242,14 @@ def archive_alternate_wcs(filename):
     -------
     Nothing
 
-    Note: There is no strict form for the HDRNAME.  For HAP, HDRNAME is of the form 
+    Note: There is no strict form for the HDRNAME.  For HAP, HDRNAME is of the form
     hst_proposid_visit_instrument_detector_filter_ipppssoo_fl[t|c]_wcsname-hlet.fits.
     Ex. hst_9029_01_acs_wfc_f775w_j8ca01at_flc_IDC_0461802ej-FIT_SVM_GAIAeDR3-hlet.fits
 
     """
     # Get all the alternate WCSNAMEs in the science header
     wcs_key_dict = wcsutil.altwcs.wcsnames(filename, ext=1, include_primary=True)
- 
+
     # Loop over the WCSNAMEs looking for the HDRNAMEs.  If a corresponding
     # HDRNAME does not exist, create one.
     header = fits.getheader(filename, ext=0)
@@ -1260,7 +1262,7 @@ def archive_alternate_wcs(filename):
             hdrname = header[keyword]
         # Handle the case where the HDRNAME keyword does not exist - create
         # a value from the FITS filename by removing the ".fits" suffix and
-        # adding information. 
+        # adding information.
         except KeyError:
             hdrname = header["FILENAME"][:-5] + "_" + wcsname + "-hlet.fits"
 

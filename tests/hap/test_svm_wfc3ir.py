@@ -27,7 +27,7 @@ WCS_SUB_NAME = "FIT_SVM_GAIA"
 POLLER_FILE = "wfc3_ir_ib6807_input.out"
 
 # Gather all expected values used for determining pass/fail criteria here
-expected_point_sources = {'ir': 358}
+expected_point_sources = {'ir': 315}
 expected_seg_sources = {'ir': 298}
 
 

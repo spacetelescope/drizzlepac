@@ -70,7 +70,6 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 __version__ = 0.1
-__version_date__ = '01-May-2020'
 
 # Environment variable which controls the quality assurance testing
 # for the Single Visit Mosaic processing.
@@ -209,8 +208,9 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
     # create the drizzle-combined filtered image, the drizzled exposure (aka single) images,
     # and finally the drizzle-combined total detection image.
     for filt_obj in total_obj_list:
-        filt_obj.rules_file = rules_files[filt_obj.edp_list[0].full_filename]
-
+        filt_obj.rules_file = proc_utils.get_rules_file(filt_obj.edp_list[0].full_filename,
+                                                        rules_type='MVM',
+                                                        rules_root=filt_obj.drizzle_filename)
         log.info("~" * 118)
         # Get the common WCS for all images which are part of a total detection product,
         # where the total detection product is detector-dependent.

@@ -24,7 +24,7 @@ __taskname__ = 'processing_utils'
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout)
 
-def get_rules_file(product, rules_type=""):
+def get_rules_file(product, rules_type="", rules_root=None):
     """Copies default HAP rules file to local directory.
 
     This function enforces the naming convention for rules files
@@ -50,6 +50,13 @@ def get_rules_file(product, rules_type=""):
         exposure.  Valid values: blank/empty string (''), 'SVM' or 'svm'
         for SVM processing (default) and 'MVM' or 'mvm' for MVM processing.
 
+    rules_root : str, optional
+        Name of output product to use as the rootname for the output rules file.
+        Specifying this filename indicates that the default rules for combining
+        multiple inputs should be used.
+        If None, output rules file will be derived from the product filename and
+        indicates that the rules file should be specific to a single input.
+
     Returns
     -------
     new_rules_name : str
@@ -59,11 +66,21 @@ def get_rules_file(product, rules_type=""):
     # and to insure all values are converted to lower-case for use in
     # filenames
     rules_type = "" if rules_type == None else rules_type.strip(' ').lower()
-
     hdu, closefits = _process_input(product)
-    rootname = '_'.join(product.split("_")[:-1])
     phdu = hdu[0].header
     instrument = phdu['instrume']
+
+    # Append '_single' to rules_type if single image product
+    if rules_root is None:
+        if rules_type == "":
+            rules_type = 'single'
+        else:
+            rules_type = '_'.join([rules_type, 'single'])
+        rootname = '_'.join(product.split("_")[:-1])
+    else:
+        rootname = '_'.join(rules_root.split("_")[:-1])
+
+
     # Create rules name prefix here
     # The trailing rstrip guards against a blank rules_type, which
     # is the default for SVM processing.
@@ -74,7 +91,7 @@ def get_rules_file(product, rules_type=""):
     new_rules_name = "{}_header_hap.rules".format(rootname)
     rules_filename = os.path.join(base_dir, 'pars', def_rules_name)
     new_rules_filename = os.path.join(os.getcwd(), new_rules_name)
-
+    log.debug(f'Copying \n\t{rules_filename} \nto \n\t{new_rules_filename}')
     if new_rules_name not in os.listdir('.'):
         shutil.copy(rules_filename, new_rules_filename)
 

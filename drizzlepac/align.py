@@ -32,7 +32,6 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 
 __version__ = 0.0
-__version_date__ = '21-Aug-2019'
 
 def _init_logger():
     log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
@@ -40,6 +39,10 @@ def _init_logger():
     return log
 
 log = _init_logger()
+
+# Initial values for the module log filename and the associated file handler used for the log
+module_fh = None
+module_logfile = ""
 
 # ----------------------------------------------------------------------------------------------------------
 
@@ -166,7 +169,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
 # ------------------------------------------------------------------------------------------------------------
 def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=False, debug=False,
                   update_hdr_wcs=False, result=None,
-                  runfile=None, print_fit_parameters=True, print_git_info=False, output=False,
+                  runfile="temp_align.log", print_fit_parameters=True, print_git_info=False, output=False,
                   headerlet_filenames=None, fit_label=None, product_type=None,
                   **alignment_pars):
     """Actual Main calling function.
@@ -243,20 +246,25 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
         Table which contains processing information and alignment results for every raw image evaluated
 
     """
-    log.info("*** HAP PIPELINE Processing Version {!s} ({!s}) started at: {!s} ***\n".format(__version__, __version_date__, util._ptime()[0]))
-
     if debug:
         loglevel = logutil.logging.DEBUG
     else:
         loglevel = logutil.logging.INFO
 
-    if runfile is not None:
-        loglevel = logutil.logging.DEBUG
-        fh = logutil.logging.FileHandler(runfile)
-        fh.setLevel(loglevel)
-        log.addHandler(fh)
+    # Need to ensure the logging works properly for the PyTests where each test starts with a fresh handler
+    global module_fh
+    global module_logfile
+    if module_fh is not None:
+        print("Removing old file handler for logging.")
+        log.removeHandler(module_fh)
 
+    module_logfile = runfile.upper()
+    module_fh = logutil.logging.FileHandler(runfile)
+    module_fh.setLevel(loglevel)
+
+    log.addHandler(module_fh)
     log.setLevel(loglevel)
+    log.info(f"{__taskname__} Version {__version__}\n")
 
     # 0: print git info
     if print_git_info:
@@ -354,8 +362,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
             index = np.where(alignment_table.filtered_table['imageName'] == imgname)[0][0]
 
             # First ensure sources were found
-
-            if table is None or not table[1]:
+            if table is None:
                 log.warning("No sources found in image {}".format(imgname))
                 alignment_table.filtered_table[:]['status'] = 1
                 alignment_table.filtered_table[:]['processMsg'] = "No sources found"
@@ -473,7 +480,9 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                                 alignment_table.filtered_table,
                                 (catalog_index < (len(catalog_list) - 1)),
                                 apars,
-                                print_fit_parameters=print_fit_parameters)
+                                print_fit_parameters=print_fit_parameters,
+                                loglevel=loglevel,
+                                runfile=runfile)
                         alignment_table.filtered_table = filtered_table
 
                         # save fit algorithm name to dictionary key "fit method" in imglist.
@@ -642,7 +651,8 @@ def make_label(label, starting_dt):
 # ----------------------------------------------------------------------------------------------------------
 
 
-def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_pars, print_fit_parameters=True):
+def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_pars, print_fit_parameters=True,
+                          loglevel=logutil.logging.NOTSET, runfile="temp_align.log"):
     """Determine the quality of the fit to the data
 
     Parameters
@@ -672,6 +682,13 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     print_fit_parameters : bool
         Specify whether or not to print out FIT results for each chip
 
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
+
+    runfile : string
+        log file name
+
     Returns
     -------
     max_rms_val : float
@@ -700,6 +717,25 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
             * fit compromised status (Boolean)
             * reason fit is considered 'compromised' (only populated if "compromised" field is "True")
     """
+
+    # Set up the log file handler and name of the log file
+    # If the log file handler were never set, the module_fh will be None.
+    # Only want to remove a file handler if there were one set in the first place.
+    global module_fh
+    global module_logfile
+    #if module_fh is not None and module_logfile != runfile.upper():
+    if module_fh is not None:
+        print("Removing old file handler for logging.")
+        log.removeHandler(module_fh)
+
+    module_logfile = runfile.upper()
+    module_fh = logutil.logging.FileHandler(runfile)
+    module_fh.setLevel(loglevel)
+
+    log.addHandler(module_fh)
+    log.setLevel(loglevel)
+    log.info("Log file: {}".format(module_logfile))
+
     max_rms_val = 1e9
     num_xmatches = 0
     fit_status_dict = {}
@@ -919,7 +955,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
 # ----------------------------------------------------------------------------------------------------------------------
 
 def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remaining, ref_catalog_length,
-                                        align_pars, print_fit_parameters=True, loglevel=logutil.logging.NOTSET):
+                                        align_pars, print_fit_parameters=True, loglevel=logutil.logging.NOTSET, runfile="temp_align.log"):
     """Simple interface to allow MVM code to use determine_fit_quality().
 
     Parameters
@@ -948,6 +984,13 @@ def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remain
 
     print_fit_parameters : bool
         Specify whether or not to print out FIT results for each chip
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 20, or 'info'.
+
+    runfile : string
+        log file name
 
     Returns
     -------
@@ -992,7 +1035,9 @@ def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remain
                                                                                            filtered_table,
                                                                                            catalogs_remaining,
                                                                                            align_pars,
-                                                                                           print_fit_parameters)
+                                                                                           print_fit_parameters=print_fit_parameters,
+                                                                                           loglevel=loglevel,
+                                                                                           runfile=runfile)
 
     # Determine if the fit quality is acceptable
     if fit_quality in align_pars['determine_fit_quality']['GOOD_FIT_QUALITY_VALUES']:

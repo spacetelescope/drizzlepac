@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-"""Quantify how well MVM products are aligned to GAIA sources found in the image footprint
-
-
-NOTE: daostarfinder coords are 0-indexed."""
+"""Statistically quantify how well MVM products are aligned to GAIA sources found in the image footprint
+defined by the SVM-processed fl(c/t).fits input files. Statistics are reported on the differences in X, Y and
+RA, Dec positions of GAIA sources compared to positions of matching point-sources in the image footprint."""
 
 # Standard library imports
 import argparse
@@ -35,10 +34,102 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
 # ============================================================================================================
 
 
-def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=logutil.logging.INFO, plot_output_dest="none"):
+def find_and_match_sources(fwhm, mosaic_hdu, mosaic_wcs, mosaic_imgname, dao_mask_array, gaia_table,
+                           xy_gaia_coords,  diagnostic_mode=False, log_level=logutil.logging.INFO):
+    """Runs decutils.UserStarFinder to find sources in the image, then runs cu.getMatchedLists() to identify
+    sources both ID'd as a source by daofind and ID'd as a GAIA sources. It should be noted here that this
+    subroutine exists because the FWHM value returned by decutils.find_point_sources() doesn't always result
+    in enough matches or none at all.
+
+    Parameters
+    ----------
+    fwhm : float
+        FWHM value, in pixels, that decutils.UserStarFinder() will use as input
+
+    mosaic_hdu : astropy fits.io.hdu object
+        FITS HDU of the user-specified MVM-processed mosaic image
+
+    mosaic_wcs : stwcs HSTWCS object
+        The WCS information of the user-specified MVM-processed mosaic image
+
+    mosaic_imgname : str
+        Name of the user-specified MVM-processed mosaic image
+
+    dao_mask_array : numpy.ndarray
+        image mask that defines where UserStarFinder should look for sources, and where it should not.
+
+    gaia_table : astropy table object
+        Table containing positions of GAIA sources found in the image footprint
+
+    xy_gaia_coords : astropy table object
+        Table containing X, Y positions of GAIA sources found in the image footprint
+
+    diagnostic_mode : bool, optional
+        If set to logical 'True', additional log messages will be displayed and additional files will be
+        created during the course of the run. Default value is logical 'False'.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file. Default value is 'INFO'.
+
+    Returns
+    -------
+    detection_table : Astropy table
+        Table of sources detected by decutils.UserStarFinder()
+
+    matches_gaia_to_det : list
+        A list of the indices of GAIA sources that match detected sources
+
+    matches_det_to_gaia : list
+        A list of the indices of detected sources that match GAIA sources
+    """
+    log.setLevel(log_level)
+    daofind = decutils.UserStarFinder(fwhm=fwhm, threshold=0.0, coords=xy_gaia_coords,
+                                      sharplo=0.4, sharphi=0.9)
+    detection_table = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
+    detection_table.rename_column('xcentroid', 'X')
+    detection_table.rename_column('ycentroid', 'Y')
+    n_detection = len(detection_table)
+    n_gaia = len(gaia_table)
+    pct_detection = 100.0 * (float(n_detection) / float(n_gaia))
+    log.info("Found {} peaks from {} GAIA source(s)".format(n_detection, n_gaia))
+    log.info("{}% of GAIA sources detected".format(pct_detection))
+
+    # 4: convert UserStarFinder output x, y centroid positions to RA, DEC using step 1 WCS info
+    ra, dec = mosaic_wcs.all_pix2world(detection_table['X'], detection_table['Y'], 0)
+    ra_col = Column(name="RA", data=ra, dtype=np.float64)
+    dec_col = Column(name="DEC", data=dec, dtype=np.float64)
+    detection_table.add_columns([ra_col, dec_col], indexes=[3, 3])
+    if diagnostic_mode:
+        write_region_file("test_detection.reg", detection_table, ['RA', 'DEC'], log_level=log_level)
+
+    # 5: Identify and isolate X, Y, RA and DEC values common to both the gaia and detection tables.
+    # 5a: find sources common to both the gaia table and the detection table
+    try:
+        coo_prefix_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
+        gaia_coo_filename = "{}_gaia.coo".format(coo_prefix_string)
+        det_coo_filename = "{}_det.coo".format(coo_prefix_string)
+        write_region_file(gaia_coo_filename, gaia_table, ['X', 'Y'], verbose=False)
+        write_region_file(det_coo_filename, detection_table, ['X', 'Y'], verbose=False)
+        matches_gaia_to_det, matches_det_to_gaia = cu.getMatchedLists([gaia_coo_filename, det_coo_filename],
+                                                                      [mosaic_imgname, mosaic_imgname],
+                                                                      [n_gaia, n_detection],
+                                                                      log_level)
+    finally:
+        for item in [det_coo_filename, gaia_coo_filename]:
+            if os.path.exists(item):
+                log.debug("Removing temp coord file {}".format(item))
+                os.remove(item)
+    return detection_table, matches_gaia_to_det, matches_det_to_gaia
+# ============================================================================================================
+
+
+def perform(mosaic_imgname, flcflt_list=None, flcflt_listfile=None, min_n_matches=10, diagnostic_mode=False,
+            log_level=logutil.logging.INFO, plot_output_dest="none"):
     """ Statistically quantify quality of GAIA MVM alignment
 
     Parameters
@@ -46,8 +137,21 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     mosaic_imgname : str
         Name of the MVM-processed mosaic image to process
 
-    flcflt_list : list
-        lList of calibrated flc.fits and/or flt.fits images to process
+    flcflt_list : list, optional
+        List of calibrated flc.fits and/or flt.fits images to process. If not explicitly specified, the
+        default value is logical 'None'. NOTE: Users must specify a value for either 'flcflt_list' or
+        'flcflt_listfile'. Both cannot be blank.
+
+    flcflt_listfile : str, optional
+        Name of a text file containing a list of calibrated flc.fits and/or flt.fits images to process, one
+        per line. If not explicitly specified, the default value is logical 'None'. NOTE: Users must
+        specify a value for either 'flcflt_list' or 'flcflt_listfile'. Both cannot be blank.
+
+    min_n_matches : int, optional
+        Minimum acceptable number of cross-matches found between the GAIA catalog and the catalog of detected
+        sources in the FOV the input flc/flt images. If the number of cross-matching sources returned by
+        find_and_match_sources() is less than this value, a hard exit will be triggered.If not explicitly
+        specified, the default value is 10.
 
     diagnostic_mode : bool, optional
         If set to logical 'True', additional log messages will be displayed and additional files will be
@@ -67,21 +171,48 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     Nothing!
     """
     log.setLevel(log_level)
-    if plot_output_dest not in ['file', 'none', 'screen']:
-        errmsg = "'{}' is not a valid input for argument 'plot_output_dest'. Valid inputs are 'file', 'none', or 'screen'.".format(plot_output_dest)
+    # Make sure either 'flcflt_list' or 'flcflt_listfile' is specified.
+    if flcflt_list is None and flcflt_listfile is None:
+        errmsg = "Users must specify a value for either 'flcflt_list' or 'flcflt_listfile'. " \
+                 "Both cannot be blank."
         log.error(errmsg)
         raise ValueError(errmsg)
-    # 0: read in flc/flt fits files from user-specified fits file
-    with open(flcflt_list, mode='r') as imgfile:
-        imglist = imgfile.readlines()
-    for x in range(0, len(imglist)):
-        imglist[x] = imglist[x].strip()
+    if flcflt_list is not None and flcflt_listfile is not None:
+        errmsg = "Users must specify a value for either 'flcflt_list' or 'flcflt_listfile'. " \
+                 "Both cannot be specified."
+        log.error(errmsg)
+        raise ValueError(errmsg)
+
+    # make sure 'plot_output_dest' has a valid input value.
+    if plot_output_dest not in ['file', 'none', 'screen']:
+        errmsg = "'{}' is not a valid input for argument 'plot_output_dest'. Valid inputs are 'file', " \
+                 "'none', or 'screen'.".format(plot_output_dest)
+        log.error(errmsg)
+        raise ValueError(errmsg)
+
+    # -1: Get flc/flt list from user-specified list of files and/or user-specified list file read in flc/flt
+    # fits files from user-specified fits file
+    if flcflt_listfile:
+        with open(flcflt_listfile, mode='r') as imgfile:
+            imglist = imgfile.readlines()
+        for x in range(0, len(imglist)):
+            imglist[x] = imglist[x].strip()
+    if flcflt_list:
+        imglist = flcflt_list
+
+    # 0: report the WCS name for each input image
+    padding = 5
+    log.info("Summary of input image WCSNAME values")
+    log.info("Image Name{}WCSNAME".format(" "*(len(max(imglist, key=len)) - padding)))
+    for imgname in imglist:
+        log.info("{}{}{}".format(imgname, " " * padding, fits.getval(imgname, keyword="WCSNAME",
+                                                                     extname="SCI", extver=1)))
 
     # 1: generate WCS obj. for custom mosaic image
     mosaic_wcs = stwcs.wcsutil.HSTWCS(mosaic_imgname, ext=1)
 
     # 2a: generate table of all gaia sources in frame
-    gaia_table = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs,
+    gaia_table = amutils.create_astrometric_catalog(imglist, existing_wcs=mosaic_wcs, full_catalog=True,
                                                     catalog='GAIAedr3', use_footprint=True)
 
     # 2b: Remove gaia sources outside footprint of input flc/flt images, add X and Y coord columns
@@ -102,60 +233,44 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
     if diagnostic_mode:
         write_region_file("gaia_edr3_trimmed.reg", gaia_table, ['RA', 'DEC'], log_level=log_level)
 
-    # 3: feed x, y coords into photutils.detection.daostarfinder() as initial guesses to get actual centroid
+    # 3: feed x, y coords into photutils.detection.userstarfinder() as initial guesses to get actual centroid
     # positions of gaia sources
     # create mask image for source detection. Pixels with value of "0" are to processed, and those with value
     # of "1" will be omitted from processing.
     dao_mask_array = np.where(footprint.total_mask == 0, 1, 0)
     xy_gaia_coords = Table([gaia_table['X'].data.astype(np.int64),
                             gaia_table['Y'].data.astype(np.int64)], names=('x_peak', 'y_peak'))
-    # the below line computes a FWHM value based on detected sources (not the gaia sources). The FWHM value
-    # doesn't kick out a lot of sources.
-    mpeaks, mfwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array),
-                                                def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
-                                                diagnostic_mode=False)
-    # mfwhm = 25.0 # If it fails due to a lack of sources, use mfwhm = 25.0 instead.
-    daofind = decutils.UserStarFinder(fwhm=mfwhm, threshold=0.0, coords=xy_gaia_coords,
-                                      sharplo=0.4, sharphi=0.9)
-    detection_table = daofind(mosaic_hdu["SCI"].data, mask=dao_mask_array)
-    detection_table.rename_column('xcentroid', 'X')
-    detection_table.rename_column('ycentroid', 'Y')
-    n_detection = len(detection_table)
-    n_gaia = len(gaia_table)
-    pct_detection = 100.0 * (float(n_detection) / float(n_gaia))
-    log.info("Found {} peaks from {} GAIA source(s)".format(n_detection, n_gaia))
-    log.info("{}% of GAIA sources detected".format(pct_detection))
-
-    # 4: convert daostarfinder output x, y centroid positions to RA, DEC using step 1 WCS info
-    ra, dec = mosaic_wcs.all_pix2world(detection_table['X'], detection_table['Y'], 0)
-    ra_col = Column(name="RA", data=ra, dtype=np.float64)
-    dec_col = Column(name="DEC", data=dec, dtype=np.float64)
-    detection_table.add_columns([ra_col, dec_col], indexes=[3, 3])
-    if diagnostic_mode:
-        write_region_file("test_detection.reg", detection_table, ['RA', 'DEC'], log_level=log_level)
-
-    # 5: Identify and isolate X, Y, RA and DEC values common to both the gaia and detection tables.
-    # 5a: find sources common to both the gaia table and the detection table
-    try:
-        coo_prefix_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
-        gaia_coo_filename = "{}_gaia.coo".format(coo_prefix_string)
-        det_coo_filename = "{}_det.coo".format(coo_prefix_string)
-        write_region_file(gaia_coo_filename, gaia_table, ['X', 'Y'], verbose=False)
-        write_region_file(det_coo_filename, detection_table, ['X', 'Y'], verbose=False)
-        matches_gaia_to_det, matches_det_to_gaia = cu.getMatchedLists([gaia_coo_filename, det_coo_filename],
-                                                                      [mosaic_imgname, mosaic_imgname],
-                                                                      [n_gaia, n_detection],
-                                                                      log_level)
-        if len(matches_gaia_to_det) == 0:
-            err_msg = "Error: No matching sources found."
-            log.error(err_msg)
-            raise Exception(err_msg)
-    finally:
-        for item in [det_coo_filename, gaia_coo_filename]:
-            if os.path.exists(item):
-                log.debug("Removing temp coord file {}".format(item))
-                os.remove(item)
-
+    # 4: compute FWHM for source finding based on sources in image
+    mpeaks, fwhm = decutils.find_point_sources(mosaic_imgname, mask=np.invert(dao_mask_array.astype(bool)).astype(np.int16),
+                                               def_fwhm=3.0, box_size=7, block_size=(1024, 1024),
+                                               diagnostic_mode=diagnostic_mode)
+    # 5: Attempt to find matching gaia sources and userStarFinder sources first using computed FWHM value then
+    # hard-wired value.
+    fwhm_values = [fwhm, 25.0]
+    for item in enumerate(fwhm_values):
+        ctr = item[0]
+        fwhm_value = item[1]
+        detection_table, matches_gaia_to_det, matches_det_to_gaia = find_and_match_sources(fwhm_value,
+                                                                                           mosaic_hdu,
+                                                                                           mosaic_wcs,
+                                                                                           mosaic_imgname,
+                                                                                           dao_mask_array,
+                                                                                           gaia_table,
+                                                                                           xy_gaia_coords,
+                                                                                           diagnostic_mode=diagnostic_mode,
+                                                                                           log_level=log_level)
+        if len(matches_gaia_to_det) > min_n_matches:
+            break
+        else:
+            if ctr == 0:
+                log.info("Not enough matching sources found. Trying again with FWHM = {}".format(fwhm_values[1]))
+            if ctr == 1:
+                err_msg = "Error: not enough matching sources found. Maybe try adjusting the value of " \
+                          "'min_n_matches' (Current value: {}).".format(min_n_matches)
+                log.error(err_msg)
+                raise Exception(err_msg)
+    gcol = ['X', 'Y', 'ref_epoch', 'RA', 'RA_error', 'DEC', 'DEC_error',
+            'pm', 'pmra', 'pmra_error', 'pmdec', 'pmdec_error']
     # 5b: Isolate sources common to both the gaia table and the detection table
     matched_values_dict = {}
     for col_title in ['X', 'Y', 'RA', 'DEC']:
@@ -263,10 +378,12 @@ def perform(mosaic_imgname, flcflt_list, diagnostic_mode=False, log_level=loguti
             final_plot_filename = "{}_{}".format(plotfile_prefix, final_plot_filename)
         csl.pdf_merger(final_plot_filename, pdf_file_list)
         log.info("Sourcelist comparison plots saved to file {}.".format(final_plot_filename))
+
 # ============================================================================================================
 
 
-def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False, log_level=logutil.logging.INFO, verbose=True):
+def write_region_file(filename, table_data, colnames, apply_zero_index_correction=False,
+                      log_level=logutil.logging.INFO, verbose=True):
     """Write out columns from user-specified table to ds9 region file
 
     Parameters
@@ -275,7 +392,7 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
         name of the output region file to be created
 
     table_data : astropy.Table
-        Table continaing values to be written out
+        Table containing values to be written out
 
     colnames : list
         list of the columns from table_data to write out
@@ -317,16 +434,15 @@ def write_region_file(filename, table_data, colnames, apply_zero_index_correctio
 
 
 if __name__ == "__main__":
-
-    log_level_dict = {"critical": logutil.logging.CRITICAL,
-                      "error": logutil.logging.ERROR,
-                      "warning": logutil.logging.WARNING,
-                      "info": logutil.logging.INFO,
-                      "debug": logutil.logging.DEBUG}
     # Parse command-line input args
     parser = argparse.ArgumentParser(description='Statistically quantify quality of GAIA MVM alignment')
     parser.add_argument('mosaic_imgname', help='Name of the MVM-processed mosaic image to process')
-    parser.add_argument('flcflt_list', help='list of calibrated flc.fits and/or flt.fits images to process')
+    g = parser.add_mutually_exclusive_group(required=True)
+    g.add_argument('-ff', '--flcflt_listfile', default='none',
+                   help='text file containing a list of calibrated flc.fits and/or flt.fits images to '
+                        'process, one per line')
+    g.add_argument('-fl', '--flcflt_list', default='none', nargs="+",
+                   help='list of calibrated flc.fits and/or flt.fits images to process')
     parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true',
                         help='If this option is turned on, additional log messages will be displayed and '
                              'additional files will be created during the course of the run.')
@@ -338,6 +454,12 @@ if __name__ == "__main__":
                         'Specifying "critical" will only record/display "critical" log statements, and '
                         'specifying "error" will record/display both "error" and "critical" log statements, '
                         'and so on.')
+    parser.add_argument('-m', '--min_n_matches', required=False, default=10, type=int,
+                        help='Minimum acceptable number of cross-matches found between the GAIA catalog and '
+                             'the catalog of detected sources in the FOV the input flc/flt images. If the '
+                             'number of cross-matching sources returned by find_and_match_sources() is less '
+                             'than this value, a hard exit will be triggered. If not explicitly specified, '
+                             'the default value is 10.')
     parser.add_argument('-p', '--plot_output_dest', required=False, default='none',
                         choices=['file', 'none', 'screen'],
                         help='Destination to direct plots, "screen" simply displays them to the screen. '
@@ -345,6 +467,21 @@ if __name__ == "__main__":
                         'option turns off all plot generation. Default value is "none".')
     input_args = parser.parse_args()
 
+    # Prep inputs for execution of perform()
+    if input_args.flcflt_listfile == 'none':
+        input_args.flcflt_listfile = None
+    if input_args.flcflt_list == 'none':
+        input_args.flcflt_list = None
+
+    log_level_dict = {"critical": logutil.logging.CRITICAL,
+                      "error": logutil.logging.ERROR,
+                      "warning": logutil.logging.WARNING,
+                      "info": logutil.logging.INFO,
+                      "debug": logutil.logging.DEBUG}
+    input_args.log_level = log_level_dict[input_args.log_level]
+
     # Perform analysis
-    perform(input_args.mosaic_imgname, input_args.flcflt_list, diagnostic_mode=input_args.diagnostic_mode,
-            log_level=log_level_dict[input_args.log_level], plot_output_dest=input_args.plot_output_dest)
+    perform(input_args.mosaic_imgname, flcflt_list=input_args.flcflt_list,
+            flcflt_listfile=input_args.flcflt_listfile, diagnostic_mode=input_args.diagnostic_mode,
+            min_n_matches=input_args.min_n_matches, log_level=input_args.log_level,
+            plot_output_dest=input_args.plot_output_dest)
