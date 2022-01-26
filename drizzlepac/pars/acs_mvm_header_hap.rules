@@ -412,7 +412,7 @@ MTFLAG    MTFLAG    first
 <delete>  / PROPOSAL INFORMATION
 <delete>  GYROMODE
 <delete>  SUNANGLE
-<delete>  MOONANGLE
+<delete>  MOONANGL
 <delete>  EXPFLAG
 <delete>  QUALCOM1
 <delete>  QUALCOM2

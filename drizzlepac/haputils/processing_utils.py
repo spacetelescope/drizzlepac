@@ -50,7 +50,7 @@ def get_rules_file(product, rules_type="", rules_root=None):
         exposure.  Valid values: blank/empty string (''), 'SVM' or 'svm'
         for SVM processing (default) and 'MVM' or 'mvm' for MVM processing.
 
-    rule_root : str, optional
+    rules_root : str, optional
         Name of output product to use as the rootname for the output rules file.
         Specifying this filename indicates that the default rules for combining
         multiple inputs should be used.

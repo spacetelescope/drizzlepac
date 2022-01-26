@@ -412,7 +412,7 @@ MTFLAG    MTFLAG    first
 <delete>  ASN_TAB
 <delete>  GYROMODE
 <delete>  SUNANGLE
-<delete>  MOONANGLE
+<delete>  MOONANGL
 <delete>  EXPFLAG
 <delete>  LINENUM
 <delete>  QUALCOM1
