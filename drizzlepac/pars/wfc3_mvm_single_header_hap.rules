@@ -358,25 +358,6 @@ EQUINOX   EQUINOX   first
 # Header Keyword Rules
 #
 ################################################################################
-#
-# Keywords which need to be deleted for MVM products
-# These are not relevant for exposures from multiple proposals
-#
-################################################################################
-<delete>  IPPPSSOO
-<delete>  ASN_ID
-<delete>  ASN_TAB
-<delete>  ASN_MTYPE
-<delete>  / PROPOSAL INFORMATION
-<delete>  GYROMODE
-<delete>  SUNANGLE
-<delete>  MOONANGL
-<delete>  EXPFLAG
-<delete>  QUALCOM1
-<delete>  QUALCOM2
-<delete>  QUALCOM3
-<delete>  / CALIBRATION REFERENCE FILES
-<delete>  / CALIBRATION SWITCHES: PERFORM, OMIT, COMPLETE, SKIPPED
 ################################################################################
 #
 # Keywords which need to be kept in product header

@@ -385,8 +385,9 @@ def create_drizzle_products(total_obj_list):
             # Create drizzle-combined filter image as well as the single exposure drizzled image
             for filt_obj in total_obj.fdp_list:
                 log.info("~" * 118)
-                filt_obj.rules_file = rules_files[filt_obj.edp_list[0].full_filename]
-
+                filt_obj.rules_file = proc_utils.get_rules_file(filt_obj.edp_list[0].full_filename,
+                                                                rules_root=filt_obj.drizzle_filename)
+                print(f"Filter RULES_FILE: {filt_obj.rules_file}")
                 log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
                 filt_obj.wcs_drizzle_product(meta_wcs)
                 product_list.append(filt_obj.drizzle_filename)
@@ -407,7 +408,9 @@ def create_drizzle_products(total_obj_list):
             # Create drizzle-combined total detection image after the drizzle-combined filter image and
             # drizzled exposure images in order to take advantage of the cosmic ray flagging.
             log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
-            total_obj.rules_file = total_obj.fdp_list[0].rules_file
+            total_obj.rules_file = proc_utils.get_rules_file(total_obj.edp_list[0].full_filename,
+                                                                rules_root=total_obj.drizzle_filename)
+            print(f"Total product RULES_FILE: {total_obj.rules_file}")
             total_obj.wcs_drizzle_product(meta_wcs)
             product_list.append(total_obj.drizzle_filename)
             product_list.append(total_obj.trl_filename)

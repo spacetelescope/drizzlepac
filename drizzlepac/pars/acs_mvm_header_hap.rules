@@ -412,7 +412,7 @@ MTFLAG    MTFLAG    first
 <delete>  / PROPOSAL INFORMATION
 <delete>  GYROMODE
 <delete>  SUNANGLE
-<delete>  MOONANGLE
+<delete>  MOONANGL
 <delete>  EXPFLAG
 <delete>  QUALCOM1
 <delete>  QUALCOM2
@@ -475,7 +475,6 @@ FW2ERROR  FW2ERROR  multi
 FW2OFFST  FW2OFFST  first
 FWSERROR  FWSERROR  multi
 FWSOFFST  FWSOFFST  first
-GYROMODE  GYROMODE  multi
 LTM1_1    LTM1_1    float_one
 LTM2_2    LTM2_2    float_one
 MEANEXP   MEANEXP   first
