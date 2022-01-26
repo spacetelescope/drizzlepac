@@ -23,6 +23,10 @@ of the list).
 - Refactored the build system to be PEP-517 ad PEP-518 complient. [#1244]
 
 
+3.3.1 (19-Nov-2021)
+===================
+
+
 3.3.0 (28-Sep-2021)
 ===================
 This version includes all the functionality needed to generate
