@@ -8,7 +8,7 @@ from astropy import wcs
 from glob import glob
 from setuptools import setup, find_packages, Extension
 
-print("NUMPY VERSION IS ", numpy.__version__)
+
 # Setup C module include directories
 include_dirs = []
 numpy_includes = [numpy.get_include()]
