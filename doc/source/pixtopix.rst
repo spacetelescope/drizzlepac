@@ -13,3 +13,4 @@ task 'tran'.
 .. automodule:: drizzlepac.pixtopix
 
 .. autofunction:: tran
+.. autofunction:: help
