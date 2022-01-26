@@ -7,7 +7,6 @@
 
 """
 from stsci.tools import fileutil
-from nictools import readTDD
 from .imageObject import imageObject
 import numpy as np
 
