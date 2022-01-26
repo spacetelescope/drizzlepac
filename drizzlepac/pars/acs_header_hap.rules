@@ -401,13 +401,30 @@ MTFLAG    MTFLAG    first
 # Header Keyword Rules for remaining keywords
 #
 ################################################################################
+#
+# Keywords which need to be deleted for MVM products
+# These are not relevant for exposures from multiple proposals
+#
+################################################################################
+<delete>  IPPPSSOO
+<delete>  ASN_ID
+<delete>  ASN_MTYP
+<delete>  ASN_TAB
+<delete>  GYROMODE
+<delete>  SUNANGLE
+<delete>  MOONANGL
+<delete>  EXPFLAG
+<delete>  LINENUM
+<delete>  QUALCOM1
+<delete>  QUALCOM2
+<delete>  QUALCOM3
+################################################################################
 FILTER1   FILTER1   multi
 FILTER2   FILTER2   multi
 GOODMAX   GOODMAX   max
 GOODMEAN  GOODMEAN  mean
 GOODMIN   GOODMIN   min
 INHERIT   INHERIT   first # maintain IRAF compatibility
-LINENUM   LINENUM   first
 LRFWAVE   LRFWAVE   first
 NCOMBINE  NCOMBINE  sum
 MDRIZSKY  MDRIZSKY  mean
@@ -459,7 +476,6 @@ DGEOFILE  DGEOFILE  multi
 DIRIMAGE  DIRIMAGE  multi
 DQICORR   DQICORR   multi
 DRIZCORR  DRIZCORR  multi
-EXPFLAG   EXPFLAG   multi
 EXPSCORR  EXPSCORR  multi
 FGSLOCK   FGSLOCK   multi
 FLASHCUR  FLASHCUR  multi
@@ -475,7 +491,6 @@ FW2OFFST  FW2OFFST  first
 FWSERROR  FWSERROR  multi
 FWSOFFST  FWSOFFST  first
 GRAPHTAB  GRAPHTAB  multi
-GYROMODE  GYROMODE  multi
 IDCTAB      IDCTAB    multi
 IMPHTTAB  IMPHTTAB  multi
 LFLGCORR  LFLGCORR  multi
@@ -484,7 +499,6 @@ LTM1_1    LTM1_1    float_one
 LTM2_2    LTM2_2    float_one
 MDRIZTAB  MDRIZTAB  multi
 MEANEXP   MEANEXP   first
-MOONANGL  MOONANGL  first
 NRPTEXP   NRPTEXP   first
 OSCNTAB   OSCNTAB   multi
 P1_ANGLE  P1_ANGLE  first
@@ -529,7 +543,6 @@ SKYSUB      SKYSUB    multi
 SKYSUM      SKYSUM    sum
 SPOTTAB   SPOTTAB   multi
 SUBARRAY  SUBARRAY  first
-SUNANGLE  SUNANGLE  first
 SUN_ALT   SUN_ALT   first
 TIME-OBS  TIME-OBS  first
 WRTERR      WRTERR    multi
