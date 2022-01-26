@@ -22,9 +22,13 @@ of the list).
 
 - Refactored the build system to be PEP-517 ad PEP-518 complient. [#1244]
 
+- Fixed a bug in the drizzle algorithm due to which input pixels with
+  zero weights may still contribute to the output image. [#1222]
+
 
 3.3.0 (28-Sep-2021)
 ===================
+
 This version includes all the functionality needed to generate
 source catalogs, both point source and extended (segment) source
 catalogs, during single-visit mosaic (SVM) processing.  In fact,
