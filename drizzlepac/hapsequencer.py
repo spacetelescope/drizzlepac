@@ -646,7 +646,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         logging.exception("message")
-
+    # TODO: put "except BaseException" code here (see hapmultisequencer.py, line 482)
     finally:
         # If poller_utils.py did not exit with an exception, the manifest filename exists.
         # If the manifest filename does not exist, need to construct a filename by using the
