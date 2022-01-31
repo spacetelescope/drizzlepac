@@ -166,7 +166,11 @@ class AlignmentTable:
         try:
             for img in self.process_list:
                 log.info("Adding {} to HAPImage list".format(img))
-                catimg = HAPImage(img)
+                detector = fits.getval(img, 'detector')
+                if detector == 'SBC':
+                    catimg = SBCHAPImage(img)
+                else:
+                    catimg = HAPImage(img)
                 # Build image properties needed for alignment
                 catimg.compute_background(box_size=self.alignment_pars['box_size'],
                                           win_size=self.alignment_pars['win_size'],
@@ -690,6 +694,7 @@ class HAPImage:
 
             dqmask = self.build_dqmask(chip=chip)
             sciarr = self.imghdu[("SCI", chip)].data.copy()
+            detector = self.imghdu[0].header['detector']
             #  TODO: replace detector_pars with dict from OO Config class
             # Turning off 'classify' since same CRs are being removed before segmentation now
             extract_pars = {'classify': False,  # alignment_pars['classify'],
@@ -724,6 +729,71 @@ class HAPImage:
         if self.imghdu is not None:
             self.imghdu.close()
             self.imghdu = None
+
+class SBCHAPImage(HAPImage):
+    def __init__(self, filename):
+        super().__init__(filename)
+
+    def find_alignment_sources(self, output=True, dqname='DQ', crclean=False,
+                               **alignment_pars):
+        """Find sources in all chips for this exposure."""
+        if crclean:
+            self.imghdu = fits.open(self.imgname, mode='update')
+
+        # Only 1 chip, no need to loop
+        chip = 1
+
+        # find sources in image
+        if output:
+            outroot = '{}_sci{}_src'.format(self.rootname, chip)
+        else:
+            outroot = None
+
+        dqmask = self.build_dqmask(chip=chip)
+        sciarr = self.imghdu[("SCI", chip)].data.copy()
+
+        # Remove all background noise
+        # This background noise is effectively integerized by the SBC detector
+        bkg_noise = astropy.stats.sigma_clipped_stats(sciarr[sciarr > 0], maxiters=1)
+        bkg_limit = bkg_noise[1] + 5 * bkg_noise[2]
+        sciarr -= bkg_limit
+        sciarr = np.clip(sciarr, 0, sciarr.max())
+        # Restore SCI values to non-subtracted values
+        sciarr += bkg_limit
+        #  TODO: replace detector_pars with dict from OO Config class
+        # Turning off 'classify' since same CRs are being removed before segmentation now
+        extract_pars = {'classify': False,  # alignment_pars['classify'],
+                        'centering_mode': alignment_pars['centering_mode'],
+                        'nlargest': alignment_pars['MAX_SOURCES_PER_CHIP'],
+                        'deblend': alignment_pars['deblend']}
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', NoDetectionsWarning)
+            seg_tab, segmap, crmap = amutils.extract_sources(sciarr, dqmask=dqmask,
+                                                             outroot=outroot,
+                                                             kernel=self.kernel,
+                                                             segment_threshold=-1 * bkg_noise[1],
+                                                             fwhm=self.kernel_fwhm,
+                                                             **extract_pars)
+        if crclean and crmap is not None:
+            i = self.imgname.replace('.fits', '')
+            if log.level < logutil.logging.INFO:
+                # apply crmap to input image
+                crfile = "{}_crmap_dq{}.fits".format(i, chip)
+                fits.PrimaryHDU(data=crmap).writeto(crfile, overwrite=True)
+            log.debug("Updating DQ array for {} using single-image CR identification algorithm".format(i))
+            self.imghdu[(dqname, chip)].data = np.bitwise_or(self.imghdu[(dqname, chip)].data, crmap)
+            del crmap
+
+        self.catalog_table[chip] = seg_tab
+
+        if crclean and log.level < logutil.logging.INFO:
+            self.imghdu.writeto(self.imgname.replace('.fits', '_crmap.fits'), overwrite=True)
+
+        if self.imghdu is not None:
+            self.imghdu.close()
+            self.imghdu = None
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
