@@ -49,7 +49,8 @@ class HapConfig(object):
         """
         log.setLevel(log_level)
         if input_custom_pars_file and input_custom_pars_file and input_custom_pars_file == output_custom_pars_file:
-            sys.exit("ERROR: Input and output parameter files must have unique names!")
+            log.error("ERROR: Input and output parameter files must have unique names!")
+            sys.exit(1)
         self.label = "hap_config"
         self.description = "A set of routines to generate appropriate set of configuration parameters"
         self.instrument = prod_obj.instrument
@@ -167,7 +168,8 @@ class HapConfig(object):
                         if n_exp >= 6:
                             self.conditions.append("acs_wfc_any_n6")
                     else:
-                        sys.exit("INVALID ACS DETECTOR!")
+                        log.error("INVALID ACS DETECTOR!")
+                        sys.exit(1)
                 elif self.instrument == "wfc3":
                     if self.detector == "ir":
                         if self.filters.lower() in ["g102", "g141"]:
@@ -201,9 +203,11 @@ class HapConfig(object):
                             if n_exp >= 6:
                                 self.conditions.append("wfc3_uvis_any_pre_n6")
                     else:
-                        sys.exit("INVALID WFC3 DETECTOR!")
+                        log.error("INVALID WFC3 DETECTOR!")
+                        sys.exit(1)
                 else:
-                    sys.exit("INVALID HST INSTRUMENT!")
+                    log.error("INVALID HST INSTRUMENT!")
+                    sys.exit(1)
         else:  # For single-exposure products
             self.conditions = ["single_basic"]
             if prod_obj.is_singleton:
