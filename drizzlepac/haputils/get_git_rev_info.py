@@ -79,8 +79,7 @@ def print_rev_id(local_repo_path):
             sys.exit(rv)
 # -------------------------------------------------------------------------------------------------
 def get_rev_id(local_repo_path):
-    """returns the current full git revision id of the specified local repository. Expected method of execution: python
-    subroutine call
+    """returns the current full git revision id of the specified local repository.
 
     Parameters
     ----------
@@ -108,10 +107,10 @@ def get_rev_id(local_repo_path):
             else:
                 raise ValueError("Git revision information not found.")
     except Exception:
-        pass
+        log.warning("Problem encountered getting git revision ID")
+        sys.exit(1)
     finally:
         os.chdir(start_path)
-
     return(rv)
 # -------------------------------------------------------------------------------------------------
 if(__name__ == '__main__'):
