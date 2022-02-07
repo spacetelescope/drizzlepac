@@ -20,7 +20,7 @@ from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 from astropy.modeling import models, fitting
 
-from photutils import background
+from photutils import background, DAOStarFinder
 from photutils.background import Background2D
 from photutils.utils import NoDetectionsWarning
 
@@ -35,6 +35,7 @@ from stsci.tools import fileutil
 from .. import updatehdr
 from . import astrometric_utils as amutils
 from . import analyze
+from . import deconvolve_utils as decutils
 
 import tweakwcs
 
@@ -677,7 +678,6 @@ class HAPImage:
 
         return dqmask
 
-
     def find_alignment_sources(self, output=True, dqname='DQ', crclean=False,
                                **alignment_pars):
         """Find sources in all chips for this exposure."""
@@ -733,13 +733,11 @@ class HAPImage:
 class SBCHAPImage(HAPImage):
     def __init__(self, filename):
         super().__init__(filename)
+        self.exptime = max(self.imghdu[0].header['exptime'], 1.0)
 
     def find_alignment_sources(self, output=True, dqname='DQ', crclean=False,
                                **alignment_pars):
         """Find sources in all chips for this exposure."""
-        if crclean:
-            self.imghdu = fits.open(self.imgname, mode='update')
-
         # Only 1 chip, no need to loop
         chip = 1
 
@@ -749,46 +747,65 @@ class SBCHAPImage(HAPImage):
         else:
             outroot = None
 
-        dqmask = self.build_dqmask(chip=chip)
         sciarr = self.imghdu[("SCI", chip)].data.copy()
 
         # Remove all background noise
         # This background noise is effectively integerized by the SBC detector
         bkg_noise = astropy.stats.sigma_clipped_stats(sciarr[sciarr > 0], maxiters=1)
-        bkg_limit = bkg_noise[1] + 5 * bkg_noise[2]
+        bkg_limit = bkg_noise[1] + 2 * bkg_noise[2]  # Set limit as 1-sigma above mean
         sciarr -= bkg_limit
         sciarr = np.clip(sciarr, 0, sciarr.max())
-        # Restore SCI values to non-subtracted values
-        sciarr += bkg_limit
-        #  TODO: replace detector_pars with dict from OO Config class
-        # Turning off 'classify' since same CRs are being removed before segmentation now
-        extract_pars = {'classify': False,  # alignment_pars['classify'],
-                        'centering_mode': alignment_pars['centering_mode'],
-                        'nlargest': alignment_pars['MAX_SOURCES_PER_CHIP'],
-                        'deblend': alignment_pars['deblend']}
+        sciarr[sciarr > 0] += bkg_limit  # Need to restore original flux for LoG determination
+        # A high LoG sigma value is needed to smooth over the pixelated nature of the SBC PSFs
+        # This avoids having PSF halo peaks being detected as 'real' sources
+        slabels, snum, logimg = amutils.detect_point_sources(sciarr, background=0, log_sigma=5.0)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', NoDetectionsWarning)
-            seg_tab, segmap, crmap = amutils.extract_sources(sciarr, dqmask=dqmask,
-                                                             outroot=outroot,
-                                                             kernel=self.kernel,
-                                                             segment_threshold=-1 * bkg_noise[1],
-                                                             fwhm=self.kernel_fwhm,
-                                                             **extract_pars)
-        if crclean and crmap is not None:
-            i = self.imgname.replace('.fits', '')
-            if log.level < logutil.logging.INFO:
-                # apply crmap to input image
-                crfile = "{}_crmap_dq{}.fits".format(i, chip)
-                fits.PrimaryHDU(data=crmap).writeto(crfile, overwrite=True)
-            log.debug("Updating DQ array for {} using single-image CR identification algorithm".format(i))
-            self.imghdu[(dqname, chip)].data = np.bitwise_or(self.imghdu[(dqname, chip)].data, crmap)
-            del crmap
+        #
+        # NOTE: Do we need to deblend?
+        #
+        bkg_mask = ~np.clip(slabels, 0, 1).astype(bool)
 
-        self.catalog_table[chip] = seg_tab
+        daofind = DAOStarFinder(fwhm=self.kernel_fwhm, threshold=0)
 
-        if crclean and log.level < logutil.logging.INFO:
-            self.imghdu.writeto(self.imgname.replace('.fits', '_crmap.fits'), overwrite=True)
+        #_region_name = self.image.imgname.replace(reg_suffix, 'region{}.fits'.format(masknum))
+        #if self.diagnostic_mode:
+        #    fits.PrimaryHDU(data=region).writeto(_region_name, overwrite=True)
+
+        log.debug("Determining source properties as src_table...")
+        src_table = daofind(sciarr, mask=bkg_mask)
+
+        if src_table is not None:
+            log.info("Total Number of detected sources: {}".format(len(src_table)))
+        else:
+            log.info("No detected sources!")
+            self.catalog_table[chip] = None
+            if self.imghdu is not None:
+                self.imghdu.close()
+                self.imghdu = None
+            return
+
+        photvals = {}
+        photvals['photmode'] = self.imghdu[('sci', 1)].header['PHOTMODE']
+        photvals['photflam'] = self.imghdu[('sci', 1)].header['PHOTFLAM']
+        photvals['photplam'] = self.imghdu[('sci', 1)].header['PHOTPLAM']
+
+        # Include magnitudes for each source for use in verification of alignment through
+        # comparison with GAIA magnitudes
+        tbl = amutils.compute_photometry(src_table, photvals)
+
+        # Insure all IDs are sequential and unique (at least in this catalog)
+        tbl['cat_id'] = np.arange(1, len(tbl) + 1)
+
+        if outroot:
+            tbl['xcentroid'].info.format = '.10f'  # optional format
+            tbl['ycentroid'].info.format = '.10f'
+            tbl['flux'].info.format = '.10f'
+            if not outroot.endswith('.cat'):
+                outroot += '.cat'
+            tbl.write(outroot, format='ascii.commented_header', overwrite=True)
+            log.info("Wrote source catalog: {}".format(outroot))
+
+        self.catalog_table[chip] = tbl
 
         if self.imghdu is not None:
             self.imghdu.close()
