@@ -751,29 +751,28 @@ class SBCHAPImage(HAPImage):
 
         # Remove all background noise
         # This background noise is effectively integerized by the SBC detector
-        bkg_noise = astropy.stats.sigma_clipped_stats(sciarr[sciarr > 0], maxiters=1)
-        bkg_limit = bkg_noise[1] + 2 * bkg_noise[2]  # Set limit as 1-sigma above mean
-        sciarr -= bkg_limit
-        sciarr = np.clip(sciarr, 0, sciarr.max())
-        sciarr[sciarr > 0] += bkg_limit  # Need to restore original flux for LoG determination
+        sci_gauss = ndimage.gaussian_filter(sciarr, sigma=3.0)
+        bkg_noise = astropy.stats.sigma_clipped_stats(sci_gauss, maxiters=1)
+        # bkg_noise = astropy.stats.sigma_clipped_stats(sciarr[sciarr > 0], maxiters=1)
+        bkg_limit = bkg_noise[1] + 3 * bkg_noise[2]  # Set limit as 1-sigma above mean
+        log.debug(f"BKG_LIMIT for source identification: {bkg_limit} based on {bkg_noise}")
+        # create mask of all background pixels and zero out all those pixels
+        bkg_mask = sci_gauss <= bkg_limit
+        sci_bkgsub = sciarr.copy()
+        sci_bkgsub[bkg_mask] = 0
+
         # A high LoG sigma value is needed to smooth over the pixelated nature of the SBC PSFs
         # This avoids having PSF halo peaks being detected as 'real' sources
-        slabels, snum, logimg = amutils.detect_point_sources(sciarr, background=0, log_sigma=5.0)
-
-        #
-        # NOTE: Do we need to deblend?
-        #
+        slabels, snum, logimg = amutils.detect_point_sources(sci_bkgsub, background=0, log_sigma=5.0)
+        # create mask based on these sources only...
         bkg_mask = ~np.clip(slabels, 0, 1).astype(bool)
 
+        # Measure sub-pixel positions of each identified source now.
         daofind = DAOStarFinder(fwhm=self.kernel_fwhm, threshold=0)
-
-        #_region_name = self.image.imgname.replace(reg_suffix, 'region{}.fits'.format(masknum))
-        #if self.diagnostic_mode:
-        #    fits.PrimaryHDU(data=region).writeto(_region_name, overwrite=True)
 
         log.debug("Determining source properties as src_table...")
         src_table = daofind(sciarr, mask=bkg_mask)
-
+        del sci_bkgsub, bkg_mask, sci_gauss  # explicitly clean up memory
         if src_table is not None:
             log.info("Total Number of detected sources: {}".format(len(src_table)))
         else:
