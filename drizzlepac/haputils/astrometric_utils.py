@@ -2104,6 +2104,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     for f in singlefiles:
         imgarr = fits.getdata(f)
         imgarr[~full_sat_mask] = 0
+        imgarr = np.nan_to_num(imgarr, nan=0)  # Insure, on Linux, all 'nan' values are removed
         focus_val, focus_pos = determine_focus_index(imgarr, sigma=sigma)
         focus_dict['exp'].append(float(focus_val))
         focus_dict['exp_pos'] = (int(focus_pos[0][0]), int(focus_pos[1][0]))
@@ -2111,6 +2112,7 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     # Generate results for drizzle product(s)
     prodarr = fits.getdata(prodfile)
     prodarr[~full_sat_mask] = 0
+    prodarr = np.nan_to_num(prodarr, nan=0)  # Insure, on Linux, all 'nan' values are removed
     # Insure output values are JSON-compliant
     focus_val, focus_pos = determine_focus_index(prodarr, sigma=sigma)
     focus_dict['prod'].append(float(focus_val))
