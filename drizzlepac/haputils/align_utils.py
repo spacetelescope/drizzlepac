@@ -1233,7 +1233,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
 
         # update header with new WCS info
         sci_extn = sci_ext_dict["{}".format(item.meta['chip'])]
-        hdr_name = "{}_{}-hlet.fits".format(image_name.rstrip(".fits"), wcs_name)
+        hdr_name = "{}_{}-hlet.fits".format(image_name.rstrip("fits")[:-1], wcs_name)
         updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
         info = item.meta['fit_info']
         if info['catalog'] and info['catalog'] != '':
