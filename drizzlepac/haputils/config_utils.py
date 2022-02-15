@@ -249,8 +249,8 @@ class HapConfig(object):
         if step_name in step_list:
             return self.pars[step_name].outpars
         else:
-            log.critical("'{}' is not a recognized step name.".format(step_name))
-            log.critical("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
+            log.error("'{}' is not a recognized step name.".format(step_name))
+            log.error("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
             sys.exit(1)
 
 
