@@ -1615,7 +1615,8 @@ def slFiles2dataTables(slNames):
                 log.info("titleSwapDict_point")
                 titleSwapDict = titleSwapDict_point
             else:
-                sys.exit("ERROR: Unrecognized format. Exiting...")
+                log.error("ERROR: Unrecognized format. Exiting...")
+                sys.exit(1)
         elif ("XCENTER" in list(dataTable.keys()) and "FLUX1" in list(dataTable.keys())):
             log.info("titleSwapDict_daoTemp")
             titleSwapDict = titleSwapDict_daoTemp
@@ -1635,7 +1636,8 @@ def slFiles2dataTables(slNames):
             log.info("titleSwapDict_segment")
             titleSwapDict = titleSwapDict_segment
         else:
-            sys.exit("ERROR: Unrecognized format. Exiting...")
+            log.error("ERROR: Unrecognized format. Exiting...")
+            sys.exit(1)
         outTable = Table()
         for swapKey in list(titleSwapDict.keys()):
             if titleSwapDict[swapKey] != "n/a":
