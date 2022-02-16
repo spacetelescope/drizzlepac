@@ -99,9 +99,7 @@ from stsci.tools import fileutil, teal
 from stwcs import wcsutil, distortion
 from . import wcs_functions
 from . import util
-
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.2'
+from .version import __version__
 
 __taskname__ = 'pixtopix'
 

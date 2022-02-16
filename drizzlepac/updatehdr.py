@@ -21,8 +21,6 @@ from stsci.skypac.utils import get_ext_list, ext2str
 from . import util
 from . import linearfit
 
-__version__ = '0.4.0'
-
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 wcs_keys = ['CRVAL1', 'CRVAL2', 'CD1_1', 'CD1_2', 'CD2_1', 'CD2_2',
