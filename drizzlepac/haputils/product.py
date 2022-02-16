@@ -439,8 +439,10 @@ class TotalProduct(HAPProduct):
     def update_drizpars(self):
         """ Update ALL products with final name of trailer file """
         # Update this total product
-        fits.setval(self.drizzle_filename, 'DRIZPARS', value=self.trl_filename)
-
+        if os.path.exists(self.drizzle_filename):
+            fits.setval(self.drizzle_filename, 'DRIZPARS', value=self.trl_filename)
+        else:
+            log.warning("File {} not found. DRIZPARS header value update failed.".format(self.drizzle_filename))
         # Update all filter drizzle products that were actually written out
         for fdp in self.fdp_list:
             if os.path.exists(fdp.drizzle_filename):

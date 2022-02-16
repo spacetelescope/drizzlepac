@@ -49,7 +49,8 @@ class HapConfig(object):
         """
         log.setLevel(log_level)
         if input_custom_pars_file and input_custom_pars_file and input_custom_pars_file == output_custom_pars_file:
-            sys.exit("ERROR: Input and output parameter files must have unique names!")
+            log.error("ERROR: Input and output parameter files must have unique names!")
+            sys.exit(1)
         self.label = "hap_config"
         self.description = "A set of routines to generate appropriate set of configuration parameters"
         self.instrument = prod_obj.instrument
@@ -114,7 +115,7 @@ class HapConfig(object):
             if hasattr(prod_obj, "skycell"):
                 n_exp = int(round(prod_obj.mask_kws['MEANNEXP'][0]))  # Use mean number of exposures in skycell instead of just simple number of input images for MVM
             else:
-                n_exp = len(prod_obj.edp_list) # use simple number of input images for SVM
+                n_exp = len(prod_obj.edp_list)  # use simple number of input images for SVM
 
         # determine product type, initialize and build conditions list
         if hasattr(prod_obj, "edp_list") and hasattr(prod_obj, "fdp_list"):  # For total products
@@ -167,7 +168,8 @@ class HapConfig(object):
                         if n_exp >= 6:
                             self.conditions.append("acs_wfc_any_n6")
                     else:
-                        sys.exit("INVALID ACS DETECTOR!")
+                        log.error("{} is an invalid ACS detector!".format(self.detector))
+                        sys.exit(1)
                 elif self.instrument == "wfc3":
                     if self.detector == "ir":
                         if self.filters.lower() in ["g102", "g141"]:
@@ -201,9 +203,11 @@ class HapConfig(object):
                             if n_exp >= 6:
                                 self.conditions.append("wfc3_uvis_any_pre_n6")
                     else:
-                        sys.exit("INVALID WFC3 DETECTOR!")
+                        log.error("{} is an invalid WFC3 detector!".format(self.detector))
+                        sys.exit(1)
                 else:
-                    sys.exit("INVALID HST INSTRUMENT!")
+                    log.error("{} is an invalid HST instrument!".format(self.instrument))
+                    sys.exit(1)
         else:  # For single-exposure products
             self.conditions = ["single_basic"]
             if prod_obj.is_singleton:
@@ -245,8 +249,8 @@ class HapConfig(object):
         if step_name in step_list:
             return self.pars[step_name].outpars
         else:
-            log.critical("'{}' is not a recognized step name.".format(step_name))
-            log.critical("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
+            log.error("'{}' is not a recognized step name.".format(step_name))
+            log.error("Recognized step names: \n{}".format(str(step_list)[2:-2].replace("', '", "\n")))
             sys.exit(1)
 
 

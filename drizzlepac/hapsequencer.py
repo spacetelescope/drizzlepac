@@ -646,7 +646,12 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         logging.exception("message")
-
+    # This except handles sys.exit() which raises the SystemExit exception which inherits from BaseException.
+    except BaseException:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        formatted_lines = traceback.format_exc().splitlines()
+        log.info(formatted_lines[-1])
+        return_value = exc_value
     finally:
         # If poller_utils.py did not exit with an exception, the manifest filename exists.
         # If the manifest filename does not exist, need to construct a filename by using the
