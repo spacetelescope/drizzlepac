@@ -752,10 +752,10 @@ class SBCHAPImage(HAPImage):
         # Remove all background noise
         # This background noise is effectively integerized by the SBC detector
         sci_gauss = ndimage.gaussian_filter(sciarr, sigma=3.0)
-        bkg_noise = astropy.stats.sigma_clipped_stats(sci_gauss, maxiters=1)
+        _, bkg_noise_median, bkg_noise_stddev = astropy.stats.sigma_clipped_stats(sci_gauss, maxiters=1)
         # bkg_noise = astropy.stats.sigma_clipped_stats(sciarr[sciarr > 0], maxiters=1)
-        bkg_limit = bkg_noise[1] + 3 * bkg_noise[2]  # Set limit as 1-sigma above mean
-        log.debug(f"BKG_LIMIT for source identification: {bkg_limit} based on {bkg_noise}")
+        bkg_limit = bkg_noise_median + 3 * bkg_noise_stddev  # Set limit as n-sigma above mean
+        log.debug(f"BKG_LIMIT for source identification: {bkg_limit} based on {bkg_noise_median},{bkg_noise_stddev}")
         # create mask of all background pixels and zero out all those pixels
         bkg_mask = sci_gauss <= bkg_limit
         sci_bkgsub = sciarr.copy()
@@ -763,7 +763,7 @@ class SBCHAPImage(HAPImage):
 
         # A high LoG sigma value is needed to smooth over the pixelated nature of the SBC PSFs
         # This avoids having PSF halo peaks being detected as 'real' sources
-        slabels, snum, logimg = amutils.detect_point_sources(sci_bkgsub, background=0, log_sigma=5.0)
+        slabels, snum, _ = amutils.detect_point_sources(sci_bkgsub, background=0, log_sigma=5.0)
         # create mask based on these sources only...
         bkg_mask = ~np.clip(slabels, 0, 1).astype(bool)
 
