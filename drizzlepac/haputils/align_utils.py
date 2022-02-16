@@ -20,7 +20,7 @@ from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 from astropy.modeling import models, fitting
 
-from photutils import background
+from photutils import background, DAOStarFinder
 from photutils.background import Background2D
 from photutils.utils import NoDetectionsWarning
 
@@ -35,6 +35,7 @@ from stsci.tools import fileutil
 from .. import updatehdr
 from . import astrometric_utils as amutils
 from . import analyze
+from . import deconvolve_utils as decutils
 
 import tweakwcs
 
@@ -166,7 +167,11 @@ class AlignmentTable:
         try:
             for img in self.process_list:
                 log.info("Adding {} to HAPImage list".format(img))
-                catimg = HAPImage(img)
+                detector = fits.getval(img, 'detector')
+                if detector == 'SBC':
+                    catimg = SBCHAPImage(img)
+                else:
+                    catimg = HAPImage(img)
                 # Build image properties needed for alignment
                 catimg.compute_background(box_size=self.alignment_pars['box_size'],
                                           win_size=self.alignment_pars['win_size'],
@@ -673,7 +678,6 @@ class HAPImage:
 
         return dqmask
 
-
     def find_alignment_sources(self, output=True, dqname='DQ', crclean=False,
                                **alignment_pars):
         """Find sources in all chips for this exposure."""
@@ -690,6 +694,7 @@ class HAPImage:
 
             dqmask = self.build_dqmask(chip=chip)
             sciarr = self.imghdu[("SCI", chip)].data.copy()
+            detector = self.imghdu[0].header['detector']
             #  TODO: replace detector_pars with dict from OO Config class
             # Turning off 'classify' since same CRs are being removed before segmentation now
             extract_pars = {'classify': False,  # alignment_pars['classify'],
@@ -724,6 +729,87 @@ class HAPImage:
         if self.imghdu is not None:
             self.imghdu.close()
             self.imghdu = None
+
+class SBCHAPImage(HAPImage):
+    def __init__(self, filename):
+        super().__init__(filename)
+        self.exptime = max(self.imghdu[0].header['exptime'], 1.0)
+
+    def find_alignment_sources(self, output=True, dqname='DQ', crclean=False,
+                               **alignment_pars):
+        """Find sources in all chips for this exposure."""
+        # Only 1 chip, no need to loop
+        chip = 1
+
+        # find sources in image
+        if output:
+            outroot = '{}_sci{}_src'.format(self.rootname, chip)
+        else:
+            outroot = None
+
+        sciarr = self.imghdu[("SCI", chip)].data.copy()
+
+        # Remove all background noise
+        # This background noise is effectively integerized by the SBC detector
+        sci_gauss = ndimage.gaussian_filter(sciarr, sigma=3.0)
+        _, bkg_noise_median, bkg_noise_stddev = astropy.stats.sigma_clipped_stats(sci_gauss, maxiters=1)
+        # bkg_noise = astropy.stats.sigma_clipped_stats(sciarr[sciarr > 0], maxiters=1)
+        bkg_limit = bkg_noise_median + 3 * bkg_noise_stddev  # Set limit as n-sigma above mean
+        log.debug(f"BKG_LIMIT for source identification: {bkg_limit} based on {bkg_noise_median},{bkg_noise_stddev}")
+        # create mask of all background pixels and zero out all those pixels
+        bkg_mask = sci_gauss <= bkg_limit
+        sci_bkgsub = sciarr.copy()
+        sci_bkgsub[bkg_mask] = 0
+
+        # A high LoG sigma value is needed to smooth over the pixelated nature of the SBC PSFs
+        # This avoids having PSF halo peaks being detected as 'real' sources
+        slabels, snum, _ = amutils.detect_point_sources(sci_bkgsub, background=0, log_sigma=5.0)
+        # create mask based on these sources only...
+        bkg_mask = ~np.clip(slabels, 0, 1).astype(bool)
+
+        # Measure sub-pixel positions of each identified source now.
+        daofind = DAOStarFinder(fwhm=self.kernel_fwhm, threshold=0)
+
+        log.debug("Determining source properties as src_table...")
+        src_table = daofind(sciarr, mask=bkg_mask)
+        del sci_bkgsub, bkg_mask, sci_gauss  # explicitly clean up memory
+        if src_table is not None:
+            log.info("Total Number of detected sources: {}".format(len(src_table)))
+        else:
+            log.info("No detected sources!")
+            self.catalog_table[chip] = None
+            if self.imghdu is not None:
+                self.imghdu.close()
+                self.imghdu = None
+            return
+
+        photvals = {}
+        photvals['photmode'] = self.imghdu[('sci', 1)].header['PHOTMODE']
+        photvals['photflam'] = self.imghdu[('sci', 1)].header['PHOTFLAM']
+        photvals['photplam'] = self.imghdu[('sci', 1)].header['PHOTPLAM']
+
+        # Include magnitudes for each source for use in verification of alignment through
+        # comparison with GAIA magnitudes
+        tbl = amutils.compute_photometry(src_table, photvals)
+
+        # Insure all IDs are sequential and unique (at least in this catalog)
+        tbl['cat_id'] = np.arange(1, len(tbl) + 1)
+
+        if outroot:
+            tbl['xcentroid'].info.format = '.10f'  # optional format
+            tbl['ycentroid'].info.format = '.10f'
+            tbl['flux'].info.format = '.10f'
+            if not outroot.endswith('.cat'):
+                outroot += '.cat'
+            tbl.write(outroot, format='ascii.commented_header', overwrite=True)
+            log.info("Wrote source catalog: {}".format(outroot))
+
+        self.catalog_table[chip] = tbl
+
+        if self.imghdu is not None:
+            self.imghdu.close()
+            self.imghdu = None
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
