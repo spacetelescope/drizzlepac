@@ -108,7 +108,6 @@ def get_rev_id(local_repo_path):
                 raise ValueError("Git revision information not found.")
     except Exception:
         log.warning("Problem encountered getting git revision ID")
-        sys.exit(1)
     finally:
         os.chdir(start_path)
     return(rv)
