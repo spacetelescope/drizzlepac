@@ -70,11 +70,9 @@ from stsci.tools import parseinput, logutil
 from stsci.tools.bitmask import interpret_bit_flags
 
 from . import util
+from .version import __version__
 
 __taskname__ = "drizzlepac.resetbits"
-
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.0.1'
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)

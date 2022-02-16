@@ -67,9 +67,6 @@ __docformat__ = 'restructuredtext'
 
 __taskname__ = "updatenpol"
 
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.1.0'
-
 import os,sys,shutil
 
 from astropy.io import fits
@@ -79,6 +76,7 @@ from stsci.tools import teal
 
 from stwcs import updatewcs
 from . import util
+from .version import __version__
 
 
 def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
