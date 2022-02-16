@@ -115,7 +115,7 @@ class HapConfig(object):
             if hasattr(prod_obj, "skycell"):
                 n_exp = int(round(prod_obj.mask_kws['MEANNEXP'][0]))  # Use mean number of exposures in skycell instead of just simple number of input images for MVM
             else:
-                n_exp = len(prod_obj.edp_list) # use simple number of input images for SVM
+                n_exp = len(prod_obj.edp_list)  # use simple number of input images for SVM
 
         # determine product type, initialize and build conditions list
         if hasattr(prod_obj, "edp_list") and hasattr(prod_obj, "fdp_list"):  # For total products
@@ -168,7 +168,7 @@ class HapConfig(object):
                         if n_exp >= 6:
                             self.conditions.append("acs_wfc_any_n6")
                     else:
-                        log.error("INVALID ACS DETECTOR!")
+                        log.error("{} is an invalid ACS detector!".format(self.detector))
                         sys.exit(1)
                 elif self.instrument == "wfc3":
                     if self.detector == "ir":
@@ -203,10 +203,10 @@ class HapConfig(object):
                             if n_exp >= 6:
                                 self.conditions.append("wfc3_uvis_any_pre_n6")
                     else:
-                        log.error("INVALID WFC3 DETECTOR!")
+                        log.error("{} is an invalid WFC3 detector!".format(self.detector))
                         sys.exit(1)
                 else:
-                    log.error("INVALID HST INSTRUMENT!")
+                    log.error("{} is an invalid HST instrument!".format(self.instrument))
                     sys.exit(1)
         else:  # For single-exposure products
             self.conditions = ["single_basic"]
