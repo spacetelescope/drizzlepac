@@ -94,14 +94,33 @@ as shown in this figure:
 This provides a way to uniquely identify any position on the sky that can be used as the basis for a unique filename for
 all products generated from all the expsosures that overlap each SkyCell.
 
-
 The WCS for each SkyCell gets defined as a subarray of the Projection cell's WCS.  This allows data across SkyCells in
 the same projection cell to be combined into larger mosaics as part of the same tangent plane without performing any
 additional resampling.
 
+Code for Defining SkyCell ID
+'''''''''''''''''''''''''''''
+The code for interfacing with the cell definitions table can be imported in Python using:
 
-Defining SkyCell Image Exposures
----------------------------------
+.. code:: python
+
+   from drizzlepac.haputils import cell_utils
+
+Determining what sky cells overlap any given set of exposures on the sky can be done using the function:
+
+.. code:: python
+
+  sky_cells_dict = cell_utils.get_sky_cells(visit_input, input_path=None)
+
+where **visit_input** is the Python list of filenames of exposures.
+Exposures in an input list are assumed to be in the current working directory when running the code,
+unless **input_path** has been provided which points to the location of the exposures to be processed.
+The return value **sky_cells_dict** is a dictionary where the keys are the names (labels) of each overlapping sky cell
+and the value is the actual SkyCell object which contains the footprint and WCS (among other details) of the sky cell.
+
+
+Defining SkyCell Layers
+------------------------
 Defining the SkyCell for a region on the sky allows for the identification of all exposures that overlap that WCS.
 However, creating a single mosaic from data taken with different detectors and filters would not result in a
 meaningful result.  Therefore, the exposures that overlap each SkyCell get grouped based on the detector and filter used
@@ -132,6 +151,9 @@ single mosaic.  Instead, 6 separate layers get defined for this SkyCell; namely,
   * wfc3_ir_f110w_coarse  (0.12"/pixel)
   * wfc3_ir_f160w_coarse  (0.12"/pixel)
 
-Since they all have the same WCS, modulo the plate scale differences, they can be overlaid directly with each other for
+Since they all have the same WCS, modulo the plate scale differences, they can be overlaid pixel-by-pixel with each other for
 analysis.
 
+
+MVM Processing Steps
+====================
