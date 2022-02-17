@@ -361,8 +361,11 @@ def interpret_sregion(image, extname='SCI'):
 
     coords = []
     for region_str in sregions:
-        radec_str = np.array(region_str.split(' ')[2:], dtype=np.float64)
-        coords.append(radec_str.reshape((radec_str.shape[0] // 2, 2)))
+        regions = region_str.split('POLYGON ICRS ')
+        regions = [val for val in regions if val.strip(' ') != '']
+        for region in regions:
+            radec_str = np.array(region.strip(' ').split(' '), dtype=np.float64)
+            coords.append(radec_str.reshape((radec_str.shape[0] // 2, 2)))
 
     return coords
 

@@ -30,7 +30,6 @@ from drizzlepac import hapmultisequencer
 __taskname__ = "runmultihap"
 
 # Local variables
-__version__ = "0.1.1"
 #
 # These lines (or something similar) will be needed in the HAP processing code
 #

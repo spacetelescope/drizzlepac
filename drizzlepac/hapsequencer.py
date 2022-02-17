@@ -69,6 +69,7 @@ from drizzlepac.haputils import product
 from drizzlepac.haputils import processing_utils as proc_utils
 from drizzlepac.haputils import svm_quality_analysis as svm_qa
 from drizzlepac.haputils.catalog_utils import HAPCatalogs
+from . import __version__
 
 from stsci.tools.fileutil import countExtn
 from stsci.tools import logutil
@@ -80,7 +81,6 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
-__version__ = 0.1
 
 # Environment variable which controls the quality assurance testing
 # for the Single Visit Mosaic processing.
@@ -387,6 +387,9 @@ def create_drizzle_products(total_obj_list):
                 log.info("~" * 118)
                 filt_obj.rules_file = proc_utils.get_rules_file(filt_obj.edp_list[0].full_filename,
                                                                 rules_root=filt_obj.drizzle_filename)
+                # add filter rules files to dict of all rules files for deletion later
+                rules_files[filt_obj.drizzle_filename] = filt_obj.rules_file
+
                 print(f"Filter RULES_FILE: {filt_obj.rules_file}")
                 log.info("CREATE DRIZZLE-COMBINED FILTER IMAGE: {}\n".format(filt_obj.drizzle_filename))
                 filt_obj.wcs_drizzle_product(meta_wcs)
@@ -410,6 +413,9 @@ def create_drizzle_products(total_obj_list):
             log.info("CREATE DRIZZLE-COMBINED TOTAL IMAGE: {}\n".format(total_obj.drizzle_filename))
             total_obj.rules_file = proc_utils.get_rules_file(total_obj.edp_list[0].full_filename,
                                                                 rules_root=total_obj.drizzle_filename)
+            # add total rules files to dict of all rules files for deletion later
+            rules_files[total_obj.drizzle_filename] = total_obj.rules_file
+
             print(f"Total product RULES_FILE: {total_obj.rules_file}")
             total_obj.wcs_drizzle_product(meta_wcs)
             product_list.append(total_obj.drizzle_filename)

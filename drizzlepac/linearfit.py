@@ -17,10 +17,6 @@ from numpy import linalg as npla
 from stsci.tools import logutil
 
 
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.4.0'
-
-
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 if hasattr(np, 'float128'):

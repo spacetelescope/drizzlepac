@@ -22,14 +22,12 @@ from . import util
 # from this variable definition, allowing the value to be designated
 # in one location only.
 #
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '1.4.7'
 
 from . import tweakutils
 from . import imgclasses
-from . import catalogs
 from . import imagefindpars
 from . import refimagefindpars
+from . import __version__
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 

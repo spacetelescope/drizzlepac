@@ -117,12 +117,12 @@ from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
 from drizzlepac.haputils import quality_analysis as qa
 from drizzlepac import wcs_functions
+from . import __version__
 
 
 __taskname__ = "runastrodriz"
 
 # Local variables
-__version__ = "2.4.0"
 
 # Implement WIN specific check
 RM_LOGFILES = False if sys.platform.startswith('win') else True

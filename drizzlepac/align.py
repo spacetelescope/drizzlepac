@@ -25,13 +25,12 @@ from .haputils import astroquery_utils as aqutils
 from .haputils import get_git_rev_info
 from .haputils import align_utils
 from .haputils import config_utils
+from . import __version__
 
 __taskname__ = 'align'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-
-__version__ = 0.0
 
 def _init_logger():
     log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,

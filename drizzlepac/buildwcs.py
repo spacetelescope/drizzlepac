@@ -16,11 +16,9 @@ from . import outputimage, wcs_functions, processInput,util
 import stwcs
 from stwcs import distortion, wcsutil
 from stwcs.wcsutil import headerlet
+from . import __version__
 
 __taskname__ = 'buildwcs'
-
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.1.1'
 
 # These default parameter values have the same keys as the parameters from
 # the configObj interface

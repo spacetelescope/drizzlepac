@@ -9,11 +9,6 @@ by ``AstroDrizzle``.
 
 """
 
-__all__ = ['photeq']
-__taskname__ = 'drizzlepac.photeq'
-__version__ = '0.2'
-__author__ = 'Mihai Cara'
-
 # HISTORY:
 # v0.1 - 14-Aug-2015 - Initial release
 # v0.2 - 06-Nov-2015 - Added doctstrings, logging, TEAL interface
@@ -27,6 +22,12 @@ import logging
 # THIRD PARTY
 import numpy as np
 from astropy.io import fits
+from . import __version__
+
+__all__ = ['photeq']
+__taskname__ = 'drizzlepac.photeq'
+__author__ = 'Mihai Cara'
+
 
 try:
     from stsci.tools import teal

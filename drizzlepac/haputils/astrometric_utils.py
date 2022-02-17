@@ -1936,7 +1936,9 @@ def check_mag_corr(imglist, threshold=0.5):
     for image in imglist:
         input_mags = image.meta['fit_info']['input_mag']
         ref_mags = image.meta['fit_info']['ref_mag']
-        if input_mags is not None and len(input_mags) > 1:
+        # If any of the input magnitudes are infinite, skip this check.
+        good_mags = ~np.any(np.isinf(input_mags))
+        if input_mags is not None and len(input_mags) > 1 and good_mags:
             mag_corr, mag_corr_std = pearsonr(input_mags, ref_mags)
             log.info("{} Magnitude correlation: {}".format(image.meta['name'], mag_corr))
             cross_match_check = True if abs(mag_corr) > threshold else False
@@ -2285,8 +2287,8 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         # The number of sources detected is subject to crowding/blending of sources
         # as well as noise from the background (if too low
         #  a background value is used)
-        drzlabels, drznum = detect_point_sources(drz_arr, scale=scale, log_sigma=lsigma)
-        slabels, snum = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight, log_sigma=lsigma)
+        drzlabels, drznum, _ = detect_point_sources(drz_arr, scale=scale, log_sigma=lsigma)
+        slabels, snum, _ = detect_point_sources(sfile_arr, scale=scale, exp_weight=exp_weight, log_sigma=lsigma)
 
         drzsrcs = np.clip(drzlabels, 0, 1).astype(np.int16)
         sfilesrcs = np.clip(slabels, 0, 1).astype(np.int16)
@@ -2353,6 +2355,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
     else:
         rebin_arr = arr.copy()
 
+    blank_image = False
     if background is None:
         """
         if exp_weight is not None and 0.2 >= exp_weight >= EXP_LIMIT:
@@ -2376,6 +2379,8 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
         log.debug("background: max={}, mean={}".format(bkg_total.max(), bkg_total.mean()))
         blank_image = True if (background.median < background.median_rms and
                                background.median < 1.0) else False
+    else:
+        bkg_total = background
 
     if blank_image:
         # median filter image to limit noise-induced variations into overlap differences
@@ -2392,7 +2397,6 @@ def detect_point_sources(arr, background=None, nsigma=4, log_sigma=3.0, scale=1,
     # Remove background entirely from input array (clip at 0)
     src_arr = reduce_diff_region(arr, background=background, nsigma=nsigma, scale=scale,
                                  sigma=sigma, exp_weight=exp_weight)
-
     # Compute distance between images using labeled sources
     srclog = -1 * ndimage.gaussian_laplace(src_arr, sigma=log_sigma)
 
@@ -2402,7 +2406,7 @@ def detect_point_sources(arr, background=None, nsigma=4, log_sigma=3.0, scale=1,
     # label sources
     slabels, snum = ndimage.label(srclog)
 
-    return slabels, snum
+    return slabels, snum, srclog
 
 
 def diff_score(arr):

@@ -16,10 +16,9 @@ from stsci.tools.fileutil import findExtname
 from stsci.tools import teal
 from . import util
 from .regfilter import fast_filter_outer_regions
+from . import __version__
 
 
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.1'
 __taskname__ = 'mapreg'
 __author__ = 'Mihai Cara'
 

@@ -26,12 +26,10 @@ from stsci.skypac.utils import get_ext_list, ext2str
 from . import updatehdr
 from . import linearfit
 from . import util
+from . import __version__
 
 
 __taskname__ = 'tweakback' # unless someone comes up with anything better
-
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.4.1'
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)

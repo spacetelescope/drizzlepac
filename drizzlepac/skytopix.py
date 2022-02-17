@@ -78,9 +78,7 @@ from stsci.tools import fileutil, teal
 from . import util,wcs_functions,tweakutils
 import stwcs
 from stwcs import distortion,wcsutil
-
-# This is specifically NOT intended to match the package-wide version information.
-__version__ = '0.1'
+from . import __version__
 
 __taskname__ = 'skytopix'
 
