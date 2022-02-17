@@ -50,18 +50,16 @@ implemented for HAP MVM products relies on tesselation of the entire sky using t
 PanSTARRS project as described at `PanSTARRS Sky tessellation patterns
 <https://outerspace.stsci.edu/display/PANSTARRS/PS1+Sky+tessellation+patterns>`_.
 
-.. figure::
-  :width: 537 pixels
-  :target: images/figure_aitoff.png
+.. figure:: images/figure_aitoff.png
+  :figwidth: 90%
   :alt: Aitoff plot of all 2,009 PS1 projection cells for the 3PI survey.
 
   Aitoff plot of all 2,009 PS1 projection cells for the 3PI survey.  The coverage extends from declination −30° to the
   north celestial pole.
 
 
-.. image::
-  :width: 433 pixels
-  :target: images/figure_pole.png
+.. figure:: images/figure_pole.png
+  :figwidth: 90%
   :alt: PS1 projection cells near the north celestial pole.
 
   PS1 projection cells near the north celestial pole, where the image overlap is greatest due to convergence of the RA grid.
@@ -84,9 +82,8 @@ during MVM processing.  Sky cells are approximately 0.2degrees x 0.2degrees in s
 they have the same WCS as the ‘projection cell’.  Each skycell gets identified by its position within the projection cell
 as shown in this figure:
 
-.. image::
-  :width: 620 pixels
-  :target: images/SkyCell_numbering.png
+.. figure:: images/SkyCell_numbering.png
+  :width: 90%
   :alt: Numbering convention for SkyCells within a Projection Cell.
 
   Numbering convention for SkyCells within a Projection Cell used for naming the SkyCell.
@@ -157,3 +154,72 @@ analysis.
 
 MVM Processing Steps
 ====================
+The definitions for the ProjectionCell and SkyCell allow for all HST observations to be processed into a logical set of
+image mosaic products regardless of how many observations cover any particular spot on the sky while tying them all
+together in the same astrometric reference frame (as much as possible, anyway).  The steps taken to generate these
+MVM products can be summarized as:
+
+  * Determine what SkyCell or set of SkyCells each exposure overlaps
+  * Copy all relevant exposures for a given SkyCell into a single directory for that SkyCell
+  * Rename input exposures to have MVM-specific filenames
+  * Generate input file to be used for processing each SkyCell
+  * Evaluate all input exposures to define all layers needed for the SkyCell
+  * Determine which layer to process
+  * Drizzle all exposures for each layer to be processed to create new mosaic product for that layer
+
+SkyCell Membership
+------------------
+Data from HST gets orgranized based on a filename derived from the proposal used to define the observations and how
+HST should take them.  MVM processing, on the other hand, focuses on how the observations relate to each other on the
+sky based on the WCS information.  The `drizzlepac/haputils/cell_utils.py` module includes the code used to interpret
+the WCS information for exposures and determine what ProjectionCells and SkyCells each exposure overlaps as shown in the
+section on the `Code for Defining SkyCell ID`_.
+
+This code can be called on any set of user-defined exposures to either determine for the first time what SkyCells the
+exposures overlap.  During HST pipeline processing, this code gets called for the exposures from each visit once they
+have finished SVM processing and aligned the data as much as possible to the latest astrometric reference frame (such
+as the GAIAeDR3 catalog).
+
+
+Copy Data
+----------
+The MVM processing code works on
+
+
+Rename Input Files
+-------------------
+
+
+Generate Input File
+--------------------
+The MVM processing could simply combine whatever input files are present in the current working directory.  However,
+that may result in working with more than 1 SkyCell at a time which can, for some steps, end up requiring more memory
+or disk space than is available on the system.  Therefore, the code relies on an input `poller file` which specifies exactly
+what files should be processed at one time.  This input `poller file` will typically only contain the names of exposures which
+overlap only a single SkyCell regardless of instrument, detector or any other observational configuration.  This file
+is simply an ASCII file with one of 2 formats.
+
+If all the exposures which are intended to be processed are already in the current working directory, then this file can
+be a simple list of filenames, perhaps even just a subset of what is in the current directory.  This form allows anyone
+to decide what they want to combine together without exposures that are unrelated to their research.  This file gets
+interpreted and converted into the second more informative form by opening each of the input files and extracting the
+necessary supplemental information from header keywords.
+
+This second form of the `poller file` gets generated during standard HST pipeline processing and also
+contains 1 line for each input exposure for
+a given SkyCell.  The form of the file, though, is a comma-separated (CSV) formatted file with all the same information
+as the SVM input files plus a couple of extra columns; namely,
+
+  * skycell ID
+  * status of MVM processing
+
+An example of an exposure's line in the poller file would be
+
+::
+
+hst_14175_01_wfc3_uvis_f814w_icz901ws_flc.fits,14175,CZ9,01,1390.0,F814W,UVIS,skycell-p1101x11y05,NEW,/ifs/archive/dev/processing/hla/home/mburger/multivisits/mv_results_2021-11-26/icz901/hst_14175_01_wfc3_uvis_f814w_icz901ws_flc.fits
+
+The value of 'NEW' specifies that this exposure should be considered as never having been combined into this SkyCell's
+mosaic before.  A value of 'OLD' instead marks allows the code to recognize layers that are unaffected by 'NEW' data so
+that those layers can be left alone and NOT processed again unnecessarily.
+
