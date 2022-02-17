@@ -494,6 +494,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     return_value: int
         A return exit code used by the calling Condor/OWL workflow code: 0 (zero) for success, 1 for error
     """
+    output_custom_pars_file = "svm_test_custom_params.json"
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
@@ -828,10 +829,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
     if not hasattr(filter_product_obj, 'hla_flag_msk'):
         filter_product_obj.hla_flag_msk = hla_flag_filter.make_mask_array(drizzled_image)
 
-    if filter_product_obj.configobj_pars.use_defaults:
-        ci_lookup_file_path = "default_parameters/any"
-    else:
-        ci_lookup_file_path = "user_parameters/any"
+    ci_lookup_file_path = "svm_parameters/any"
     output_custom_pars_file = filter_product_obj.configobj_pars.output_custom_pars_file
     for cat_type in filter_product_catalogs.catalogs.keys():
         exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime']  # TODO: This works for ACS. Make sure that it also works for WFC3. Look at "TEXPTIME"
