@@ -374,6 +374,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
 
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
+                                                                hap_pipeline_name='mvm',
                                                                 log_level=log_level,
                                                                 use_defaults=use_defaults_configs,
                                                                 input_custom_pars_file=input_custom_pars_file,
@@ -381,6 +382,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
 
             for edp in filter_item.edp_list:
                 edp.configobj_pars = config_utils.HapConfig(edp,
+                                                            hap_pipeline_name='mvm',
                                                             log_level=log_level,
                                                             use_defaults=use_defaults_configs,
                                                             input_custom_pars_file=input_custom_pars_file,
