@@ -90,7 +90,7 @@ from . import util
 from . import wcs_functions
 import stwcs
 from stwcs import distortion, wcsutil
-from .version import __version__
+from . import __version__
 
 __taskname__ = 'pixtosky'
 

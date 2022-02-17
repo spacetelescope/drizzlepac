@@ -25,7 +25,7 @@ from .haputils import astroquery_utils as aqutils
 from .haputils import get_git_rev_info
 from .haputils import align_utils
 from .haputils import config_utils
-from .version import __version__
+from . import __version__
 
 __taskname__ = 'align'
 

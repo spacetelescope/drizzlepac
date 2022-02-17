@@ -27,7 +27,7 @@ from . import tweakutils
 from . import imgclasses
 from . import imagefindpars
 from . import refimagefindpars
-from .version import __version__
+from . import __version__
 
 __taskname__ = 'tweakreg' # unless someone comes up with anything better
 

@@ -26,7 +26,7 @@ from stsci.skypac.utils import get_ext_list, ext2str
 from . import updatehdr
 from . import linearfit
 from . import util
-from .version import __version__
+from . import __version__
 
 
 __taskname__ = 'tweakback' # unless someone comes up with anything better

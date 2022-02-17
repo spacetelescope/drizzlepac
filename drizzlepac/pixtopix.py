@@ -99,7 +99,7 @@ from stsci.tools import fileutil, teal
 from stwcs import wcsutil, distortion
 from . import wcs_functions
 from . import util
-from .version import __version__
+from . import __version__
 
 __taskname__ = 'pixtopix'
 
