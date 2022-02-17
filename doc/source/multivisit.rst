@@ -183,11 +183,46 @@ as the GAIAeDR3 catalog).
 
 Copy Data
 ----------
-The MVM processing code works on
+The MVM processing code requires the input exposures to be located in the current working directory as the processing may
+require the ability to update the input files with the results of the MVM processing.  Each input file may also overlap
+more than 1 SkyCell.  As a result, the input files get copied into a directory set up specifically for processing a
+given SkyCell.  This results in each input file being copied into as many directories as needed to support creating the mosaics
+for as many SkyCells as desired while protecting the integrity of the original input files and their WCS solutions.
 
 
 Rename Input Files
 -------------------
+The MVM processing code works on the input files provided using the WCS solutions defined in the headers of the input
+files as-is for the initial implementation.  However, in order to preserve the solutions defined by previous processing
+steps, these files are renamed based on the SkyCell to be generated in the current working directory.
+
+For reference, the original pipeline-assigned name has the format of:
+
+  `IPPPSSOOT_flc.fits`
+
+such as
+  * jcz906dvq_flc.fits
+  * icz901wpq_flc.fits
+
+The MVM filename defined for the input exposures follows the convention.
+
+  `hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits`
+
+where:
+  ==========  =========================================================================
+  Element     Definition
+  ==========  =========================================================================
+  <PPPP>      ProjectionCell ID as a zero-padded 4 digit integer
+  <XX>,<YY>   SkyCell ID within ProjectionCell as zero-padded 2 digit integers
+  <instr>     Name of HST instrument from **INSTRUME** header keyword
+  <detector>  Name of detector from **DETECTOR** header keyword
+  <filter>    Name of filter from **FILTER** or **FILTER1,FILTER2** header keyword(s)
+  <ipppssoo>  Pipeline-assigned **IPPPSSOO* designation from original input filename
+  fl[ct]      Suffix of either **flt** or **flc** from original input filename
+  ==========  =========================================================================
+
+This insures that each exposure gets renamed in a way that allows them to be easily identified with respect to the
+output SkyCell layer the exposure contributes to during MVM processing.
 
 
 Generate Input File
@@ -222,4 +257,17 @@ hst_14175_01_wfc3_uvis_f814w_icz901ws_flc.fits,14175,CZ9,01,1390.0,F814W,UVIS,sk
 The value of 'NEW' specifies that this exposure should be considered as never having been combined into this SkyCell's
 mosaic before.  A value of 'OLD' instead marks allows the code to recognize layers that are unaffected by 'NEW' data so
 that those layers can be left alone and NOT processed again unnecessarily.
+
+
+Define SkyCell Layers
+----------------------
+
+
+Determine Layers to Process
+----------------------------
+
+
+
+Create SkyCell Mosaics
+----------------------
 
