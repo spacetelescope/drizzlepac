@@ -60,7 +60,7 @@ from astropy.io import fits
 from stsci.tools import parseinput
 
 from . import util
-from .version import __version__
+from . import __version__
 
 __taskname__ = 'pixreplace'
 

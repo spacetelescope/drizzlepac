@@ -69,7 +69,7 @@ from drizzlepac.haputils import product
 from drizzlepac.haputils import processing_utils as proc_utils
 from drizzlepac.haputils import svm_quality_analysis as svm_qa
 from drizzlepac.haputils.catalog_utils import HAPCatalogs
-from .version import __version__
+from . import __version__
 
 from stsci.tools.fileutil import countExtn
 from stsci.tools import logutil
