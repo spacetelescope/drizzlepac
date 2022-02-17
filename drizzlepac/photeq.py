@@ -22,7 +22,7 @@ import logging
 # THIRD PARTY
 import numpy as np
 from astropy.io import fits
-from .version import __version__
+from . import __version__
 
 __all__ = ['photeq']
 __taskname__ = 'drizzlepac.photeq'

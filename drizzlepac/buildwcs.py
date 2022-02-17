@@ -16,7 +16,7 @@ from . import outputimage, wcs_functions, processInput,util
 import stwcs
 from stwcs import distortion, wcsutil
 from stwcs.wcsutil import headerlet
-from .version import __version__
+from . import __version__
 
 __taskname__ = 'buildwcs'
 

@@ -16,7 +16,7 @@ from stsci.tools.fileutil import findExtname
 from stsci.tools import teal
 from . import util
 from .regfilter import fast_filter_outer_regions
-from .version import __version__
+from . import __version__
 
 
 __taskname__ = 'mapreg'

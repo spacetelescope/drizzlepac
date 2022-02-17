@@ -117,7 +117,7 @@ from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
 from drizzlepac.haputils import quality_analysis as qa
 from drizzlepac import wcs_functions
-from .version import __version__
+from . import __version__
 
 
 __taskname__ = "runastrodriz"

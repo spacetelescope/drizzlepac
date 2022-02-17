@@ -70,7 +70,7 @@ from stsci.tools import parseinput, logutil
 from stsci.tools.bitmask import interpret_bit_flags
 
 from . import util
-from .version import __version__
+from . import __version__
 
 __taskname__ = "drizzlepac.resetbits"
 

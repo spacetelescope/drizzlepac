@@ -59,7 +59,7 @@ from drizzlepac.haputils import poller_utils
 from drizzlepac.haputils import product
 from drizzlepac.haputils import processing_utils as proc_utils
 from drizzlepac.haputils import svm_quality_analysis as svm_qa
-from .version import __version__
+from . import __version__
 
 from stsci.tools import logutil
 from stwcs import wcsutil

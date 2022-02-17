@@ -76,7 +76,7 @@ from stsci.tools import teal
 
 from stwcs import updatewcs
 from . import util
-from .version import __version__
+from . import __version__
 
 
 def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
