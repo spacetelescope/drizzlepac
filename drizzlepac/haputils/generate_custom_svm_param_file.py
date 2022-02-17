@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-
-""" generate_custom_svm_param_file - a module to create a template SVM processing pipeline parameter file
-based on the observations present in the current working directory for the user to customize
+# TODO: Rename script from generate_custom_svm_param_file to generate_custom_mvm_svm_parameter_file
+""" generate_custom_mvm_svm_param_file - a module to create a template SVM/MVM processing pipeline parameter
+file based on the observations present in the current working directory for the user to customize
 
 Command-line USAGE:
-    >>> python generate_custom_svm_param_file.py [-clo] poller_filename
+    >>> python generate_custom_mvm_svm_param_file.py [-clop] poller_filename
 
-    - poller_filename: (required) the name of the input SVM poller file
+    - poller_filename: (required) the name of the input SVM/MVM poller file
 
     - -c: (optional) If turned on, existing files with the same name as the output custom SVM parameter file
       created by this script will be overwritten.
@@ -16,15 +16,20 @@ Command-line USAGE:
 
     - -o: (optional) Name of the output configuration JSON file which will be created for specialized
       processing. This file will contain ALL the input parameters necessary for processing. If not explicitly
-      specified, the default name for the output file is "custom_svm_params.json".
+      specified, the default name for the output file is "custom_parameters.json".
+
+    - -p: (optional) Name of the pipeline that the configurations will be prepared for. Valid options are
+      'mvm' (for the HAP multi-visit mosaics pipeline) or 'svm' (for the HAP single-visit mosaic pipeline).
+      If not explicitly stated, the default value is 'svm'
 
 Python USAGE:
     >>> python
     >>> from drizzlepac.haputils import generate_custom_svm_param_file
     >>> generate_custom_svm_param_file.make_svm_input_file(input_filename,
-                                                           output_custom_pars_file='custom_svm_params.json',
                                                            clobber=False,
-                                                           log_level=logutil.logging.INFO)
+                                                           log_level=logutil.logging.INFO
+                                                           output_custom_pars_file='custom_parameters.json',
+                                                           hap_pipeline_name='svm')
 
 .. note:: This script only generates a template input parameter file populated with default values based on
           the observations present in the current working directory. It is entirely incumbent on the user to
@@ -45,7 +50,8 @@ from drizzlepac.haputils import poller_utils
 
 from stsci.tools import logutil
 
-__taskname__ = 'generate_custom_svm_param_file'
+__taskname__ = 'generate_custom_svm_param_file'  # TODO: Rename script from generate_custom_svm_param_file to generate_custom_mvm_svm_parameter_file
+
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
@@ -54,7 +60,8 @@ __version__ = 0.1
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def make_svm_input_file(input_filename, output_custom_pars_file='custom_svm_params.json', clobber=False,
+def make_svm_input_file(input_filename, hap_pipeline_name='svm',
+                        output_custom_pars_file='custom_parameters.json', clobber=False,
                         log_level=logutil.logging.INFO):
     """
     create a custom SVM processing pipeline parameter file based on the observations present in the current
@@ -67,9 +74,13 @@ def make_svm_input_file(input_filename, output_custom_pars_file='custom_svm_para
         The 'poller file' where each line contains information regarding an exposures taken
         during a single visit.
 
+    hap_pipeline_name : str, optional
+        Name of the pipeline that the configurations will be prepared for. Valid options are 'mvm' or
+        'svm'. If not explicitly stated, the default value is 'svm'
+
     output_custom_pars_file: str, optional
         Fully specified output filename which contains all the configuration parameters
-        available during the processing session. Default is 'custom_svm_params.json'.
+        available during the processing session. Default is 'custom_parameters.json'.
 
     clobber : Bool, optional
         If set to Boolean 'True', existing files with the same name as *output_custom_pars_file*, the output
@@ -90,6 +101,9 @@ def make_svm_input_file(input_filename, output_custom_pars_file='custom_svm_para
             msg = "A file named '{}' already exists. Please choose a unique name for the custom SVM parameter file.".format(output_custom_pars_file)
             log.critical(msg)
             sys.exit()
+    if hap_pipeline_name not in ['mvm', 'svm']:  # error trap if user specifies incorrect value for hap_pipeline_name
+        log.error("'{}' is an invalid value for 'hap_pipeline_name'. Valid values are either 'mvm' or 'svm'.".format(hap_pipeline_name))
+        sys.exit(1)
     # Define trailer file (log file) that will contain the log entries for all processing
     if isinstance(input_filename, str):  # input file is a poller file -- easy case
         logname = input_filename.replace('.out', '_svm_partam_gen.log')
@@ -117,11 +131,13 @@ def make_svm_input_file(input_filename, output_custom_pars_file='custom_svm_para
         for total_item in total_obj_list:
             log.info("Preparing configuration parameter values for total product {}".format(total_item.drizzle_filename))
             total_item.configobj_pars = config_utils.HapConfig(total_item,
+                                                               hap_pipeline_name=hap_pipeline_name,
                                                                log_level=log_level,
                                                                output_custom_pars_file=output_custom_pars_file)
             for filter_item in total_item.fdp_list:
                 log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
                 filter_item.configobj_pars = config_utils.HapConfig(filter_item,
+                                                                    hap_pipeline_name=hap_pipeline_name,
                                                                     log_level=log_level,
                                                                     output_custom_pars_file=output_custom_pars_file)
                 update_ci_values(filter_item, output_custom_pars_file, log_level)
@@ -129,6 +145,7 @@ def make_svm_input_file(input_filename, output_custom_pars_file='custom_svm_para
             for expo_item in total_item.edp_list:
                 log.info("Preparing configuration parameter values for exposure product {}".format(expo_item.drizzle_filename))
                 expo_item.configobj_pars = config_utils.HapConfig(expo_item,
+                                                                  hap_pipeline_name=hap_pipeline_name,
                                                                   log_level=log_level,
                                                                   output_custom_pars_file=output_custom_pars_file)
                 # Housekeeping: remove those pesky renamed copies of the input flc.fits/flt.fits files
@@ -230,11 +247,15 @@ if __name__ == '__main__':
                         'statements with a log_level left of the specified level. Specifying "critical" will '
                         'only record/display "critical" log statements, and specifying "error" will '
                         'record/display both "error" and "critical" log statements, and so on.')
-    parser.add_argument('-o', '--output_custom_pars_file', required=False, default="custom_svm_params.json",
+    parser.add_argument('-o', '--output_custom_pars_file', required=False, default="custom_parameters.json",
                         help='Name of the output configuration JSON file which will be created for '
                              'specialized processing. This file will contain ALL the input parameters '
                              'necessary for processing. If not explicitly specified, the default name for '
-                             'the output file is "custom_svm_params.json".')
+                             'the output file is "custom_parameters.json".')
+    parser.add_argument('-p', '--hap_pipeline_name', required=False, default='svm', choices=['mvm', 'svm'],
+                        help='Name of the pipeline that the configurations will be prepared for. Valid '
+                             'options are "mvm" or "svm". If not explicitly stated, the default value is '
+                             '"svm"')
     user_args = parser.parse_args()
 
     log_level_dict = {"critical": logutil.logging.CRITICAL,
@@ -243,5 +264,6 @@ if __name__ == '__main__':
                       "info": logutil.logging.INFO,
                       "debug": logutil.logging.DEBUG}
 
-    make_svm_input_file(user_args.poller_filename, output_custom_pars_file=user_args.output_custom_pars_file,
+    make_svm_input_file(user_args.poller_filename, hap_pipeline_name=user_args.hap_pipeline_name,
+                        output_custom_pars_file=user_args.output_custom_pars_file,
                         clobber=user_args.clobber, log_level=log_level_dict[user_args.log_level])
