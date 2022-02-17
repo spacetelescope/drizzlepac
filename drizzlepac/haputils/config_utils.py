@@ -22,16 +22,25 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 
 class HapConfig(object):
-    def __init__(self, prod_obj, log_level=logutil.logging.NOTSET, use_defaults=True, input_custom_pars_file=None,
-                 output_custom_pars_file=None):
+    def __init__(self, prod_obj, hap_pipeline_name='svm', log_level=logutil.logging.NOTSET, use_defaults=True,
+                 input_custom_pars_file=None, output_custom_pars_file=None):
         """
         A set of routines to generate appropriate set of configuration parameters.
 
         Parameters
         ----------
         prod_obj : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
-        drizzlepac.haputils.Product.ExposureProduct, depending on input
-            Product to get configuration values for.
+            drizzlepac.haputils.Product.ExposureProduct, depending on input Product to get configuration
+            values for.
+
+        hap_pipeline_name : str, optional
+            Name of the pipeline that the configurations will be prepared for. Valid options are 'mvm' (for
+            the HAP multi-visit mosaics pipeline) or 'svm' (for the HAP single-visit mosaic pipeline). If not
+            explicitly stated, the default value is 'svm'
+
+        log_level :  int, optional
+            The desired level of verboseness in the log statements displayed on the screen and written to the
+            .log file. If not explicitly set, the default value is 'logging.NOTSET', or int value '0'
 
         use_defaults : bool, optional
             Use default configuration parameters? Default value is True.
@@ -57,8 +66,13 @@ class HapConfig(object):
         self.detector = prod_obj.detector
         self.inst_det = "{}_{}".format(prod_obj.instrument, prod_obj.detector).lower()
         self.use_defaults = use_defaults
+        self.hap_pipeline_name = hap_pipeline_name.lower()
         self.input_custom_pars_file = input_custom_pars_file
         self.output_custom_pars_file = output_custom_pars_file
+
+        if self.hap_pipeline_name not in ['mvm', 'svm']: # error trap if user specifies incorrect value for hap_pipeline_name
+            log.error("'{}' is an invalid value for 'hap_pipeline_name'. Valid values are either 'mvm' or 'svm'.".format(self.hap_pipeline_name))
+            sys.exit(1)
 
         # The filters attribute is populated by _determine_conditions()
         self.filters = None
@@ -84,6 +98,7 @@ class HapConfig(object):
             cfg_index = self.full_cfg_index[step_title]
             self.pars[step_title] = step_name(cfg_index,
                                               self.conditions,
+                                              self.hap_pipeline_name,
                                               self.pars_dir,
                                               step_title,
                                               self.use_defaults,
@@ -293,7 +308,7 @@ class HapConfig(object):
 
 
 class Par():
-    def __init__(self, cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data):
+    def __init__(self, cfg_index, conditions, hap_pipeline_name, pars_dir, step_title, use_defaults, input_cfg_json_data):
         """Parent class for alignment_pars, astrodrizzle_pars, catalog_generation_pars, and quality_control_pars
 
         Parameters
@@ -303,6 +318,10 @@ class Par():
 
         conditions : list
             list of observing conditions that will be used to build the final composite parameter set.
+
+        hap_pipeline_name : str, optional
+            Name of the pipeline that the configurations will be prepared for. Valid options are 'mvm' (for
+            the HAP multi-visit mosaics pipeline) or 'svm' (for the HAP single-visit mosaic pipeline).
 
         pars_dir : str
             full path of the directory that contains the config files
@@ -324,6 +343,7 @@ class Par():
         """
         self.cfg_index = cfg_index
         self.conditions = conditions
+        self.hap_pipeline_name = hap_pipeline_name
         self.pars_dir = pars_dir
         self.step_title = step_title
         self.use_defaults = use_defaults
@@ -417,10 +437,7 @@ class Par():
         dictionary of these values."""
         self.pars_multidict = collections.OrderedDict()
         found_cfg = False
-        if self.use_defaults:
-            param_dir_branch = "default_parameters"
-        else:
-            param_dir_branch = "user_parameters"
+        param_dir_branch = "{}_parameters".format(self.hap_pipeline_name)
         for condition in self.conditions:
             if condition in self.cfg_index.keys():
                 found_cfg = True
@@ -465,9 +482,9 @@ class Par():
 
 
 class AlignmentPars(Par):
-    def __init__(self, cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data):
+    def __init__(self, cfg_index, conditions, hap_pipeline_name, pars_dir, step_title, use_defaults, input_cfg_json_data):
         """Configuration parameters for the image alignment step. See Par.__init__() for input argument definitions."""
-        super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
+        super().__init__(cfg_index, conditions, hap_pipeline_name, pars_dir, step_title, use_defaults, input_cfg_json_data)
         self.set_name = "alignment"
         if input_cfg_json_data:
             self._read_custom_pars()
@@ -479,9 +496,9 @@ class AlignmentPars(Par):
 
 
 class AstrodrizzlePars(Par):
-    def __init__(self, cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data):
+    def __init__(self, cfg_index, conditions, hap_pipeline_name, pars_dir, step_title, use_defaults, input_cfg_json_data):
         """Configuration parameters for the AstroDrizzle step. See Par.__init__() for input argument definitions."""
-        super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
+        super().__init__(cfg_index, conditions, hap_pipeline_name, pars_dir, step_title, use_defaults, input_cfg_json_data)
         if input_cfg_json_data:
             self._read_custom_pars()
         else:
@@ -495,10 +512,10 @@ class AstrodrizzlePars(Par):
 
 
 class CatalogGenerationPars(Par):
-    def __init__(self, cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data):
+    def __init__(self, cfg_index, conditions, hap_pipeline_name, pars_dir, step_title, use_defaults, input_cfg_json_data):
         """Configuration parameters for the photometric catalog generation step. See Par.__init__() for input argument
         definitions."""
-        super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
+        super().__init__(cfg_index, conditions, hap_pipeline_name, pars_dir, step_title, use_defaults, input_cfg_json_data)
         if input_cfg_json_data:
             self._read_custom_pars()
         else:
@@ -509,9 +526,9 @@ class CatalogGenerationPars(Par):
 
 
 class QualityControlPars(Par):
-    def __init__(self, cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data):
+    def __init__(self, cfg_index, conditions, hap_pipeline_name, pars_dir, step_title, use_defaults, input_cfg_json_data):
         """Configuration parameters for the quality control step. See Par.__init__() for input argument definitions."""
-        super().__init__(cfg_index, conditions, pars_dir, step_title, use_defaults, input_cfg_json_data)
+        super().__init__(cfg_index, conditions, hap_pipeline_name, pars_dir, step_title, use_defaults, input_cfg_json_data)
         if input_cfg_json_data:
             self._read_custom_pars()
         else:
