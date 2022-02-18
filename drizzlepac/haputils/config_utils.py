@@ -6,10 +6,13 @@ given the specified observation conditions and instrument/detector used in the o
 import collections
 import json
 import os
+import pdb
 import sys
 
 from astropy.time import Time
 from stsci.tools import logutil
+
+from drizzlepac.haputils import ci_table
 
 __taskname__ = 'config_utils'
 
@@ -103,6 +106,10 @@ class HapConfig(object):
                                               step_title,
                                               self.use_defaults,
                                               self.input_cfg_json_data)
+        # update CI values if needed
+        for phot_type in ['aperture', 'segment']:
+            if self.pars['quality control'].outpars['ci filter'][phot_type]['lookup_ci_limits_from_table'] is True:
+                self._update_ci_values_from_file(prod_obj, phot_mode)
 
         # write out all parameters to file if specified by user
         if output_custom_pars_file:
@@ -228,6 +235,35 @@ class HapConfig(object):
             if prod_obj.is_singleton:
                 self.conditions.append("any_n1")
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def _update_ci_values_from_file(self, prod_obj, phot_mode):
+        """Update quality control values """
+        # log.info("NOTE: The 'lookup_ci_limits_from_table' setting in the 'quality control'>'{}' section of "
+        #          "the parameters for filter image {} is set to 'True'. This means that any custom user-tuned "
+        #          "values for 'ci_upper_limit' and 'ci_lower_limit' will be overwritten. To prevent this, "
+        #          "please set 'lookup_ci_limits_from_table' to 'False' in the custom parameter file "
+        #          "{}".format(phot_mode, prod_obj.drizzle_filename, config_filename))
+        # set up inputs to ci_table.get_ci_from_file() and execute to get new CI values
+        drizzled_image = prod_obj.drizzle_filename
+        ci_lookup_file_path = "{}_parameters/any".format(self.hap_pipeline_name)
+        log_level = 20
+        diagnostic_mode = False
+        ci_lower_limit = self.pars['quality control'].outpars['ci filter'][phot_mode]['ci_lower_limit']
+        ci_upper_limit = self.pars['quality control'].outpars['ci filter'][phot_mode]['ci_upper_limit']
+        ci_dict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
+                                            diagnostic_mode=diagnostic_mode, ci_lower=ci_lower_limit,
+                                            ci_upper=ci_upper_limit)
+        log.debug("{} {} CI upper limit updated from {} to {}".format(prod_obj.drizzle_filename,
+                                                                      phot_mode,
+                                                                      ci_upper_limit,
+                                                                      ci_dict["ci_upper_limit"]))
+        log.debug("{} {} CI lower limit updated from {} to {}\n".format(prod_obj.drizzle_filename,
+                                                                        phot_mode,
+                                                                        ci_lower_limit,
+                                                                        ci_dict["ci_lower_limit"]))
+        # update CI values
+        self.pars['quality control'].outpars['ci filter'][phot_mode]['ci_lower_limit']= ci_dict["ci_lower_limit"]
+        self.pars['quality control'].outpars['ci filter'][phot_mode]['ci_upper_limit'] = ci_dict["ci_upper_limit"]
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def as_single_giant_dict(self):
