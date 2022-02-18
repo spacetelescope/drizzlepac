@@ -161,7 +161,11 @@ Combining data across visits to create mosaics for every observed location on th
 
 Indices and tables
 ==================
-* Glossary of HAP Terms <hap_glossary.rst>
+.. toctree::
+  :maxdepth: 1
+
+  Glossary of HAP Terms <hap_glossary.rst>
+
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

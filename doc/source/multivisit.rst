@@ -217,7 +217,7 @@ where:
   <instr>     Name of HST instrument from **INSTRUME** header keyword
   <detector>  Name of detector from **DETECTOR** header keyword
   <filter>    Name of filter from **FILTER** or **FILTER1,FILTER2** header keyword(s)
-  <ipppssoo>  Pipeline-assigned **IPPPSSOO* designation from original input filename
+  <ipppssoo>  Pipeline-assigned **IPPPSSOO** designation from original input filename
   fl[ct]      Suffix of either **flt** or **flc** from original input filename
   ==========  =========================================================================
 
@@ -240,34 +240,198 @@ to decide what they want to combine together without exposures that are unrelate
 interpreted and converted into the second more informative form by opening each of the input files and extracting the
 necessary supplemental information from header keywords.
 
+Generating one of these basic input files with the filename *skycell_basic_input.out* can be done using commands such as:
+
+.. code:: python
+
+    import glob
+
+    flcs = sorted(glob.glob("hst*fl?.fits"))
+    with open("skycell_basic_input.out", "w") as fout:
+        _ = [fout.write(f"{fname}\n") for fname in flcs]
+
+This file can then be used as input to the top-level MVM processing code using:
+
+.. code:: python
+
+    from drizzlepac import hapmultisequencer
+    rv = hapmultisequencer.run_mvm_processing(input_filename)
+
+
 This second form of the `poller file` gets generated during standard HST pipeline processing and also
-contains 1 line for each input exposure for
-a given SkyCell.  The form of the file, though, is a comma-separated (CSV) formatted file with all the same information
-as the SVM input files plus a couple of extra columns; namely,
+contains 1 line for each input exposure for a given SkyCell.  The form of the file, though, is a comma-separated (CSV)
+formatted file with all the same information as the SVM input files plus a couple of extra columns; namely,
 
   * skycell ID
   * status of MVM processing
 
-An example of an exposure's line in the poller file would be
+An example of an exposure's line in the poller file would be:
 
-::
+.. code-block::
 
-hst_14175_01_wfc3_uvis_f814w_icz901ws_flc.fits,14175,CZ9,01,1390.0,F814W,UVIS,skycell-p1101x11y05,NEW,/ifs/archive/dev/processing/hla/home/mburger/multivisits/mv_results_2021-11-26/icz901/hst_14175_01_wfc3_uvis_f814w_icz901ws_flc.fits
+  hst_14175_01_wfc3_uvis_f814w_icz901ws_flc.fits,14175,CZ9,01,1390.0,F814W,UVIS,skycell-p1101x11y05,NEW,/ifs/archive/dev/processing/hla/home/mburger/multivisits/mv_results_2021-11-26/icz901/hst_14175_01_wfc3_uvis_f814w_icz901ws_flc.fits
 
-The value of 'NEW' specifies that this exposure should be considered as never having been combined into this SkyCell's
-mosaic before.  A value of 'OLD' instead marks allows the code to recognize layers that are unaffected by 'NEW' data so
-that those layers can be left alone and NOT processed again unnecessarily.
+where the elements of each line are defined as:
+
+.. code-block::
+
+        filename, proposal_id, program_id, obset_id, exptime, filters, detector, skycell-p<PPPP>x<XX>y<YY>, [OLD|NEW], pathname
+
+The SkyCell ID will be included in this input information to allow for grouping of exposures into the same SkyCell layer based on filter, exptime, and year.
+
+The value of **'NEW'** specifies that this exposure should be considered as never having been combined into this SkyCell's
+mosaic before.  A value of **'OLD'** instead marks allows the code to recognize layers that are unaffected by 'NEW' data so
+that those layers can be left alone and NOT processed again unnecessarily.  As such, it can serve as a useful summary of all
+the input exposures used to generate the mosaics for the SkyCell.
+
+These files can be generated interactively from the basic input file generated above using:
+
+.. code:: python
+
+    from drizzlepac.haputils import make_poller_files as mpf
+
+    mpf.generate_poller_file("skycell_basic_input.out",
+                             poller_file_type='mvm',
+                             output_poller_filename="skycell_poller_file.out",
+                             skycell_name="skycell-p1101x11y05")
+
+Either of these files would be suitable inputs for the primary MVM interface that performs the rest of the processing.
+
+
+Primary MVM Processing Interface
+---------------------------------
+MVM processing gets controlled through a single function:
+
+.. code:: python
+
+    from drizzlepac import hapmultisequencer
+
+    rv = hapmultisequencer.run_mvm_processing(input_filename)
+
+This function takes as either form of the input file generated for the input exposures in the current directory
+as the input parameter `input_filename`.  This function then performs all the following processing steps automatically to
+generate the image mosaics from the exposures listed in the input file.
+
+There are times, though, when the default processing need to be revised to account for the science goals of the
+processing or to account for the exposures available as inputs.  These environmental variables can be used to control
+how the MVM processing deals with various types of input files:
+
+MVM_INCLUDE_SMALL
+  This controls whether or not layers are created for ACS/HRC or ACS/SBC exposures given their
+  small field-of-view.  By default, this is turned on ('true') so that these layers are created.
+
+MVM_ONLY_CTE
+  This controls whether or not to include exposures which have NOT been CTE-corrected due to the
+  potential impact to the output mosaics PSFs from including exposures with CTE tails.  By default,
+  this is actually turned off ('false') so that all data gets used.
+
+These variables can be set to values of 'on', 'off', 'true', 'false', 'yes' or 'no' in the operating system environment
+or even in the python environment using `os.environ`.
+
+Additionally, the function `run_mvm_processing()` has the ability to enable an additional attempt to align all the
+input exposures to the latest astrometric catalog, as well as limit the size of the output mosaics.
+Full details of these parameters are available in the discussion of the MVM API.
 
 
 Define SkyCell Layers
 ----------------------
+SkyCells define the WCS that will be used for all the observations for any given region on the sky.  However, it doesn't
+make sense to create a single image from all the exposures due to differences in the detectors, pixel sizes, PSFs and
+filters used for the observations.  It can even be argued that observations taken too far apart in time should also not
+be combined, or observations taken with dramatic differences in exposure time should not be combined.  As a result,
+the concept of a SkyCell 'layer' was implemented to organize all the exposures for a SkyCell into sets of exposures which
+can be combined to create useful, and hopefully scientifically interesting, mosaics.
+
+The most basic definition for a layer organizes the exposures based on the following criteria:
+
+  * instrument
+  * detector
+  * filter
+
+Using the renamed input files, the MVM processing code organizes all the exposures based on these criteria to identify
+what layers could be generated from all the inputs.  For example, a SkyCell with ACS/WFC3 F814W exposures and
+WFC3/UVIS F606W exposures would result in 2 SkyCell layers being defined; namely, one for each set of exposures.
+
+.. note:: Observations taken with a spectroscopic element, like grisms or prisms, will not be used to define SkyCell layers.
 
 
 Determine Layers to Process
 ----------------------------
-
+Specifying what input exposures need to be used to create a SkyCell layer mosaic serves as a critical feature of the
+input file.  Input files simply listing filenames indicate that ALL exposures specified should be used to create MVM
+products.  However, the more descriptive `poller file` CSV format input file provides the ability to limit the processing
+to only new exposures, while treating already archived versions of the MVM products for all the other SkyCell layers as
+fully updated and not in need of any further processing.  This control comes from the entry that specifies 'NEW' or 'OLD',
+with only those layers with at least 1 'NEW' entry getting defined for processing.
 
 
 Create SkyCell Mosaics
 ----------------------
+The interpretation of the input files performed to this point has resulted in the definition of the image products that
+need to be created by combining the exposures specified for processing.  These mosaics get generated by drizzling the
+input exposures onto the WCS defined for the SkyCell, creating a separate mosaic for each layer from all the exposures
+with the same filter/detector/instrument configuration.
+
+The drizzle parameters used to create these products get determined based on the average number of exposures for all the
+exposed pixels in the SkyCell layer.  This only serves as an approximation of what would work best across the entire
+SkyCell layer, as some portions may only have a single exposure while other regions may have many overlapping exposures.
+However, this still works reasonably well due to the fact the only the following drizzle steps are actually applied when
+creating the MVM products:
+
+  * sky matching
+  * final drizzling with bad pixel rejection
+
+These products, thus, rely entirely on the DQ arrays to be updated by SVM and pipeline processing to flag cosmic-rays and
+detector artifacts as bad pixels so those pixels get rejected when creating the MVM product.  In addition, they rely
+on the WCS solutions provided by previous processing as well to place the exposures in the final MVM product.
+
+The parameters used for creating these drizzle products can be found installed with the package's code.  You can find
+the files using:
+
+.. code-block::
+
+    import os
+    import drizzlepac
+    #
+    # Directory is:  drizzlepac/pars/hap_pars/mvm_parameters
+    #
+    os.chdir(os.path.join(drizzlepac.__path__, 'pars', 'hap_pars', 'mvm_parameters'))
+
+There are separate configuration files for each detector based on the number of average exposures in the output frame.
+
+The final output products get created with a final output array size that is trimmed down to only the subsection of the
+entire SkyCell which has HST data in any layer.
+
+Finally, the output drizzle product will have a filename that follows the basic convention used to rename the input
+exposures without the final 'ipppssoo' designation; namely,
+
+  `hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>_<layer>_dr[cz].fits`
+
+where:
+  ==========  =========================================================================
+  Element     Definition
+  ==========  =========================================================================
+  <PPPP>      ProjectionCell ID as a zero-padded 4 digit integer
+  <XX>,<YY>   SkyCell ID within ProjectionCell as zero-padded 2 digit integers
+  <instr>     Name of HST instrument from **INSTRUME** header keyword
+  <detector>  Name of detector from **DETECTOR** header keyword
+  <filter>    Name of filter from **FILTER** or **FILTER1,FILTER2** header keyword(s)
+  <layer>     Layer-specific designation: coarse-all or all
+  dr[cz]      Suffix of either **DRZ** or **DRC** based on input filenames
+  ==========  =========================================================================
+
+The *<layer>* component of the MVM filename indicates the plate scale and any other criteria used to define the layer
+such as exposure time or date range of exposures used to create the layer.  At present, only WFC3/IR data gets generated
+with both the default (fine) plate-scale of 0.04"/pixel as well as the IR-native "coarse" plate scale which show up with
+a *<layer>* term of **coarse-all**.  Initial processing does not apply any additional definitions for the layers, and thus
+the remainder of the initially generated MVM products simply have a *<layer>* term of **all**.  Future processing may
+enable generation of additonal layers based on date ranges for SkyCells which have massive amount of exposures over a
+large range of dates, in which case this *<layer>* term will be updated to reflect those ranges.  Additionally, the
+code can be run interactively to enable generation of additional layers based on exposure time ranges as well.  See
+explanation of the processing code functions for more details.
+
+
+
+
+
 
