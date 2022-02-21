@@ -140,8 +140,6 @@ def make_svm_input_file(input_filename, hap_pipeline_name='svm',
                                                                     hap_pipeline_name=hap_pipeline_name,
                                                                     log_level=log_level,
                                                                     output_custom_pars_file=output_custom_pars_file)
-                update_ci_values(filter_item, output_custom_pars_file, hap_pipeline_name, log_level)
-
             for expo_item in total_item.edp_list:
                 log.info("Preparing configuration parameter values for exposure product {}".format(expo_item.drizzle_filename))
                 expo_item.configobj_pars = config_utils.HapConfig(expo_item,
@@ -162,76 +160,6 @@ def make_svm_input_file(input_filename, hap_pipeline_name='svm',
         err_msg = "Something went wrong!"
         log.error(err_msg)
         raise Exception(err_msg)
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def update_ci_values(filter_item, config_filename, hap_pipeline_name, log_level=logutil.logging.INFO):
-    """
-    if the 'lookup_ci_limits_from_table' parameter is set to Boolean 'True', update the custom parameter
-    file with concentration index (CI) upper and lower limit values from ci_table.get_ci_from_file() for the
-    specified filter object.
-
-    Parameters
-    ----------
-    filter_item : drizzlepac.haputils.product.FilterProduct object
-        object containing all the relevant info for the drizzled filter product
-
-    config_filename : str
-        Name of the output custom SVM parameter file
-
-    hap_pipeline_name : str
-        Name of the pipeline that the configurations will be prepared for. Valid options are 'mvm' (for the
-        HAP multi-visit mosaics pipeline) or 'svm' (for the HAP single-visit mosaic pipeline).
-
-    log_level : int, optional
-        The desired level of verboseness in the log statements displayed on the screen and written to the
-        .log file. Default value is 20, or 'info'.
-
-    Returns
-    -------
-    Nothing!
-    """
-    log.setLevel(log_level)
-    # Check to see if the CI values need to be updated. If not, simply skip over all of this.
-    update_ci_vals = False
-    for phot_mode in ['aperture', 'segment']:
-        if filter_item.configobj_pars.pars['quality control'].outpars['ci filter'][phot_mode]['lookup_ci_limits_from_table']:
-            update_ci_vals = True
-    if update_ci_vals:
-        # read in the custom SVM param file data
-        with open(config_filename) as f:
-            json_data = json.load(f)
-        for phot_mode in ['aperture', 'segment']:
-            if filter_item.configobj_pars.pars['quality control'].outpars['ci filter'][phot_mode]['lookup_ci_limits_from_table']:
-                log.info("NOTE: The 'lookup_ci_limits_from_table' setting in the 'quality control'>'{}' section of the parameters for filter image {} is set to 'True'. This means that any custom user-tuned values for 'ci_upper_limit' and 'ci_lower_limit' will be overwritten. To prevent this, please set 'lookup_ci_limits_from_table' to 'False' in the custom parameter file {}".format(phot_mode, filter_item.drizzle_filename, config_filename))
-                # set up inputs to ci_table.get_ci_from_file() and execute to get new CI values
-                drizzled_image = filter_item.drizzle_filename
-                ci_lookup_file_path = "{}_parameters/any".format(hap_pipeline_name)
-                diagnostic_mode = False
-                ci_lower_limit = filter_item.configobj_pars.pars['quality control'].outpars['ci filter'][phot_mode]['ci_lower_limit']
-                ci_upper_limit = filter_item.configobj_pars.pars['quality control'].outpars['ci filter'][phot_mode]['ci_upper_limit']
-                ci_dict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
-                                                    diagnostic_mode=diagnostic_mode, ci_lower=ci_lower_limit,
-                                                    ci_upper=ci_upper_limit)
-                log.debug("{} {} CI upper limit updated from {} to {}".format(filter_item.drizzle_filename,
-                                                                              phot_mode,
-                                                                              ci_upper_limit,
-                                                                              ci_dict["ci_upper_limit"]))
-                log.debug("{} {} CI lower limit updated from {} to {}\n".format(filter_item.drizzle_filename,
-                                                                                phot_mode,
-                                                                                ci_lower_limit,
-                                                                                ci_dict["ci_lower_limit"]))
-                # update CI values
-                json_data[drizzled_image[:-9]]["default_values"]["quality control"]["ci filter"][phot_mode]["ci_lower_limit"] = ci_dict["ci_lower_limit"]
-                json_data[drizzled_image[:-9]]["default_values"]["quality control"]["ci filter"][phot_mode]["ci_upper_limit"] = ci_dict["ci_upper_limit"]
-
-        # Write out the updated custom SVM param file data back to file.
-        with open(config_filename, 'w') as f:
-            json.dump(json_data, f, indent=4)
-    else:
-        log.debug("Using existing concentration index limits from parameter file")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
