@@ -47,7 +47,6 @@
 """
 import datetime
 import fnmatch
-import glob
 import logging
 import os
 import pickle
@@ -494,7 +493,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     return_value: int
         A return exit code used by the calling Condor/OWL workflow code: 0 (zero) for success, 1 for error
     """
-    output_custom_pars_file = "svm_test_custom_params.json"
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
@@ -874,8 +872,6 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
                                                                    cat_type,
                                                                    drz_root_dir,
                                                                    filter_product_obj.hla_flag_msk,
-                                                                   ci_lookup_file_path,
-                                                                   output_custom_pars_file,
                                                                    log_level,
                                                                    diagnostic_mode)
         else:
