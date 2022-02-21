@@ -6,7 +6,6 @@ given the specified observation conditions and instrument/detector used in the o
 import collections
 import json
 import os
-import pdb
 import sys
 
 from astropy.time import Time
@@ -49,8 +48,8 @@ class HapConfig(object):
             Use default configuration parameters? Default value is True.
 
         input_custom_pars_file: str, optional
-            Name of the full configuration file (with full path) to use for ALL input params. WARNING: Specifying a
-            file will turn off automatic parameter determination.
+            Name of the full configuration file (with full path) to use for ALL input params. WARNING:
+            Specifying a file will turn off automatic parameter determination.
 
         output_custom_pars_file: str, optional
             Name of the full configuration file (with full path) that all parameters will be written to.
@@ -109,7 +108,7 @@ class HapConfig(object):
         # update CI values if needed
         for phot_type in ['aperture', 'segment']:
             if self.pars['quality control'].outpars['ci filter'][phot_type]['lookup_ci_limits_from_table'] is True:
-                self._update_ci_values_from_file(prod_obj, phot_mode)
+                self._update_ci_values_from_file(prod_obj, phot_type, log_level=log_level)
 
         # write out all parameters to file if specified by user
         if output_custom_pars_file:
@@ -124,8 +123,8 @@ class HapConfig(object):
         Parameters
         ----------
         prod_obj : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
-        drizzlepac.haputils.Product.ExposureProduct, depending on input
-            Product to get configuration values for.
+            drizzlepac.haputils.Product.ExposureProduct, depending on input
+            product to get configuration values for.
 
         Returns
         -------
@@ -236,17 +235,32 @@ class HapConfig(object):
                 self.conditions.append("any_n1")
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    def _update_ci_values_from_file(self, prod_obj, phot_mode):
-        """Update quality control values """
-        # log.info("NOTE: The 'lookup_ci_limits_from_table' setting in the 'quality control'>'{}' section of "
-        #          "the parameters for filter image {} is set to 'True'. This means that any custom user-tuned "
-        #          "values for 'ci_upper_limit' and 'ci_lower_limit' will be overwritten. To prevent this, "
-        #          "please set 'lookup_ci_limits_from_table' to 'False' in the custom parameter file "
-        #          "{}".format(phot_mode, prod_obj.drizzle_filename, config_filename))
+    def _update_ci_values_from_file(self, prod_obj, phot_mode, log_level=logutil.logging.NOTSET):
+        """Update Concentration Index upper and lower limits in the "quality control" section of the
+        parameter values.
+
+        Parameters
+        ----------
+        prod_obj : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
+        drizzlepac.haputils.Product.ExposureProduct, depending on input
+            product to get configuration values for.
+
+        phot_mode : str
+            Section of the "quality control" parameters to update CI values
+
+        log_level : int, optional
+            The desired level of verboseness in the log statements displayed on the screen and written to the
+            .log file. If not explicitly set, the default value is 'logging.NOTSET', or int value '0'
+
+        Returns
+        -------
+        rv : int
+            simple status indicator. int value 0 if no CI updates were made, 1 if CI updates were made.
+        """
+        log.setLevel(log_level)
         # set up inputs to ci_table.get_ci_from_file() and execute to get new CI values
         drizzled_image = prod_obj.drizzle_filename
         ci_lookup_file_path = "{}_parameters/any".format(self.hap_pipeline_name)
-        log_level = 20
         diagnostic_mode = False
         ci_lower_limit = self.pars['quality control'].outpars['ci filter'][phot_mode]['ci_lower_limit']
         ci_upper_limit = self.pars['quality control'].outpars['ci filter'][phot_mode]['ci_upper_limit']
@@ -261,6 +275,12 @@ class HapConfig(object):
                                                                         phot_mode,
                                                                         ci_lower_limit,
                                                                         ci_dict["ci_lower_limit"]))
+        log.info("NOTE: The 'lookup_ci_limits_from_table' setting in the 'quality control'>'{}' section of "
+                 "the parameters for filter image {} is set to 'True'. This means that any custom user-tuned "
+                 "values for 'ci_upper_limit' and 'ci_lower_limit' will be overwritten. To prevent this, "
+                 "please set 'lookup_ci_limits_from_table' to 'False' in the custom parameter file "
+                 "{}".format(phot_mode, prod_obj.drizzle_filename, self.output_custom_pars_file))
+
         # update CI values
         self.pars['quality control'].outpars['ci filter'][phot_mode]['ci_lower_limit']= ci_dict["ci_lower_limit"]
         self.pars['quality control'].outpars['ci filter'][phot_mode]['ci_upper_limit'] = ci_dict["ci_upper_limit"]
