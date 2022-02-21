@@ -1,0 +1,29 @@
+{
+    "ci filter": {
+      "aperture": {
+        "bthresh": 5.0,
+        "lookup_ci_limits_from_table": true,
+        "ci_lower_limit": 0.15,
+        "ci_upper_limit": 0.45
+      },
+      "segment": {
+        "bthresh": 5.0,
+        "lookup_ci_limits_from_table": true,
+        "ci_lower_limit": 0.15,
+        "ci_upper_limit": 0.45
+      }
+    },
+    "swarm filter": {
+      "HLA_plate_scale": 0.030,
+      "upper_epp_limit": 70000.0,
+      "lower_epp_limit": 2000.0,
+      "eppsky_limit": 1000.0,
+      "selfradius": 20.0,
+      "swarm_thresh": 1.0,
+      "clip_radius_list": [120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
+      "scale_factor_list": [0.0, 1.778106e-05, 3.821292e-05, 9.017166e-05, 2.725184e-04, 1.269197e-03, 7.007126e-03, 3.839166e-02, 2.553349e-01, 1.000000e+00],
+      "proximity_binary": false,
+      "ctrList_radiusList": [40, 35, 20, 15, 10],
+      "ctrList_thresholdList": [100000, 70000, 50000, 10000, 2000]
+    }
+}
