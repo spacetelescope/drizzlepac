@@ -60,8 +60,8 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 
 def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plate_scale, median_sky,
-                             catalog_name, catalog_data, proc_type, drz_root_dir, hla_flag_msk, ci_lookup_file_path,
-                             output_custom_pars_file, log_level, diagnostic_mode):
+                             catalog_name, catalog_data, proc_type, drz_root_dir, hla_flag_msk, log_level,
+                             diagnostic_mode):
 
     """Simple calling subroutine that executes the other flagging subroutines.
 
@@ -143,12 +143,11 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag sources based on concentration index.
     log.info("Determining concentration indices for sources.")
-    log.debug("ci_filter({} {} {} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>",
-                                                                proc_type, param_dict, ci_lookup_file_path,
-                                                                output_custom_pars_file, column_titles, log_level,
-                                                                diagnostic_mode))
-    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-                             output_custom_pars_file, column_titles, log_level, diagnostic_mode)
+    log.debug("ci_filter({} {} {} {} {} {} {} {})".format(drizzled_image, catalog_name, "<CATALOG DATA>",
+                                                                proc_type, param_dict, column_titles,
+                                                                log_level, diagnostic_mode))
+    catalog_data = ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, column_titles,
+                             log_level, diagnostic_mode)
 
     # -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -
     # Flag saturated sources
@@ -183,11 +182,11 @@ def run_source_list_flagging(drizzled_image, flt_list, param_dict, exptime, plat
 # ======================================================================================================================
 
 
-def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, ci_lookup_file_path,
-              output_custom_pars_file, column_titles, log_level, diagnostic_mode):
+def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict, column_titles, log_level,
+              diagnostic_mode):
     """This subroutine flags sources based on concentration index.  Sources below the minimum CI value are
-    flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended (flag=1).
-    It also flags sources below the detection limit in mag_aper2 (flag=8).
+    flagged as hot pixels/CRs (flag=16). Sources above the maximum (for stars) are flagged as extended
+    (flag=1). It also flags sources below the detection limit in mag_aper2 (flag=8).
 
     Parameters
     ----------
@@ -206,17 +205,12 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     param_dict : dictionary
         Dictionary of instrument/detector - specific drizzle, source finding and photometric parameters
 
-    ci_lookup_file_path : string
-        final path elements of the concentration index lookup file
-
-    output_custom_pars_file : string
-        name of the output config file
-
     column_titles : dictionary
         Relevant column titles
 
     log_level : int
-        The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.
 
     diagnostic_mode : bool
         write intermediate files?
@@ -232,41 +226,6 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
     ci_upper_limit = float(par_dict['ci_upper_limit'])
     snr = float(par_dict['bthresh'])
 
-    if par_dict['lookup_ci_limits_from_table']:
-        # replace CI limits with values from table if possible
-        cidict = ci_table.get_ci_from_file(drizzled_image, ci_lookup_file_path, log_level,
-                                           diagnostic_mode=diagnostic_mode, ci_lower=ci_lower_limit,
-                                           ci_upper=ci_upper_limit)  # TODO: add values for ACS/SBC
-        ci_lower_limit = cidict['ci_lower_limit']
-        ci_upper_limit = cidict['ci_upper_limit']
-
-        # if an output custom param file was created and the CI values were updated by ci_table.get_ci_from_file,
-        # update output custom param file with new CI values
-        if output_custom_pars_file:
-            if ci_lower_limit != float(par_dict['ci_lower_limit']) or \
-                    ci_upper_limit != float(par_dict['ci_upper_limit']):
-                log.info("CI limits updated.")
-                with open(output_custom_pars_file) as f:
-                    json_data = json.load(f)
-                if ci_lookup_file_path.startswith("default"):
-                    param_set = "default_values"
-                else:
-                    param_set = "parameters"
-
-                if ci_lower_limit != float(par_dict['ci_lower_limit']):
-                    json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"][proc_type]["ci_lower_limit"]\
-                        = ci_lower_limit
-
-                if ci_upper_limit != float(par_dict['ci_upper_limit']):
-                    json_data[drizzled_image[:-9]][param_set]["quality control"]["ci filter"][proc_type]["ci_upper_limit"]\
-                        = ci_upper_limit
-
-                with open(output_custom_pars_file, 'w') as f:
-                    json.dump(json_data, f, indent=4)
-                log.info("Updated custom pars file {}".format(output_custom_pars_file))
-    else:
-        log.info("Using existing concentration index limits from parameter file")
-    log.info(' ')
     log.info('ci limits for {}'.format(drizzled_image))
     log.info('ci_lower_limit = {}'.format(ci_lower_limit))
     log.info('ci_upper_limit = {}'.format(ci_upper_limit))
@@ -957,8 +916,6 @@ def hla_swarm_flags(drizzled_image, catalog_name, catalog_data, exptime, plate_s
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
     # ==========================================================================
-
-
     swarm_thresh = float(param_dict["quality control"]["swarm filter"]["swarm_thresh"])
     clip_radius_list = param_dict["quality control"]["swarm filter"]["clip_radius_list"]
     clip_radius_list = numpy.array(list(map(float, clip_radius_list))) * scale_to_hla
