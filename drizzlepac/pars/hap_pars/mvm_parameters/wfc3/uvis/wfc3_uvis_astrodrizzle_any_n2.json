@@ -9,7 +9,7 @@
     "build": true,
     "crbit": 4096,
     "stepsize": 10,
-    "resetbits": "4096",
+    "resetbits": "0",
     "num_cores": 1,
     "in_memory": false,
     "STEP 1: STATIC MASK": {
@@ -22,7 +22,7 @@
         "skystat": "median",
         "skywidth": 0.1,
         "skylower": -100.0,
-        "sky_bits": "16",
+        "sky_bits": "80",
         "skyupper": null,
         "skyclip": 5,
         "skylsigma": 4.0,
@@ -33,16 +33,16 @@
         "skyuser": ""
     },
     "STEP 3: DRIZZLE SEPARATE IMAGES": {
-        "driz_separate": true,
-        "driz_sep_bits": "336",
-        "driz_sep_kernel": "turbo",
+        "driz_separate": false,
+        "driz_sep_bits": "80",
+        "driz_sep_kernel": "square",
         "driz_sep_wt_scl": "exptime",
         "driz_sep_pixfrac": 1.0,
         "driz_sep_fillval": null,
         "driz_sep_compress": false
     },
     "STEP 4: CREATE MEDIAN IMAGE": {
-        "median": true,
+        "median": false,
         "median_newmasks": true,
         "combine_type": "minmed",
         "combine_nlow": 0,
@@ -55,14 +55,14 @@
         "combine_bufsize": null
     },
     "STEP 5: BLOT BACK THE MEDIAN IMAGE": {
-        "blot": true,
+        "blot": false,
         "blot_interp": "poly5",
         "blot_sinscl": 1.0,
         "blot_addsky": true,
         "blot_skyval": 0.0
     },
     "STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR": {
-        "driz_cr": true,
+        "driz_cr": false,
         "driz_cr_snr": "3.5 3.0",
         "driz_cr_grow": 1,
         "driz_cr_ctegrow": 0,
@@ -73,7 +73,7 @@
         "driz_combine": true,
         "final_pixfrac": 1.0,
         "final_fillval": null,
-        "final_bits": "336",
+        "final_bits": "80",
         "final_maskval": null,
         "final_wht_type": "EXP",
         "final_kernel": "square",
