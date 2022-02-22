@@ -32,7 +32,7 @@ from pathlib import Path
 WCS_SUB_NAME = "IDC_4BB1536OJ"
 POLLER_FILE = "acs_97e_06_input.out"
 EXPECTED_POINT_SOURCES = {"wfc": 2}
-EXPECTED_SEG_SOURCES = {"wfc": 7}
+EXPECTED_SEG_SOURCES = {"wfc": 2}
 MEAN_CAT_MAGAP1_POINT = {
 "hst_10374_06_acs_wfc_f814w_j97e06_point-cat.ecsv": 18.79,
 "hst_10374_06_acs_wfc_f625w_j97e06_point-cat.ecsv": 18.86,
@@ -178,15 +178,14 @@ def test_svm_manifest_name(construct_manifest_filename):
     assert(path.is_file())
 
 
-@pytest.mark.skip
 def test_svm_wcs(gather_output_data):
-    # Check the output primary WCSNAME includes FIT_SVM_GAIA as part of the string value
+    # Check the output primary WCSNAME includes IDC_* of the string value
     tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith(".fits")]
 
-    # For this dataset, there is only one total data product. However, make the test more general to 
-    # handle multiple total data products which all have the same simple WCSNAME.
-    wcsnames = [fits.getval(tdp, "WCSNAME", ext=1).upper() for tdp in tdp_files]
-    assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same: {wcsnames}"
+    for tdp in tdp_files:
+        wcsname = fits.getval(tdp, "WCSNAME", ext=1).upper()
+        print("\ntest_svm_wcs.  WCSNAME: {} Output file: {}".format(wcsname, tdp))
+        assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp}."
 
 
 def test_svm_point_cat_numsources(gather_output_data):
@@ -204,7 +203,6 @@ def test_svm_point_cat_numsources(gather_output_data):
     assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {EXPECTED_POINT_SOURCES}"
 
 
-@pytest.mark.skip
 def test_svm_segment_cat_numsources(gather_output_data):
    # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("segment-cat.ecsv")]
