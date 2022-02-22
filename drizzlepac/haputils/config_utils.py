@@ -6,6 +6,7 @@ given the specified observation conditions and instrument/detector used in the o
 import collections
 import json
 import os
+import pdb
 import sys
 
 from astropy.time import Time
@@ -80,7 +81,8 @@ class HapConfig(object):
         self.filters = None
 
         self._determine_conditions(prod_obj)
-        self.full_cfg_index, self.pars_dir = read_index(self.instrument,
+        self.full_cfg_index, self.pars_dir = read_index(self.hap_pipeline_name,
+                                                        self.instrument,
                                                         self.detector)
 
         # Instantiate the parameter set
@@ -495,15 +497,14 @@ class Par():
         dictionary of these values."""
         self.pars_multidict = collections.OrderedDict()
         found_cfg = False
-        param_dir_branch = "{}_parameters".format(self.hap_pipeline_name)
         for condition in self.conditions:
             if condition in self.cfg_index.keys():
                 found_cfg = True
-                self.subcfgfilename = os.path.join(self.pars_dir, param_dir_branch, self.cfg_index[condition])
+                self.subcfgfilename = os.path.join(self.pars_dir, self.cfg_index[condition])
                 self.pars_multidict[condition] = self._read_json_file()
         # if no specific cfg files can be found for the specified conditions, use the generic cfg file.
         if not found_cfg:
-            self.subcfgfilename = os.path.join(self.pars_dir, param_dir_branch, self.cfg_index["all"])
+            self.subcfgfilename = os.path.join(self.pars_dir, self.cfg_index["all"])
             self.pars_multidict["all"] = self._read_json_file()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -594,19 +595,19 @@ class QualityControlPars(Par):
 
 # ------------------------------------------------------------------------------
 
-def read_index(instrument, detector):
+def read_index(hap_pipeline_name, instrument, detector):
     # Create instrument/detector observing mode
     inst_det = "{}_{}".format(instrument, detector).lower()
 
     # Determine directory containing hap_pars index files
     code_dir = os.path.abspath(__file__)
     base_dir = os.path.dirname(os.path.dirname(code_dir))
-    pars_dir = os.path.join(base_dir, "pars", "hap_pars")
+    pars_dir = os.path.join(base_dir, "pars", "hap_pars", "{}_parameters".format(hap_pipeline_name))
 
     # Define name of index appropriate for observing mode
     cfg_index_filename = "{}_index.json".format(inst_det)
     cfg_index_filename = os.path.join(pars_dir, cfg_index_filename)
-
+    print(">>>>>> cfg_index_filename : ", cfg_index_filename)
     # Read JSON index file
     with open(cfg_index_filename) as json_file:
         json_string = json_file.read()
