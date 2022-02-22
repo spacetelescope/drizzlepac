@@ -23,7 +23,7 @@ Alignment
 ==========
 Generating MVM products relies entirely on the definition of the WCS of each input image in order to define where each
 exposure will land in the output mosaic.  Errors in an input exposure's WCS will lead to misalignment of overlapping
-images resulting in smeared sources or even multiple images of the overlapping sources in the output mosaic.  Errors
+exposures resulting in smeared sources or even multiple images of the overlapping sources in the output mosaic.  Errors
 in the WCS primarily stem from images being aligned to different astrometric catalogs.  For example,
 one exposure may be aligned successfully to the GAIADR2 catalog, yet another overlapping exposure can only be aligned
 to the 2MASS catalog due to the lack of GAIA sources in the offset exposure.
@@ -68,8 +68,18 @@ PanSTARRS project as described at `PanSTARRS Sky tessellation patterns
 MVM processing uses these pre-defined projection cells after extending them to cover the entire sky
 with cells that are actually 4.2°x4.2° in size and are on rings spaced by 4° apart in declination.  This provides
 sufficient overlap to allow data from one projection cell to be merged with data from a neighboring cell if necessary.
+These cells, defined as the ProjectionCell object in the code and referred to as **ProjectionCell**, are indexed
+starting at 0 at δ = −90° (South Pole) and ending at 2643 at δ = +90° (North Pole).  As stated in the
+`PanSTARRS page <https://outerspace.stsci.edu/display/PANSTARRS/PS1+Sky+tessellation+patterns>`_:
 
-All these definitions, including finely each ProjectionCell should be divided to define the SkyCells, are encoded in a
+  The projection cell centers are located on lines of constant declination spaced 4° apart. At a given declination,
+  the pointing centers are equally spaced in right ascension around the sky, with the number of RA points changing to
+  account for the convergence of RA lines in the spherical sky. The pattern is defined to cover the entire sky from
+  δ = −90° to +90°... Within a given declination zone, the projection cells are centered at RA(n) = n Δα = n 360°/M where
+  M is the number of RA cells in the zone. Finally, the projection cells themselves are numbered consecutively
+  (ordered by increasing RA) starting at 0 at the south pole, 1–9 at δ = −86°, etc.
+
+All these definitions, including how finely each ProjectionCell should be divided to define the SkyCells, are encoded in a
 FITS table installed as part of the `drizzlepac` package:
 
     drizzlepac/pars/allsky_cells.fits
@@ -77,9 +87,10 @@ FITS table installed as part of the `drizzlepac` package:
 
 Defining each SkyCell
 ----------------------
-Each projection cell is split into a grid of 21 x 21 'sky cells' which serves as the most basic MVM product generated
-during MVM processing.  Sky cells are approximately 0.2degrees x 0.2degrees in size (~21500 x ~21500 pixels) and
-they have the same WCS as the ‘projection cell’.  Each skycell gets identified by its position within the projection cell
+Each ProjectionCell is split into a grid of 21 x 21 'sky cells' which serves as the most basic MVM product generated
+during MVM processing.  Sky cells, as defined as the SkyCell object in the code and referred to as **SkyCell**,
+are approximately 0.2° x 0.2° in size (~21500 x ~21500 pixels) and
+they have the same WCS as the ProjectionCell.  Each SkyCell gets identified by its position within the ProjectionCell
 as shown in this figure:
 
 .. figure:: images/SkyCell_numbering.png
@@ -88,11 +99,25 @@ as shown in this figure:
 
   Numbering convention for SkyCells within a Projection Cell used for naming the SkyCell.
 
-This provides a way to uniquely identify any position on the sky that can be used as the basis for a unique filename for
-all products generated from all the expsosures that overlap each SkyCell.
+The numbering of the SkyCells within a ProjectionCell starts in the lower left corner at (1,1) corresponding to the cell
+that with the lowest declination and largest RA since the SkyCell is oriented so that the Y axis follows a line of RA
+pointing towards the North Pole.
+This indexing provides a way to identify uniquely any position on the sky that can be used as the basis for a unique filename for
+all products generated from the exposures that overlap each SkyCell.  Mosaics generated for each SkyCell uses this
+indexing to create files with names using the convention:
+
+  skycell-p<PPPP>x<XX>y<YY>
+
+where:
+  ==========  =========================================================================
+  Element     Definition
+  ==========  =========================================================================
+  <PPPP>      ProjectionCell ID as a zero-padded 4 digit integer
+  <XX>,<YY>   SkyCell ID within ProjectionCell as zero-padded 2 digit integers
+  ==========  =========================================================================
 
 The WCS for each SkyCell gets defined as a subarray of the Projection cell's WCS.  This allows data across SkyCells in
-the same projection cell to be combined into larger mosaics as part of the same tangent plane without performing any
+the same ProjectionCell to be combined into larger mosaics as part of the same tangent plane without performing any
 additional resampling.
 
 Code for Defining SkyCell ID
@@ -103,17 +128,75 @@ The code for interfacing with the cell definitions table can be imported in Pyth
 
    from drizzlepac.haputils import cell_utils
 
-Determining what sky cells overlap any given set of exposures on the sky can be done using the function:
+Determining what SkyCells overlap any given set of exposures on the sky can be done using the function:
 
 .. code:: python
 
   sky_cells_dict = cell_utils.get_sky_cells(visit_input, input_path=None)
 
-where **visit_input** is the Python list of filenames of exposures.
+where **visit_input** is the Python list of filenames of FLT/FLC exposures.  These files can be any set of FLT/FLC files
+and the WCS's defined in them will, by default, **be used as-is** to create the final combined mosaics.  The MVM products
+generated in the HST pipeline and stored in the HST archive will be generated using FLT/FLC files that have been aligned
+to an astrometric catalog like GAIAeDR3 during SVM processing, if alignment was possible at all for the exposure.  The full
+set of parameters that can be used to control the sky cell definitions and IDs can be found in the
+:ref:`MVM Processing Code API page<multivisit_api`.
+
 Exposures in an input list are assumed to be in the current working directory when running the code,
 unless **input_path** has been provided which points to the location of the exposures to be processed.
-The return value **sky_cells_dict** is a dictionary where the keys are the names (labels) of each overlapping sky cell
-and the value is the actual SkyCell object which contains the footprint and WCS (among other details) of the sky cell.
+The return value **sky_cells_dict** is a dictionary where the keys are the names (labels) of each overlapping SkyCell
+and the value is the actual SkyCell object which contains the footprint and WCS (among other details) of the SkyCell.
+
+For example, observations from HST proposal 14175 were taken to study NGC 4594 (Sombrero Galaxy) using both the ACS and
+WFC3 cameras.  The footprints of all the HST/ACS and HST/WFC3 observations taken in this part of the sky as shown by MAST
+can be seen here:
+
+.. figure:: images/pg1202_acs_wfc3_mast_footprint.png
+  :width: 90%
+  :alt: Footprints of HST/ACS and HST/WFC3 observations of PG1202+281 and surrounding area.
+
+  Footprints of HST/ACS and HST/WFC3 observations of the the quasar PG1202+281 and surrounding area.
+
+There were 25 FLT and FLC exposures taken as part of this proposal making up these footprints.  The list of these
+files defined what was provided as **visit_input** to the `cell_utils.get_sky_cells()` function to get these SkyCell
+definitions:
+
+.. code:: python
+
+    sky_cells_dict = cell_utils.get_sky_cells(visit_input, input_path=None)
+    sky_cells_dict
+
+    {'skycell-p1889x07y19': SkyCell object: skycell-p1889x07y19,
+     'skycell-p1889x07y20': SkyCell object: skycell-p1889x07y20,
+     'skycell-p1970x15y03': SkyCell object: skycell-p1970x15y03,
+     'skycell-p1970x15y02': SkyCell object: skycell-p1970x15y02,
+     'skycell-p1970x16y02': SkyCell object: skycell-p1970x16y02}
+
+This indicates that these exposures overlap 5 SkyCells in 2 ProjectionCells **p1889** and **p1970** with the WCS defined in the
+defined SkyCell object for each SkyCell entry in this dictionary.  Each SkyCell object includes a list of all the
+exposures that overlap just that SkyCell, which can be used to generate those mosaics.  We can see that one SkyCell
+includes all exposures using:
+
+.. code:: python
+
+    for scell in sky_cells_dict:
+        print(scell, len(sky_cells_dict[sc].members))
+
+    skycell-p1889x07y19 25
+    skycell-p1889x07y20 8
+    skycell-p1970x15y03 8
+    skycell-p1970x15y02 17
+    skycell-p1970x16y02 8
+
+All subsequent examples will use the exposures for SkyCell **skycell-p1889x07y19**.  The member exposures filenames
+can be written out to its own input file named **skycell-p1889x07y19_mvm_input.txt** for MVM processing using:
+
+.. code:: python
+
+    with open('skycell-p1889x07y19_input.txt', 'w') as fout:
+        _ = [fout.write(f'{file}\n') for file in p1889_scells['skycell-p1889x07y19'].members]
+
+    mpf.generate_poller_file('skycell-p1889x07y19_input.txt', poller_file_type='mvm', output_poller_filename='skycell-p1889x07y19_mvm_input.txt', skycell_name='skycell-p1889x07y19')
+
 
 
 Defining SkyCell Layers
@@ -133,20 +216,34 @@ when drizzling IR data to that plate scale. So in addition to creating IR mosaic
 IR mosaics are also generated at a 'coarse' plate scale of 0.12"/pixel to minimize the resampling artifacts while also being easily
 scaled to the 'fine' plate scale mosaics.
 
-SkyCell Example
-'''''''''''''''
-For example, observations have been taken of NGC5474 with both the ACS and WFC3 cameras.  The ACS observations were taken
-with the ACS/WFC detector using the F814W and F606W filters, while the WFC3 observations were taken using the IR detector
-using the F110W and F160W filters.  All these observations fall within the SkyCell at position X06y11 in the
-projection cell p2381, but given the dramatic plate scale differences, these observations can not be used to create a
-single mosaic.  Instead, 6 separate layers get defined for this SkyCell; namely,
+SkyCell Layers Example
+'''''''''''''''''''''''
+For example, observations were taken with Proposals 12286 and 12903 using both the ACS and WFC3 cameras and
+multiple filters. The ACS observations were taken
+with the ACS/WFC detector using the F775W and F850LP filters, while the WFC3 observations were taken using the IR detector
+using the F105W and F125W filters as well as the UVIS detector using the F475W.
+All these observations fall within the SkyCell at position **x07y19** in the
+ProjectionCell **p1889**, but given the dramatic plate scale differences, these observations can not be used to create a
+single mosaic.
 
-  * acs_wfc_f814w  (0.04"/pixel)
-  * acs_wfc_f606w  (0.04"/pixel)
-  * wfc3_ir_f110w  (0.04"/pixel)
-  * wfc3_ir_f160w  (0.04"/pixel)
-  * wfc3_ir_f110w_coarse  (0.12"/pixel)
-  * wfc3_ir_f160w_coarse  (0.12"/pixel)
+.. code:: python
+
+    with open('skycell_p1889x07y19_input.txt', 'w') as fout:
+        _ = [fout.write(f'{file}\n') for file in p1889_scells['skycell-p1889x07y19'].members]
+
+Full details of the contents of the SkyCell object can be found in the
+:ref:`Multi-visit Processing API documentation <multivisit_api.rst>`.
+
+The different observing modes used for observations in this SkyCell end up being organized as
+7 separate layers (mosaics); namely,
+
+  * acs_wfc_f775w  (0.04"/pixel)
+  * acs_wfc_f850lp  (0.04"/pixel)
+  * wfc3_uvis_f475w (0.04"/pixel)
+  * wfc3_ir_f105w  (0.04"/pixel)
+  * wfc3_ir_f125w  (0.04"/pixel)
+  * wfc3_ir_f105w_coarse  (0.12"/pixel)
+  * wfc3_ir_f125w_coarse  (0.12"/pixel)
 
 Since they all have the same WCS, modulo the plate scale differences, they can be overlaid pixel-by-pixel with each other for
 analysis.
@@ -167,18 +264,32 @@ MVM products can be summarized as:
   * Determine which layer to process
   * Drizzle all exposures for each layer to be processed to create new mosaic product for that layer
 
+Running MVM Processing
+----------------------
+The primary function used to perform MVM processing interactively in a Python session is:
+
+.. code:: python
+
+   from drizzlepac import hapmultisequencer
+   r = hapmultisequencer.run_mvm_processing(input_filename)
+
+The function takes several optional parameters to control aspects of the processing, with full details of this function's
+parameters and all related functions being described in :ref:`Multi-visit Processing API<multivisit_api>`.
+
+
 SkyCell Membership
 ------------------
-Data from HST gets orgranized based on a filename derived from the proposal used to define the observations and how
+Data from HST gets organized based on a filename derived from the proposal used to define the observations and how
 HST should take them.  MVM processing, on the other hand, focuses on how the observations relate to each other on the
 sky based on the WCS information.  The `drizzlepac/haputils/cell_utils.py` module includes the code used to interpret
 the WCS information for exposures and determine what ProjectionCells and SkyCells each exposure overlaps as shown in the
 section on the `Code for Defining SkyCell ID`_.
 
-This code can be called on any set of user-defined exposures to either determine for the first time what SkyCells the
-exposures overlap.  During HST pipeline processing, this code gets called for the exposures from each visit once they
-have finished SVM processing and aligned the data as much as possible to the latest astrometric reference frame (such
-as the GAIAeDR3 catalog).
+This code can be called on any set of user-defined exposures to determine for the first time what SkyCells the
+exposures overlap.  During HST pipeline processing, this code gets called for the exposures from each visit after they
+have finished SVM processing and after they have been aligned as much as possible to the latest astrometric reference frame (such
+as the GAIAeDR3 catalog).  Using these updated WCS solutions provides the most accurate placement of the exposures on
+the sky and therefore in the correct SkyCell.
 
 
 Copy Data
@@ -204,7 +315,7 @@ such as
   * jcz906dvq_flc.fits
   * icz901wpq_flc.fits
 
-The MVM filename defined for the input exposures follows the convention.
+The MVM filename defined for the **input exposures** follows the convention.
 
   `hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits`
 
@@ -222,54 +333,56 @@ where:
   ==========  =========================================================================
 
 This insures that each exposure gets renamed in a way that allows them to be easily identified with respect to the
-output SkyCell layer the exposure contributes to during MVM processing.
+**output SkyCell layer** the exposure contributes to during MVM processing.
 
 
-Generate Input File
---------------------
+Input Poller File
+------------------
 The MVM processing could simply combine whatever input files are present in the current working directory.  However,
 that may result in working with more than 1 SkyCell at a time which can, for some steps, end up requiring more memory
 or disk space than is available on the system.  Therefore, the code relies on an input `poller file` which specifies exactly
-what files should be processed at one time.  This input `poller file` will typically only contain the names of exposures which
-overlap only a single SkyCell regardless of instrument, detector or any other observational configuration.  This file
-is simply an ASCII file with one of 2 formats.
+what files should be processed at one time.  This ASCII CSV-formatted input `poller file` will only contain
+the names of exposures which
+overlap only a single SkyCell regardless of instrument, detector or any other observational configuration.
 
-If all the exposures which are intended to be processed are already in the current working directory, then this file can
-be a simple list of filenames, perhaps even just a subset of what is in the current directory.  This form allows anyone
-to decide what they want to combine together without exposures that are unrelated to their research.  This file gets
-interpreted and converted into the second more informative form by opening each of the input files and extracting the
-necessary supplemental information from header keywords.
-
-Generating one of these basic input files with the filename *skycell_basic_input.out* can be done using commands such as:
+Generating one of these input 'poller' files with the filename *skycell-p1889x07y19_mvm_input.txt* can be done using
+the same SkyCell dictionary defined earlier with the commands:
 
 .. code:: python
 
-    import glob
+    from drizzlepac.haputils import make_poller_files as mpf
 
-    flcs = sorted(glob.glob("hst*fl?.fits"))
-    with open("skycell_basic_input.out", "w") as fout:
-        _ = [fout.write(f"{fname}\n") for fname in flcs]
+    with open('skycell-p1889x07y19_input.txt', 'w') as fout:
+        _ = [fout.write(f'{file}\n') for file in p1889_scells['skycell-p1889x07y19'].members]
 
-This file can then be used as input to the top-level MVM processing code using:
+    mpf.generate_poller_file('skycell-p1889x07y19_input.txt',
+                             poller_file_type='mvm',
+                             output_poller_filename='skycell-p1889x07y19_mvm_input.txt',
+                             skycell_name='skycell-p1889x07y19')
+
+
+The full description of the function used to create this poller file can be found in the
+:ref:`Multi-visit Processing Code API documentation <multivisit_api.rst>`.
+
+This input file *skycell-p1889x07y19_mvm_input.txt* can then be used as input to the top-level MVM processing code using:
 
 .. code:: python
 
     from drizzlepac import hapmultisequencer
-    rv = hapmultisequencer.run_mvm_processing(input_filename)
+    rv = hapmultisequencer.run_mvm_processing("skycell-p1889x07y19_mvm_input.txt")
 
+The `poller file` contains 1 line for each input exposure for a given SkyCell.  The form of the file, though,
+is a comma-separated (CSV) formatted file with all the same information as the SVM input files plus a couple of
+extra columns; namely,
 
-This second form of the `poller file` gets generated during standard HST pipeline processing and also
-contains 1 line for each input exposure for a given SkyCell.  The form of the file, though, is a comma-separated (CSV)
-formatted file with all the same information as the SVM input files plus a couple of extra columns; namely,
-
-  * skycell ID
+  * SkyCell ID
   * status of MVM processing
 
 An example of an exposure's line in the poller file would be:
 
 .. code-block::
 
-  hst_14175_01_wfc3_uvis_f814w_icz901ws_flc.fits,14175,CZ9,01,1390.0,F814W,UVIS,skycell-p1101x11y05,NEW,/ifs/archive/dev/processing/hla/home/mburger/multivisits/mv_results_2021-11-26/icz901/hst_14175_01_wfc3_uvis_f814w_icz901ws_flc.fits
+  hst_12286_0r_acs_wfc_f775w_jbl70rtv_flc.fits,12286,BL7,0R,486.0,F775W,WFC,skycell-p1889x07y19,NEW,g:\data\mvm\p1889x07y19\hst_12286_0r_acs_wfc_f775w_jbl70rtv_flc.fits
 
 where the elements of each line are defined as:
 
@@ -280,22 +393,9 @@ where the elements of each line are defined as:
 The SkyCell ID will be included in this input information to allow for grouping of exposures into the same SkyCell layer based on filter, exptime, and year.
 
 The value of **'NEW'** specifies that this exposure should be considered as never having been combined into this SkyCell's
-mosaic before.  A value of **'OLD'** instead marks allows the code to recognize layers that are unaffected by 'NEW' data so
+mosaic before.  A value of **'OLD'** instead allows the code to recognize layers that are unaffected by 'NEW' data so
 that those layers can be left alone and NOT processed again unnecessarily.  As such, it can serve as a useful summary of all
 the input exposures used to generate the mosaics for the SkyCell.
-
-These files can be generated interactively from the basic input file generated above using:
-
-.. code:: python
-
-    from drizzlepac.haputils import make_poller_files as mpf
-
-    mpf.generate_poller_file("skycell_basic_input.out",
-                             poller_file_type='mvm',
-                             output_poller_filename="skycell_poller_file.out",
-                             skycell_name="skycell-p1101x11y05")
-
-Either of these files would be suitable inputs for the primary MVM interface that performs the rest of the processing.
 
 
 Primary MVM Processing Interface
@@ -309,11 +409,11 @@ MVM processing gets controlled through a single function:
     rv = hapmultisequencer.run_mvm_processing(input_filename)
 
 This function takes as either form of the input file generated for the input exposures in the current directory
-as the input parameter `input_filename`.  This function then performs all the following processing steps automatically to
+as the input parameter `input_filename`.  This function then performs all the processing steps automatically to
 generate the image mosaics from the exposures listed in the input file.
 
-There are times, though, when the default processing need to be revised to account for the science goals of the
-processing or to account for the exposures available as inputs.  These environmental variables can be used to control
+There are times, though, when the default processing needs to be revised to account for the science goals of the
+processing or to account for the exposures available as inputs.  The following environmental variables can be used to control
 how the MVM processing deals with various types of input files:
 
 MVM_INCLUDE_SMALL
@@ -367,12 +467,12 @@ with only those layers with at least 1 'NEW' entry getting defined for processin
 
 Create SkyCell Mosaics
 ----------------------
-The interpretation of the input files performed to this point has resulted in the definition of the image products that
-need to be created by combining the exposures specified for processing.  These mosaics get generated by drizzling the
+The input files get interpreted to define the image products that
+need to be created when combining the exposures.  These mosaics get generated by drizzling the
 input exposures onto the WCS defined for the SkyCell, creating a separate mosaic for each layer from all the exposures
 with the same filter/detector/instrument configuration.
 
-The drizzle parameters used to create these products get determined based on the average number of exposures for all the
+The drizzle parameters used to create these products are determined based on the average number of exposures for all the
 exposed pixels in the SkyCell layer.  This only serves as an approximation of what would work best across the entire
 SkyCell layer, as some portions may only have a single exposure while other regions may have many overlapping exposures.
 However, this still works reasonably well due to the fact the only the following drizzle steps are actually applied when

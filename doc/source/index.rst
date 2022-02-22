@@ -153,10 +153,11 @@ Combining data across visits to create mosaics for every observed location on th
   :maxdepth: 2
 
   Multi-Visit Mosaic Processing <multivisit.rst>
+  multivisit_api.rst
 
   makecustommosaic.rst
-  mvmutilities_api.rst
   mvmutilities.rst
+  mvmutilities_api.rst
 
 
 Indices and tables
