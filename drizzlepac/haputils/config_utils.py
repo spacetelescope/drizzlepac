@@ -275,11 +275,13 @@ class HapConfig(object):
                                                                         phot_mode,
                                                                         ci_lower_limit,
                                                                         ci_dict["ci_lower_limit"]))
-        log.info("NOTE: The 'lookup_ci_limits_from_table' setting in the 'quality control'>'{}' section of "
-                 "the parameters for filter image {} is set to 'True'. This means that any custom user-tuned "
-                 "values for 'ci_upper_limit' and 'ci_lower_limit' will be overwritten. To prevent this, "
-                 "please set 'lookup_ci_limits_from_table' to 'False' in the custom parameter file "
-                 "{}".format(phot_mode, prod_obj.drizzle_filename, self.output_custom_pars_file))
+        if self.output_custom_pars_file:
+            log.info("NOTE: The 'lookup_ci_limits_from_table' setting in the 'quality control'>'{}' section "
+                     "of the parameters for filter image {} is set to 'True'. This means that any custom "
+                     "user-tuned values for 'ci_upper_limit' and 'ci_lower_limit' will be overwritten. To "
+                     "prevent this, please set 'lookup_ci_limits_from_table' to 'False' in the custom "
+                     "parameter file {}".format(phot_mode, prod_obj.drizzle_filename,
+                                                self.output_custom_pars_file))
 
         # update CI values
         self.pars['quality control'].outpars['ci filter'][phot_mode]['ci_lower_limit']= ci_dict["ci_lower_limit"]
