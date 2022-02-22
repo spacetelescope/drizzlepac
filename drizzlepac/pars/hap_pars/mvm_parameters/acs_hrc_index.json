@@ -1,0 +1,20 @@
+{
+    "alignment": {
+        "all": "acs/hrc/acs_hrc_alignment_all.json"
+    },
+    "astrodrizzle": {
+        "acs_hrc_any_post_n2": "acs/hrc/acs_hrc_astrodrizzle_any_n2.json",
+        "acs_hrc_any_post_n4": "acs/hrc/acs_hrc_astrodrizzle_any_n4.json",
+        "acs_hrc_any_post_n6": "acs/hrc/acs_hrc_astrodrizzle_any_n6.json",
+        "any_n1": "any/any_astrodrizzle_n1.json",
+        "filter_basic": "any/any_astrodrizzle_filter_hap_basic.json",
+        "single_basic": "any/any_astrodrizzle_single_hap_basic.json",
+        "total_basic": "acs/hrc/acs_hrc_astrodrizzle_any_total.json"
+    },
+    "catalog generation": {
+        "all": "acs/hrc/acs_hrc_catalog_generation_all.json"
+    },
+    "quality control": {
+        "all": "acs/hrc/acs_hrc_quality_control_all.json"
+    }
+}

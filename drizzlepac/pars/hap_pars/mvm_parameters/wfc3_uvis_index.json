@@ -1,0 +1,24 @@
+{
+    "alignment": {
+        "all": "wfc3/uvis/wfc3_uvis_alignment_all.json"
+    },
+    "astrodrizzle": {
+        "any_n1": "any/any_astrodrizzle_n1.json",
+        "filter_basic": "any/any_astrodrizzle_filter_hap_basic.json",
+        "single_basic": "any/any_astrodrizzle_single_hap_basic.json",
+        "total_basic_pre": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_total_pre2012.json",
+        "total_basic_post": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_total.json",
+        "wfc3_uvis_any_pre_n2": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_pre2012_n2.json",
+        "wfc3_uvis_any_pre_n4": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_pre2012_n4.json",
+        "wfc3_uvis_any_pre_n6": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_pre2012_n6.json",
+        "wfc3_uvis_any_post_n2": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_n2.json",
+        "wfc3_uvis_any_post_n4": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_n4.json",
+        "wfc3_uvis_any_post_n6": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_n6.json"
+    },
+    "catalog generation": {
+        "all": "wfc3/uvis/wfc3_uvis_catalog_generation_all.json"
+    },
+    "quality control": {
+        "all": "wfc3/uvis/wfc3_uvis_quality_control_all.json"
+    }
+}
