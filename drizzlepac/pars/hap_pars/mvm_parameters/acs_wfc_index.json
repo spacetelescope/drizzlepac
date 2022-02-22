@@ -6,7 +6,7 @@
         "acs_wfc_any_n2": "acs/wfc/acs_wfc_astrodrizzle_any_n2.json",
         "acs_wfc_any_n4": "acs/wfc/acs_wfc_astrodrizzle_any_n4.json",
         "acs_wfc_any_n6": "acs/wfc/acs_wfc_astrodrizzle_any_n6.json",
-        "any_n1": "any/any_astrodrizzle_n1.json",
+        "any_n1": "acs/wfc/acs_wfc_astrodrizzle_any_n1.json",
         "filter_basic": "any/any_astrodrizzle_filter_hap_basic.json",
         "single_basic": "any/any_astrodrizzle_single_hap_basic.json",
         "total_basic": "acs/wfc/acs_wfc_astrodrizzle_any_total.json"
