@@ -165,12 +165,16 @@ class HapConfig(object):
                 self.filters = prod_obj.edp_list[0].filters
                 if self.instrument == "acs":
                     if self.detector == "hrc":
-                        if n_exp in [2, 3]:
-                            self.conditions.append("acs_hrc_any_n2")
-                        if n_exp in [4, 5]:
-                            self.conditions.append("acs_hrc_any_n4")
-                        if n_exp >= 6:
-                            self.conditions.append("acs_hrc_any_n6")
+                        if self.hap_pipeline_name == 'mvm':
+                            if n_exp > 1:
+                                self.conditions.append("acs_hrc_any_n2")
+                        if self.hap_pipeline_name == 'svm':
+                            if n_exp in [2, 3]:
+                                self.conditions.append("acs_hrc_any_n2")
+                            if n_exp in [4, 5]:
+                                self.conditions.append("acs_hrc_any_n4")
+                            if n_exp >= 6:
+                                self.conditions.append("acs_hrc_any_n6")
                     elif self.detector == "sbc":
                         if self.filters.lower() in ["f115lp", "f122m"]:
                             if n_exp in [2, 3, 4, 5]:
@@ -183,12 +187,16 @@ class HapConfig(object):
                             if n_exp >= 6:
                                 self.conditions.append("acs_sbc_any_n6")
                     elif self.detector == "wfc":
-                        if n_exp in [2, 3]:
-                            self.conditions.append("acs_wfc_any_n2")
-                        if n_exp in [4, 5]:
-                            self.conditions.append("acs_wfc_any_n4")
-                        if n_exp >= 6:
-                            self.conditions.append("acs_wfc_any_n6")
+                        if self.hap_pipeline_name == 'mvm':
+                            if n_exp > 1:
+                                self.conditions.append("acs_wfc_any_n2")
+                        if self.hap_pipeline_name == 'svm':
+                            if n_exp in [2, 3]:
+                                self.conditions.append("acs_wfc_any_n2")
+                            if n_exp in [4, 5]:
+                                self.conditions.append("acs_wfc_any_n4")
+                            if n_exp >= 6:
+                                self.conditions.append("acs_wfc_any_n6")
                     else:
                         log.error("{} is an invalid ACS detector!".format(self.detector))
                         sys.exit(1)
@@ -200,30 +208,37 @@ class HapConfig(object):
                             if n_exp >= 4:
                                 self.conditions.append("wfc3_ir_grism_n4")
                         else:
-                            if n_exp in [2, 3]:
-                                self.conditions.append("wfc3_ir_any_n2")
-                            if n_exp >= 4:
-                                self.conditions.append("wfc3_ir_any_n4")
+                            if self.hap_pipeline_name == 'mvm':
+                                if n_exp > 1:
+                                    self.conditions.append("wfc3_ir_any_n2")
+                            if self.hap_pipeline_name == 'svm':
+                                if n_exp in [2, 3]:
+                                    self.conditions.append("wfc3_ir_any_n2")
+                                if n_exp >= 4:
+                                    self.conditions.append("wfc3_ir_any_n4")
                     elif self.detector == "uvis":
-                        thresh_time = Time("2012-11-08T02:59:15", format='isot', scale='utc').mjd
-                        # Get the MJDUTC of the first exposure in the filter exposure product list. While
-                        # each exposure will have its own MJDUTC (the EXPSTART keyword), this is probably
-                        # granular enough.
-                        mjdutc = prod_obj.edp_list[0].mjdutc
-                        if mjdutc >= thresh_time:
-                            if n_exp in [2, 3]:
-                                self.conditions.append("wfc3_uvis_any_post_n2")
-                            if n_exp in [4, 5]:
-                                self.conditions.append("wfc3_uvis_any_post_n4")
-                            if n_exp >= 6:
-                                self.conditions.append("wfc3_uvis_any_post_n6")
-                        else:
-                            if n_exp in [2, 3]:
-                                self.conditions.append("wfc3_uvis_any_pre_n2")
-                            if n_exp in [4, 5]:
-                                self.conditions.append("wfc3_uvis_any_pre_n4")
-                            if n_exp >= 6:
-                                self.conditions.append("wfc3_uvis_any_pre_n6")
+                        if self.hap_pipeline_name == 'mvm':
+                            self.conditions.append("wfc3_uvis_any_post_n2")
+                        if self.hap_pipeline_name == 'svm':
+                            thresh_time = Time("2012-11-08T02:59:15", format='isot', scale='utc').mjd
+                            # Get the MJDUTC of the first exposure in the filter exposure product list. While
+                            # each exposure will have its own MJDUTC (the EXPSTART keyword), this is probably
+                            # granular enough.
+                            mjdutc = prod_obj.edp_list[0].mjdutc
+                            if mjdutc >= thresh_time:
+                                if n_exp in [2, 3]:
+                                    self.conditions.append("wfc3_uvis_any_post_n2")
+                                if n_exp in [4, 5]:
+                                    self.conditions.append("wfc3_uvis_any_post_n4")
+                                if n_exp >= 6:
+                                    self.conditions.append("wfc3_uvis_any_post_n6")
+                            else:
+                                if n_exp in [2, 3]:
+                                    self.conditions.append("wfc3_uvis_any_pre_n2")
+                                if n_exp in [4, 5]:
+                                    self.conditions.append("wfc3_uvis_any_pre_n4")
+                                if n_exp >= 6:
+                                    self.conditions.append("wfc3_uvis_any_pre_n6")
                     else:
                         log.error("{} is an invalid WFC3 detector!".format(self.detector))
                         sys.exit(1)
@@ -234,7 +249,7 @@ class HapConfig(object):
             self.conditions = ["single_basic"]
             if prod_obj.is_singleton:
                 self.conditions.append("any_n1")
-
+        print(">>>>>>>", self.conditions)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def _update_ci_values_from_file(self, prod_obj, phot_mode, log_level=logutil.logging.NOTSET):
         """Update Concentration Index upper and lower limits in the "quality control" section of the
