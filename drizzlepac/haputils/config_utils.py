@@ -6,7 +6,6 @@ given the specified observation conditions and instrument/detector used in the o
 import collections
 import json
 import os
-import pdb
 import sys
 
 from astropy.time import Time
@@ -607,7 +606,6 @@ def read_index(hap_pipeline_name, instrument, detector):
     # Define name of index appropriate for observing mode
     cfg_index_filename = "{}_index.json".format(inst_det)
     cfg_index_filename = os.path.join(pars_dir, cfg_index_filename)
-    print(">>>>>> cfg_index_filename : ", cfg_index_filename)
     # Read JSON index file
     with open(cfg_index_filename) as json_file:
         json_string = json_file.read()
