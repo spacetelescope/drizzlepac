@@ -211,9 +211,9 @@ class HapDiagnostic(object):
             time_since_epoch = time.time()
         self.out_dict['general information']['seconds since epoch'] = time_since_epoch
         # add git commit id
-        reporootpath = "/"
-        for item in __file__.split("/")[0:-3]:
-            reporootpath = os.path.join(reporootpath, item)
+        reporootpath = os.path.dirname(__file__)
+        for i in range(2):
+            reporootpath = os.path.dirname(reporootpath)
         self.out_dict['general information']['commit id'] = get_git_rev_info.get_rev_id(reporootpath)
         del reporootpath
         # add data_source and description # TODO: THESE MAY BE REMOVED LATER ON

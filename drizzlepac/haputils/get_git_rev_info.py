@@ -62,9 +62,17 @@ def print_rev_id(local_repo_path):
             log.info("{}".format(streamline.strip()))
 
         log.info("\n===== Most Recent Commit =====")
-        instream = os.popen('git log |head -1')
-        for streamline in instream:
-            log.info("{}\n".format(streamline.strip()))
+        if 'win' in sys.platform:
+            # for Windows, 'head' command doesn't exist
+            instream = os.popen('git log --oneline |more')
+            for line in instream:
+                log.info("{}\n".format(instream[0].strip()))
+                # Only print out first entry, then quit
+                break
+        else:
+            instream = os.popen('git log |head -1')
+            for streamline in instream:
+                log.info("{}\n".format(streamline.strip()))
 
         rv = 0
 
@@ -99,13 +107,19 @@ def get_rev_id(local_repo_path):
     try:
         os.chdir(local_repo_path)
 
-        instream = os.popen("git --no-pager log --max-count=1 | head -1")
-        for streamline in instream.readlines():
-            streamline = streamline.strip()
-            if streamline.startswith("commit "):
-                rv = streamline.replace("commit ", "")
-            else:
-                raise ValueError("Git revision information not found.")
+        if 'win' not in sys.platform:
+            instream = os.popen("git --no-pager log --max-count=1 | head -1")
+            for streamline in instream.readlines():
+                streamline = streamline.strip()
+                if streamline.startswith("commit "):
+                    rv = streamline.replace("commit ", "")
+                else:
+                    raise ValueError("Git revision information not found.")
+        else:
+            instream = os.popen("git --no-pager log --max-count=1 | more")
+            for streamline in instream.readlines():
+                rv = streamline.split(' ')[0]
+                break
     except Exception:
         log.warning("Problem encountered getting git revision ID")
     finally:

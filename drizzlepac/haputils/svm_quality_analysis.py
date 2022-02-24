@@ -1044,7 +1044,7 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
     log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(img_obj.kernel_fwhm,
                                                               nsigma, img_obj.bkg_rms_median))
     daofind = DAOStarFinder(fwhm=img_obj.kernel_fwhm, threshold=nsigma * img_obj.bkg_rms_median)
-    sources = daofind(image, mask=exclusion_mask)
+    sources = Table(daofind(image, mask=exclusion_mask))
     cat_name = filt_obj.product_basename + "_point-cat-fxm.ecsv"
 
     return {"filt_obj": filt_obj, "sources": sources, "cat_name": cat_name}
