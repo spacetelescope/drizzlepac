@@ -372,7 +372,8 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
             # The catalog of observable sources must have at least MIN_OBSERVABLE_THRESHOLD entries to be useful
             total_num_sources = 0
             for chipnum in table.keys():
-                total_num_sources += len(table[chipnum])
+                if table[chipnum] is not None:
+                    total_num_sources += len(table[chipnum])
 
             # Update filtered table with number of found sources
             alignment_table.filtered_table[index]['foundSources'] = total_num_sources
