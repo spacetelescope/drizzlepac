@@ -3,7 +3,7 @@
         "all": "wfc3/ir/wfc3_ir_alignment_all.json"
     },
     "astrodrizzle": {
-        "any_n1": "any/any_astrodrizzle_n1.json",
+        "any_n1": "wfc3/ir/wfc3_ir_astrodrizzle_any_n1.json",
         "filter_basic": "any/any_astrodrizzle_filter_hap_basic.json",
         "single_basic": "any/any_astrodrizzle_single_hap_basic.json",
         "total_basic": "wfc3/ir/wfc3_ir_astrodrizzle_any_total.json",
