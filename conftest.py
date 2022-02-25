@@ -11,3 +11,4 @@ def pytest_addoption(parser):
     parser.addoption("--start_row", action="store", default=0)
     parser.addoption("--num_rows", action="store", default=5)
     parser.addoption("--master_list", action="store", default="ACSWFC3ListDefault50.csv")
+    parser.addoption("--svm_list", action="store", default="svm_input.lst")

@@ -3,55 +3,49 @@
     the Single Visit Mosaic pipeline.
     """
 import datetime
-import traceback
+import glob
 import os
 import shutil
 import sys
+import traceback
 import numpy as np
-from astropy.table import Table
 import pytest
-import logging
-from importlib import reload
-import glob
 
-from stsci.tools import logutil
-from astropy.table import Table
-
+from astropy.io import ascii
 from drizzlepac import runsinglehap
-
-
-log = logutil.create_logger('test_run_svmpoller', level=logutil.logging.INFO, stream=sys.stdout)
+from astropy.table import Table
+from drizzlepac.haputils import astroquery_utils as aqutils
+from importlib import reload
 
 
 def pytest_generate_tests(metafunc):
     """Get the command line options."""
 
-    # The input master_list option should be given a fully qualified filename
-    master_list = metafunc.config.option.master_list
+    # The input svm_list option should be given a fully qualified filename
+    svm_list = metafunc.config.option.svm_list
 
     # The list containing the poller filenames must exist in the current working directory
-    if not os.path.exists(master_list):
+    if not os.path.exists(svm_list):
         # If not, copy the default file from the installation directory
         # Find where this module has been installed.
         install_dir = os.path.dirname(__file__)
-        default_file = os.path.join(install_dir, master_list)
+        default_file = os.path.join(install_dir, svm_list)
         if os.path.exists(default_file):
             # Copy the file
             shutil.copy2(default_file, os.getcwd())
 
-    # Read the master_list to get the poller fully qualified filenames
-    table = Table.read(master_list, format="ascii.fast_no_header")
-    poller_fqfile_list = table["col1"].tolist()
+    # Read the svm_list to get the poller filenames
+    table = Table.read(svm_list, format="ascii.fast_no_header")
+    poller_file_list = table["col1"].tolist()
 
-    print("Input file: {}".format(master_list))
-    print("List of poller files: {}".format(poller_fqfile_list))
-    metafunc.parametrize('dataset', poller_fqfile_list)
+    print("Input file: {}".format(svm_list))
+    print("List of poller files: {}".format(poller_file_list))
+    metafunc.parametrize('dataset', poller_file_list)
 
 
 @pytest.mark.bigdata
 @pytest.mark.slow
 @pytest.mark.unit
-@pytest.mark.skip
 def test_run_svmpoller(tmpdir, dataset):
     """ Tests to read a series of poller files and process the contents of each as Single Visit Mosaic
 
@@ -60,28 +54,33 @@ def test_run_svmpoller(tmpdir, dataset):
         Success Criteria:
             The SVM processing returns a value of 0: Success or 1: Failure
 
-        The input master_list file is a list of poller filenames, one filename per line.
+        The input svm_list file is a list of poller filenames, one filename per line.
         Each poller file must be obtained from a specified directory and read to obtain the
         names of the data files which need to be processed.
 
         This test file can be executed in the following manner:
             $ pytest -n # -s --basetemp=/internal/hladata/yourUniqueDirectoryHere --bigdata --slow
-              --master_list /internal/hladata/input/master_poller_list.txt test_run_svmpoller.py >&
-              test_svmpoller_output.txt &
+              --svm_list svm_input.lst test_run_svmpoller.py >& test_svmpoller_output.txt &
             $ tail -f test_svmpoller_output.txt
           * The `-n #` option can be used to run tests in parallel if `pytest-xdist` has
             been installed where `#` is the number of cpus to use. THIS IS NOT ADVISED FOR USE.
           * Note: When running this test, the `--basetemp` directory should be set to a unique
             existing directory to avoid deleting previous test output.
-          * A default master list exists in the tests/hla directory and contains 121 datasets.  This
-            is probably NOT the list you want to use, but it allows you to see what this file should
-            contain.
+          * A default master list, svm_input.lst, exists in the tests/hla directory and contains 3 datasets.
+            This specific list may NOT the list you want to use, but it allows you to see what this file
+            should contain.  Please note the PyTests should be kept to runtimes which are not
+            excessive.
 
     """
     print("TEST_RUN_SVMPOLLER. Dataset: ", dataset)
 
     current_dt = datetime.datetime.now()
     print(str(current_dt))
+
+    # Create working directory specified for the test
+    #install_dir = os.path.dirname(__file__)
+    #local_path = os.path.join(install_dir, dataset)
+    #os.chdir(install_dir)
 
     subdir = ""
     prevdir = os.getcwd()
@@ -97,45 +96,74 @@ def test_run_svmpoller(tmpdir, dataset):
 
     try:
 
-        # The dataset variable is a fully qualified poller file (CSV) with no header
-        # Copy the poller file to the current working directory
-        shutil.copy2(dataset, ".")
+        # Read the CSV poller file residing in the tests directory to extract the individual visit FLT/FLC filenames
+        path = os.path.join(os.path.dirname(__file__), dataset)
+        table = ascii.read(path, format="no_header")
+        filename_column = table.colnames[0]
+        filenames = list(table[filename_column])
+        print("\nread_csv_for_filenames. Filesnames from poller: {}".format(filenames))
 
-        # Get the poller file path, as well as its simple name
-        poller_path = os.path.dirname(dataset)
-        poller_file = os.path.basename(dataset)
-        table = Table.read(poller_file, format="ascii")
+        # Establish FLC/FLT lists and obtain the requested data
+        flc_flag = ""
+        flt_flag = ""
+        # In order to obtain individual FLC or FLT images from MAST (if the files are not reside on disk) which
+        # may be part of an ASN, use only IPPPSS with a wildcard.  The unwanted images have to be removed
+        # after-the-fact.
+        for fn in filenames:
+            if fn.lower().endswith("flc.fits") and flc_flag == "":
+                flc_flag = fn[0:6] + "*"
+            elif fn.lower().endswith("flt.fits") and flt_flag == "":
+                flt_flag = fn[0:6] + "*"
+     
+            # If both flags have been set, then break out the loop early.  It may be
+            # that all files have to be checked which means the for loop continues
+            # until its natural completion.
+            if flc_flag and flt_flag:
+                break
 
-        # Column "col8" contains fully qualified constituent filenames for the single visit, and
-        # the fully qualified path designated in the poller file is the shared cache.
-        file_list = table["col8"].tolist()
+        # Get test data through astroquery - only retrieve the pipeline processed FLC and/or FLT files
+        # (e.g., j*_flc.fits) as necessary. The logic here and the above for loop is an attempt to
+        # avoid downloading too many images which are not needed for processing.
+        flcfiles = []
+        fltfiles = []
+        if flc_flag:
+            flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
+        if flt_flag:
+            fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
 
-        # Check if the files to be processed are in the same directory as poller
-        # directory, otherwise they need to be copied from the on-line cache
-        for full_filename in file_list:
-            filename = os.path.basename(full_filename)
-            log.info("Looking for file {}".format(filename))
-            local_path = os.path.join(poller_path, filename)
-            if os.path.exists(local_path):
-                shutil.copy2(local_path, ".")
-            else:
-                shutil.copy2(full_filename, ".")
+        flcfiles.extend(fltfiles)
 
-        log.info("Obtained all input files for dataset {}.".format(dataset))
+        # Keep only the files which exist in BOTH lists for processing
+        files_to_process= set(filenames).intersection(set(flcfiles))
 
-        # Run SVM pipeline processing
-        return_value = runsinglehap.perform(poller_file)
+        # Identify unwanted files from the download list and remove from disk
+        files_to_remove = set(filenames).symmetric_difference(set(flcfiles))
 
-    # Catch anything that happens as this dataset will be considered a failure, but
-    # the processing of datasets should continue.  This is meant to catch
-    # unexpected errors and generate sufficient output exception
-    # information so algorithmic problems can be addressed.
+        try:
+            for ftr in files_to_remove:
+               os.remove(ftr)
+        except Exception as x_cept:
+            print("")
+            print("Exception encountered: {}.".format(x_cept))
+            print("The file {} could not be deleted from disk. ".format(ftr))
+            print("Remove files which are not used for processing from disk manually.")
+
+        # Run the SVM processing
+        path = os.path.join(os.path.dirname(__file__), dataset)
+
+        return_value = runsinglehap.perform(path)
+
+    # Catch anything that happens and report it.  This is meant to catch unexpected errors and
+    # generate sufficient output exception information so algorithmic problems can be addressed.
     except Exception as except_details:
         traceback.print_exc()
         pytest.fail("TEST_RUN_SVMPOLLER. Exception Dataset: {}\n", dataset)
         return_value = 1
 
     assert return_value == 0
+
+    current_dt = datetime.datetime.now()
+    print(str(current_dt))
 
     # Return to original directory
     os.chdir(prevdir)
