@@ -15,7 +15,6 @@ from astropy.io import ascii
 from drizzlepac import runsinglehap
 from astropy.table import Table
 from drizzlepac.haputils import astroquery_utils as aqutils
-from importlib import reload
 
 
 def pytest_generate_tests(metafunc):
@@ -76,11 +75,6 @@ def test_run_svmpoller(tmpdir, dataset):
 
     current_dt = datetime.datetime.now()
     print(str(current_dt))
-
-    # Create working directory specified for the test
-    #install_dir = os.path.dirname(__file__)
-    #local_path = os.path.join(install_dir, dataset)
-    #os.chdir(install_dir)
 
     subdir = ""
     prevdir = os.getcwd()
