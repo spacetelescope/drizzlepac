@@ -13,7 +13,7 @@ a Python session for interactive data analysis.
 
 hapmultisequencer
 ---------------------
-Primary user interface for performing MVM processing.
+This module provides the primary user interface for performing MVM processing.
 
 .. automodule:: drizzlepac.hapmultisequencer
 .. autofunction:: drizzlepac.hapmultisequencer.run_mvm_processing

@@ -802,6 +802,17 @@ class GridDefs(object):
 
 
 class ProjectionCell(object):
+    """
+    Class which defines a projection cell product based on the
+    position on the sky using the PanSTARRs-derived definitions.
+
+    This class has the following members for defining the projection cell:
+
+        * **wcs** : astropy.wcs.WCS object defining the WCS for the cell
+        * **footprint** : footprint of the projection cell on the sky from **wcs.calc_footprint()**
+        * **corners** : (RA, DEC) of the corners of the projection cell on the sky.
+
+    """
 
     def __init__(self, index=None, band=None, scale=None,
                         nxy=None, overlap=None):
@@ -809,6 +820,30 @@ class ProjectionCell(object):
 
         If `band` is not specified, it will open the grid definitions file to
         obtain the band definition for the cell with the specified `index`.
+
+        Parameters
+        ----------
+        index : int
+            ProjectionCell index on the sky
+
+        band : list, optional
+            Definition of spacing of projection cells along a line
+            of constant declination.  These defintions, if not
+            provided, are extracted from the projection cell FITS table.
+
+        scale : float, optional
+            Plate scale to use for defining the projection cell WCS.
+           If not specified here,
+            will use values from the projection cell FITS table *'PC_SCALE'* header keyword.
+
+        nxy : int, optional
+            Number of sky cells in X and Y to use in subdividing the projection cell.
+            If not specified here,
+            will use values from the projection cell FITS table *'SC_NXY'* header keyword.
+
+        overlap : int, optional
+            Number of pixels of overlap between sky cells.  If not specified here,
+            will use values from the projection cell FITS table *'SC_OLAP'* header keyword.
 
         """
         self.scale = scale
@@ -961,6 +996,19 @@ class ProjectionCell(object):
 
 
 class SkyCell(object):
+    """ Definition of the sky cell within a ProjectionCell object.
+
+    This class defines the following attributes of a sky cell:
+
+      * **sky_cell_id** : string representation of the sky cell ID
+      * **projection_cell** : name of projection cell this sky cell belongs to
+      * **wcs** : astropy.wcs.WCS definition of the WCS of this sky cell as a
+              subarray within the tangent plane defined by the projection
+              cell's WCS
+      * **corners** : (RA, Dec) array of the edges of the exposures within the sky cell
+      * **mask** : polygon representation exposures within the sky cell
+
+    """
 
     def __init__(self, projection_cell=None, x=None, y=None, scale="fine"):
         """Define sky cell at position x,y within projection cell.
