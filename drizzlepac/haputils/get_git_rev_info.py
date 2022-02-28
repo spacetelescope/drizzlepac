@@ -66,7 +66,7 @@ def print_rev_id(local_repo_path):
             # for Windows, 'head' command doesn't exist
             instream = os.popen('git log --oneline |more')
             for line in instream:
-                log.info("{}\n".format(instream[0].strip()))
+                log.info("{}\n".format(line.strip()))
                 # Only print out first entry, then quit
                 break
         else:
