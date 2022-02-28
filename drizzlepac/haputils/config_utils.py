@@ -154,10 +154,16 @@ class HapConfig(object):
             else:
                 self.conditions = ["total_basic"]
             if n_exp == 1:
+                # For all situations involving just a single exposure regardless of the instrument/detector
+                # used or any other factors, the "any_n1" condition is set, which maps to the
+                # instrument/detector-generic any_astrodrizzle_n1.json param file.
                 self.conditions.append("any_n1")
         elif hasattr(prod_obj, "edp_list") and not hasattr(prod_obj, "fdp_list"):  # For filter products
             self.conditions = ["filter_basic"]
             if n_exp == 1:
+                # For all situations involving just a single exposure regardless of the instrument/detector
+                # used or any other factors, the "any_n1" condition is set, which maps to the
+                # instrument/detector-generic any_astrodrizzle_n1.json param file.
                 self.conditions.append("any_n1")
             else:
                 # Get the filter of the first exposure in the filter exposure product list.  The filter
