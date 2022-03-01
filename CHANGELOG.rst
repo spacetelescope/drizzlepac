@@ -36,8 +36,6 @@ New features added in this version include:
 - Tools for generating cutouts of MVM products found in the
   `drizzlepac/haputils/hapcut_utils.py` module.
 
-
-
 The most significant revisions and bug fixes that affect
 output products of this version of the code include:
 
@@ -72,6 +70,29 @@ output products of this version of the code include:
   when performing a posteriori alignment to GAIA. [#1220]
 
 - Add explicit dependency on spherical-geometry package. [#1232]
+
+- update how make_poller_files.py generates visit numbers. [#1221]
+
+- Insure both FLT and FLC headers have same a posteriori fit keywords. [#1238]
+
+- MVM: Make tool to quantify quality of GAIA alignment generic for general use. [#1241]
+
+- Fix logic to not align grism data in standard pipeline. [#1243]
+
+- Remove nictools as a dependency for this package. [#1245]
+
+- RickerWavelet Kernel for SBC to separate crowded PSFS needs to have
+  dimensions which are odd [#1246]
+
+- Refine headers for filter and total products to allow keywords like IPPPSSOO and ASN_ID
+  which only apply to single exposures
+  (or data from the same ASN) to be removed from SVM filter and total drizzle products and
+  from MVM layers drizzle products  [#1249]
+
+- Remove logic from align that related to checking for alignment results in align.py
+  when it was not necessary so that more data can successfully align to GAIA. [#1250]
+
+- Add support for using astropy 5.0. [#1280]
 
 
 3.3.1 (19-Nov-2021)
