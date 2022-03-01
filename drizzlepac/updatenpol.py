@@ -65,7 +65,7 @@ C version of MultiDrizzle (astrodrizzle).
 """
 __docformat__ = 'restructuredtext'
 
-__taskname__ = "updatenpol"
+__taskname__ = "drizzlepac.updatenpol"
 
 import os,sys,shutil
 
@@ -357,50 +357,6 @@ if __name__ == "__main__":
     DAMAGE.
 """
 
-def help(file=None):
-    """
-    Print out syntax help for running astrodrizzle
-
-    Parameters
-    ----------
-    file : str (Default = None)
-        If given, write out help to the filename specified by this parameter
-        Any previously existing file with this name will be deleted before
-        writing out the help.
-
-    """
-    helpstr = getHelpAsString(docstring=True, show_ver = True)
-    if file is None:
-        print(helpstr)
-    else:
-        if os.path.exists(file): os.remove(file)
-        f = open(file, mode = 'w')
-        f.write(helpstr)
-        f.close()
-
-
-def getHelpAsString(docstring = False, show_ver = True):
-    """
-    return useful help from a file in the script directory called
-    __taskname__.help
-
-    """
-    install_dir = os.path.dirname(__file__)
-    taskname = util.base_taskname(__taskname__, '')
-    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
-    helpfile = os.path.join(install_dir, taskname + '.help')
-
-    if docstring or (not docstring and not os.path.exists(htmlfile)):
-        if show_ver:
-            helpString = f"\n{__taskname__} Version {__version__}\n"
-        else:
-            helpString = ''
-        if os.path.exists(helpfile):
-            helpString += teal.getHelpFileAsString(taskname, __file__)
-        else:
-            if __doc__ is not None:
-                helpString += __doc__ + os.linesep
-    else:
-        helpString = 'file://' + htmlfile
-
-    return helpString
+util._def_help_functions(
+    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
+)
