@@ -13,7 +13,7 @@ The version of DrizzlePac can be identified using ::
 The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
 of the list).  The number at the end of each item is the Github Pull Request (PR)
-number of the code change for that issue.  These PR's can be viewed at:
+number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
@@ -72,7 +72,7 @@ output products of this version of the code include:
 
 - Add explicit dependency on spherical-geometry package. [#1232]
 
-- update how make_poller_files.py generates visit numbers. [#1221]
+- Update how make_poller_files.py generates visit numbers. [#1221]
 
 - Insure both FLT and FLC headers have same a posteriori fit keywords. [#1238]
 
