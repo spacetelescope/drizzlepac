@@ -12,7 +12,7 @@ The version of DrizzlePac can be identified using ::
 
 The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
-of the list).  Numbers at the end of each item is the Github Pull Request (PR)
+of the list).  The number at the end of each item is the Github Pull Request (PR)
 number of the code change for that issue.  These PR's can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
@@ -22,14 +22,15 @@ number of the code change for that issue.  These PR's can be viewed at:
 ==================
 This major release adds support for multi-visit mosaic (MVM) processing, in
 addition to including numerous revisions to try to align more datasets
-successfully to GAIA during pipeline and (single-visit mosaic) SVM processing.
-Multi-visit mosaics introduce the concept of SkyCells with new code added to define
-these sections on the sky as standardized definitions of mosaics created
+successfully to GAIA during pipeline and single-visit mosaic (SVM) processing.
+Multi-visit mosaics (MVM) introduce the concept of SkyCells with new code added to define
+them.  SkyCells are subarrays of pre-defined tangent planes spaced regularly
+on the sky as standardized definitions of mosaics to be created
 from all HST observations taken of each part of the sky.
 
 New features added in this version include:
 
-- Support for creating multi-visit mosaics (MVMs) as generated
+- Support for creating MVMs as generated
   by the 'drizzlepac/hapmultisequencer.py' module or using the
   new command-line task `runmultihap`.
 
