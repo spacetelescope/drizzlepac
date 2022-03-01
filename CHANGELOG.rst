@@ -6,24 +6,118 @@ DrizzlePac Release Notes
 
 The version of DrizzlePac can be identified using ::
 
-> python
->>> import drizzlepac
->>> drizzlepac.__version__
-
+  > python
+  >>> import drizzlepac
+  >>> drizzlepac.__version__
 
 The following notes provide some details on what has been revised for each
 version in reverse chronological order (most recent version at the top
-of the list).
+of the list).  The number at the end of each item is the Github Pull Request (PR)
+number of the code change for that issue.  These PRs can be viewed at:
 
-3.3.2 (unreleased)
+    https://github.com/spacetelescope/drizzlepac/pulls
+
+
+3.4.0 (unreleased)
 ==================
+This major release adds support for multi-visit mosaic (MVM) processing, in
+addition to including numerous revisions to try to align more datasets
+successfully to GAIA during pipeline and single-visit mosaic (SVM) processing.
+Multi-visit mosaics (MVM) introduce the concept of SkyCells with new code added to define
+them.  SkyCells are subarrays of pre-defined tangent planes spaced regularly
+on the sky as standardized definitions of mosaics to be created
+from all HST observations taken of each part of the sky.
 
-- Detect extension name from WFPC2 flatfield files. [#1193]
+New features added in this version include:
 
-- Refactored the build system to be PEP-517 ad PEP-518 complient. [#1244]
+- Support for creating MVMs as generated
+  by the 'drizzlepac/hapmultisequencer.py' module or using the
+  new command-line task `runmultihap`.
+
+- Tools for generating cutouts of MVM products found in the
+  `drizzlepac/haputils/hapcut_utils.py` module.
+
+The most significant revisions and bug fixes that affect
+output products of this version of the code include:
+
+- Detect extension name from WFPC2 flat-field files. [#1193]
+
+- Refactored the build system to be PEP-517 ad PEP-518 compliant. [#1244]
 
 - Fixed a bug in the drizzle algorithm due to which input pixels with
   zero weights may still contribute to the output image. [#1222]
+
+- Added Sphinx documentation describing tools used for working with
+  MVM products. [#1144, #1150]
+
+- Changed names of "ISO" columns in Segmentation catalog to be unique [#1155]
+
+- Add WCS keyword values to catalog metadata [#1160]
+
+- Enforced a minimum number of cross-matches for alignment to be 4 sources [#1187, #1218]
+
+- Revised 2D background determination for smaller detectors to improve source
+  detection during alignment. [#1187]
+
+- Create empty catalogs when exposures are effectively blank. [#1199]
+
+- Cut processing time from days to minutes for exposures of crowded fields of
+  faint sources or fields dominated by a single large extended source.  [#1198]
+
+- Report correct value of NMATCHES keyword for number of sources actually
+  used in alignment fit to GAIA. [#1217]
+
+- Prevent older distortion models from overriding new distortion models
+  when performing a posteriori alignment to GAIA. [#1220]
+
+- Add explicit dependency on spherical-geometry package. [#1232]
+
+- Update how make_poller_files.py generates visit numbers. [#1221]
+
+- Insure both FLT and FLC headers have same a posteriori fit keywords. [#1238]
+
+- MVM: Make tool to quantify quality of GAIA alignment generic for general use. [#1241]
+
+- Fix logic to not align grism data in standard pipeline. [#1243]
+
+- Remove nictools as a dependency for this package. [#1245]
+
+- RickerWavelet Kernel for SBC to separate crowded PSFS needs to have
+  dimensions which are odd [#1246]
+
+- Refine headers for filter and total products to allow keywords like IPPPSSOO and ASN_ID
+  which only apply to single exposures
+  (or data from the same ASN) to be removed from SVM filter and total drizzle products and
+  from MVM layers drizzle products  [#1249]
+
+- Remove logic from align that related to checking for alignment results in align.py
+  when it was not necessary so that more data can successfully align to GAIA. [#1250]
+
+- Add support for using astropy 5.0. [#1280]
+
+
+3.3.1 (19-Nov-2021)
+===================
+This version provides bug fixes primarily
+for the single-visit mosaic (SVM) processing.
+
+- Insure a compatible version of photutils gets installed. [#1151]
+
+- Improve handling of segmentation catalog generation for
+  mostly or completely blank images. [#1152]
+
+- Changed default floating point value in catalogs
+  from -9999.9 to -9999.0.  [#1165]
+
+- Avoid creating an empty manifest file when no images
+  get drizzled by SVM processing, unless the visit was
+  comprised solely of Grism/Prism data. [#1174, #1181]
+
+- Update total catalog to only remove sources which were
+  not measured successfully in any filter. [#1175]
+
+- Fix the units of a few variables in the output Point and
+  Segmentation catalogs [#1178]
 
 
 3.3.0 (28-Sep-2021)
