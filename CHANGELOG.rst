@@ -45,6 +45,9 @@ output products of this version of the code include:
 
 - Refactored the build system to be PEP-517 ad PEP-518 compliant. [#1244]
 
+- Fixed a bug in the drizzle algorithm due to which input pixels with
+  zero weights may still contribute to the output image. [#1222]
+
 - Added Sphinx documentation describing tools used for working with
   MVM products. [#1144, #1150]
 
