@@ -18,7 +18,7 @@ from stwcs import distortion, wcsutil
 from stwcs.wcsutil import headerlet
 from . import __version__
 
-__taskname__ = 'drizzlepac.buildwcs'
+__taskname__ = 'buildwcs'
 
 # These default parameter values have the same keys as the parameters from
 # the configObj interface

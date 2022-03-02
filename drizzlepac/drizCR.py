@@ -25,7 +25,7 @@ if util.can_parallel:
     import multiprocessing
 
 
-__taskname__ = "drizzlepac.drizCR"  # looks in drizzlepac for sky.cfg
+__taskname__ = "drizCR"  # looks in drizzlepac for sky.cfg
 _STEP_NUM = 6  # this relates directly to the syntax in the cfg file
 
 

@@ -80,7 +80,7 @@ import stwcs
 from stwcs import distortion,wcsutil
 from . import __version__
 
-__taskname__ = 'drizzlepac.skytopix'
+__taskname__ = 'skytopix'
 
 blank_list = [None, '', ' ']
 

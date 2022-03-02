@@ -31,7 +31,7 @@ from . import __version__
 
 __all__ = ['blot', 'runBlot', 'help', 'getHelpAsString']
 
-__taskname__ = 'drizzlepac.ablot'
+__taskname__ = 'ablot'
 _blot_step_num_ = 5
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)

@@ -29,7 +29,7 @@ from . import imagefindpars
 from . import refimagefindpars
 from . import __version__
 
-__taskname__ = 'drizzlepac.tweakreg'
+__taskname__ = 'tweakreg'
 
 PSET_SECTION        = '_SOURCE FINDING PARS_'
 PSET_SECTION_REFIMG = '_REF IMAGE SOURCE FINDING PARS_'
