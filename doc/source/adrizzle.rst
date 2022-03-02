@@ -14,4 +14,5 @@ twice during processing:
 
 .. automodule:: drizzlepac.adrizzle
    :members:
+   :exclude-members: getHelpAsString
    :undoc-members:

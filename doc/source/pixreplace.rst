@@ -12,3 +12,4 @@ with a value of -999.9.
 .. automodule:: drizzlepac.pixreplace
 
 .. autofunction:: replace
+.. autofunction:: help

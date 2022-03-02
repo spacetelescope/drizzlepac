@@ -8,5 +8,6 @@ Updatenpol
 
 .. automodule:: drizzlepac.updatenpol
    :members:
+   :exclude-members: getHelpAsString
 
-
+.. autofunction:: help

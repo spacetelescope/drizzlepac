@@ -141,18 +141,32 @@ The **HAP Single Visit Mosaics (SVMs)** differ from the standard HST drizzled da
 
   singlevisit.rst
   runsinglehap.rst
-  makecustommosaic.rst
-  mvmutilities_api.rst
-  mvmutilities.rst
 
   catalog_generation
   catalogs
 
-  Glossary of HAP Terms <hap_glossary.rst>
+
+Combining data across visits to create mosaics for every observed location on the sky gets performed using
+**HAP Multi-Visit Mosaic (MVM)** processing.
+
+.. toctree::
+  :maxdepth: 2
+
+  Multi-Visit Mosaic Processing <multivisit.rst>
+  multivisit_api.rst
+
+  makecustommosaic.rst
+  mvmutilities.rst
+  mvmutilities_api.rst
 
 
 Indices and tables
 ==================
+.. toctree::
+  :maxdepth: 1
+
+  Glossary of HAP Terms <hap_glossary.rst>
+
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

@@ -315,7 +315,8 @@ def check_disk_get_data(input_list, **pars):
                     # retrieved from MAST
                     log.info("Collect data: {} Suffix: {}".format(input_item, suffix_to_retrieve))
                     for filetype in suffix_to_retrieve:
-                        retrieve_list += aqutils.retrieve_observation(input_item, suffix=filetype)
+                        retrieve_list += aqutils.retrieve_observation(input_item, suffix=filetype,
+                                                                      product_type='pipeline')
                     log.info("Collected data: {}".format(retrieve_list))
 
                     # If the retrieved list is not empty, add filename(s) to the total_input_list.

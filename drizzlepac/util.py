@@ -26,7 +26,7 @@ from stsci.tools import configobj
 from stwcs import wcsutil
 from stwcs.wcsutil import altwcs
 
-#from .version import *
+from . import __version__
 
 __fits_version__ = astropy.__version__
 __numpy_version__ = np.__version__
@@ -1209,3 +1209,57 @@ def base_taskname(taskname, packagename=None):
     assert(True if packagename is None else (packagename == pkg_name))
 
     return base_taskname
+
+
+def _get_help_as_string(docstring, show_ver, module_file, task_name, module_doc):
+    install_dir = os.path.dirname(module_file)
+    taskname = base_taskname(task_name, __package__)
+    htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
+    helpfile = os.path.join(install_dir, taskname + '.help')
+
+    if docstring or not os.path.exists(htmlfile):
+        helpString = f"Task: '{task_name}'. '{__package__}' version: {__version__}\n\n" if show_ver else '\n'
+        if os.path.exists(helpfile):
+            helpString += teal.getHelpFileAsString(taskname, module_file).rstrip() + '\n'
+        elif module_doc is not None:
+            helpString += module_doc + '\n'
+    else:
+        helpString = 'file://' + htmlfile
+
+    return helpString
+
+
+def _def_help_functions(module, module_file, task_name, module_doc):
+    tname = base_taskname(task_name, __package__)
+
+    def getHelpAsString(docstring=False, show_ver=True):
+        return _get_help_as_string(docstring, show_ver, module_file=module_file,
+                                   task_name=task_name, module_doc=module_doc)
+
+    getHelpAsString.__doc__ = f"""
+    Return help string from a file in the script directory called
+    ``{tname}.help`` or from the module's docstring.
+    """
+    module['getHelpAsString'] = getHelpAsString
+
+    def help(file=None):
+        helpstr = getHelpAsString(docstring=True, show_ver=True)
+        if file is None:
+            print(helpstr)
+        else:
+            with open(file, mode='w') as f:
+                f.write(helpstr)
+
+    help.__doc__ = f"""
+    Print out syntax help for running ``{tname}``.
+
+    Parameters
+    ----------
+    file : str (Default = None)
+        If given, write out help to the filename specified by this parameter
+        Any previously existing file with this name will be deleted before
+        writing out the help.
+    """
+    module['help'] = help
+
+    return getHelpAsString(docstring=True, show_ver=False)
