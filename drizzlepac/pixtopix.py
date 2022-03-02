@@ -101,7 +101,7 @@ from . import wcs_functions
 from . import util
 from . import __version__
 
-__taskname__ = 'drizzlepac.pixtopix'
+__taskname__ = 'pixtopix'
 
 
 def tran(inimage, outimage, direction='forward', x=None, y=None,

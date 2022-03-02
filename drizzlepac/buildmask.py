@@ -42,7 +42,7 @@ import numpy as np
 
 from . import processInput, util
 
-__taskname__ = 'drizzlepac.buildmask'
+__taskname__ = 'buildmask'
 #
 #### Interactive interface
 #

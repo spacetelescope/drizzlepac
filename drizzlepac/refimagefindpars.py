@@ -10,7 +10,7 @@ from stsci.tools import teal
 from . import util
 from . import __version__
 
-__taskname__ = 'drizzlepac.refimagefindpars'
+__taskname__ = 'refimagefindpars'
 
 
 __doc__ = util._def_help_functions(

@@ -65,7 +65,7 @@ C version of MultiDrizzle (astrodrizzle).
 """
 __docformat__ = 'restructuredtext'
 
-__taskname__ = "drizzlepac.updatenpol"
+__taskname__ = "updatenpol"
 
 import os,sys,shutil
 
