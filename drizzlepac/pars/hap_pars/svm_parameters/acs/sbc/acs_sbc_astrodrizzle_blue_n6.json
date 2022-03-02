@@ -28,7 +28,7 @@
         "skylsigma": 4.0,
         "skyusigma": 4.0,
         "skymask_cat": "",
-        "use_static": true,
+        "use_static": false,
         "skyfile": "",
         "skyuser": ""
     },
@@ -84,7 +84,7 @@
         "final_wcs": true,
         "final_rot": 0.0,
         "final_refimage": "",
-        "final_scale": null,
+        "final_scale": 0.025,
         "final_outnx": null,
         "final_outny": null,
         "final_ra": null,
