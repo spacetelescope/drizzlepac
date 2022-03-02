@@ -18,7 +18,7 @@ from . import util
 from .regfilter import fast_filter_outer_regions
 
 
-__taskname__ = 'drizzlepac.mapreg'
+__taskname__ = 'mapreg'
 __author__ = 'Mihai Cara'
 
 

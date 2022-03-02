@@ -63,7 +63,7 @@ from . import util
 
 
 __all__ = ['replace', 'help', 'getHelpAsString']
-__taskname__ = 'drizzlepac.pixreplace'
+__taskname__ = 'pixreplace'
 
 
 def replace(input, **pars):

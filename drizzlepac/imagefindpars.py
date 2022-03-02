@@ -9,7 +9,7 @@ from stsci.tools import teal
 from . import util
 from . import __version__
 
-__taskname__ = 'drizzlepac.imagefindpars'
+__taskname__ = 'imagefindpars'
 
 
 __doc__ = util._def_help_functions(

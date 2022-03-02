@@ -48,7 +48,7 @@ from . import wcs_functions
 from . import __version__
 
 
-__taskname__ = "drizzlepac.astrodrizzle"
+__taskname__ = "astrodrizzle"
 
 
 # Pointer to the included Python class for WCS-based coordinate transformations

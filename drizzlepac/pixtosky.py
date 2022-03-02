@@ -92,7 +92,7 @@ import stwcs
 from stwcs import distortion, wcsutil
 from . import __version__
 
-__taskname__ = 'drizzlepac.pixtosky'
+__taskname__ = 'pixtosky'
 
 blank_list = [None, '', ' ']
 
