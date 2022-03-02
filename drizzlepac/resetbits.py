@@ -72,7 +72,7 @@ from stsci.tools.bitmask import interpret_bit_flags
 from . import util
 from . import __version__
 
-__taskname__ = "drizzlepac.resetbits"
+__taskname__ = "resetbits"
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)

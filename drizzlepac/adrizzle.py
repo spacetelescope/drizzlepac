@@ -37,7 +37,7 @@ __all__ = ['drizzle', 'run', 'drizSeparate', 'drizFinal', 'mergeDQarray',
            'get_data', 'create_output', 'help', 'getHelpAsString']
 
 
-__taskname__ = "drizzlepac.adrizzle"
+__taskname__ = "adrizzle"
 _single_step_num_ = 3
 _final_step_num_ = 7
 

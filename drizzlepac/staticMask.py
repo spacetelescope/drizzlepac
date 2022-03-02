@@ -20,7 +20,7 @@ from stsci.imagestats import ImageStats
 from . import util
 from . import processInput
 
-__taskname__ = "drizzlepac.staticMask"
+__taskname__ = "staticMask"
 _step_num_ = 1
 
 

@@ -29,7 +29,7 @@ from . import util
 from . import __version__
 
 
-__taskname__ = 'drizzlepac.tweakback'
+__taskname__ = 'tweakback'
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
