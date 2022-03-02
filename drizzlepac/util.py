@@ -1213,7 +1213,7 @@ def base_taskname(taskname, packagename=None):
 
 def _get_help_as_string(docstring, show_ver, module_file, task_name, module_doc):
     install_dir = os.path.dirname(module_file)
-    taskname = base_taskname(task_name, __package__)
+    taskname = base_taskname(task_name)
     htmlfile = os.path.join(install_dir, 'htmlhelp', taskname + '.html')
     helpfile = os.path.join(install_dir, taskname + '.help')
 
@@ -1230,7 +1230,7 @@ def _get_help_as_string(docstring, show_ver, module_file, task_name, module_doc)
 
 
 def _def_help_functions(module, module_file, task_name, module_doc):
-    tname = base_taskname(task_name, __package__)
+    tname = base_taskname(task_name)
 
     def getHelpAsString(docstring=False, show_ver=True):
         return _get_help_as_string(docstring, show_ver, module_file=module_file,
