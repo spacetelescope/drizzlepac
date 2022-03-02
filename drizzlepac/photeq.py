@@ -25,7 +25,7 @@ from astropy.io import fits
 from . import __version__
 
 __all__ = ['photeq']
-__taskname__ = 'drizzlepac.photeq'
+__taskname__ = 'photeq'
 __author__ = 'Mihai Cara'
 
 

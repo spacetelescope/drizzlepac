@@ -25,7 +25,7 @@ from .adrizzle import _single_step_num_
 from . import __version__
 
 # look in drizzlepac for createMedian.cfg:
-__taskname__ = "drizzlepac.createMedian"
+__taskname__ = "createMedian"
 _step_num_ = 4  # this relates directly to the syntax in the cfg file
 
 BUFSIZE = 1024*1024   # 1MB cache size
