@@ -182,10 +182,7 @@ class HapConfig(object):
                             if n_exp >= 6:
                                 self.conditions.append("acs_sbc_blue_n6")
                         else:
-                            if n_exp in [2, 3, 4, 5]:
-                                self.conditions.append("acs_sbc_any_n2")
-                            if n_exp >= 6:
-                                self.conditions.append("acs_sbc_any_n6")
+                            self.conditions.append("acs_sbc_any_any")
                     elif self.detector == "wfc":
                         if self.hap_pipeline_name == 'mvm':
                             if n_exp > 1:
