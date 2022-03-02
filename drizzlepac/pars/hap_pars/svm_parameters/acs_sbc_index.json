@@ -3,8 +3,7 @@
         "all": "acs/sbc/acs_sbc_alignment_all.json"
     },
     "astrodrizzle": {
-        "acs_sbc_any_n2": "acs/sbc/acs_sbc_astrodrizzle_any_n2.json",
-        "acs_sbc_any_n6": "acs/sbc/acs_sbc_astrodrizzle_any_n6.json",
+        "acs_sbc_any_any": "acs/sbc/acs_sbc_astrodrizzle_any_any.json",
         "acs_sbc_blue_n2": "acs/sbc/acs_sbc_astrodrizzle_blue_n2.json",
         "acs_sbc_blue_n6": "acs/sbc/acs_sbc_astrodrizzle_blue_n6.json",
         "any_n1": "any/any_astrodrizzle_n1.json",
