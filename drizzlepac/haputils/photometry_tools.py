@@ -59,6 +59,7 @@ Classes and Functions
 ---------------------
 """
 import numpy as np
+import math
 from astropy.table import Table
 from drizzlepac.haputils.background_median import aperture_stats_tbl
 from photutils.aperture import aperture_photometry
@@ -141,11 +142,15 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
         else:
             flux_error = compute_phot_error(flux, bg_phot, bg_method, ap_area, epadu)
 
+        # When photflam is 0.0, mag is set to -9999.0.
         mag = convert_flux_to_abmag(flux, photflam, photplam)
 
         # NOTE: Magnitude error calculation comes from computing d(ABMAG)/d(flux).
         # See https://iraf.net/forum/viewtopic.php?showtopic=83932 for details.
-        mag_err = 1.0857 * flux_error / flux
+        if math.isclose(photflam, 0.0, abs_tol=1e-9):
+            mag_err = mag
+        else:
+            mag_err = 1.0857 * flux_error / flux
 
         # Build the final data table
         stacked = np.stack([flux, flux_error, mag, mag_err], axis=1)
@@ -218,13 +223,17 @@ def convert_flux_to_abmag(in_flux, photflam, photplam):
         input flux values converted to ABMAG
     """
 
-    # convert flux from units of electrons/second to ergs/cm2/angstrom/second
-    f_lambda = in_flux * photflam
+    # Avoid taking the log10 of zero
+    if math.isclose(photflam, 0.0, abs_tol=1e-9):
+        abmag = -9999.0 + in_flux * 0.0
+    else:
+        # convert flux from units of electrons/second to ergs/cm2/angstrom/second
+        f_lambda = in_flux * photflam
 
-    # Convert f_lambda to STMAG
-    stmag = -2.5 * np.log10(f_lambda) - 21.10
+        # Convert f_lambda to STMAG
+        stmag = -2.5 * np.log10(f_lambda) - 21.10
 
-    # Convert STMAG to ABMAG
-    abmag = stmag - 5.0 * np.log10(photplam) + 18.6921
+        # Convert STMAG to ABMAG
+        abmag = stmag - 5.0 * np.log10(photplam) + 18.6921
 
     return abmag
