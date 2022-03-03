@@ -33,6 +33,7 @@ import os
 import shutil
 import string
 import sys
+from packaging.version import Version
 
 import numpy as np
 import astropy
@@ -751,6 +752,11 @@ def changeSuffixinASN(asnfile, suffix):
     Create a copy of the original asn file and change the name of all members
     to include the suffix.
     """
+    if Version(astropy.__version__) >= Version('5.0.0'):
+        asn_decode = False
+    else:
+        asn_decode = True
+
     # Start by creating a new name for the ASN table
     _new_asn = asnfile.replace('_asn.fits','_'+suffix+'_asn.fits')
     if os.path.exists(_new_asn):
@@ -763,9 +769,15 @@ def changeSuffixinASN(asnfile, suffix):
     fasn[0].header['DUPCHECK'] = "COMPLETE"
     newdata = fasn[1].data.tolist()
     for i in range(len(newdata)):
-        val = newdata[i][0].decode(encoding='UTF-8').strip()
-        if 'prod' not in newdata[i][1].decode(encoding='UTF-8').lower():
-            val += '_'+suffix
+        if asn_decode:
+            val = newdata[i][0].decode(encoding='UTF-8').strip()
+            if 'prod' not in newdata[i][1].decode(encoding='UTF-8').lower():
+                val += '_'+suffix
+        else:
+            val = newdata[i][0].strip()
+            if 'prod' not in newdata[i][1].lower():
+                val += '_'+suffix
+
         newdata[i] = (val,newdata[i][1].strip(),newdata[i][2])
 
     # Redefine dtype to support longer strings for MEMNAME
