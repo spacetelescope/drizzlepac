@@ -61,9 +61,9 @@ Classes and Functions
 import numpy as np
 import math
 from astropy.table import Table
+from drizzlepac.haputils import constants
 from drizzlepac.haputils.background_median import aperture_stats_tbl
 from photutils.aperture import aperture_photometry
-
 
 def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam, error_array=None,
                           bg_method='mode', epadu=1.0):
@@ -147,7 +147,7 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
 
         # NOTE: Magnitude error calculation comes from computing d(ABMAG)/d(flux).
         # See https://iraf.net/forum/viewtopic.php?showtopic=83932 for details.
-        if math.isclose(photflam, 0.0, abs_tol=1e-9):
+        if math.isclose(photflam, 0.0, abs_tol=constants.TOLERANCE):
             mag_err = mag
         else:
             mag_err = 1.0857 * flux_error / flux
@@ -224,8 +224,10 @@ def convert_flux_to_abmag(in_flux, photflam, photplam):
     """
 
     # Avoid taking the log10 of zero
-    if math.isclose(photflam, 0.0, abs_tol=1e-9):
-        abmag = -9999.0 + in_flux * 0.0
+    if math.isclose(photflam, 0.0, abs_tol=constants.TOLERANCE):
+        # Create a column of data from an existing column of data
+        # and set each value = -9999.0
+        abmag = constants.FLAG + in_flux * 0.0
     else:
         # convert flux from units of electrons/second to ergs/cm2/angstrom/second
         f_lambda = in_flux * photflam
