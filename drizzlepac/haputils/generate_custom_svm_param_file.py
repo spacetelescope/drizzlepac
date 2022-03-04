@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# TODO: Rename script from generate_custom_svm_param_file to generate_custom_mvm_svm_parameter_file
 """ generate_custom_mvm_svm_param_file - a module to create a template SVM/MVM processing pipeline parameter
 file based on the observations present in the current working directory for the user to customize
 
@@ -50,7 +49,7 @@ from drizzlepac.haputils import poller_utils
 
 from stsci.tools import logutil
 
-__taskname__ = 'generate_custom_svm_param_file'  # TODO: Rename script from generate_custom_svm_param_file to generate_custom_mvm_svm_parameter_file
+__taskname__ = 'generate_custom_svm_mvm_param_file'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
