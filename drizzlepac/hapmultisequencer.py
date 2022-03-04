@@ -391,8 +391,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
                                                             input_custom_pars_file=input_custom_pars_file,
                                                             output_custom_pars_file=output_custom_pars_file)
         log.info("The configuration parameters have been read and applied to the drizzle objects.")
-        import pdb
-        pdb.set_trace()
+
         # TODO: This is the place where updated WCS info is migrated from drizzlepac params to filter objects
         if skip_gaia_alignment:
             log.info("Gaia alignment step skipped. Existing input image alignment solution will be used instead.")
