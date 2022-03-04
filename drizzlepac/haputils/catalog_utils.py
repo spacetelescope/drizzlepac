@@ -2,7 +2,7 @@
 aperture photometry and segmentation-map based photometry."""
 
 import copy
-import pickle  # FIX Remove
+import math
 import sys
 from packaging.version import Version
 
@@ -33,6 +33,7 @@ from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
 
 from . import astrometric_utils
+from . import constants
 from . import photometry_tools
 from . import deconvolve_utils as decutils
 from . import processing_utils as proc_utils
@@ -1194,17 +1195,27 @@ class HAPPointCatalog(HAPCatalogBase):
 
         try:
             # Calculate and add concentration index (CI) column to table
-            ci_data = photometry_tbl["MagAp1"].data - photometry_tbl["MagAp2"].data
-        except Exception:
-            log.info("Wrote catalog info to file 'catalog.pickle'.")
-            pickle_out = open("catalog.pickle", "wb")
-            pickle.dump(photometry_tbl, pickle_out)
-            pickle_out.close()
+            if math.isclose(self.image.keyword_dict['photflam'], 0.0, abs_tol=constants.TOLERANCE):
+                # Fill the ci_data column with the "bad data indicator" of -9999.0
+                # where photometry_tbl["MagAp1"] was populated with -9999.0 in iraf_style_photometry
+                ci_data = photometry_tbl["MagAp1"].data
+                ci_mask = np.logical_not(ci_data > constants.FLAG + 1.0)
+            else:
+                ci_data = photometry_tbl["MagAp1"].data - photometry_tbl["MagAp2"].data
+                ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
+                big_bad_index = np.where(abs(ci_data) > 1.0e20)
+                ci_mask[big_bad_index] = True
 
-        ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
-        big_bad_index = np.where(abs(ci_data) > 1.0e20)
-        ci_mask[big_bad_index] = True
-        ci_col = MaskedColumn(name="CI", data=ci_data, dtype=np.float64, mask=ci_mask)
+        except Exception as x_cept:
+            log.warning("Computation of concentration index (CI) was not successful: {} - {}.".format(self.imgname, x_cept))
+            log.warning("CI measurements may be missing from the output filter catalog.\n")
+
+            # Create a column of data from an existing column of data
+            # and set each value = -9999.0
+            ci_data = constants.FLAG + photometry_tbl["MagAp1"] * 0.0
+            ci_mask = np.logical_not(ci_data > constants.FLAG + 1.0)
+
+        ci_col = MaskedColumn(name='CI', data=ci_data, dtype=np.float64, mask=ci_mask)
         photometry_tbl.add_column(ci_col)
 
         # Add zero-value "Flags" column in preparation for source flagging
@@ -1298,7 +1309,7 @@ class HAPPointCatalog(HAPCatalogBase):
             self.source_cat.remove_rows(slice(0, None))
 
         # Fill the nans and masked values with numeric data
-        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=-9999.0)
+        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=constants.FLAG)
 
         # Write out catalog to ecsv file
         # self.source_cat.meta['comments'] = \
@@ -2248,15 +2259,26 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             try:
                 # Compute the Concentration Index (CI)
-                ci_data = mag_inner_data - mag_outer_data
-                ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
-                big_bad_index = np.where(abs(ci_data) > 1.0e20)
-                ci_mask[big_bad_index] = True
-                ci_col = MaskedColumn(name='CI', data=ci_data, dtype=np.float64, mask=ci_mask)
+                if math.isclose(self.image.keyword_dict['photflam'], 0.0, abs_tol=constants.TOLERANCE):
+                    # Fill the ci_data column with the "bad data indicator" of -9999.0
+                    # where photometry_tbl["MagAp1"] was populated with -9999.0 in iraf_style_photometry
+                    ci_data = photometry_tbl["MagAp1"].data
+                    ci_mask = np.logical_not(ci_data > constants.FLAG + 1.0)
+                else:
+                    ci_data = mag_inner_data - mag_outer_data
+                    ci_mask = np.logical_and(np.abs(ci_data) > 0.0, np.abs(ci_data) < 1.0e-30)
+                    big_bad_index = np.where(abs(ci_data) > 1.0e20)
+                    ci_mask[big_bad_index] = True
 
             except Exception as x_cept:
                 log.warning("Computation of concentration index (CI) was not successful: {} - {}.".format(self.imgname, x_cept))
                 log.warning("CI measurements may be missing from the output filter catalog.\n")
+                # Create a column of data from an existing column of data
+                # and set each value = -9999.0
+                ci_data = constants.FLAG + photometry_tbl["MagAp1"] * 0.0
+                ci_mask = np.logical_not(ci_data > constants.FLAG + 1.0)
+
+            ci_col = MaskedColumn(name='CI', data=ci_data, dtype=np.float64, mask=ci_mask)
 
             # OK to insert *entire* column here to preserve any values which have been computed.  The
             # column already exists and contains nans.
@@ -2725,7 +2747,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             self.source_cat.remove_rows(slice(0, None))
 
         # Fill the nans and masked values with numeric data
-        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=-9999.0)
+        self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=constants.FLAG)
 
         # Write out catalog to ecsv file
         self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
@@ -2821,7 +2843,7 @@ def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11, 11)
 # Utility functions supporting point and segmentation catalogs
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-def fill_nans_maskvalues(catalog, fill_value=-9999.0):
+def fill_nans_maskvalues(catalog, fill_value=constants.FLAG):
 
     # Fill the masked values with fill_value - the value is truncated for int as datatype of column is known
     catalog = catalog.filled(fill_value)
