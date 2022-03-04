@@ -3,7 +3,7 @@
 file based on the observations present in the current working directory for the user to customize
 
 Command-line USAGE:
-    >>> python generate_custom_mvm_svm_param_file.py [-clop] poller_filename
+    >>> python generate_custom_svm_mvm_param_file.py [-clop] poller_filename
 
     - poller_filename: (required) the name of the input SVM/MVM poller file
 
