@@ -80,9 +80,9 @@ class HapConfig(object):
         self.filters = None
 
         self._determine_conditions(prod_obj)
-        self.full_cfg_index, self.pars_dir = read_index(self.hap_pipeline_name,
-                                                        self.instrument,
-                                                        self.detector)
+        self.full_cfg_index, self.pars_dir = read_index(self.instrument,
+                                                        self.detector,
+                                                        hap_pipeline_name=self.hap_pipeline_name)
 
         # Instantiate the parameter set
         self.pars = {}
@@ -615,7 +615,30 @@ class QualityControlPars(Par):
 
 # ------------------------------------------------------------------------------
 
-def read_index(hap_pipeline_name, instrument, detector):
+def read_index(instrument, detector, hap_pipeline_name='svm'):
+    """Determine the correct index file and read it in to get the paths of the parameter .json files.
+
+    Parameters
+    ----------
+    instrument : str
+        Instrument name
+
+    detector : str
+        Detector name
+
+    hap_pipeline_name : str, optional
+            Name of the pipeline that the configurations will be prepared for. Valid options are 'mvm' (for
+            the HAP multi-visit mosaics pipeline) or 'svm' (for the HAP single-visit mosaic pipeline). If not
+            explicitly stated, the default value is 'svm'
+
+    Returns
+    -------
+    full_cfg_index : dict
+        dictionary containing conditions -> parameter file path mappings
+
+    pars_dir : str
+        path of the directory containing the parameter subdirectories
+    """
     # Create instrument/detector observing mode
     inst_det = "{}_{}".format(instrument, detector).lower()
 
