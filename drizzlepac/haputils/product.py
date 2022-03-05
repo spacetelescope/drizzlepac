@@ -1174,6 +1174,7 @@ class SkyCellProduct(HAPProduct):
         # ...and set parameters which are computed on-the-fly
         drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
+        drizzle_pars['rules_file'] = self.rules_file
         # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
         # of this directory is now obsolete.
         drizzle_pars["preserve"] = False
