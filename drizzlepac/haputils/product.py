@@ -80,7 +80,7 @@ class HAPProduct:
         # Initialize attributes for use in generating the output products
         self.meta_wcs = None
         self.mask = None
-        self.mask_kws = MASK_KWS.copy()
+        self.mask_kws = copy.deepcopy(MASK_KWS)
         self.mask_computed = False
 
     # def print_info(self):
