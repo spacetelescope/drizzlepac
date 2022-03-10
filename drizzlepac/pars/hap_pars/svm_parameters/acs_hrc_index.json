@@ -3,7 +3,7 @@
         "all": "acs/hrc/acs_hrc_alignment_all.json"
     },
     "astrodrizzle": {
-        "any_n1": "any/any_astrodrizzle_n1.json",
+        "any_n1": "acs/hrc/acs_hrc_astrodrizzle_any_n1.json",
         "acs_hrc_any_n2": "acs/hrc/acs_hrc_astrodrizzle_any_n2.json",
         "acs_hrc_any_n4": "acs/hrc/acs_hrc_astrodrizzle_any_n4.json",
         "acs_hrc_any_n6": "acs/hrc/acs_hrc_astrodrizzle_any_n6.json",
