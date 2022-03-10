@@ -19,10 +19,10 @@
     "STEP 2: SKY SUBTRACTION": {
         "skysub": false,
         "skymethod": "match",
-        "skystat": "mean",
+        "skystat": "median",
         "skywidth": 0.1,
         "skylower": -100.0,
-        "sky_bits": "0",
+        "sky_bits": "16",
         "skyupper": null,
         "skyclip": 5,
         "skylsigma": 4.0,
@@ -34,7 +34,7 @@
     },
     "STEP 3: DRIZZLE SEPARATE IMAGES": {
         "driz_separate": false,
-        "driz_sep_bits": "0",
+        "driz_sep_bits": "336",
         "driz_sep_kernel": "turbo",
         "driz_sep_wt_scl": "exptime",
         "driz_sep_pixfrac": 1.0,
@@ -43,7 +43,7 @@
     },
     "STEP 4: CREATE MEDIAN IMAGE": {
         "median": false,
-        "median_newmasks": false,
+        "median_newmasks": true,
         "combine_type": "minmed",
         "combine_nlow": 0,
         "combine_nhigh": 1,
@@ -66,14 +66,14 @@
         "driz_cr_snr": "3.5 3.0",
         "driz_cr_grow": 1,
         "driz_cr_ctegrow": 0,
-        "driz_cr_scale": "1.2 0.7",
+        "driz_cr_scale": "1.5 1.2",
         "driz_cr_corr": false
     },
     "STEP 7: DRIZZLE FINAL COMBINED IMAGE": {
         "driz_combine": true,
         "final_pixfrac": 1.0,
         "final_fillval": null,
-        "final_bits": "0",
+        "final_bits": "65535",
         "final_maskval": null,
         "final_wht_type": "EXP",
         "final_kernel": "square",
@@ -84,7 +84,7 @@
         "final_wcs": true,
         "final_rot": 0.0,
         "final_refimage": "",
-        "final_scale": null,
+        "final_scale": 0.025,
         "final_outnx": null,
         "final_outny": null,
         "final_ra": null,
@@ -93,11 +93,11 @@
         "final_crpix2": null
     },
     "INSTRUMENT PARAMETERS": {
+        "gnkeyword": "ATODGNA,ATODGNB,ATODGNC,ATODGND",
+        "rnkeyword": "READNSEA,READNSEB,READNSEC,READNSED",
         "expkeyword": "EXPTIME",
         "gain": "",
-        "gnkeyword": "",
         "rdnoise": "",
-        "rnkeyword": "",
         "exptime": ""
     },
     "STATE OF INPUT FILES": {
@@ -107,10 +107,10 @@
         "clean": true
     },
     "STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS": {
-        "driz_sep_wcs": false,
+        "driz_sep_wcs": true, 
         "driz_sep_refimage": "",
         "driz_sep_rot": null,
-        "driz_sep_scale": null,
+        "driz_sep_scale": null, 
         "driz_sep_outnx": null,
         "driz_sep_outny": null,
         "driz_sep_ra": null,
