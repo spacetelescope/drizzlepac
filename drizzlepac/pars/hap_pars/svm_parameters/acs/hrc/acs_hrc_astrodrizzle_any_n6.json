@@ -22,7 +22,7 @@
         "skystat": "median",
         "skywidth": 0.1,
         "skylower": -100.0,
-        "sky_bits": "64646464
+        "sky_bits": "64",
         "skyupper": null,
         "skyclip": 5,
         "skylsigma": 4.0,
