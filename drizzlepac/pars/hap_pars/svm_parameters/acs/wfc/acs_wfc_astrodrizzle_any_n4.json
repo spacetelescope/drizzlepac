@@ -22,7 +22,7 @@
         "skystat": "median",
         "skywidth": 0.1,
         "skylower": -100.0,
-        "sky_bits": "16",
+        "sky_bits": "80",
         "skyupper": null,
         "skyclip": 5,
         "skylsigma": 4.0,
@@ -35,7 +35,7 @@
     "STEP 3: DRIZZLE SEPARATE IMAGES": {
         "driz_separate": true,
         "driz_sep_bits": "336",
-        "driz_sep_kernel": "turbo",
+        "driz_sep_kernel": "square",
         "driz_sep_wt_scl": "exptime",
         "driz_sep_pixfrac": 1.0,
         "driz_sep_fillval": null,
@@ -44,7 +44,7 @@
     "STEP 4: CREATE MEDIAN IMAGE": {
         "median": true,
         "median_newmasks": true,
-        "combine_type": "median",
+        "combine_type": "minmed",
         "combine_nlow": 0,
         "combine_nhigh": 1,
         "combine_maskpt": 0.3,

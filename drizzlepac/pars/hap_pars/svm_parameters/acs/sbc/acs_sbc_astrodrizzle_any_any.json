@@ -1,6 +1,6 @@
 {
     "_mdriztab_btn_": "Update From MDRIZTAB",
-    "runfile": "",
+    "runfile": "astrodrizzle.log",
     "wcskey": "",
     "proc_unit": "native",
     "coeffs": true,
@@ -9,7 +9,7 @@
     "build": true,
     "crbit": 4096,
     "stepsize": 10,
-    "resetbits": "0",
+    "resetbits": "4096",
     "num_cores": 1,
     "in_memory": false,
     "STEP 1: STATIC MASK": {
@@ -28,7 +28,7 @@
         "skylsigma": 4.0,
         "skyusigma": 4.0,
         "skymask_cat": "",
-        "use_static": false,
+        "use_static": true,
         "skyfile": "",
         "skyuser": ""
     },
@@ -44,7 +44,7 @@
     "STEP 4: CREATE MEDIAN IMAGE": {
         "median": false,
         "median_newmasks": false,
-        "combine_type": "median",
+        "combine_type": "minmed",
         "combine_nlow": 0,
         "combine_nhigh": 1,
         "combine_maskpt": 0.3,
