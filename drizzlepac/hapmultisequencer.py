@@ -199,8 +199,7 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
     for imgname in edp_names:
         rules_files[imgname] = proc_utils.get_rules_file(imgname, rules_type='MVM')
 
-    print('Generated RULES_FILE names of: \n{}\n'.format(rules_files))
-
+    log.debug(f'Generated LAYER RULES_FILE name of: \n\t{rules_files}\n')
     # Keep track of all the products created for the output manifest
     product_list = []
 
@@ -211,6 +210,8 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
         filt_obj.rules_file = proc_utils.get_rules_file(filt_obj.edp_list[0].full_filename,
                                                         rules_type='MVM',
                                                         rules_root=filt_obj.drizzle_filename)
+        log.debug(f'Generated LAYER RULES_FILE name of: \n\t{filt_obj.rules_file}\n')
+
         # add filter rules files to dict of all rules files for deletion later
         rules_files[filt_obj.drizzle_filename] = filt_obj.rules_file
 
@@ -377,6 +378,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
 
             log.info("Preparing configuration parameter values for filter product {}".format(filter_item.drizzle_filename))
             filter_item.configobj_pars = config_utils.HapConfig(filter_item,
+                                                                hap_pipeline_name='mvm',
                                                                 log_level=log_level,
                                                                 use_defaults=use_defaults_configs,
                                                                 input_custom_pars_file=input_custom_pars_file,
@@ -384,6 +386,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
 
             for edp in filter_item.edp_list:
                 edp.configobj_pars = config_utils.HapConfig(edp,
+                                                            hap_pipeline_name='mvm',
                                                             log_level=log_level,
                                                             use_defaults=use_defaults_configs,
                                                             input_custom_pars_file=input_custom_pars_file,

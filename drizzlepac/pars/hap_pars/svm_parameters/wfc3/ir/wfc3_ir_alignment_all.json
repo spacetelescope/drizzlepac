@@ -1,0 +1,76 @@
+{
+    "general":
+      {
+        "MIN_FIT_MATCHES": 4,
+        "MAX_FIT_RMS": 20,
+        "MAX_SOURCES_PER_CHIP": 250
+      },
+    "run_align":
+      {
+        "update_hdr_wcs": true,
+        "catalog_list": ["GAIAeDR3", "GSC242", "2MASS"],
+        "fit_algorithm_list_ngt1": ["match_relative_fit", "match_2dhist_fit", "match_default_fit"],
+        "fit_algorithm_list_n1": ["match_2dhist_fit", "match_default_fit"],
+        "MIN_CATALOG_THRESHOLD": 3,
+        "MIN_OBSERVABLE_THRESHOLD": 10,
+        "MAX_FIT_LIMIT": 150,
+        "mosaic_catalog_list": ["GAIAeDR3", "GSC242", "2MASS"],
+        "mosaic_fit_list": ["match_relative_fit", "match_2dhist_fit", "match_default_fit"],
+        "mosaic_fitgeom_list": {"shift": 3, "rshift": 4, "rscale": 6, "general": 6}
+      },
+    "generate_source_catalogs":
+      {
+        "box_size":13,
+        "win_size":3,
+        "nsigma":3.0,
+        "centering_mode": "starfind",
+        "bkg_estimator": "MedianBackground",
+        "rms_estimator": "StdBackgroundRMS",
+        "num_sources": 250,
+        "deblend": false,
+        "fwhmpsf": 0.13,
+        "classify": false,
+        "threshold": -1.1
+      },
+    "generate_astrometric_catalog":
+      {
+        "gaia_only": false,
+        "existing_wcs": null
+      },
+    "match_relative_fit":
+      {
+        "fitgeom": "rscale",
+        "searchrad": 125,
+        "separation": 4.0,
+        "tolerance": 2.0,
+        "use2dhist": true
+      },
+    "match_default_fit":
+      {
+        "fitgeom": "rscale",
+        "searchrad": 250,
+        "separation": 0.1,
+        "tolerance": 10,
+        "use2dhist": false
+      },
+    "match_2dhist_fit":
+      {
+        "fitgeom": "rscale",
+        "searchrad": 250,
+        "separation": 4.0,
+        "tolerance": 2,
+        "use2dhist": true
+      },
+    "determine_fit_quality":
+      {
+        "MIN_CATALOG_THRESHOLD": 3,
+        "MIN_OBSERVABLE_THRESHOLD": 4,
+        "MIN_CROSS_MATCHES": 3,
+        "MIN_FIT_MATCHES": 4,
+        "MAX_FIT_RMS": 20,
+        "MAX_FIT_LIMIT": 150,
+        "MAX_SOURCES_PER_CHIP": 250,
+        "MAS_TO_ARCSEC": 1000,
+        "GOOD_FIT_QUALITY_VALUES": [1, 2, 3, 4]
+      }
+}

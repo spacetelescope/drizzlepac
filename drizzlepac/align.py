@@ -1084,7 +1084,7 @@ def generate_astrometric_catalog(imglist, **pars):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def get_default_pars(instrument, detector, step='alignment',
-                     condition=['filter_basic']):
+                     condition=['filter_basic'], hap_pipeline_name='svm'):
 
     step_list = config_utils.step_title_list
     if step not in step_list:
@@ -1092,10 +1092,10 @@ def get_default_pars(instrument, detector, step='alignment',
                   step_list))
         raise ValueError
 
-    full_cfg_index, pars_dir = config_utils.read_index(instrument, detector)
+    full_cfg_index, pars_dir = config_utils.read_index(instrument, detector, hap_pipeline_name=hap_pipeline_name)
 
     par_class = config_utils.step_name_list[step_list.index(step)]
-    apars = par_class(full_cfg_index[step], condition,
+    apars = par_class(full_cfg_index[step], condition, hap_pipeline_name,
                       pars_dir, step, True, None)
 
     return apars.outpars
