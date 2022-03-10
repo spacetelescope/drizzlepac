@@ -188,10 +188,7 @@ class HapConfig(object):
                             if n_exp >= 6:
                                 self.conditions.append("acs_sbc_blue_n6")
                         else:
-                            if n_exp in [2, 3, 4, 5]:
-                                self.conditions.append("acs_sbc_any_n2")
-                            if n_exp >= 6:
-                                self.conditions.append("acs_sbc_any_n6")
+                            self.conditions.append("acs_sbc_any_any")
                     elif self.detector == "wfc":
                         if self.hap_pipeline_name == 'mvm':
                             if n_exp > 1:
@@ -255,7 +252,7 @@ class HapConfig(object):
             self.conditions = ["single_basic"]
             if prod_obj.is_singleton:
                 self.conditions.append("any_n1")
-        print(">>>>>>>", self.conditions)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def _update_ci_values_from_file(self, prod_obj, phot_mode, log_level=logutil.logging.NOTSET):
         """Update Concentration Index upper and lower limits in the "quality control" section of the
