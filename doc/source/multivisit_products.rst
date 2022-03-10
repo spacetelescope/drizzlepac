@@ -91,7 +91,7 @@ We can see how the exposures land in the SkyCell as defined with this subarray W
           All the WFC3/IR F105W exposures that overlap SkyCell **p1889x07y19**.
 
 
-These figures demnstrate how the SkyCell subarray has been defined to only cover the exposures that overlap this
+These figures demonstrate how the SkyCell subarray has been defined to only cover the exposures that overlap this
 SkyCell while minimizing the amount of empty space in these layers making these products as small as possible without
 resorting to compression.
 
@@ -100,4 +100,55 @@ resorting to compression.
   As a result, any position in these layers refers to the exact same position on the sky
   as defined in the SkyCell or ProjectionCell.  A source at (x,y)=(7936, 11133) will have the same sky coordinates
   regardless of what SkyCell layer it was measured in, including an array defined for the entire SkyCell.
+
+
+File Format
+============
+
+
+
+Artifacts
+==========
+There are a number of issues that can arise when generating SkyCell mosaics.  Every effort is made during pipeline
+processing to minimize or avoid these issues where possible, but some mosaics are unavoidably affected by these issues.
+
+
+Mis-alignment
+--------------
+One of the primary benefits of SkyCell mosaic image is learning how observations taken at different times and using
+different filters relate to each other.  The mosaics all share the same pixel definitions which allow for direct
+comparisons of the data across all the layers of a SkyCell.  However, the placement of the exposures in the SkyCell
+depends on how the WCS was defined for each exposure.  Unfortunately, due to the objects in the field of view for an
+exposure or the size of the field of view of the exposure, it may not be possible to align the exposure to the same
+astrometric catalog as the rest of the exposures in the SkyCell.  This can lead to mis-alignment between the exposures
+on the order of a few pixels.  If this mis-aligned exposure overlaps another exposure aligned to GAIA in a SkyCell mosaic,
+then it can result in visible blurring or double-images in the final mosaic.
+
+This can be seen when examining the SkyCell mosaic WFC3/UVIS F555W layer for SkyCell **p0498x16y19**.  The WCS has been
+defined based on different astrometric catalogs for one of the visits of this source.  This results in
+'blurred' sources being seen in the overlap between exposures from different visits.
+
+.. figure:: images/mvm_p0498x16y19_f555w.png
+         :figwidth: 95%
+         :alt: SkyCell p0498x16y19 WFC3/UVIS F555W layer.
+
+         All the WFC3/UVIS F555W exposures that overlap SkyCell **p0498x16y19** illustrating
+         how misalignment between visits can result in 'blurred' sources in region of overlap.
+         [Image courtesy of J. Mack (STScI/ACS Instrument team)].
+
+
+Loss of Lock
+--------------
+Another issue that can show up in SkyCell mosaics results from HST slewing across the sky while the exposures was
+being taken.  This can happen when HST loses lock on the guide stars used to point the telescope or intentionally
+when the proposer requested exposures be taken in 'SCAN' mode.  No reliable method currently exists to identify
+such exposures prior to creating mosaics with them, resulting in exposures where the sources are trailed across
+the exposures.
+
+.. figure:: images/skycell_p0080x09y16-slewing-example-color.jpg
+         :figwidth: 95%
+         :alt: SkyCell p0080x09y16 SCAN mode data.
+
+         SkyCell **p0080x09y16** mosaic showing the effects of loss of lock or SCAN mode data
+         being included in the output image.
 

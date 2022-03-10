@@ -560,7 +560,7 @@ such as exposure time or date range of exposures used to create the layer.  At p
 with both the default (fine) plate-scale of 0.04"/pixel as well as the IR-native "coarse" plate scale which show up with
 a *<layer>* term of **coarse-all**.  Initial processing does not apply any additional definitions for the layers, and thus
 the remainder of the initially generated MVM products simply have a *<layer>* term of **all**.  Future processing may
-enable generation of additonal layers based on date ranges for SkyCells which have massive amount of exposures over a
+enable generation of additional layers based on date ranges for SkyCells which have massive amount of exposures over a
 large range of dates, in which case this *<layer>* term will be updated to reflect those ranges.  Additionally, the
 code can be run interactively to enable generation of additional layers based on exposure time ranges as well.  See
 explanation of the processing code functions for more details.
