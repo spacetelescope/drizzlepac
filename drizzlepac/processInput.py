@@ -768,6 +768,7 @@ def changeSuffixinASN(asnfile, suffix):
     fasn = fits.open(_new_asn, mode='update', memmap=False)
     fasn[0].header['DUPCHECK'] = "COMPLETE"
     newdata = fasn[1].data.tolist()
+
     for i in range(len(newdata)):
         if asn_decode:
             val = newdata[i][0].decode(encoding='UTF-8').strip()
@@ -793,6 +794,10 @@ def changeSuffixinASN(asnfile, suffix):
     # Assign newly created, reformatted array to extension
     newasn = np.array(newdata,dtype=new_dtype)
     fasn[1].data = newasn
+    # Explicitly set the values of the boolean column to original values since they get
+    # lost when writing out as a FITS_Rec object using the FITS interface.
+    for row, dcol in zip(fasn[1].data, newdata):
+        row['MEMPRSNT'] = dcol[2]
     fasn.close()
 
     return _new_asn
