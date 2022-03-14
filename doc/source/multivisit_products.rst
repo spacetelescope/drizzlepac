@@ -104,6 +104,13 @@ resorting to compression.
 
 File Format
 ============
+The SkyCell layer mosaics get generated using AstroDrizzle using a custom set of rules for defining what
+keywords go into the primary and science extension headers. These files have the same set of extensions
+as all other drizzled products; namely, PRIMARY, SCI, WHT, CTX and HDRTAB.
+
+MVM-specific keywords
+---------------------
+
 
 
 
@@ -152,3 +159,6 @@ the exposures.
          SkyCell **p0080x09y16** mosaic showing the effects of loss of lock or SCAN mode data
          being included in the output image.
 
+
+Alignment Accuracy Across the SkyCell
+--------------------------------------
