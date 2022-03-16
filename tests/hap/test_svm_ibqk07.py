@@ -233,7 +233,7 @@ def test_svm_point_total_cat(gather_output_data):
                 valid_cats[tdp] = (file, np.isclose(expected_total_point_sources[tdp], num_sources[file], atol=tol_limit))
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
-    assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_point_sources}"
+    assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_point_sources}"
 
 
 def test_svm_segment_total_cat(gather_output_data):
@@ -250,7 +250,7 @@ def test_svm_segment_total_cat(gather_output_data):
                 valid_cats[tdp] = (file, np.isclose(expected_total_segment_sources[tdp], num_sources[file], atol=tol_limit))
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
-    assert len(bad_cats) == 0,  f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_segment_sources}"
+    assert len(bad_cats) == 0,  f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_segment_sources}"
 
 
 def test_svm_point_cat_meanmag(gather_output_data):
