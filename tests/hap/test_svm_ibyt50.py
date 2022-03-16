@@ -30,14 +30,14 @@ from pathlib import Path
 
 POLLER_FILE = "wfc3_byt_50_input.out"
 WCS_UVIS_SUB_NAME = "FIT_SVM_GAIA"
-WCS_IR_SUB_NAME = "FIT_SVM_GAIA"
+WCS_IR_SUB_NAME = "FIT_SVM_GSC242"
 expected_total_point_sources = {
 "hst_13023_50_wfc3_ir_total_ibyt50_point-cat.ecsv": 122,
 "hst_13023_50_wfc3_uvis_total_ibyt50_point-cat.ecsv": 105}
 expected_total_segment_sources = {
 "hst_13023_50_wfc3_ir_total_ibyt50_segment-cat.ecsv": 107,
 "hst_13023_50_wfc3_uvis_total_ibyt50_segment-cat.ecsv": 415}
-tolerance = 0.25 
+tolerance = 0.25
 
 
 @pytest.fixture(scope="module")
@@ -55,7 +55,7 @@ def read_csv_for_filenames():
 @pytest.fixture(scope="module")
 def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     # Create working directory specified for the test
-    curdir = tmp_path_factory.mktemp(os.path.basename(__file__)) 
+    curdir = tmp_path_factory.mktemp(os.path.basename(__file__))
     os.chdir(curdir)
 
     # Establish FLC/FLT lists and obtain the requested data
@@ -69,7 +69,7 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
             flc_flag = fn[0:6] + "*"
         elif fn.lower().endswith("flt.fits") and flt_flag == "":
             flt_flag = fn[0:6] + "*"
-     
+
         # If both flags have been set, then break out the loop early.  It may be
         # that all files have to be checked which means the for loop continues
         # until its natural completion.
@@ -181,7 +181,7 @@ def test_svm_wcs_ir(gather_output_data):
 
 def test_svm_wcs_ir_all(gather_output_data):
     print("\ntest_svm_wcs_ir_all.")
-    # Check the output primary WCSNAME 
+    # Check the output primary WCSNAME
     ir_files = [files for files in gather_output_data if files.lower().find("_ir_") > -1 and files.lower().endswith("drz.fits")]
 
     wcsnames = [fits.getval(ir, "WCSNAME", ext=1).upper() for ir in ir_files]
@@ -200,7 +200,7 @@ def test_svm_wcs_uvis(gather_output_data):
 
 
 def test_svm_wcs_uvis_all(gather_output_data):
-    # Check the output primary WCSNAME 
+    # Check the output primary WCSNAME
     print("\ntest_svm_wcs_uvis_all.")
     uvis_files = [files for files in gather_output_data if files.lower().find("_uvis_") > -1 and files.lower().endswith("drc.fits")]
 
@@ -209,7 +209,7 @@ def test_svm_wcs_uvis_all(gather_output_data):
 
 
 # Due to the way the catalogs are filtered, check the size of the total catalog and one of the filter
-# catalogs separately.  The total catalog has the row removed for each source where the constituent 
+# catalogs separately.  The total catalog has the row removed for each source where the constituent
 # filter catalogs *ALL* have flag>5 for the source.  Rows are NOT removed from the filter table based on
 # flag values.
 def test_svm_point_total_cat(gather_output_data):
@@ -226,7 +226,7 @@ def test_svm_point_total_cat(gather_output_data):
                 valid_cats[tdp] = (file, np.isclose(expected_total_point_sources[tdp], num_sources[file], atol=tol_limit))
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
-    assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_point_sources}"
+    assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_point_sources}"
 
 
 def test_svm_segment_total_cat(gather_output_data):
@@ -243,4 +243,4 @@ def test_svm_segment_total_cat(gather_output_data):
                 valid_cats[tdp] = (file, np.isclose(expected_total_segment_sources[tdp], num_sources[file], atol=tol_limit))
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
-    assert len(bad_cats) == 0,  f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_segment_sources}"
+    assert len(bad_cats) == 0,  f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_segment_sources}"
