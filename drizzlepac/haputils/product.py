@@ -594,7 +594,6 @@ class FilterProduct(HAPProduct):
         # start by pulling out the specific parameters for the final refimage as
         # separate input parameters
         # rot and scale are specified in the config pars json files
-        # drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["final_ra"] = meta_wcs.wcs.crval[0]
         drizzle_pars["final_dec"] = meta_wcs.wcs.crval[1]
         drizzle_pars["final_crpix1"] = meta_wcs.wcs.crpix[0]
