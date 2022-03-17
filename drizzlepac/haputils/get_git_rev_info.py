@@ -106,12 +106,6 @@ def get_rev_id(local_repo_path):
     start_path = os.getcwd()
     try:
         os.chdir(local_repo_path)
-        # If not installed in 'develop' mode, git information
-        # will not be present, so look for it explicitly and
-        # exit with the correct message before triggering a
-        # fatal error.
-        if not os.path.exists('.git'):
-            raise OSError("git revision info not found.")
 
         if 'win' not in sys.platform:
             instream = os.popen("git --no-pager log --max-count=1 | head -1")
@@ -124,15 +118,10 @@ def get_rev_id(local_repo_path):
         else:
             instream = os.popen("git --no-pager log --max-count=1 | more")
             for streamline in instream.readlines():
-                rv = streamline.split(' ')[1]
+                rv = streamline.split(' ')[0]
                 break
     except Exception:
         log.warning("Problem encountered getting git revision ID")
-        # If no git version was found, assume it was installed from master.
-        # Even if installed from a release branch, if there is no git information
-        # it was installed separate from the source directory, so it is a
-        # at least a release branch which is comparable to master.
-        rv = 'master'
     finally:
         os.chdir(start_path)
     return(rv)

@@ -352,10 +352,6 @@ def slFiles2dataTables(slNames):
             compData_in = Table.read(slNames[1], format='ascii.daophot')
         except Exception:
             compData_in = Table.read(slNames[1], format='ascii')
-    # Need to watch for empty catalogs being provided for comparison
-    if len(refData_in)==0 or len(compData_in)==0:
-        return [refData_in, compData_in]
-
     titleSwapDict_dao1 = {"X": "X-Center", "Y": "Y-Center", "RA": "RA", "DEC": "DEC", "FLUX1": "n/a",
                           "FLUX2": "Flux(0.15)", "MAGNITUDE1": "MagAp(0.05)", "MAGNITUDE2": "MagAp(0.15)",
                           "MERR1": "MagErr(0.05)", "MERR2": "MagErr(0.15)", "MSKY": "MSky(0.15)",

@@ -128,14 +128,10 @@ class HAPProduct:
         log.debug("The following images will be used: ")
         log.debug("{}\n".format(exposure_filenames))
 
-        # Extract final output rot and scale from AstroDrizzle parameters to be used
-        final_rot = self.configobj_pars.pars['astrodrizzle'].outpars['final_rot']
-        final_scale = self.configobj_pars.pars['astrodrizzle'].outpars['final_scale']
         # Set the rotation to 0.0 to force North as up
         if exposure_filenames:
-            meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames,
-                                                     rot=final_rot,
-                                                     scale=final_scale)
+            meta_wcs = wcs_functions.make_mosaic_wcs(exposure_filenames, rot=0.0)
+
         # Used in generation of SkyFootprints
         self.meta_wcs = meta_wcs
 
@@ -591,16 +587,7 @@ class FilterProduct(HAPProduct):
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         # ...and set parameters which are computed on-the-fly
-        # start by pulling out the specific parameters for the final refimage as
-        # separate input parameters
-        # rot and scale are specified in the config pars json files
-        drizzle_pars["final_ra"] = meta_wcs.wcs.crval[0]
-        drizzle_pars["final_dec"] = meta_wcs.wcs.crval[1]
-        drizzle_pars["final_crpix1"] = meta_wcs.wcs.crpix[0]
-        drizzle_pars["final_crpix2"] = meta_wcs.wcs.crpix[1]
-        drizzle_pars["final_outnx"] = meta_wcs.pixel_shape[0]
-        drizzle_pars["final_outny"] = meta_wcs.pixel_shape[1]
-
+        drizzle_pars["final_refimage"] = meta_wcs
         drizzle_pars["runfile"] = self.trl_logname
         # Setting "preserve" to false so the OrIg_files directory is deleted as the purpose
         # of this directory is now obsolete.

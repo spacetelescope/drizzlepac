@@ -197,7 +197,7 @@ def test_svm_point_cat_numsources(gather_output_data):
     for cat in EXPECTED_POINT_SOURCES.keys():
         for file in cat_files:
             if cat in file and "total" in file:
-                valid_cats[cat] = (np.isclose(num_sources[file], EXPECTED_POINT_SOURCES[cat], atol=1), num_sources[file])
+                valid_cats[cat] = (np.isclose(num_sources[file], EXPECTED_POINT_SOURCES[cat], rtol=0.1), num_sources[file])
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][0]]
     assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {EXPECTED_POINT_SOURCES}"
@@ -212,7 +212,7 @@ def test_svm_segment_cat_numsources(gather_output_data):
     for cat in EXPECTED_SEG_SOURCES.keys():
         for file in cat_files:
             if cat in file and "total" in file:
-                valid_cats[cat] = (np.isclose(num_sources[file], EXPECTED_SEG_SOURCES[cat], atol=1), num_sources[file])
+                valid_cats[cat] = (np.isclose(num_sources[file], EXPECTED_SEG_SOURCES[cat], rtol=0.1), num_sources[file])
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][0]]
     assert len(bad_cats) == 0, f"Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {EXPECTED_SEG_SOURCES}"
