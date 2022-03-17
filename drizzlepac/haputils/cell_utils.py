@@ -404,6 +404,11 @@ class SkyFootprint(object):
         # creating extraneous 'regions' from the image when it is really
         # all one region/chip.
         total_mask = ndimage.binary_fill_holes(total_mask)
+        # Now account for rough edges of the exposure due to calibration effects
+        # which are particularly noticable for WFC3/IR data.
+        # We are hard-coding the number of iterations since it is only
+        # intended to improve, not make perfect, the mask shape.
+        total_mask = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
         self.total_mask = total_mask
 
         # clean up as quickly as possible
@@ -589,9 +594,9 @@ class SkyFootprint(object):
             xy_corners = self.exp_masks[member]['xy_corners']
             sky_corners = self.meta_wcs.all_pix2world(xy_corners, 0)
 
-        self.edge_pixels = np.array(ordered_edges)
-        self.xy_corners = np.array(ordered_xy)
-        self.corners = np.array(sky_corners)
+        self.edge_pixels = np.array(ordered_edges, dtype=object)
+        self.xy_corners = np.array(ordered_xy, dtype=object)
+        self.corners = np.array(sky_corners, dtype=object)
 
     def get_edges_sky(self, member='total'):
         """Returns the sky coordinates of all edge pixels.
