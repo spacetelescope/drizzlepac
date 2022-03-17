@@ -1090,8 +1090,8 @@ class HAPPointCatalog(HAPCatalogBase):
                 sources[fcd_key].description = final_col_descrip[fcd_key]
 
             # add units to columns
-            final_col_units = {"xcentroid": "pixels", "ycentroid": "pixels", "RA": "degrees", "DEC": "degrees",
-                               "id": "unitless"}
+            final_col_units = {"xcentroid": "pixel", "ycentroid": "pixel", "RA": "degree", "DEC": "degree",
+                               "id": ""}
             for col_title in final_col_units:
                 sources[col_title].unit = final_col_units[col_title]
 
@@ -1116,8 +1116,8 @@ class HAPPointCatalog(HAPCatalogBase):
                              "id": "Catalog Object Identification Number",
                              "Flags": "Numeric encoding for conditions on detected sources"}
 
-        final_col_units = {"xcentroid": "pixels", "ycentroid": "pixels", "RA": "degrees", "DEC": "degrees",
-                           "id": "unitless", "Flags": "unitless"}
+        final_col_units = {"xcentroid": "pixel", "ycentroid": "pixel", "RA": "degree", "DEC": "degree",
+                           "id": "", "Flags": ""}
 
         final_colnames = [k for k in final_col_format.keys()]
 
@@ -1254,10 +1254,10 @@ class HAPPointCatalog(HAPCatalogBase):
             output_photometry_table[fcd_key].description = final_col_descrip[fcd_key]
 
         # add units to columns
-        final_col_units = {"X-Center": "pixels", "Y-Center": "pixels", "RA": "degrees", "DEC": "degrees",
-                           "ID": "unitless", "MagAp1": "ABMAG", "MagErrAp1": "ABMAG", "MagAp2": "ABMAG",
-                           "MagErrAp2": "ABMAG", "MSkyAp2": "electrons/s/pixel", "StdevAp2": "electrons/s/pixel",
-                           "FluxAp2": "electrons/sec", "CI": "ABMAG", "Flags": "unitless"}
+        final_col_units = {"X-Center": "pixel", "Y-Center": "pixel", "RA": "degree", "DEC": "degree",
+                           "ID": "", "MagAp1": "mag(AB)", "MagErrAp1": "mag(AB)", "MagAp2": "mag(AB)",
+                           "MagErrAp2": "mag(AB)", "MSkyAp2": "electron/(s pixel)", "StdevAp2": "electron/(s pixel)",
+                           "FluxAp2": "electron/s", "CI": "mag(AB)", "Flags": ""}
         for col_title in final_col_units:
             output_photometry_table[col_title].unit = final_col_units[col_title]
 
@@ -2191,8 +2191,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         radec_data = SkyCoord(filter_measurements_table["sky_centroid_icrs"])
         ra_icrs = radec_data.ra.degree
         dec_icrs = radec_data.dec.degree
-        rr = Column(ra_icrs, name="RA", unit="degrees")
-        dd = Column(dec_icrs, name="DEC", unit="degrees")
+        rr = Column(ra_icrs, name="RA", unit="degree")
+        dd = Column(dec_icrs, name="DEC", unit="degree")
         filter_measurements_table.add_columns([dd, rr])
 
         # Compute the MagSegment
@@ -2457,40 +2457,40 @@ class HAPSegmentCatalog(HAPCatalogBase):
             final_filter_table[fcd_key].description = final_col_descrip[fcd_key]
 
         # Add units
-        final_col_unit = {"X-Centroid": "pixels", "Y-Centroid": "pixels",
-                          "RA": "degrees", "DEC": "degrees",
-                          "Bck": "electrons/s",
-                          "Area": "pixels**2",
-                          "FWHM": "pixels",
-                          "MagAp1": "ABMAG",
-                          "MagErrAp1": "ABMAG",
-                          "FluxAp1": "electrons/s",
-                          "FluxErrAp1": "electrons/s",
-                          "MagAp2": "ABMAG",
-                          "MagErrAp2": "ABMAG",
-                          "FluxAp2": "electrons/s",
-                          "FluxErrAp2": "electrons/s",
-                          "MSkyAp2": "electrons/s/pixel",
-                          "MagSegment": "ABMAG",
-                          "FluxSegment": "electrons/s",
-                          "FluxSegmentErr": "electrons/s",
-                          "KronRadius": "pixels",
-                          "X2": "pixels**2",
-                          "Y2": "pixels**2",
-                          "XY": "pixels**2",
-                          "CXX": "pixels**(-2)",
-                          "CYY": "pixels**(-2)",
-                          "CXY": "pixels**(-2)",
-                          "Xmin": "pixels",
-                          "Ymin": "pixels",
-                          "Xmax": "pixels",
-                          "Ymax": "pixels",
-                          "Theta": "radians",
-                          "CI": "ABMAG",
-                          "Flags": "unitless",
-                          "ID": "unitless",
-                          "Elongation": "unitless",
-                          "Ellipticity": "unitless"}
+        final_col_unit = {"X-Centroid": "pixel", "Y-Centroid": "pixel",
+                          "RA": "degree", "DEC": "degree",
+                          "Bck": "electron/s",
+                          "Area": "pixel**2",
+                          "FWHM": "pixel",
+                          "MagAp1": "mag(AB)",
+                          "MagErrAp1": "mag(AB)",
+                          "FluxAp1": "electron/s",
+                          "FluxErrAp1": "electron/s",
+                          "MagAp2": "mag(AB)",
+                          "MagErrAp2": "mag(AB)",
+                          "FluxAp2": "electron/s",
+                          "FluxErrAp2": "electron/s",
+                          "MSkyAp2": "electron/(s pixel)",
+                          "MagSegment": "mag(AB)",
+                          "FluxSegment": "electron/s",
+                          "FluxSegmentErr": "electron/s",
+                          "KronRadius": "pixel",
+                          "X2": "pixel**2",
+                          "Y2": "pixel**2",
+                          "XY": "pixel**2",
+                          "CXX": "pixel**(-2)",
+                          "CYY": "pixel**(-2)",
+                          "CXY": "pixel**(-2)",
+                          "Xmin": "pixel",
+                          "Ymin": "pixel",
+                          "Xmax": "pixel",
+                          "Ymax": "pixel",
+                          "Theta": "radian",
+                          "CI": "mag(AB)",
+                          "Flags": "",
+                          "ID": "",
+                          "Elongation": "",
+                          "Ellipticity": ""}
         for fcu_key in final_col_unit.keys():
             final_filter_table[fcu_key].unit = final_col_unit[fcu_key]
 
@@ -2500,8 +2500,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
     def _define_empty_table(self, segm_img):
         """Create basic empty table based on total_table format to signify no valid sources were found"""
 
-        final_col_unit = {"X-Centroid": "pixels", "Y-Centroid": "pixels",
-                          "RA": "degrees", "DEC": "degrees", "Flags": "unitless"}
+        final_col_unit = {"X-Centroid": "pixel", "Y-Centroid": "pixel",
+                          "RA": "degree", "DEC": "degree", "Flags": ""}
         final_col_format = {"ID": "7d",
                             "X-Centroid": "10.3f", "Y-Centroid": "10.3f",
                             "RA": "13.7f", "DEC": "13.7f",
@@ -2560,8 +2560,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         radec_data = SkyCoord(updated_table["sky_centroid_icrs"])
         ra_icrs = radec_data.ra.degree
         dec_icrs = radec_data.dec.degree
-        rr = Column(ra_icrs, name="RA", unit="degrees")
-        dd = Column(dec_icrs, name="DEC", unit="degrees")
+        rr = Column(ra_icrs, name="RA", unit="degree")
+        dd = Column(dec_icrs, name="DEC", unit="degree")
         table.add_columns([rr, dd])
 
         # Rename columns to names to those used when HLA Classic catalog distributed by MAST
@@ -2585,8 +2585,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             table[fcd_key].description = final_col_descrip[fcd_key]
 
         # Add units
-        final_col_unit = {"X-Centroid": "pixels", "Y-Centroid": "pixels",
-                          "RA": "degrees", "DEC": "degrees"}
+        final_col_unit = {"X-Centroid": "pixel", "Y-Centroid": "pixel",
+                          "RA": "degree", "DEC": "degree"}
         for fcu_key in final_col_unit.keys():
             table[fcu_key].unit = final_col_unit[fcu_key]
 
