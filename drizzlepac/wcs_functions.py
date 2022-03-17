@@ -1049,6 +1049,7 @@ def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
         hwcs = altwcs.pc2cd(hwcs, key=wcskey)
     return hwcs
 
+
 def make_mosaic_wcs(filenames, rot=None, scale=None):
     """Combine WCSs from all input files into a single meta-WCS
 
@@ -1079,8 +1080,18 @@ def make_mosaic_wcs(filenames, rot=None, scale=None):
     output_wcs = utils.output_wcs(hstwcs_list, undistort=True)
     output_wcs.wcs.cd = make_perfect_cd(output_wcs)
 
-    mosaic_wcs = mergeWCS(output_wcs, {'rot': rot, 'scale': scale})
+    # Apply each parameter in order, as this is effectively what is
+    # done by AstroDrizzle.  This insures that all rounding effects
+    # are applied
+    if rot is not None:
+        mosaic_wcs = mergeWCS(output_wcs, {'rot': rot})
+    else:
+        mosaic_wcs = output_wcs
+    if scale is not None:
+        mosaic_wcs = mergeWCS(mosaic_wcs, {'rot':rot, 'scale': scale})
+
     return mosaic_wcs
+
 
 def create_mosaic_pars(mosaic_wcs):
     """Return dict of values to use with AstroDrizzle to specify output mosaic

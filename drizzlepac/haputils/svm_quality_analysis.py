@@ -409,6 +409,12 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
     sl_lengths = [len(point_data['RA']), len(seg_data['RA'])]
     json_results_dict['point catalog length'] = sl_lengths[0]
     json_results_dict['segment catalog length'] = sl_lengths[1]
+    # Guard against empty catalogs being compared
+    if min(sl_lengths) == 0:
+        log.warning("*** No matching sources were found. Comparisons cannot be computed. "
+                    "No json file will be produced.***")
+        return
+
     matching_lines_ref, matching_lines_img = cu.getMatchedLists(sl_names, img_names, sl_lengths,
                                                                 log_level=log_level)
     json_results_dict['number of cross-matches'] = len(matching_lines_ref)
@@ -430,8 +436,8 @@ def compare_ra_dec_crossmatches(hap_obj, json_timestamp=None, json_time_since_ep
                                                                                  / float(sl_lengths[1]))))
     # return without creating a .json if no cross-matches are found
     if len(matching_lines_ref) == 0 or len(matching_lines_img) == 0:
-        log.error("*** No matching sources were found. Comparisons cannot be computed. "
-                  "No json file will be produced.***")
+        log.warning("*** No matching sources were found. Comparisons cannot be computed. "
+                    "No json file will be produced.***")
         return
     # 2: Create masks to remove missing values or values not considered "good" according to user-specified
     # good bit values
