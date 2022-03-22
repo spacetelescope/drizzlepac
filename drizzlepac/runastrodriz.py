@@ -1710,7 +1710,10 @@ def _update_wcs_fit_keywords(fltfile, flcfile):
         sci_extn = ('SCI', extnum)
         for kw in fit_kws_sci:
             src_hdr = hdulist_flc[sci_extn].header
-            hdulist[sci_extn].header.set(kw[0], value=src_hdr[kw[0]], after='WCSNAME')
+            # Account for situations where FLC was not updated due to
+            # EXPTIME=0 or other condition
+            src_val = src_hdr[kw[0]] if kw[0] in src_hdr else kw[1]
+            hdulist[sci_extn].header.set(kw[0], value=src_val, after='WCSNAME')
 
     hdulist.flush()
     hdulist.close()
