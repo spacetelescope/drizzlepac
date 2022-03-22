@@ -110,8 +110,29 @@ as all other drizzled products; namely, PRIMARY, SCI, WHT, CTX and HDRTAB.
 
 MVM-specific keywords
 ---------------------
+MVM mosaics, by definition, include the contributions of many exposures (in most cases) potentially taken
+at many different times for a specific section of the sky.  Header keywords have been defined to provide
+some information on the unique characteristics of these mosaics and the contribution of the exposures to
+the mosaic.  This unique set of keywords defined in the SCI headers of MVM mosaics includes:
 
+    ===========    ================================================================================
+    Keyword        Description
+    ===========    ================================================================================
+    SCELLID        ID of the SkyCell this mosaic covers
+    NPIXFRAC       Fraction of pixels across the full SkyCell which has been observed by HST
+    MEANEXPT       Mean exposure time of pixels which have been observed by HST
+    MEDEXPT        Median exposure time of pixels which have been observed by HST
+    MEANNEXP       Mean number of HST exposures for the pixels which have been observed by HST
+    MEDNEXP        Median number of HST exposure for the pixels which have been observed by HST
+    ===========    ================================================================================
 
+In addition, some keywords typically found in standard pipeline product headers or the headers of SVM mosaics have
+been removed from the headers of MVM products.  These deleted keywords can be found in the HDRTAB extension for each
+of the input exposures, but make no sense for MVM products.  One example would be the 'IPPPSSOO' keyword which
+gives the 'ipppssoo' value for a single exposure or association product the input exposures had, yet MVM mosaics
+consist of multiple inputs with many different values of 'ipppssoo'.  The full list of keywords which were removed can
+be found in the HISTORY keywords of the MVM product PRIMARY header where the rules file used for defining the MVM
+headers gets reported.
 
 
 Artifacts
@@ -159,6 +180,35 @@ the exposures.
          SkyCell **p0080x09y16** mosaic showing the effects of loss of lock or SCAN mode data
          being included in the output image.
 
+Fortunately, these observations stand out as very dramatic regions of the MVM mosaic where no recognizable sources can
+be found, only a series of streaks as seen in the example.  There are some exposures where SCAN mode was used to observe
+extremely bright sources, however, many of the examples in the archive are the result of unexpected tracking problems
+by HST.
+
+The best option for anyone wanting to explore the region affected by such observations would be to get the list of
+exposures that contribute to the MVM mosaic and reprocess the SkyCell interactively without including the problematic
+exposures.  Eventually, these observations may be removed from the archived products, but until that time comes,
+manual reprocessing would be the suggested means for studying SkyCells affected by such exposures.
+
 
 Alignment Accuracy Across the SkyCell
 --------------------------------------
+Every effort gets made to align all exposures to a GAIA-based coordinate system.
+Some exposures, though, just can not be aligned (or aligned in an automated fashion) to the GAIA system due to any
+number of reasons.  In addition, not all exposures can be aligned to the same GAIA-based catalog of sources as the
+exposure may not include enough GAIA sources for alignment, but may contain sources measured by other projects (like
+Pan-STARRS) that have been subsequently fit to the GAIA coordinate system.  This will result in a larger uncertainty
+for the coordinates for those sources.  The best available WCS for any given exposure eventually gets defined by the
+SVM processing performed by the HST calibration pipeline and these aligned products then get used as inputs to generate
+the MVM mosaics.
+
+MVM mosaics include as many exposures as possible but due to these reasons, a given MVM mosaic can contain exposures
+fit to different astrometric catalogs.  Exposures which do not overlap other exposures in the MVM mosaic can only use
+the WCS defined during SVM processing and that may not be the most accurate GAIA-based catalog available.  This can result
+in errors in the relative alignment between those exposures and the rest of the exposures in the mosaic which have been
+aligned to the most accurate catalog available.  These errors may not be large (less than a few pixels in nearly all cases),
+but care must be taken to interpret the positions of sources across a SkyCell due to such effects.
+
+
+Effects of Proper Motion
+-------------------------
