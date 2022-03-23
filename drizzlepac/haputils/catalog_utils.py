@@ -1415,7 +1415,9 @@ class HAPPointCatalog(HAPCatalogBase):
         for col2del in ['sharpness', 'roundness1', 'roundness2', 'npix', 'sky', 'peak', 'flux', 'mag']:
             if col2del in self.sources.colnames:
                 self.sources.remove_column(col2del)
-        self.sources = join(self.sources, subset_table, keys="ID", join_type="left")
+
+        # Cast the QTable back to a Table to avoid complications
+        self.sources = join(Table(self.sources), subset_table, keys="ID", join_type="left")
 
 # ----------------------------------------------------------------------------------------------------------------------
 
