@@ -1,13 +1,8 @@
 .. _multivisit_api:
 
-****************************
-API for MVM Processing Code
-****************************
-The MVM processing can be performed using one of two interfaces:
-  - command-line interface: :doc:`runmultihap<runmultihap>`
-  - Python interface: :ref:`hapmultisequencer.py<hapmulti>`
-
-
+******************************************
+Python Interface for MVM Processing Code
+******************************************
 The ``hapmultisequencer.py`` module is part of the drizzlepac package and calls
 utilities which are intended to be used with
 Multi-visit Mosaic (MVM) data and to be imported into other Python programs or
