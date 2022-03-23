@@ -3,6 +3,10 @@
 ****************************
 API for MVM Processing Code
 ****************************
+The MVM processing can be performed using one of two interfaces:
+  - command-line interface: :doc:`runmultihap<runmultihap>`
+  - Python interface: :ref:`hapmultisequencer.py<hapmulti>`
+
 
 The ``hapmultisequencer.py`` module is part of the drizzlepac package and calls
 utilities which are intended to be used with
@@ -11,6 +15,8 @@ a Python session for interactive data analysis.
 
 .. toctree::
    :maxdepth: 1
+
+.. _hapmulti :
 
 hapmultisequencer
 ---------------------

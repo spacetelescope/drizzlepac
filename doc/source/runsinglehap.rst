@@ -87,12 +87,12 @@ Associated Helper Code
 ======================
 These modules and functions assist with some of the logistics associated with single-visit processing.
 
-.. _generate_custom_svm_param_file:
+.. _generate_custom_svm_mvm_param_file:
 
-drizzlepac.haputils.generate_custom_svm_param_file
---------------------------------------------------
-.. automodule:: drizzlepac.haputils.generate_custom_svm_param_file
-.. autofunction:: drizzlepac.haputils.generate_custom_svm_param_file.make_svm_input_file
+drizzlepac.haputils.generate_custom_svm_mvm_param_file
+-------------------------------------------------------
+.. automodule:: drizzlepac.haputils.generate_custom_svm_mvm_param_file
+.. autofunction:: drizzlepac.haputils.generate_custom_svm_mvm_param_file.make_svm_input_file
 
 .. _make_poller_files:
 

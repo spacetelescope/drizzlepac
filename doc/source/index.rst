@@ -154,6 +154,7 @@ Combining data across visits to create mosaics for every observed location on th
 
   Multi-Visit Mosaic Processing <multivisit.rst>
   Multi-Visit Mosaic Products <multivisit_products.rst>
+  runmultihap.rst
   multivisit_api.rst
 
   makecustommosaic.rst

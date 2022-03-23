@@ -24,19 +24,24 @@ the new aspects of these products are described in the following sections.
 
 SkyCell Layers
 ===============
-The most basic MVM product would be the SkyCell layer as described in `Defining SkyCell Layers`_ section.  These layers
+The most basic MVM product would be the SkyCell layer as described in
+:ref:`Defining SkyCell Layers<defining_skycells>` section.  These layers
 represent all the exposures taken in a given detector/filter combination in that SkyCell (position on the sky).  As a
 example, the exposures for sky cell **p1889x07y19** define 9 separate layers; namely,
 
-  * **wfc3_uvis_f475w (0.04"/pixel)** :  hst_skycell-p1889x07y19_wfc3_uvis_f475w_all_drz.fits
-  * **wfc3_ir_f105w_coarse  (0.12"/pixel)** : hst_skycell-p1889x07y19_wfc3_ir_f105w_coarse-all_drz.fits
-  * **wfc3_ir_f105w  (0.04"/pixel)** : hst_skycell-p1889x07y19_wfc3_ir_f105w_all_drz.fits
-  * **wfc3_ir_f125w_coarse  (0.12"/pixel)** : hst_skycell-p1889x07y19_wfc3_ir_f125w_coarse-all_drz.fits
-  * **wfc3_ir_f125w  (0.04"/pixel)** : hst_skycell-p1889x07y19_wfc3_ir_f125w_all_drz.fits
-  * **wfc3_ir_f160w_coarse  (0.12"/pixel)** : hst_skycell-p1889x07y19_wfc3_ir_f160w_coarse-all_drz.fits
-  * **wfc3_ir_f160w  (0.04"/pixel)** : hst_skycell-p1889x07y19_wfc3_ir_f160w_all_drz.fits
-  * **acs_wfc_f850lp  (0.04"/pixel)** : hst_skycell-p1889x07y19_acs_wfc_f850lp_all_drc.fits
-  * **acs_wfc_f775w  (0.04"/pixel)** : hst_skycell-p1889x07y19_acs_wfc_f775w_all_drc.fits
+  ==========================  =============  ============================================================
+  Layer Name                  Plate scale    SkyCell filename
+  ==========================  =============  ============================================================
+  **wfc3_uvis_f475w**         0.04"/pixel    hst_skycell-p1889x07y19_wfc3_uvis_f475w_all_drz.fits
+  **wfc3_ir_f105w_coarse**    0.12"/pixel    hst_skycell-p1889x07y19_wfc3_ir_f105w_coarse-all_drz.fits
+  **wfc3_ir_f105w**           0.04"/pixel    hst_skycell-p1889x07y19_wfc3_ir_f105w_all_drz.fits
+  **wfc3_ir_f125w_coarse**    0.12"/pixel    hst_skycell-p1889x07y19_wfc3_ir_f125w_coarse-all_drz.fits
+  **wfc3_ir_f125w**           0.04"/pixel    hst_skycell-p1889x07y19_wfc3_ir_f125w_all_drz.fits
+  **wfc3_ir_f160w_coarse**    0.12"/pixel    hst_skycell-p1889x07y19_wfc3_ir_f160w_coarse-all_drz.fits
+  **wfc3_ir_f160w**           0.04"/pixel    hst_skycell-p1889x07y19_wfc3_ir_f160w_all_drz.fits
+  **acs_wfc_f850lp**          0.04"/pixel    hst_skycell-p1889x07y19_acs_wfc_f850lp_all_drc.fits
+  **acs_wfc_f775w**           0.04"/pixel    hst_skycell-p1889x07y19_acs_wfc_f775w_all_drc.fits
+  ==========================  =============  ============================================================
 
 A full SkyCell would cover an area on the sky of approximately 0.2\deg x 0.2\deg with a WCS defined as:
 
@@ -212,3 +217,27 @@ but care must be taken to interpret the positions of sources across a SkyCell du
 
 Effects of Proper Motion
 -------------------------
+HST has been taking images for over 30 years, with ACS being active since 2002 and WFC3 having been installed in 2009.
+As a result, there have been some fields which have been observed multiple times over those decades allowing HST with
+it's high resolution to observe the stellar proper motions.  Any source with proper motions of a few milli-arcseconds
+motion per year or more could potentially be observed moving when comparing images taken over the life of HST.  Such
+sources can be found in observations of sources like nearby globular clusters (e.g., 47Tuc or Omega Cen) or open clusters
+(like M35).
+
+Unfortunately, this makes aligning images of such high proper motion sources difficult to interpret.  Measurements of
+each sources proper motions have been included in the catalog information for sources in the GAIA-based astrometric
+catalogs for all catalogs derived using GAIADR2 or later.  The HST images taken during the same visit are then aligned
+to the GAIA-based catalog, using the GAIAeDR3 catalog by default through 2022 during the SVM processing.  This SVM
+alignment generates a consistent fit for the proper motions at a single epoch.  These SVM-aligned exposures are then
+used, without further alignment, to generate the final MVM mosaic of all exposures taken over the life of HST.  As a result,
+each epoch represents a single snapshot of the sources at one time.  The sources in the field with large proper motions,
+on the other hand, are not going to align as they have moved from one epoch.  This will result in those sources showing
+up with smeared PSFs or even double-exposures in the final MVM mosaic image while the background sources
+(typically background galaxies or globular clusters) will be well aligned.
+
+These errors can actually be a good way to spot high proper motion sources for later study.  In addition, improvements
+to the MVM processing code are being developed to allow for such fields to processed such that observations taken at
+different times end up in their own MVM mosaic rather than having all the exposures combined by default.  This would
+enable more direct measurement of such high proper motion sources, eventually.  The initial set of MVM products available
+through the archive, though, will be comprised of layers consisting of all exposures from all times for each
+detector/filter combination as indicated by the 'all' in the final MVM product filename.

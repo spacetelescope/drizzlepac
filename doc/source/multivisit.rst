@@ -85,6 +85,8 @@ FITS table installed as part of the `drizzlepac` package:
     drizzlepac/pars/allsky_cells.fits
 
 
+.. _defining_skycells :
+
 Defining each SkyCell
 ----------------------
 Each ProjectionCell is split into a grid of 21 x 21 'sky cells' which serves as the most basic MVM product generated
