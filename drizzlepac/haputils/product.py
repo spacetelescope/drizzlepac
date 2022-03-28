@@ -489,6 +489,12 @@ class TotalProduct(HAPProduct):
 
             .. note:: Cosmic-ray identification is NOT performed when creating the total detection image.
         """
+        # This insures that keywords related to the footprint are generated for this
+        # specific object to use in updating the output drizzle product.
+        self.meta_wcs = meta_wcs
+        if self.mask_computed is False:
+            self.generate_footprint_mask()
+
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         # ...and set parameters which are computed on-the-fly
@@ -947,6 +953,12 @@ class SkyCellExposure(HAPProduct):
         """
             Create the drizzle-combined exposure image using the meta_wcs as the reference output
         """
+        # This insures that keywords related to the footprint are generated for this
+        # specific object to use in updating the output drizzle product.
+        self.meta_wcs = meta_wcs
+        if self.mask_computed is False:
+            self.generate_footprint_mask(save_mask=False)
+
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")
         # ...and set parameters which are computed on-the-fly
@@ -968,6 +980,11 @@ class SkyCellExposure(HAPProduct):
         astrodrizzle.AstroDrizzle(input=self.full_filename,
                                   output=self.drizzle_filename,
                                   **drizzle_pars)
+
+        # Update product with SVM-specific keywords based on the footprint
+        with fits.open(self.drizzle_filename, mode='update') as hdu:
+            for kw in self.mask_kws:
+                hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Exposure image {}".format(self.drizzle_filename))
@@ -1180,7 +1197,7 @@ class SkyCellProduct(HAPProduct):
         # specific object to use in updating the output drizzle product.
         self.meta_wcs = meta_wcs
         if self.mask_computed is False:
-            self.generate_footprint_mask()
+            self.generate_footprint_mask(save_mask=False)
 
         # Retrieve the configuration parameters for astrodrizzle
         drizzle_pars = self.configobj_pars.get_pars("astrodrizzle")

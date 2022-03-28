@@ -370,6 +370,8 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         # Update the SkyCellProduct objects with their associated configuration information.
         for filter_item in total_obj_list:
             _ = filter_item.generate_metawcs(custom_limits=custom_limits)
+            # Compute mask keywords early in processing for use in determining what
+            # parameters need to be used for processing.
             filter_item.generate_footprint_mask(save_mask=False)
 
             # Optionally rename output products
