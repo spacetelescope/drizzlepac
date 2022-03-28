@@ -143,10 +143,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # Make sure this is re-initialized for the new total product
             phot_mode = input_phot_mode
 
-            # Generate an "n" exposure mask which has the image footprint set to the number
-            # of exposures which constitute each pixel.
-            total_product_obj.generate_footprint_mask()
-
             # Instantiate filter catalog product object
             total_product_catalogs = HAPCatalogs(total_product_obj.drizzle_filename,
                                                  total_product_obj.configobj_pars.get_pars('catalog generation'),
