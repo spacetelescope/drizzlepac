@@ -44,6 +44,10 @@ MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEDNEXP": [None, "Median number of exposures per pixel with data"]
             }
 
+MASK_WHTKWS = {"MEANWHT": [None, "Mean exposure time per pixel with data"],
+               "MEDWHT": [None, "Median exposure time per pixel with data"]
+              }
+
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -81,6 +85,7 @@ class HAPProduct:
         self.meta_wcs = None
         self.mask = None
         self.mask_kws = copy.deepcopy(MASK_KWS)
+        self.mask_whtkws = copy.deepcopy(MASK_WHTKWS)
         self.mask_computed = False
 
     # def print_info(self):
@@ -521,6 +526,13 @@ class TotalProduct(HAPProduct):
             for kw in self.mask_kws:
                 hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
 
+            wht = hdu["WHT", 1].data
+            wht_mask = wht > 0.0
+            self.mask_whtkws['MEANWHT'][0] = np.mean(wht[wht_mask])
+            self.mask_whtkws['MEDWHT'][0] = np.median(wht[wht_mask])
+            for kw in self.mask_whtkws:
+                hdu[("WHT", 1)].header[kw] = tuple(self.mask_whtkws[kw])
+
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         try:
@@ -630,6 +642,13 @@ class FilterProduct(HAPProduct):
         with fits.open(self.drizzle_filename, mode='update') as hdu:
             for kw in self.mask_kws:
                 hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+
+            wht = hdu["WHT", 1].data
+            wht_mask = wht > 0.0
+            self.mask_whtkws['MEANWHT'][0] = np.mean(wht[wht_mask])
+            self.mask_whtkws['MEDWHT'][0] = np.median(wht[wht_mask])
+            for kw in self.mask_whtkws:
+                hdu[("WHT", 1)].header[kw] = tuple(self.mask_whtkws[kw])
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
@@ -1224,8 +1243,23 @@ class SkyCellProduct(HAPProduct):
         with fits.open(self.drizzle_filename, mode='update') as hdu:
             for kw in self.mask_kws:
                 hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+
             # Add SCELLID keyword to MVM product
             hdu[("SCI", 1)].header['SCELLID'] = self.cell_id
+
+            # Now that the drizzle product is created, compute the mean and median
+            # exposure times based on the WHT image
+            wht = hdu["WHT", 1].data
+            wht_mask = wht > 0.0
+            # MDD TMP
+            wht_mean = np.mean(wht[wht_mask])
+            wht_median = np.median(wht[wht_mask])
+            log.info("WHT Mean: {}   WHT Median: {}".format(wht_mean, wht_median))
+            self.mask_whtkws['MEANWHT'][0] = np.mean(wht[wht_mask])
+            self.mask_whtkws['MEDWHT'][0] = np.median(wht[wht_mask])
+            for kw in self.mask_whtkws:
+                hdu[("WHT", 1)].header[kw] = tuple(self.mask_whtkws[kw])
+
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Sky-cell layer image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         try:
