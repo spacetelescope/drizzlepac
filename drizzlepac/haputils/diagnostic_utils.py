@@ -175,13 +175,8 @@ class HapDiagnostic(object):
         for key in dict_keys:
             self.out_dict['general information'][dict_keys[key]] = self.header[key]
         # Now, add items which require more interpretation
-        try:
-            if self.header['primesi'].lower() == self.header['instrume']:
-                self.out_dict['general information']['visit'] = self.header['linenum'].split(".")[0]
-            else:
-                self.out_dict['general information']['visit'] = self.header['filename'].split("_")[2]
-        except:
-            self.out_dict['general information']['visit'] = self.header['filename'].split("_")[2]
+        self.out_dict['general information']['visit'] = extract_visit_from_header(self.header)
+
         # determine filter...
         filter_names = ';'.join([self.header[f] for f in self.header['filter*']])
         self.out_dict['general information']['filter'] = poller_utils.determine_filter_name(filter_names)
@@ -491,6 +486,33 @@ def dict_to_astropy_table(in_dict):
         out_table[colname].format = in_dict[colname]['format']
     return out_table
 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+def extract_visit_from_header(header):
+    """extracts the visit ID from the header
+
+    Returns
+    --------
+    visit_id : str
+        String ID for the visit from the input header
+
+    """
+    filename_split = header['filename'].split("_")
+    default_id = header['linenum'].split(".")[0]
+
+    if header['primesi'].lower() == header['instrume']:
+        # Not a parallel observation, so we can rely on 'linenum' keyword
+        visit_id = default_id
+    else:
+        # For parallel observations...
+        if len(filename_split) > 2:
+            # filename follows SVM naming convention
+            visit_id = filename_split[2]
+        else:
+            # working with standard IPPPSSOOT filename, so go off 'SS' from filename
+            visit_id = filename_split[0][4:6]
+
+    return visit_id
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
