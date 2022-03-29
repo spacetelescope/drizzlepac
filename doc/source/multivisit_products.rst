@@ -60,7 +60,7 @@ SkyCell Subarray Specification
 -------------------------------
 SkyCell layers would normally result in arrays that take up 1.8Gb each, or nearly 4Gb for the entire FITS file.  In
 addition, most of a typical SkyCell layer will be empty due to the small size of most detectors, especially the WFC3/IR,
-ACS/HRC and ACS/SBC detectors which are only 1024x1024 arrays.  Each SkyCell then gets evaluated to only define a common
+ACS/HRC and ACS/SBC detectors which are only 1024x1024 arrays.  As a result, each SkyCell is evaluated to define only a common
 subarray size that covers ALL HST data for the SkyCell regardless of the layer, then uses that to define the smallest
 WCS specification possible for the SkyCell.  The data from **p1889x07y19** actually only covers about 1/4 of the entire
 SkyCell resulting in a WCS defined as:
@@ -96,7 +96,7 @@ We can see how the exposures land in the SkyCell as defined with this subarray W
           All the WFC3/IR F105W exposures that overlap SkyCell **p1889x07y19**.
 
 
-These figures demonstrate how the SkyCell subarray has been defined to only cover the exposures that overlap this
+These figures demonstrate how the SkyCell subarray has been defined to cover only the exposures that overlap this
 SkyCell while minimizing the amount of empty space in these layers making these products as small as possible without
 resorting to compression.
 
@@ -172,11 +172,11 @@ defined based on different astrometric catalogs for one of the visits of this so
 
 Loss of Lock
 --------------
-Another issue that can show up in SkyCell mosaics results from HST slewing across the sky while the exposures was
+Another issue that can show up in SkyCell mosaics results from HST slewing across the sky while the exposure was
 being taken.  This can happen when HST loses lock on the guide stars used to point the telescope or intentionally
 when the proposer requested exposures be taken in 'SCAN' mode.  No reliable method currently exists to identify
 such exposures prior to creating mosaics with them, resulting in exposures where the sources are trailed across
-the exposures.
+the image.
 
 .. figure:: images/skycell_p0080x09y16-slewing-example-color.jpg
          :figwidth: 95%
@@ -224,8 +224,8 @@ motion per year or more could potentially be observed moving when comparing imag
 sources can be found in observations of sources like nearby globular clusters (e.g., 47Tuc or Omega Cen) or open clusters
 (like M35).
 
-Unfortunately, this makes aligning images of such high proper motion sources difficult to interpret.  Measurements of
-each sources proper motions have been included in the catalog information for sources in the GAIA-based astrometric
+Unfortunately, this makes aligning images of such high proper motion sources difficult to interpret.  Measurements of proper
+motions for each source have been included in the catalog information for sources in the GAIA-based astrometric
 catalogs for all catalogs derived using GAIADR2 or later.  The HST images taken during the same visit are then aligned
 to the GAIA-based catalog, using the GAIAeDR3 catalog by default through 2022 during the SVM processing.  This SVM
 alignment generates a consistent fit for the proper motions at a single epoch.  These SVM-aligned exposures are then
@@ -236,7 +236,7 @@ up with smeared PSFs or even double-exposures in the final MVM mosaic image whil
 (typically background galaxies or globular clusters) will be well aligned.
 
 These errors can actually be a good way to spot high proper motion sources for later study.  In addition, improvements
-to the MVM processing code are being developed to allow for such fields to processed such that observations taken at
+to the MVM processing code are being developed to allow for such fields to be processed such that observations taken at
 different times end up in their own MVM mosaic rather than having all the exposures combined by default.  This would
 enable more direct measurement of such high proper motion sources, eventually.  The initial set of MVM products available
 through the archive, though, will be comprised of layers consisting of all exposures from all times for each
