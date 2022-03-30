@@ -44,6 +44,10 @@ MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEDNEXP": [None, "Median number of exposures per pixel with data"]
             }
 
+MASK_WHTKWS = {"MEANWHT": [None, "Mean exposure time per pixel with data"],
+               "MEDWHT": [None, "Median exposure time per pixel with data"]
+              }
+
 
 class HAPProduct:
     """ HAPProduct is the base class for the various products generated during the
@@ -81,6 +85,7 @@ class HAPProduct:
         self.meta_wcs = None
         self.mask = None
         self.mask_kws = copy.deepcopy(MASK_KWS)
+        self.mask_whtkws = copy.deepcopy(MASK_WHTKWS)
         self.mask_computed = False
 
     # def print_info(self):
@@ -519,7 +524,17 @@ class TotalProduct(HAPProduct):
         # Update product with SVM-specific keywords based on the footprint
         with fits.open(self.drizzle_filename, mode='update') as hdu:
             for kw in self.mask_kws:
-                hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+                hdu[0].header[kw] = tuple(self.mask_kws[kw])
+
+            # Now that the drizzle product is created, compute the mean and median
+            # of the WHT image
+            wht = hdu["WHT", 1].data
+            wht_mask = self.mask > 0 if hasattr(self.mask, 'shape') else wht > 0.0
+            self.mask_whtkws['MEANWHT'][0] = np.mean(wht[wht_mask])
+            self.mask_whtkws['MEDWHT'][0] = np.median(wht[wht_mask])
+
+            for kw in self.mask_whtkws:
+                hdu[0].header[kw] = tuple(self.mask_whtkws[kw])
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Total combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
@@ -629,7 +644,17 @@ class FilterProduct(HAPProduct):
         # Update product with SVM-specific keywords based on the footprint
         with fits.open(self.drizzle_filename, mode='update') as hdu:
             for kw in self.mask_kws:
-                hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+                hdu[0].header[kw] = tuple(self.mask_kws[kw])
+
+            # Now that the drizzle product is created, compute the mean and median
+            # of the WHT image
+            wht = hdu["WHT", 1].data
+            wht_mask = self.mask > 0 if hasattr(self.mask, 'shape') else wht > 0.0
+            self.mask_whtkws['MEANWHT'][0] = np.mean(wht[wht_mask])
+            self.mask_whtkws['MEDWHT'][0] = np.median(wht[wht_mask])
+
+            for kw in self.mask_whtkws:
+                hdu[0].header[kw] = tuple(self.mask_whtkws[kw])
 
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Filter combined image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
@@ -1223,9 +1248,21 @@ class SkyCellProduct(HAPProduct):
         # Update product with MVM-specific keywords based on the footprint
         with fits.open(self.drizzle_filename, mode='update') as hdu:
             for kw in self.mask_kws:
-                hdu[("SCI", 1)].header[kw] = tuple(self.mask_kws[kw])
+                hdu[0].header[kw] = tuple(self.mask_kws[kw])
+
             # Add SCELLID keyword to MVM product
-            hdu[("SCI", 1)].header['SCELLID'] = self.cell_id
+            hdu[0].header['SCELLID'] = self.cell_id
+
+            # Now that the drizzle product is created, compute the mean and median
+            # of the WHT image
+            wht = hdu["WHT", 1].data
+            wht_mask = self.mask > 0 if hasattr(self.mask, 'shape') else wht > 0.0
+            self.mask_whtkws['MEANWHT'][0] = np.mean(wht[wht_mask])
+            self.mask_whtkws['MEDWHT'][0] = np.median(wht[wht_mask])
+
+            for kw in self.mask_whtkws:
+                hdu[0].header[kw] = tuple(self.mask_whtkws[kw])
+
         # Rename Astrodrizzle log file as a trailer file
         log.debug("Sky-cell layer image {} composed of: {}".format(self.drizzle_filename, edp_filenames))
         try:
