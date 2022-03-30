@@ -529,7 +529,7 @@ class TotalProduct(HAPProduct):
             # Now that the drizzle product is created, compute the mean and median
             # of the WHT image
             wht = hdu["WHT", 1].data
-            wht_mask = self.mask > 0 if self.mask else wht > 0.0
+            wht_mask = self.mask > 0 if hasattr(self.mask, 'shape') else wht > 0.0
             self.mask_whtkws['MEANWHT'][0] = np.mean(wht[wht_mask])
             self.mask_whtkws['MEDWHT'][0] = np.median(wht[wht_mask])
 
@@ -649,7 +649,7 @@ class FilterProduct(HAPProduct):
             # Now that the drizzle product is created, compute the mean and median
             # of the WHT image
             wht = hdu["WHT", 1].data
-            wht_mask = self.mask > 0 if self.mask else wht > 0.0
+            wht_mask = self.mask > 0 if hasattr(self.mask, 'shape') else wht > 0.0
             self.mask_whtkws['MEANWHT'][0] = np.mean(wht[wht_mask])
             self.mask_whtkws['MEDWHT'][0] = np.median(wht[wht_mask])
 
@@ -1256,7 +1256,7 @@ class SkyCellProduct(HAPProduct):
             # Now that the drizzle product is created, compute the mean and median
             # of the WHT image
             wht = hdu["WHT", 1].data
-            wht_mask = self.mask > 0 if self.mask else wht > 0.0
+            wht_mask = self.mask > 0 if hasattr(self.mask, 'shape') else wht > 0.0
             self.mask_whtkws['MEANWHT'][0] = np.mean(wht[wht_mask])
             self.mask_whtkws['MEDWHT'][0] = np.median(wht[wht_mask])
 
