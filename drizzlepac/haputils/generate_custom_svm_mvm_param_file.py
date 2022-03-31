@@ -23,8 +23,8 @@ Command-line USAGE:
 
 Python USAGE:
     >>> python
-    >>> from drizzlepac.haputils import generate_custom_svm_param_file
-    >>> generate_custom_svm_param_file.make_svm_input_file(input_filename,
+    >>> from drizzlepac.haputils import generate_custom_svm_mvm_param_file
+    >>> generate_custom_svm_mvm_param_file.make_svm_input_file(input_filename,
                                                            clobber=False,
                                                            log_level=logutil.logging.INFO
                                                            output_custom_pars_file='custom_parameters.json',

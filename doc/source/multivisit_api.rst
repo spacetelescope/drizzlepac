@@ -1,8 +1,8 @@
 .. _multivisit_api:
-****************************
-API for MVM Processing Code
-****************************
 
+******************************************
+Python Interface for MVM Processing Code
+******************************************
 The ``hapmultisequencer.py`` module is part of the drizzlepac package and calls
 utilities which are intended to be used with
 Multi-visit Mosaic (MVM) data and to be imported into other Python programs or
@@ -10,6 +10,8 @@ a Python session for interactive data analysis.
 
 .. toctree::
    :maxdepth: 1
+
+.. _hapmulti :
 
 hapmultisequencer
 ---------------------
