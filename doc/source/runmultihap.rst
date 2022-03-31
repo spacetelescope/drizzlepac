@@ -1,8 +1,12 @@
 .. _runmultihap_api:
 
-===================
-API for runmultihap
-===================
+The MVM processing can be performed using one of two interfaces:
+  - command-line interface: :ref:`runmultihap<runmultihap_api>`
+  - Python interface: :doc:`hapmultisequencer<multivisit_api>`
+
+==========================================
+Command-line Interface for MVM Processing
+==========================================
 .. toctree::
    :maxdepth: 2
 
