@@ -118,7 +118,7 @@ MVM-specific keywords
 MVM mosaics, by definition, include the contributions of many exposures (in most cases) potentially taken
 at many different times for a specific section of the sky.  Header keywords have been defined to provide
 some information on the unique characteristics of these mosaics and the contribution of the exposures to
-the mosaic.  This unique set of keywords defined in the SCI headers of MVM mosaics includes:
+the mosaic.  This unique set of keywords defined in the PRIMARY headers of MVM mosaics includes:
 
     ===========    ================================================================================
     Keyword        Description
@@ -129,6 +129,8 @@ the mosaic.  This unique set of keywords defined in the SCI headers of MVM mosai
     MEDEXPT        Median exposure time of pixels which have been observed by HST
     MEANNEXP       Mean number of HST exposures for the pixels which have been observed by HST
     MEDNEXP        Median number of HST exposure for the pixels which have been observed by HST
+    MEANWHT        Mean weight (typically exposure time) of pixels observed by HST
+    MEDWHT         Median of weights (typically exposure time) of pixels observed by HST
     ===========    ================================================================================
 
 In addition, some keywords typically found in standard pipeline product headers or the headers of SVM mosaics have
