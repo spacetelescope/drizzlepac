@@ -18,7 +18,41 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.4.0 (unreleased)
+3.4.1 (5-Apr-2022)
+==================
+This release addresses issues found in v3.4.0.  The most significant
+issues were:
+
+- Add documentation describing mvm products and artifacts (#1322)
+
+- Revise logic for when mask keywords are computed (#1323)
+
+- Restrict version of Photutils to < 1.4.0. (#1326)
+
+- Add MEANWHT and MEDWHT keywords to drizzle products (#1324)
+
+- Modify the units of the catalog variables so they are astropy-compatible (#1318)
+
+- Smooth out determination of S_REGION vertices (#1315)
+
+- Apply default alignment fit parameters for zero exptime exposures (#1319)
+
+- fix for tasknames to once again work with TEAL (#1289)
+
+- Revise code to properly support Astropy v5.0 (#1286 , #1290 , #1292, #1296, #1307)
+
+- Protect computations in catalog generation when photflam is equal to 0.0 (#1295)
+
+- Define MVM-specific and SVM-specific processing parameters for drizzling (#1277, #1303)
+
+- Remove IPPPSSOO keyword from header of output SVM or MVM drizzle products (#1297)
+
+- Insure correct statistics are reported in MVM headers (#1300)
+
+
+
+
+3.4.0 (7-Mar-2022)
 ==================
 This major release adds support for multi-visit mosaic (MVM) processing, in
 addition to including numerous revisions to try to align more datasets
