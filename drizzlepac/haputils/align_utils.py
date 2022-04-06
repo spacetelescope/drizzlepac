@@ -179,6 +179,13 @@ class AlignmentTable:
                                           bkg_estimator=self.alignment_pars['bkg_estimator'],
                                           rms_estimator=self.alignment_pars['rms_estimator'],
                                           threshold_flag=self.alignment_pars['threshold'])
+                catimg.verify_guiding()
+                if catimg.bad_guiding:
+                    # Remove this entry from the process_list
+                    self.process_list.remove(img)
+                    # go on to the next image and not include in it self.haplist
+                    continue
+
                 catimg.build_kernel(fwhmpsf)
                 catimg.crclean = self.alignment_pars['classify']
                 log.info("CATIMG.CRCLEAN: {}".format(catimg.crclean))
@@ -473,6 +480,10 @@ class HAPImage:
         # Switch to turn on/off use of single-image CR detection/removal
         self.crclean = False
 
+        # Keep track of whether or not this image had guiding problems
+        self.bad_guiding = False
+
+
     def build_wht_image(self):
         if not self.num_wht:
             # Working with a calibrated exposure, no WHT extension
@@ -497,6 +508,17 @@ class HAPImage:
         self.bkg_rms_mean = {}
         self.bkg = {}
         self.bkg_dao_rms = {}
+
+    def verify_guiding(self):
+        """ Determine if this image was affected by guide star tracking problems."""
+        if self.bkg is None or self.bkg == {}:
+            self.compute_background()
+        bkg = np.concatenate([background for background in self.bkg.values()])
+        imgarr = self.data - bkg
+        imgarr = np.clip(imgarr, 0, imgarr.max())
+
+        # Now determine whether this image was affected by guiding problems
+        self.bad_guiding = amutils.detect_lines(imgarr)
 
 
     def build_kernel(self, fwhmpsf):
@@ -537,7 +559,6 @@ class HAPImage:
         log.info("  Found PSF with FWHM = {:9.4f}".format(self.kernel_fwhm))
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
-
 
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
                            bkg_estimator="SExtractorBackground", rms_estimator="StdBackgroundRMS",
