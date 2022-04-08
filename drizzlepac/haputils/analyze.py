@@ -15,9 +15,15 @@ import math
 import sys
 
 from enum import Enum
+from astropy.io import fits
 from astropy.io.fits import getheader
 from astropy.table import Table
+from astropy.stats import sigma_clipped_stats
 import numpy as np
+
+from scipy import ndimage
+from skimage.transform import hough_line, hough_line_peaks
+from skimage.feature import canny
 
 from stsci.tools import logutil
 
@@ -151,6 +157,10 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     # Reduce table to only the data which should be processed (doProcess == 1)
     mask = filtered_table["doProcess"] > 0
     filtered_table = filtered_table[mask]
+
+    # Further reduce table to only the data which is NOT affected by bad guiding
+    guide_mask = [not verify_guiding(f) for f in filtered_table["imageName"]]
+    filtered_table = filtered_table[guide_mask]
 
     good_table = None
     good_rows = []
@@ -471,3 +481,102 @@ def generate_msg(filename, msg, key, value):
         log.warning('Dataset cannot be aligned.')
     else:
         log.warning('Dataset can be aligned, but the result may be compromised.')
+
+
+# -----------------------------------------------------------------------------
+#  Line detection functions
+# -----------------------------------------------------------------------------
+
+def verify_guiding(filename):
+    """ Verify whether or not the input image was affected by guiding problems.
+
+    This algorithm evaluates the data from (SCI,1) to try to determine whether
+    the image was affected by guiding problems which mimic SCAN mode or GRISM data
+    with the trails in an arbitrary angle across the image.
+
+    Parameters
+    ==========
+    filename : str
+        Name of image to be evaluated
+
+    Returns
+    ========
+    bad_guiding : bool
+        Boolean specifying whether or not the image was detected as
+        being affected by guiding problems.  Value is True if image
+        was affected.
+    """
+
+    data = fits.getdata(filename, ext=("SCI", 1))
+    bkg_stats = sigma_clipped_stats(data, maxiters=3)
+    bkg_limit = bkg_stats[1] + 10 * bkg_stats[2]
+    bkg = np.zeros(data.shape, np.float32) + bkg_limit
+
+    imgarr = data - bkg
+    imgarr = np.clip(imgarr, 0, imgarr.max())
+
+    log.info(f"Verifying that {filename} was not affected by guiding problems.")
+    # Now determine whether this image was affected by guiding problems
+    bad_guiding = detect_lines(imgarr)
+    if bad_guiding:
+        log.warning(f"Image {filename} was determined to have bad guiding.")
+
+    return bad_guiding
+
+
+def detect_lines(image):
+    """Detect lines in the input image and return list of line parameters """
+    # extract edges from image for faster line detection
+    edges = canny(image)
+    # turn all sources into filled sources, if they are linear
+    edges = ndimage.binary_erosion(ndimage.binary_dilation(edges, iterations=2), iterations=2)
+
+    # Classic straight-line Hough transform
+    # Set a precision of 0.5 degree.
+    tested_angles = np.linspace(-np.pi / 2, np.pi / 2, 360, endpoint=False)
+    h, theta, d = hough_line(edges, theta=tested_angles)
+
+    lines = []
+    for _, angle, dist in zip(*hough_line_peaks(h, theta, d)):
+        (x0, y0) = dist * np.array([np.cos(angle), np.sin(angle)])
+        lines.append([x0, y0, np.rad2deg(angle), np.tan(angle + np.pi / 2), dist])
+
+    return lines
+
+
+def lines_in_image(image, line_sigma=10.0):
+    """Determine if image is dominated by linear features
+
+    Parameters
+    ----------
+    image : ndarray
+        Background-subtracted image to detect linear features in
+
+    line_sigma : float, optional
+        Detection threshold in sigma used to determine whether
+        the number of features with a given angle is more than
+        the noise.
+
+    Returns
+    -------
+    lines_detected : bool
+        Specifies whether or not image is dominated by linear features
+    """
+    # detect any lines in image
+    lines = detect_lines(image)
+
+    # perform statistical analysis on detected linear features
+    # start by generating a histogram of the angles of all the lines
+    angles = [l[2] for l in lines]
+    angle_bins = np.linspace(-180, 180, 360)  # 1 degree bins
+    ahist = np.histogram(angles, bins=angle_bins)
+
+    # look to see whether the peak angle is dramatically larger
+    # than any other peak
+    # we will use 10-sigma as the threshold by default
+    astats = sigma_clipped_stats(ahist[0], maxiters=1)
+    alimit = astats[2] * line_sigma
+
+    lines_detected = angles.max() > alimit
+
+    return lines_detected

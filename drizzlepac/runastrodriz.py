@@ -109,10 +109,10 @@ from drizzlepac import processInput  # used for creating new ASNs for _flc input
 
 from drizzlepac import align
 from drizzlepac import resetbits
+from drizzlepac.haputils import analyze
 from drizzlepac.haputils import astrometric_utils as amutils
 from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import processing_utils
-from drizzlepac.haputils import align_utils  # Used for detecting bad guiding
 from drizzlepac import util
 from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
@@ -413,9 +413,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             fltimg = flcimg
         # We want to use the FLC image, if possible, to avoid any
         # possible detection of CTE tails as false guide-star trailing lines
-        hap_flc = align_utils.HAPImage(fltimg)
-        hap_flc.verify_guiding()
-        if hap_flc.bad_guiding:
+        bad_guiding = analyze.verify_guiding(fltimg)
+        if bad_guiding:
             # Remove the affected image(s) from further processing
             _calfiles.remove(fltimg)
             if os.path.exists(flcimg):
