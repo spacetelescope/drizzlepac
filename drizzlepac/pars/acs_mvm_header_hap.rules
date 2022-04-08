@@ -418,7 +418,7 @@ MTFLAG    MTFLAG    first
 <delete>  QUALCOM2
 <delete>  QUALCOM3
 <delete>  / CALIBRATION REFERENCE FILES
-<delete>  / CALIBRATION SWITCHES: PERFORM, OMIT, COMPLETE, SKIPPED
+<delete>  / CALIBRATION SWITCHES: PERFORM, OMIT, COMPLETE
 <delete>  / PATTERN KEYWORDS
 ################################################################################
 #
