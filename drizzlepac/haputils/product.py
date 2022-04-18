@@ -44,8 +44,8 @@ MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEDNEXP": [None, "Median number of exposures per pixel with data"]
             }
 
-MASK_WHTKWS = {"MEANWHT": [None, "Mean exposure time per pixel with data"],
-               "MEDWHT": [None, "Median exposure time per pixel with data"]
+MASK_WHTKWS = {"MEANWHT": [None, "Mean weight (typically exposure time) over pixels with data"],
+               "MEDWHT": [None, "Median weight (typically exposure time) over pixels with data"]
               }
 
 
