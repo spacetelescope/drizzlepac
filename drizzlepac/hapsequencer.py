@@ -50,6 +50,7 @@ import fnmatch
 import logging
 import os
 import pickle
+import re
 import shutil
 import sys
 import traceback
@@ -1254,10 +1255,30 @@ def archive_alternate_wcs(filename):
     # Loop over the WCSNAMEs looking for the HDRNAMEs.  If a corresponding
     # HDRNAME does not exist, create one.
     header = fits.getheader(filename, ext=0)
+
+    # Check if this alternate WCS is already a headerlet
+    headerlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="WCSNAME")
+    headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
+
+    # Create patterns for each WCSNAME to find any 'duplicate' solutions
+    wcs_patterns = []
+    for wcsname in headerlet_wcsnames:
+        wcs_patterns.append([wcsname, re.compile(wcsname+"-[\d]")])
+
     for wkey, wcsname in wcs_key_dict.items():
         # Skip the "OPUS" WCS
         if wkey.upper().startswith("O"):
             continue
+
+        # Look for duplicated WCSNAMEs
+        for (pattern_wcs, pattern) in wcs_patterns:
+            log.debug(f'Checking {wcsname} against {pattern}')
+            if pattern.match(wcsname) is not None:
+                # Reset WCSNAME to original non-duplicated WCSNAME
+                wcsname = pattern_wcs
+                log.debug(f'Reset WCSNAME to {wcsname}')
+                break
+
         try:
             keyword = "HDRNAME" + wkey.upper()
             hdrname = header[keyword]
@@ -1267,13 +1288,9 @@ def archive_alternate_wcs(filename):
         except KeyError:
             hdrname = header["FILENAME"][:-5] + "_" + wcsname + "-hlet.fits"
 
-        # Check if this alternate WCS is already a headerlet
-        headerlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="WCSNAME")
-        headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
-
         # If already a headerlet, then do nothing ...
         try:
-            headerlet_name = headerlet_hdrnames[headerlet_wcsnames.index(wcsname)]
+            _ = headerlet_hdrnames[headerlet_wcsnames.index(wcsname)]
         # ... else, make a headerlet
         except:
             wcsutil.headerlet.archive_as_headerlet(filename, hdrname, wcsname=wcsname, wcskey=wkey)
