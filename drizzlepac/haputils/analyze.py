@@ -24,7 +24,7 @@ import numpy as np
 from photutils.segmentation import SourceCatalog, detect_sources
 
 from scipy import ndimage
-from skimage.transform import hough_line, hough_line_peaks
+from skimage.transform import probabilistic_hough_line
 from skimage.feature import canny
 
 from stsci.tools import logutil
@@ -33,7 +33,7 @@ __taskname__ = 'analyze'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.DEBUG, stream=sys.stdout,
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __all__ = ['analyze_data', 'analyze_wrapper', 'mvm_analyze_wrapper']
@@ -489,7 +489,7 @@ def generate_msg(filename, msg, key, value):
 #  Line detection functions
 # -----------------------------------------------------------------------------
 
-def verify_guiding(filename):
+def verify_guiding(filename, min_length=33):
     """ Verify whether or not the input image was affected by guiding problems.
 
     This algorithm evaluates the data from (SCI,1) to try to determine whether
@@ -501,6 +501,9 @@ def verify_guiding(filename):
     filename : str
         Name of image to be evaluated
 
+    min_length : int, optional
+        Minimum length of trails (in pixels) to be detected in image.
+
     Returns
     ========
     bad_guiding : bool
@@ -508,52 +511,84 @@ def verify_guiding(filename):
         being affected by guiding problems.  Value is True if image
         was affected.
     """
+    log.info(f"Verifying that {filename} was not affected by guiding problems.")
 
-    data = fits.getdata(filename, ext=("SCI", 1))
+    hdu = fits.open(filename)
+    data = hdu[("SCI", 1)].data.copy()
+    scale_data = hdu[("SCI",1)].header["bunit"].endswith('/S')
+    data = np.nan_to_num(data, nan=0.0)  # just to be careful
+    if scale_data:
+        # Photutils works best in units of DN
+        scale_hdr = hdu[0].header if 'exptime' in hdu[0].header else hdu[1].header
+        scale_val = scale_hdr['exptime']
+        data *= scale_val
     bkg_stats = sigma_clipped_stats(data, maxiters=2)
-    bkg_limit = bkg_stats[1] + (3 * bkg_stats[2])
+    bkg_limit = bkg_stats[1] + bkg_stats[2]
     log.debug(f"bkg_limit found to be: {bkg_limit:.2f}")
 
-    imgarr = data - bkg_limit
-    imgarr = np.clip(imgarr, 0, imgarr.max())
+    data -= bkg_limit
+    imgarr = np.clip(data, 0, data.max())
 
     # Determine rough number of probable sources
     # Trying to ignore small sources (<= 4x4 pixels in size, or npixels < 17)
     #   which are either noise peaks or head-on CRs.
-    segm = detect_sources(image, 0, npixels=17)
-    src_cat = SourceCatalog(image, segm)
-    num_sources = len(src_cat)
-    seg_mask = np.clip(segm.data, 0, 1).astype(np.bool)
+    segm = detect_sources(imgarr, 0, npixels=17)
+    log.debug(f'Detected {segm.nlabels} raw sources in {filename}')
+    if segm.nlabels < 2:
+        return False, None
 
-    log.info(f"Verifying that {filename} was not affected by guiding problems.")
+    src_cat = SourceCatalog(imgarr, segm)
+    pt_srcs = src_cat.labels[src_cat.elongation < 10]
+    segm.remove_labels(pt_srcs)
+    src_cat = SourceCatalog(imgarr, segm)  # clean up source catalog now...
+    num_sources = len(src_cat)
+    seg_mask = ndimage.binary_dilation(segm.data > 0, iterations=5)
+
     # Now determine whether this image was affected by guiding problems
-    bad_guiding, lhist = lines_in_image(imgarr, num_sources, mask=seg_mask)
+    bad_guiding = lines_in_image(imgarr*seg_mask, num_sources,
+                                        min_length=min_length)
     if bad_guiding:
         log.warning(f"Image {filename} was determined to have bad guiding.")
+    else:
+        log.info(f"No signs of bad guiding detected in {filename}.")
 
-    return bad_guiding, lhist
+    return bad_guiding
 
 
-def detect_lines(image, mask=None):
+def detect_lines(image, mask=None, min_length=17):
     """Detect lines in the input image and return list of line parameters """
-    # extract edges from image for faster line detection
-    edges = canny(image, sigmae=3, mask=mask)
-    # turn all sources into filled sources, if they are linear
-    edges = ndimage.binary_erosion(ndimage.binary_dilation(edges, iterations=2), iterations=2)
-    # Classic straight-line Hough transform
-    # Set a precision of 0.5 degree.
-    tested_angles = np.linspace(-np.pi / 2, np.pi / 2, 361, endpoint=False)
-    h, theta, d = hough_line(edges, theta=tested_angles)
+    lines = {'num': None,
+             'line_start': None,
+             'line_end': None,
+             'angles': None,
+             'lengths': None,
+             'slopes': None}
 
-    lines = []
-    for _, angle, dist in zip(*hough_line_peaks(h, theta, d)):
-        (x0, y0) = dist * np.array([np.cos(angle), np.sin(angle)])
-        lines.append([x0, y0, np.rad2deg(angle), np.tan(angle + np.pi / 2), dist])
+    # extract edges from image for faster line detection
+    edges = canny(image, sigma=2.5, low_threshold=0, high_threshold=25, mask=mask)
+
+    # Classic straight-line Hough transform
+    plines = probabilistic_hough_line(edges, threshold=0,
+                                     line_gap=3,
+                                     line_length=min_length)
+    if len(plines) > 0:
+        plines = np.array(plines)
+        startarr = plines[:, 0]
+        endarr = plines[:, 1]
+        rise = endarr[:, 1] - startarr[:, 1]
+        run = endarr[:, 0]-startarr[:, 0]
+        angles = np.arctan2(rise, run)
+        lines['startarr'] = startarr
+        lines['endarr'] = endarr
+        lines['angles'] = np.rad2deg(angles)
+        lines['lengths'] = np.sqrt(rise**2 + run**2)
+        lines['slopes'] = np.tan(angles + np.pi/2)
+        lines['num'] = len(plines)
 
     return lines
 
 
-def lines_in_image(image, num_sources, line_sigma=10.0, mask=None):
+def lines_in_image(image, num_sources, line_sigma=10.0, mask=None, min_length=17):
     """Determine if image is dominated by linear features
 
     Parameters
@@ -566,21 +601,29 @@ def lines_in_image(image, num_sources, line_sigma=10.0, mask=None):
         the number of features with a given angle is more than
         the noise.
 
+    sensitivity : float, optional
+        Increments in degrees for detecting lines in image.
+
     Returns
     -------
     lines_detected : bool
         Specifies whether or not image is dominated by linear features
     """
     # detect any lines in image
-    lines = detect_lines(image, mask=mask)
+    lines = detect_lines(image, mask=mask, min_length=min_length)
+    log.debug(f"Number of lines detected: {lines['num']}")
+    if lines['num'] is None:
+        return False, None
 
     # perform statistical analysis on detected linear features
     # start by generating a histogram of the angles of all the lines
     # We will ignore lines that are exactly in line with a column (+/- 90)
-    # as they are nearly always caused by CTE or diffraction spikes
-    print(f'Number of lines detected: {len(lines)}')
-    angles = [l[2] for l in lines if int(abs(l[2])+0.5) != 90]
-    angle_bins = np.linspace(-180, 180, 361)  # 1 degree bins
+    # as they are nearly always caused by CTE or saturation bleeding along the columns.
+    # We ignore 45 degrees as well, as they are nearly always just from the diffraction spikes.
+    angles = lines['angles'][~np.isclose(lines['angles'], 90, atol=0.01)]
+    angles = angles[~np.isclose(angles, 45, atol=0.01)]
+    # angles = [l[2] for l in lines if int(abs(l[2])+0.5) not in [90, 45]]
+    angle_bins = np.linspace(-180., 180., 361)
     ahist = np.histogram(angles, bins=angle_bins)
 
     # look to see whether the peak angle is dramatically larger
@@ -592,15 +635,11 @@ def lines_in_image(image, num_sources, line_sigma=10.0, mask=None):
     log.debug(f"Peak number of similar lines: {max_angles} based on limit of {alimit:0.1f}")
     log.debug(f"number of probable sources: {num_sources}")
 
-    # Now check to see:
-    #  1.  enough detected lines have the same (non-90 deg) orientation
-    #  2.  The number of detected lines with the same orientation is
-    #      at least half the number of detected sources indicating that most or all
-    #      sources are linear features.
-    # If both of these criteria are met, this would indicate the image probably is
-    #    affected by a guiding problem and sources are 'streaked'.
-    # This limit also serves to guard against fields with a lot of saturated sources
-    #    since it is doubtful more than half will be saturated.
-    lines_detected = (max_angles > alimit) and (max_angles > (0.5*num_sources))
+    #
+    # TODO:  add check against length of lines detected as well
+    #        -- Not sure what stats to use for this check...
+    #
+    # Now check to see if enough detected lines have the same (non-90 deg) orientation
+    lines_detected = (max_angles > alimit)
 
-    return lines_detected, ahist
+    return lines_detected
