@@ -558,8 +558,8 @@ def verify_guiding(filename, min_length=33):
 def detect_lines(image, mask=None, min_length=17):
     """Detect lines in the input image and return list of line parameters """
     lines = {'num': None,
-             'line_start': None,
-             'line_end': None,
+             'startarr': None,
+             'endarr': None,
              'angles': None,
              'lengths': None,
              'slopes': None}
