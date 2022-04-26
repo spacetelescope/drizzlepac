@@ -528,7 +528,7 @@ def verify_guiding(filename, min_length=33):
         scale_val = scale_hdr['exptime']
         data *= scale_val
     bkg_stats = sigma_clipped_stats(data, maxiters=2)
-    bkg_limit = bkg_stats[1] + bkg_stats[2]
+    bkg_limit = bkg_stats[1] + bkg_stats[2]  # only need a 1-sigma detection limit here...
     log.debug(f"bkg_limit found to be: {bkg_limit:.2f}")
 
     data -= bkg_limit
