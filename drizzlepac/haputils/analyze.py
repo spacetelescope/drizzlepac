@@ -55,6 +55,14 @@ FGSKEY = 'FGSLOCK'
 CHINKEY = 'CHINJECT'
 DRIZKEY = 'DRIZCORR'
 
+# These definitions are for ACS and WFC3
+BAD_DQ_FLAGS = [256,  # full-well saturated pixel
+                512,  # bad pixel from reference file
+                1024,  # weak charge trap
+                2048,  # A-to-D saturated pixel
+                4096  # cosmic-ray
+]
+
 MIN_LINES = 4  # Minimum number of detected lines for consideration of bad guiding
 
 # Return codes 
@@ -542,7 +550,7 @@ def verify_guiding(filename, min_length=33):
             dqarr = hdu[("DQ", 1)].data.copy()
             break
     if dqarr is not None:
-        dqmask = bitfield_to_boolean_mask(dqarr, ignore_flags=[256, 512, 1024, 2048, 4096])
+        dqmask = bitfield_to_boolean_mask(dqarr, ignore_flags=BAD_DQ_FLAGS)
     else:
         dqmask = np.ones_like(data)
     # close FITS object (just to be nice to the OS...)
