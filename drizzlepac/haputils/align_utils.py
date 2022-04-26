@@ -179,6 +179,7 @@ class AlignmentTable:
                                           bkg_estimator=self.alignment_pars['bkg_estimator'],
                                           rms_estimator=self.alignment_pars['rms_estimator'],
                                           threshold_flag=self.alignment_pars['threshold'])
+
                 catimg.build_kernel(fwhmpsf)
                 catimg.crclean = self.alignment_pars['classify']
                 log.info("CATIMG.CRCLEAN: {}".format(catimg.crclean))
@@ -473,6 +474,7 @@ class HAPImage:
         # Switch to turn on/off use of single-image CR detection/removal
         self.crclean = False
 
+
     def build_wht_image(self):
         if not self.num_wht:
             # Working with a calibrated exposure, no WHT extension
@@ -497,7 +499,6 @@ class HAPImage:
         self.bkg_rms_mean = {}
         self.bkg = {}
         self.bkg_dao_rms = {}
-
 
     def build_kernel(self, fwhmpsf):
         """
@@ -537,7 +538,6 @@ class HAPImage:
         log.info("  Found PSF with FWHM = {:9.4f}".format(self.kernel_fwhm))
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
-
 
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
                            bkg_estimator="SExtractorBackground", rms_estimator="StdBackgroundRMS",
