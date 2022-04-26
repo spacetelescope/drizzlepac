@@ -547,7 +547,7 @@ def verify_guiding(filename, min_length=33):
     dqarr = None
     for extn in hdu:
         if 'extname' in extn.header and extn.header['extname'] == 'DQ':
-            dqarr = hdu[("DQ", 1)].data.copy()
+            dqarr = hdu[extn].data.copy()
             break
     if dqarr is not None:
         dqmask = bitfield_to_boolean_mask(dqarr, ignore_flags=BAD_DQ_FLAGS)
@@ -559,6 +559,7 @@ def verify_guiding(filename, min_length=33):
 
     # apply mask now...
     imgarr *= dqmask
+    del dqmask  # just to clean up a little
 
     # Determine rough number of probable sources
     # Trying to ignore small sources (<= 4x4 pixels in size, or npixels < 17)
