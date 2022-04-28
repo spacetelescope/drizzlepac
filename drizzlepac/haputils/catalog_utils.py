@@ -1761,13 +1761,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 self._define_empty_table(g_segm_img)
                 return
 
-            # Deblend the segmentation image
+            # If appropriate, deblend the segmentation image. Otherwise, use the current segmentation image
             ncount += 1
-            segm_img = self.deblend_segments(segm_img,
-                                             imgarr,
-                                             ncount,
-                                             filter_kernel=self.kernel,
-                                             source_box=self._size_source_box)
+            if segm_img.big_segments is not None:
+                segm_img = self.deblend_segments(segm_img,
+                                                 imgarr,
+                                                 ncount,
+                                                 filter_kernel=self.kernel,
+                                                 source_box=self._size_source_box)
 
             # The total product catalog consists of at least the X/Y and RA/Dec coordinates for the detected
             # sources in the total drizzled image.  All the actual measurements are done on the filtered drizzled
@@ -2661,18 +2662,29 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         n, binedges = np.histogram(segm_img.data, range=(1, nbins))
         real_pixels = (image_data != 0).sum()
+        biggest_source = n.max()/float(real_pixels)
+        log.info("Biggest_source: %f", biggest_source)
 
         # Compute which segments are larger than the kernel.
         deb_limit = self.kernel.size
         log.debug("Deblending limit set at: {} pixels".format(deb_limit))
-        # add as attribute to SegmentationImage for use later
+        # Add big_segments as an attribute to SegmentationImage for use when deblending.
+        # This is a Numpy array which currently contains the segment labels of
+        # the segments in the image which should be deblended. Larger segments will be
+        # filtered out in the "if/for block below" as the processing time to deblend
+        # really enormous segments is prohibitive.
+        segm_img.big_segments = None
         big_segments = np.where(segm_img.areas >= deb_limit)[0] + 1  # Segment labels are 1-based
 
-        biggest_source = n.max()/float(real_pixels)
-        log.info("Biggest_source: %f", biggest_source)
+        # The biggest_source may be > max_biggest_source indicating there are "big islands"
+        # and is_poor_quality should be set to True.  The is_poor_quality is only an indicator that
+        # a different kernel type or background computation could be tried for improved results.
         if biggest_source > max_biggest_source:
             log.info("Biggest source %.4f percent exceeds %f percent of the image", (100.0*biggest_source), (100.0*max_biggest_source))
             is_poor_quality = True
+
+        # Filter the big_segments array to remove the prohibitively large segments 
+        if big_segments.size > 0:
             # Sort the areas and get the indices of the sorted areas
             area_indices = np.argsort(segm_img.areas)
             areas = np.sort(segm_img.areas)
@@ -2687,7 +2699,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     continue
                 # determine ratio of area with next smallest area
                 r = a / areas[-1*(i+2)]
-                if r >= self._ratio_bigsource_deblend_limit :
+                if r >= self._ratio_bigsource_deblend_limit:
                     # Record the segmentation ID of large area to be ignored during deblending
                     big_areas.append(ind + 1)
                 else:
@@ -2696,13 +2708,17 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Remove largest segments from list of 'large' segments to be deblended
             big_segments = big_segments.tolist()
             for b in big_areas:
-                big_segments.remove(b)
+                if len(big_segments) > 0 and b in big_segments:
+                    big_segments.remove(b)
             log.debug("Ignoring {} sources exceeding the deblending limit in size".format(len(big_areas)))
             # Convert back to ndarray
             big_segments = np.array(big_segments)
 
-        segm_img.big_segments = big_segments
-        log.info("Total number of sources suitable for deblending: {}".format(len(big_segments)))
+            segm_img.big_segments = big_segments
+            log.info("Total number of sources suitable for deblending: {}".format(len(big_segments)))
+        else:
+            log.info("There are no big segments larger than the deblending limit.")
+
         # Always compute the source_fraction so the value can be reported.  Setting the
         # big_island_only parameter allows control over whether the source_fraction should
         # or should not be ignored.
