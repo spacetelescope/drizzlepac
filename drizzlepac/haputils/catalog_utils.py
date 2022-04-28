@@ -1763,7 +1763,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # If appropriate, deblend the segmentation image. Otherwise, use the current segmentation image
             ncount += 1
-            if segm_img.big_segments is not None:
+            if segm_img.big_segments is not None or len(segm_img.big_segments > 0):
                 segm_img = self.deblend_segments(segm_img,
                                                  imgarr,
                                                  ncount,
@@ -2698,6 +2698,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 if i == 0:
                     continue
                 # determine ratio of area with next smallest area
+                # make sure there are enough entries in areas since the first/largest segment was skipped
+                if len(areas) <= 2:
+                    break
                 r = a / areas[-1*(i+2)]
                 if r >= self._ratio_bigsource_deblend_limit:
                     # Record the segmentation ID of large area to be ignored during deblending
