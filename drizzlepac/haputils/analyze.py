@@ -579,7 +579,7 @@ def verify_guiding(filename, min_length=33):
     num_sources = len(src_cat)
 
     # trim edges from image to avoid spurious sources
-    trim_slice=[slice(2, -2), slice(2, -2)]
+    trim_slice=(slice(2, -2), slice(2, -2))
 
     # Now determine whether this image was affected by guiding problems
     bad_guiding = lines_in_image(imgarr[trim_slice], num_sources,
