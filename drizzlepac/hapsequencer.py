@@ -1183,6 +1183,9 @@ def update_active_wcs(filename, wcsname):
 
     hdu = fits.open(filename)
 
+    # Get original value of IDCSCALE keyword
+    idcscale = hdu['SCI', 1].header['idcscale']
+
     # Check if the desired WCS solution is already the active solution
     # whereupon there is nothing to do
     key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wcsname)
@@ -1219,6 +1222,8 @@ def update_active_wcs(filename, wcsname):
             for sciext in range(1, num_sci_ext+1):
                 nm = fhdu[extensions[0]].header['nmatch'] if 'nmatch' in fhdu[extensions[0]].header else 0
                 fhdu[(extname, sciext)].header['nmatches'] = nm
+                if 'idcscale' not in fhdu[(extname, sciext)].header:
+                    fhdu[(extname, sciext)].header['idcscale'] = idcscale  # Restore this if it was overwritten/deleted
             fhdu.close()
         except:
             _, _, tb = sys.exc_info()
