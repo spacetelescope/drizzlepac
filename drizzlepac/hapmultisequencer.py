@@ -207,6 +207,10 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
     # create the drizzle-combined filtered image, the drizzled exposure (aka single) images,
     # and finally the drizzle-combined total detection image.
     for filt_obj in total_obj_list:
+        if not filt_obj.valid_product:
+            # If this object has 'valid_product' set to False,
+            # skip processing this object
+            continue
         filt_obj.rules_file = proc_utils.get_rules_file(filt_obj.edp_list[0].full_filename,
                                                         rules_type='MVM',
                                                         rules_root=filt_obj.drizzle_filename)
@@ -249,7 +253,8 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
 
     # Add primary header information to all objects
     for filt_obj in total_obj_list:
-        filt_obj = poller_utils.add_primary_fits_header_as_attr(filt_obj)
+        if filt_obj.valid_product:
+            filt_obj = poller_utils.add_primary_fits_header_as_attr(filt_obj)
 
     # Return product list for creation of pipeline manifest file
     return product_list
@@ -373,7 +378,9 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
             # Compute mask keywords early in processing for use in determining what
             # parameters need to be used for processing.
             filter_item.generate_footprint_mask(save_mask=False)
-
+            if not filter_item.valid_product:
+                log.warning(f"Ignoring {filter_item.info} as no input exposures overlap that layer.")
+                continue
             # Optionally rename output products
             if output_file_prefix or custom_limits:
                 filter_item = rename_output_products(filter_item, output_file_prefix=output_file_prefix)
