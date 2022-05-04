@@ -378,9 +378,8 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
             # Compute mask keywords early in processing for use in determining what
             # parameters need to be used for processing.
             filter_item.generate_footprint_mask(save_mask=False)
-            if not filter_item.mask_computed:
+            if not filter_item.valid_product:
                 log.warning(f"Ignoring {filter_item.info} as no input exposures overlap that layer.")
-                filter_item.valid_product = False
                 continue
             # Optionally rename output products
             if output_file_prefix or custom_limits:
