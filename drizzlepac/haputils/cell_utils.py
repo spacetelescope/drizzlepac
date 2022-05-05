@@ -1,5 +1,4 @@
 import os
-import pdb
 import shutil
 from itertools import chain, combinations
 
@@ -136,21 +135,23 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
         meta_wcs = wcs_functions.make_mosaic_wcs(visit_expnames, rot=0.0, scale=sky_grid.scale)
 
         print('Visit WCS: \n{}'.format(meta_wcs))
+        # For each exposure in the visit,
+        # look to see what SkyCell it overlaps
+        for expname in visit_expnames:
+            # create footprint on the sky (as a tangent plane array) for all input exposures using meta_wcs
+            footprint = SkyFootprint(meta_wcs)
+            footprint.build([expname])
 
-        # create footprint on the sky (as a tangent plane array) for all input exposures using meta_wcs
-        footprint = SkyFootprint(meta_wcs)
-        footprint.build(visit_expnames)
+            # Use this footprint to identify overlapping sky cells
+            visit_cells = sky_grid.get_sky_cells(footprint)
+            print('Exposure {} from visit {} overlapped SkyCells:\n{}'.format(expname, visit_id, visit_cells))
 
-        # Use this footprint to identify overlapping sky cells
-        visit_cells = sky_grid.get_sky_cells(footprint)
-        print('Visit "{}" overlapped SkyCells:\n{}'.format(visit_id, visit_cells))
-
-        for scell in visit_cells:
-            if scell not in sky_cells:
-                sky_cells[scell] = visit_cells[scell]
-            else:
-                # It overlapped previous exposures, so add these exposures to the SkyCell definition
-                sky_cells[scell].members.extend(visit_cells[scell].members)
+            for scell in visit_cells:
+                if scell not in sky_cells:
+                    sky_cells[scell] = visit_cells[scell]
+                else:
+                    # It overlapped previous exposures, so add these exposures to the SkyCell definition
+                    sky_cells[scell].members.extend(visit_cells[scell].members)
 
     return sky_cells
 
@@ -376,6 +377,9 @@ class SkyFootprint(object):
             # Only add members which contributed to this footprint
             if exposure not in self.members:
                 self.members.append(exposure)
+        if self.total_mask.sum() == 0:
+            # These exposures do not overlap the footprint of this WCS
+            return
 
         # Compute the bounded WCS for this mask of exposed pixels
         self.find_bounded_wcs()
@@ -435,7 +439,6 @@ class SkyFootprint(object):
         # Use this box to compute new CRPIX position
         self.bounded_wcs.wcs.crpix -= [xmin, ymin]
         self.bounded_wcs.pixel_shape = [xmax - xmin + 1, ymax - ymin + 1]
-
 
     # Methods with 'find' compute values
     # Methods with 'get' return values
@@ -587,16 +590,15 @@ class SkyFootprint(object):
                 ordered_xy.append(np.array(ordered_xyc, dtype=np.float64))
                 sky_corners.append(self.meta_wcs.all_pix2world(ordered_xyc, 0))
                 ordered_edges.append(edge_pixels)
-
         else:
             if member not in self.exp_masks:
                 raise ValueError("Member {} not added to footprint".format(member))
-            xy_corners = self.exp_masks[member]['xy_corners']
-            sky_corners = self.meta_wcs.all_pix2world(xy_corners, 0)
+            ordered_xy = [self.exp_masks[member]['xy_corners']]
+            sky_corners = [self.meta_wcs.all_pix2world(xy_corners, 0)]
 
-        self.edge_pixels = np.array(ordered_edges, dtype=object)
-        self.xy_corners = np.array(ordered_xy, dtype=object)
-        self.corners = np.array(sky_corners, dtype=object)
+        self.edge_pixels = ordered_edges
+        self.xy_corners = ordered_xy
+        self.corners = sky_corners
 
     def get_edges_sky(self, member='total'):
         """Returns the sky coordinates of all edge pixels.
@@ -614,7 +616,8 @@ class SkyFootprint(object):
         self.find_footprint(member=member)
         if len(self.corners) == 0:
             self.find_corners()
-        self.edges_ra, self.edges_dec = self.meta_wcs.pixel_to_world_values(self.edge_pixels[0][:,0], self.edge_pixels[0][:,1])
+        edge_pixels = np.vstack(self.edge_pixels)
+        self.edges_ra, self.edges_dec = self.meta_wcs.pixel_to_world_values(edge_pixels[:,0], edge_pixels[:,1])
         return self.edges_ra, self.edges_dec
 
     def build_polygon(self, member='total'):
@@ -865,6 +868,8 @@ class ProjectionCell(object):
         if nxy:
             self.sc_nxy = nxy
 
+        self.polygon = None
+        self.mask = None
         # Generate WCS for projection cell
         self._build_wcs()
 
@@ -918,7 +923,6 @@ class ProjectionCell(object):
         inner_pix = self.wcs.pixel_to_world_values(2, 2)
         # define polygon on the sky
         self.polygon = SphericalPolygon.from_radec(self.corners[:, 0], self.corners[:, 1], inner_pix)
-
 
     def find_sky_cells(self, mosaic, nxy=None, overlap=None):
         """Return the sky cell indices from this projection cell that overlap the input footprint"""

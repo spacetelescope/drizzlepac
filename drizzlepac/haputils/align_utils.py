@@ -47,6 +47,9 @@ BKG_FILTER_SIZE = 3
 CATALOG_TYPES = ['point', 'segment']
 MIN_CATALOG_THRESHOLD = 3
 
+RMS_RA_COMMENT = "RMS in RA of WCS fit(mas)"
+RMS_DEC_COMMENT = "RMS in Dec of WCS fit(mas)"
+
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
@@ -179,6 +182,7 @@ class AlignmentTable:
                                           bkg_estimator=self.alignment_pars['bkg_estimator'],
                                           rms_estimator=self.alignment_pars['rms_estimator'],
                                           threshold_flag=self.alignment_pars['threshold'])
+
                 catimg.build_kernel(fwhmpsf)
                 catimg.crclean = self.alignment_pars['classify']
                 log.info("CATIMG.CRCLEAN: {}".format(catimg.crclean))
@@ -473,6 +477,7 @@ class HAPImage:
         # Switch to turn on/off use of single-image CR detection/removal
         self.crclean = False
 
+
     def build_wht_image(self):
         if not self.num_wht:
             # Working with a calibrated exposure, no WHT extension
@@ -497,7 +502,6 @@ class HAPImage:
         self.bkg_rms_mean = {}
         self.bkg = {}
         self.bkg_dao_rms = {}
-
 
     def build_kernel(self, fwhmpsf):
         """
@@ -537,7 +541,6 @@ class HAPImage:
         log.info("  Found PSF with FWHM = {:9.4f}".format(self.kernel_fwhm))
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
-
 
     def compute_background(self, box_size=BKG_BOX_SIZE, win_size=BKG_FILTER_SIZE,
                            bkg_estimator="SExtractorBackground", rms_estimator="StdBackgroundRMS",
@@ -1323,15 +1326,17 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
         info = item.meta['fit_info']
         if info['catalog'] and info['catalog'] != '':
-            hdulist[sci_extn].header['RMS_RA'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
-            hdulist[sci_extn].header['RMS_DEC'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
-            hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
-            hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
+            rms_ra_val = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
+            rms_dec_val = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
+            hdulist[sci_extn].header['RMS_RA'] = (rms_ra_val, RMS_RA_COMMENT)
+            hdulist[sci_extn].header['RMS_DEC'] = (rms_dec_val, RMS_DEC_COMMENT)
+            hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value/3600. if info['RMS_RA'] is not None else -1.0
+            hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value/3600. if info['RMS_DEC'] is not None else -1.0
             hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else 0
             hdulist[sci_extn].header['FITGEOM'] = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
         else:
-            hdulist[sci_extn].header['RMS_RA'] = -1.0
-            hdulist[sci_extn].header['RMS_DEC'] = -1.0
+            hdulist[sci_extn].header['RMS_RA'] = (-1.0, RMS_RA_COMMENT)
+            hdulist[sci_extn].header['RMS_DEC'] = (-1.0, RMS_DEC_COMMENT)
             hdulist[sci_extn].header['CRDER1'] = -1.0
             hdulist[sci_extn].header['CRDER2'] = -1.0
             hdulist[sci_extn].header['NMATCHES'] = 0
@@ -1405,8 +1410,8 @@ def update_headerlet_phdu(tweakwcs_item, headerlet):
 
         # Update the existing FITS keywords
         primary_header = headerlet[0].header
-        primary_header['RMS_RA'] = rms_ra
-        primary_header['RMS_DEC'] = rms_dec
+        primary_header['RMS_RA'] = (rms_ra, RMS_RA_COMMENT)
+        primary_header['RMS_DEC'] = (rms_dec, RMS_DEC_COMMENT)
         primary_header['NMATCH'] = nmatch
         primary_header['CATALOG'] = catalog
         primary_header['FITMETH'] = fit_method

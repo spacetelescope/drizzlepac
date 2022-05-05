@@ -44,8 +44,8 @@ MASK_KWS = {"NPIXFRAC": [None, "Fraction of pixels with data"],
             "MEDNEXP": [None, "Median number of exposures per pixel with data"]
             }
 
-MASK_WHTKWS = {"MEANWHT": [None, "Mean exposure time per pixel with data"],
-               "MEDWHT": [None, "Median exposure time per pixel with data"]
+MASK_WHTKWS = {"MEANWHT": [None, "Mean weight (typically exposure time) over pixels with data"],
+               "MEDWHT": [None, "Median weight (typically exposure time) over pixels with data"]
               }
 
 
@@ -88,6 +88,11 @@ class HAPProduct:
         self.mask_whtkws = copy.deepcopy(MASK_WHTKWS)
         self.mask_computed = False
 
+        # attribute to use for identifying whether or not this product is valid
+        # can be set depending on any number of conditions, such as no member
+        # overlapping the WCS.
+        self.valid_product = True
+
     # def print_info(self):
         # """ Generic print at this time to indicate the information used in the
         #     construction of the object for debug purposes.
@@ -103,6 +108,11 @@ class HAPProduct:
         footprint = cell_utils.SkyFootprint(self.meta_wcs)
         exposure_names = [element.full_filename for element in self.edp_list]
         footprint.build(exposure_names, scale=True)
+        if footprint.bounded_wcs is None:
+            log.warning(f"These exposures do not overlap this WCS:\n{exposure_names}\n{self.meta_wcs}")
+            self.valid_product = False
+            del footprint
+            return
 
         # This mask actually represents the number of chips per pixel, not True/False.
         # To have the True/False mask it should be self.mask = footprint.footprint.
