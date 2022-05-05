@@ -15,17 +15,28 @@ import math
 import sys
 
 from enum import Enum
+from astropy.io import fits
 from astropy.io.fits import getheader
 from astropy.table import Table
+from astropy.stats import sigma_clipped_stats
 import numpy as np
 
+from photutils.segmentation import SourceCatalog, detect_sources
+
+from scipy import ndimage
+from skimage.transform import probabilistic_hough_line
+from skimage.feature import canny
+
 from stsci.tools import logutil
+from stsci.tools.bitmask import bitfield_to_boolean_mask
+
+from .astrometric_utils import classify_sources
 
 __taskname__ = 'analyze'
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.DEBUG, stream=sys.stdout,
+log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
 __all__ = ['analyze_data', 'analyze_wrapper', 'mvm_analyze_wrapper']
@@ -43,6 +54,16 @@ EXPKEY = 'EXPTIME'
 FGSKEY = 'FGSLOCK'
 CHINKEY = 'CHINJECT'
 DRIZKEY = 'DRIZCORR'
+
+# These definitions are for ACS and WFC3
+BAD_DQ_FLAGS = [256,  # full-well saturated pixel
+                512,  # bad pixel from reference file
+                1024,  # weak charge trap
+                2048,  # A-to-D saturated pixel
+                4096  # cosmic-ray
+]
+
+MIN_LINES = 4  # Minimum number of detected lines for consideration of bad guiding
 
 # Return codes 
 class Ret_code(Enum):
@@ -151,6 +172,10 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     # Reduce table to only the data which should be processed (doProcess == 1)
     mask = filtered_table["doProcess"] > 0
     filtered_table = filtered_table[mask]
+
+    # Further reduce table to only the data which is NOT affected by bad guiding
+    guide_mask = [not verify_guiding(f) for f in filtered_table["imageName"]]
+    filtered_table = filtered_table[guide_mask]
 
     good_table = None
     good_rows = []
@@ -471,3 +496,187 @@ def generate_msg(filename, msg, key, value):
         log.warning('Dataset cannot be aligned.')
     else:
         log.warning('Dataset can be aligned, but the result may be compromised.')
+
+
+# -----------------------------------------------------------------------------
+#  Line detection functions
+# -----------------------------------------------------------------------------
+
+def verify_guiding(filename, min_length=33):
+    """ Verify whether or not the input image was affected by guiding problems.
+
+    This algorithm evaluates the data from (SCI,1) to try to determine whether
+    the image was affected by guiding problems which mimic SCAN mode or GRISM data
+    with the trails in an arbitrary angle across the image.
+
+    Parameters
+    ==========
+    filename : str
+        Name of image to be evaluated
+
+    min_length : int, optional
+        Minimum length of trails (in pixels) to be detected in image.
+
+    Returns
+    ========
+    bad_guiding : bool
+        Boolean specifying whether or not the image was detected as
+        being affected by guiding problems.  Value is True if image
+        was affected.
+    """
+    log.info(f"Verifying that {filename} was not affected by guiding problems.")
+
+    hdu = fits.open(filename)
+    data = hdu[("SCI", 1)].data.copy()
+    scale_data = hdu[("SCI",1)].header["bunit"].endswith('/S')
+    data = np.nan_to_num(data, nan=0.0)  # just to be careful
+    if scale_data:
+        # Photutils works best in units of DN
+        scale_hdr = hdu[0].header if 'exptime' in hdu[0].header else hdu[1].header
+        scale_val = scale_hdr['exptime']
+        data *= scale_val
+    bkg_stats = sigma_clipped_stats(data, maxiters=2)
+    bkg_limit = bkg_stats[1] + bkg_stats[2]  # only need a 1-sigma detection limit here...
+    log.debug(f"bkg_limit found to be: {bkg_limit:.2f}")
+
+    data -= bkg_limit
+    imgarr = np.clip(data, 0, data.max())
+
+    # Build up a mask of all bad pixels and ignore them when looking for
+    # sources and linear features
+    dqarr = None
+    for extn in hdu:
+        if 'extname' in extn.header and extn.header['extname'] == 'DQ':
+            dqarr = hdu[extn].data.copy()
+            break
+    if dqarr is not None:
+        dqmask = bitfield_to_boolean_mask(dqarr, ignore_flags=BAD_DQ_FLAGS)
+    else:
+        dqmask = np.ones_like(data)
+    # close FITS object (just to be nice to the OS...)
+    hdu.close()
+    del hdu
+
+    # apply mask now...
+    imgarr *= dqmask
+    del dqmask  # just to clean up a little
+
+    # Determine rough number of probable sources
+    # Trying to ignore small sources (<= 4x4 pixels in size, or npixels < 17)
+    #   which are either noise peaks or head-on CRs.
+    segm = detect_sources(imgarr, 0, npixels=17)
+    log.debug(f'Detected {segm.nlabels} raw sources in {filename}')
+    if segm.nlabels < 2:
+        return False
+
+    src_cat = SourceCatalog(imgarr, segm)
+    # Remove likely cosmic-rays based on central_moments classification
+    bad_srcs = classify_sources(src_cat, 1.5)
+    # Get the label IDs for sources flagged as CRs, IDs are 1-based not 0-based
+    pt_srcs = np.where(bad_srcs == 0)[0] + 1
+    segm.remove_labels(pt_srcs)
+    src_cat = SourceCatalog(imgarr, segm)  # clean up source catalog now...
+    num_sources = len(src_cat)
+
+    # trim edges from image to avoid spurious sources
+    trim_slice=(slice(2, -2), slice(2, -2))
+
+    # Now determine whether this image was affected by guiding problems
+    bad_guiding = lines_in_image(imgarr[trim_slice], num_sources,
+                                 min_length=min_length, min_lines=MIN_LINES)
+    if bad_guiding:
+        log.warning(f"Image {filename}'s GUIDING detected as: BAD.")
+    else:
+        log.info(f"Image {filename}'s GUIDING detected as: GOOD.")
+
+    return bad_guiding
+
+
+def detect_lines(image, mask=None, min_length=17):
+    """Detect lines in the input image and return list of line parameters """
+    lines = {'num': None,
+             'startarr': None,
+             'endarr': None,
+             'angles': None,
+             'lengths': None,
+             'slopes': None}
+
+    # extract edges from image for faster line detection
+    edges = canny(image, sigma=2.5, low_threshold=0, high_threshold=25, mask=mask)
+
+    # Classic straight-line Hough transform
+    plines = probabilistic_hough_line(edges, threshold=0,
+                                     line_gap=0,
+                                     line_length=min_length)
+    if len(plines) > 0:
+        plines = np.array(plines)
+        startarr = plines[:, 0]
+        endarr = plines[:, 1]
+        rise = endarr[:, 1] - startarr[:, 1]
+        run = endarr[:, 0]-startarr[:, 0]
+        angles = np.arctan2(rise, run)
+        lines['startarr'] = startarr
+        lines['endarr'] = endarr
+        lines['angles'] = np.rad2deg(angles)
+        lines['lengths'] = np.sqrt(rise**2 + run**2)
+        lines['slopes'] = np.tan(angles + np.pi/2)
+        lines['num'] = len(plines)
+
+    return lines
+
+
+def lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4):
+    """Determine if image is dominated by linear features
+
+    Parameters
+    ----------
+    image : ndarray
+        Background-subtracted image to detect linear features in
+
+    sensitivity : float, optional
+        Increments in degrees for detecting lines in image.
+
+    Returns
+    -------
+    lines_detected : bool
+        Specifies whether or not image is dominated by linear features
+    """
+    # detect any lines in image
+    lines = detect_lines(image, mask=mask, min_length=min_length)
+    if lines['num'] is None:
+        log.debug(f"No linear features found.")
+        return False
+    else:
+        # If we have a lot of sources, we should have a lot of lines if bad
+        # Otherwise, however, min_lines is used to guard against faint fields
+        if lines['num'] < max(min_lines, num_sources/10):
+            log.debug(f"Only {lines['num']} linear features found.")
+            return False
+
+    # perform statistical analysis on detected linear features
+    # start by generating a histogram of the angles of all the lines
+    # We will ignore lines that are exactly in line with a column (+/- 90)
+    # as they are nearly always caused by CTE or saturation bleeding along the columns.
+    diff_lines = np.isclose(np.abs(lines['angles']), 90, atol=2.0)
+    angles = lines['angles'][~diff_lines]
+
+    angle_bins = np.linspace(-180., 180., 91)
+    ahist = np.histogram(angles, bins=angle_bins)
+
+    # if one peak has a more than 10% of all linear features detected,
+    # and there are more linear features than lines from saturated columns
+    # it is considered as having bad guiding.
+    max_angles = ahist[0].max()
+    alimit = max(len(angles) / 10.0, diff_lines.sum())
+
+    log.debug(f"Peak number of similar lines: {max_angles} based on a threshold of {alimit}")
+    log.debug(f"number of probable sources: {num_sources}")
+
+    #
+    # TODO:  add check against length of lines detected as well
+    #        -- Not sure what stats to use for this check...
+    #
+    # Now check to see if enough detected lines have the same (non-90 deg) orientation
+    lines_detected = (max_angles > alimit)
+    log.info(f"{max_angles} lines were similar, so linear features were detected.")
+    return lines_detected

@@ -109,6 +109,7 @@ from drizzlepac import processInput  # used for creating new ASNs for _flc input
 
 from drizzlepac import align
 from drizzlepac import resetbits
+from drizzlepac.haputils import analyze
 from drizzlepac.haputils import astrometric_utils as amutils
 from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import processing_utils
@@ -403,6 +404,22 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # Add S_REGION keyword to input files regardless of whether DRIZCORR is turned on
     for f in _calfiles+_calfiles_flc:
         processing_utils.compute_sregion(f)
+
+    # Check to see whether or not guide star failure affected these observations
+    # They would show up as images all sources streaked as if taken in SCAN mode or with a GRISM
+    for fltimg in _calfiles:
+        flcimg = f.replace('_flt.fits', '_flc.fits')
+        if os.path.exists(flcimg):
+            fltimg = flcimg
+        # We want to use the FLC image, if possible, to avoid any
+        # possible detection of CTE tails as false guide-star trailing lines
+        bad_guiding = analyze.verify_guiding(fltimg)
+        if bad_guiding:
+            # Remove the affected image(s) from further processing
+            _calfiles.remove(fltimg)
+            if os.path.exists(flcimg):
+                _calfiles_flc.remove(flcimg)
+
 
     if dcorr == 'PERFORM':
 

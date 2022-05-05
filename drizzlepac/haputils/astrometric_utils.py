@@ -2434,3 +2434,4 @@ def evaluate_overlap_diffs(diff_dict, limit=1.0):
         log.info("Alignment NOT verified based on overlap...")
 
     return verified, max_diff
+
