@@ -879,7 +879,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
     # filtobj_dict dictionary
     log.info("")
     for imgname in filtobj_dict.keys():
-        log.info("removing temporary catalog file {}".format(filtobj_dict[imgname]['cat_name']))
+        log.info("removing temporary catalog file {}".format(filtobj_dict[imgname]['cat_name'])) # TODO: make this section of code fault-reistant, so fxm files are deleted even if code crashes.
         os.remove(filtobj_dict[imgname]['cat_name'])
     del filtobj_dict
 

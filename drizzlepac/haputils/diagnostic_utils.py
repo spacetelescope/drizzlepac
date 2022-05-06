@@ -497,13 +497,11 @@ def extract_visit_from_header(header):
         String ID for the visit from the input header
 
     """
-    filename_split = header['filename'].split("_")
-    default_id = header['linenum'].split(".")[0]
-
     if header['primesi'].lower() == header['instrume']:
         # Not a parallel observation, so we can rely on 'linenum' keyword
-        visit_id = default_id
+        visit_id = header['linenum'].split(".")[0]
     else:
+        filename_split = header['filename'].split("_")
         # For parallel observations...
         if len(filename_split) > 2:
             # filename follows SVM naming convention
