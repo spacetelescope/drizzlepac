@@ -174,8 +174,10 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     filtered_table = filtered_table[mask]
 
     # Further reduce table to only the data which is NOT affected by bad guiding
-    guide_mask = [not verify_guiding(f) for f in filtered_table["imageName"]]
-    filtered_table = filtered_table[guide_mask]
+    # This check is only to be done for MVM processing
+    if type.upper() == "MVM":
+        guide_mask = [not verify_guiding(f) for f in filtered_table["imageName"]]
+        filtered_table = filtered_table[guide_mask]
 
     good_table = None
     good_rows = []
@@ -523,6 +525,11 @@ def verify_guiding(filename, min_length=33):
         Boolean specifying whether or not the image was detected as
         being affected by guiding problems.  Value is True if image
         was affected.
+
+    Note: This function will only be called from analyze_wrapper if the processing
+          type is "MVM".  It is deliberately False for other processing (e.g., SVM and
+          pipeline).  However, this routine can be invoked directly for pipeline
+          processing from runastrodriz.py with the appropriate parameter setting.
     """
     log.info(f"Verifying that {filename} was not affected by guiding problems.")
 
