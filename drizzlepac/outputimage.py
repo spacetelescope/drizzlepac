@@ -721,6 +721,7 @@ def getTemplates(fnames, blend=True, rules_file=None):
 
     return newhdrs, newtab
 
+
 def addWCSKeywords(wcs, hdr, blot=False, single=False, after=None):
     """ Update input header 'hdr' with WCS keywords.
     """
@@ -729,8 +730,9 @@ def addWCSKeywords(wcs, hdr, blot=False, single=False, after=None):
 
     # Update WCS Keywords based on PyDrizzle product's value
     # since 'drizzle' itself doesn't update that keyword.
-    hdr['WCSNAME'] = wname
-    hdr['WCSTYPE'] = wtype
+    if wname != '':
+        hdr['WCSNAME'] = wname
+        hdr['WCSTYPE'] = wtype
     hdr.set('VAFACTOR', value=1.0, after=after)
     hdr.set('ORIENTAT', value=wcs.orientat, after=after)
 
