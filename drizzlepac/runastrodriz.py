@@ -182,7 +182,7 @@ wcs_preference = ['IDC_?????????-FIT_REL_GAIA*', 'IDC_?????????-FIT_IMG_GAIA*', 
 
 # Primary user interface
 def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
-            headerlets=True, align_to_gaia=True, force_alignment=False, debug=False):
+            headerlets=True, align_to_gaia=True, force_alignment=False, do_verify_guiding=False, debug=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
@@ -407,19 +407,23 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     # Check to see whether or not guide star failure affected these observations
     # They would show up as images all sources streaked as if taken in SCAN mode or with a GRISM
-    for fltimg in _calfiles:
-        flcimg = f.replace('_flt.fits', '_flc.fits')
-        if os.path.exists(flcimg):
-            fltimg = flcimg
-        # We want to use the FLC image, if possible, to avoid any
-        # possible detection of CTE tails as false guide-star trailing lines
-        bad_guiding = analyze.verify_guiding(fltimg)
-        if bad_guiding:
-            # Remove the affected image(s) from further processing
-            _calfiles.remove(fltimg)
+    # 
+    # Note: This functionality is intentionally turned off for pipeline processing at this time.
+    # However, a user may wish to invoke this functionality which is controlled by the
+    # parameter "do_verify_guiding".
+    if do_verify_guiding:
+        for fltimg in _calfiles:
+            flcimg = f.replace('_flt.fits', '_flc.fits')
             if os.path.exists(flcimg):
-                _calfiles_flc.remove(flcimg)
-
+                fltimg = flcimg
+            # We want to use the FLC image, if possible, to avoid any
+            # possible detection of CTE tails as false guide-star trailing lines
+            bad_guiding = analyze.verify_guiding(fltimg)
+            if bad_guiding:
+                # Remove the affected image(s) from further processing
+                _calfiles.remove(fltimg)
+                if os.path.exists(flcimg):
+                    _calfiles_flc.remove(flcimg)
 
     if dcorr == 'PERFORM':
 
@@ -1899,7 +1903,7 @@ def main():
     import getopt
 
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 'bdahfgin:')
+        optlist, args = getopt.getopt(sys.argv[1:], 'bdahfginv:')
     except getopt.error as e:
         print(str(e))
         print(__doc__)
@@ -1915,6 +1919,7 @@ def main():
     align_to_gaia = True
     debug = False
     force_alignment = False
+    do_verify_guiding = False
 
     # read options
     for opt, value in optlist:
@@ -1923,13 +1928,15 @@ def main():
         if opt == "-d":
             debug = True
         if opt == "-a":
-            force_alignment = False
+            force_alignment = True
         if opt == "-h":
             help = 1
         if opt == "-f":
             force = True
         if opt == "-i":
             inmemory = True
+        if opt == "-v":
+            do_verify_guiding = True
         if opt == '-n':
             if not value.isdigit():
                 print('ERROR: num_cores value must be an integer!')
@@ -1939,7 +1946,7 @@ def main():
             # turn off writing headerlets
             headerlets = False
     if len(args) < 1:
-        print("syntax: runastrodriz.py [-fhibng] inputFilename [newpath]")
+        print("syntax: runastrodriz.py [-bdahfginv] inputFilename [newpath]")
         sys.exit()
     if len(args) > 1:
         newdir = args[-1]
@@ -1950,7 +1957,8 @@ def main():
         try:
             process(args[0], force=force, newpath=newdir, num_cores=num_cores,
                     inmemory=inmemory, headerlets=headerlets,
-                    align_to_gaia=align_to_gaia, force_alignment=force_alignment, debug=debug)
+                    align_to_gaia=align_to_gaia, force_alignment=force_alignment,
+                    do_verify_guiding=do_verify_guiding, debug=debug)
 
         except Exception as errorobj:
             print(str(errorobj))
