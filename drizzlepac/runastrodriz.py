@@ -1928,7 +1928,7 @@ def main():
         if opt == "-d":
             debug = True
         if opt == "-a":
-            force_alignment = False
+            force_alignment = True
         if opt == "-h":
             help = 1
         if opt == "-f":
