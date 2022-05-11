@@ -33,7 +33,6 @@ import glob
 import json
 import math
 import os
-import pdb
 import pickle
 import sys
 import time
@@ -691,196 +690,203 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
         # Perform cross-match based on X, Y coords
         for imgname in filtobj_dict.keys():
             if imgname != xmatch_ref_imgname:
-                log.info(" ")
-                xmatch_comp_imgname = imgname
-                xmatch_comp_catname = filtobj_dict[imgname]['cat_name']
-                filtername_ref = filtobj_dict[xmatch_ref_imgname]['filt_obj'].filters
-                filtername_comp = filtobj_dict[imgname]['filt_obj'].filters
+                try:
+                    log.info(" ")
+                    xmatch_comp_imgname = imgname
+                    xmatch_comp_catname = filtobj_dict[imgname]['cat_name']
+                    filtername_ref = filtobj_dict[xmatch_ref_imgname]['filt_obj'].filters
+                    filtername_comp = filtobj_dict[imgname]['filt_obj'].filters
 
-                # Perform crossmatching; get lists of crossmatched sources in the reference and comparison
-                log.info("{} Crossmatching {} -> {} {}".format(">" * 20, xmatch_comp_catname,
-                                                               xmatch_ref_catname, "<" * 20))
-                sl_names = [xmatch_ref_catname, xmatch_comp_catname]
-                img_names = [xmatch_ref_imgname, xmatch_comp_imgname]
-                sl_lengths = [max_sources, len(filtobj_dict[xmatch_comp_imgname]["sources"])]
-                matching_lines_ref, matching_lines_comp = cu.getMatchedLists(sl_names, img_names, sl_lengths,
-                                                                             log_level=log_level)
+                    # Perform crossmatching; get lists of crossmatched sources in the reference and comparison
+                    log.info("{} Crossmatching {} -> {} {}".format(">" * 20, xmatch_comp_catname,
+                                                                   xmatch_ref_catname, "<" * 20))
+                    sl_names = [xmatch_ref_catname, xmatch_comp_catname]
+                    img_names = [xmatch_ref_imgname, xmatch_comp_imgname]
+                    sl_lengths = [max_sources, len(filtobj_dict[xmatch_comp_imgname]["sources"])]
+                    matching_lines_ref, matching_lines_comp = cu.getMatchedLists(sl_names, img_names, sl_lengths,
+                                                                                 log_level=log_level)
 
-                # Report number and percentage of the total number of detected ref and comp sources that were
-                # matched
+                    # Report number and percentage of the total number of detected ref and comp sources that were
+                    # matched
 
-                xmresults = []
-                xmresults.append("Reference sourcelist:  {} of {} total reference sources ({}%) cross-matched.".format(len(matching_lines_ref),
-                                                                                                                       sl_lengths[0],
-                                                                                                                       100.0 * (float(len(matching_lines_ref)) / float(sl_lengths[0]))))
-                xmresults.append("Comparison sourcelist: {} of {} total comparison sources ({}%) cross-matched.".format(len(matching_lines_comp),
-                                                                                                                        sl_lengths[1],
-                                                                                                                        100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
-                # display crossmatch results
-                padding = math.ceil((max([len(xmresults[0]), len(xmresults[1])]) - 18) / 2)
-                log.info("{}Crossmatch results".format(" "*padding))
-                for item in xmresults:
-                    log.info(item)
-                log.info("")
-                if len(matching_lines_ref) > 0:
-                    # instantiate diagnostic object to store test results for eventual .json file output
-                    diag_obj = du.HapDiagnostic(log_level=log_level)
-                    diag_obj.instantiate_from_hap_obj(filtobj_dict[xmatch_comp_imgname]['filt_obj'],
-                                                      data_source="{}.compare_interfilter_crossmatches".format(__taskname__),
-                                                      description="Interfilter cross-matched comparison and reference catalog X and Y values",
-                                                      timestamp=json_timestamp,
-                                                      time_since_epoch=json_time_since_epoch)
-                    json_results_dict = collections.OrderedDict()
-                    json_results_dict["reference image name"] = xmatch_ref_imgname
-                    json_results_dict["comparison image name"] = xmatch_comp_imgname
-                    json_results_dict['reference catalog length'] = sl_lengths[0]
-                    json_results_dict['comparison catalog length'] = sl_lengths[1]
-                    json_results_dict['number of cross-matches'] = len(matching_lines_ref)
-                    json_results_dict['percent of all identified reference sources crossmatched'] = 100.0 * (
-                            float(len(matching_lines_ref)) / float(sl_lengths[0]))
-                    json_results_dict['percent of all identified comparison sources crossmatched'] = 100.0 * (
-                                float(len(matching_lines_comp)) / float(sl_lengths[1]))
-                    json_results_dict['reference image platescale'] = filtobj_dict[xmatch_ref_imgname]['filt_obj'].meta_wcs.pscale
+                    xmresults = []
+                    xmresults.append("Reference sourcelist:  {} of {} total reference sources ({}%) cross-matched.".format(len(matching_lines_ref),
+                                                                                                                           sl_lengths[0],
+                                                                                                                           100.0 * (float(len(matching_lines_ref)) / float(sl_lengths[0]))))
+                    xmresults.append("Comparison sourcelist: {} of {} total comparison sources ({}%) cross-matched.".format(len(matching_lines_comp),
+                                                                                                                            sl_lengths[1],
+                                                                                                                            100.0 * (float(len(matching_lines_comp)) / float(sl_lengths[1]))))
+                    # display crossmatch results
+                    padding = math.ceil((max([len(xmresults[0]), len(xmresults[1])]) - 18) / 2)
+                    log.info("{}Crossmatch results".format(" "*padding))
+                    for item in xmresults:
+                        log.info(item)
+                    log.info("")
+                    if len(matching_lines_ref) > 0:
+                        # instantiate diagnostic object to store test results for eventual .json file output
+                        diag_obj = du.HapDiagnostic(log_level=log_level)
+                        diag_obj.instantiate_from_hap_obj(filtobj_dict[xmatch_comp_imgname]['filt_obj'],
+                                                          data_source="{}.compare_interfilter_crossmatches".format(__taskname__),
+                                                          description="Interfilter cross-matched comparison and reference catalog X and Y values",
+                                                          timestamp=json_timestamp,
+                                                          time_since_epoch=json_time_since_epoch)
+                        json_results_dict = collections.OrderedDict()
+                        json_results_dict["reference image name"] = xmatch_ref_imgname
+                        json_results_dict["comparison image name"] = xmatch_comp_imgname
+                        json_results_dict['reference catalog length'] = sl_lengths[0]
+                        json_results_dict['comparison catalog length'] = sl_lengths[1]
+                        json_results_dict['number of cross-matches'] = len(matching_lines_ref)
+                        json_results_dict['percent of all identified reference sources crossmatched'] = 100.0 * (
+                                float(len(matching_lines_ref)) / float(sl_lengths[0]))
+                        json_results_dict['percent of all identified comparison sources crossmatched'] = 100.0 * (
+                                    float(len(matching_lines_comp)) / float(sl_lengths[1]))
+                        json_results_dict['reference image platescale'] = filtobj_dict[xmatch_ref_imgname]['filt_obj'].meta_wcs.pscale
 
-                    # store cross-match details
-                    diag_obj.add_data_item(json_results_dict, "Interfilter cross-match details",
-                                           descriptions={
-                                               "reference image name": "Crossmatch reference image name",
-                                               "comparison image name": "Crossmatch comparison image name",
-                                               "reference catalog length": "Number of entries in point catalog",
-                                               "comparison catalog length": "Number of entries in segment catalog",
-                                               "number of cross-matches": "Number of cross-matches between point and segment catalogs",
-                                               "percent of all identified reference sources crossmatched": "percent of all identified reference sources crossmatched",
-                                               "percent of all identified comparison sources crossmatched": "percent of all identified comparison sources crossmatched",
-                                               "reference image platescale": "Platescale of the crossmatch reference image"},
-                                           units={"reference image name": "unitless",
-                                                  "comparison image name": "unitless",
-                                                  "reference catalog length": "unitless",
-                                                  "comparison catalog length": "unitless",
-                                                  "number of cross-matches": "unitless",
-                                                  "percent of all identified reference sources crossmatched": "unitless",
-                                                  "percent of all identified comparison sources crossmatched": "unitless",
-                                                  "reference image platescale": "arcseconds/pixel"})
+                        # store cross-match details
+                        diag_obj.add_data_item(json_results_dict, "Interfilter cross-match details",
+                                               descriptions={
+                                                   "reference image name": "Crossmatch reference image name",
+                                                   "comparison image name": "Crossmatch comparison image name",
+                                                   "reference catalog length": "Number of entries in point catalog",
+                                                   "comparison catalog length": "Number of entries in segment catalog",
+                                                   "number of cross-matches": "Number of cross-matches between point and segment catalogs",
+                                                   "percent of all identified reference sources crossmatched": "percent of all identified reference sources crossmatched",
+                                                   "percent of all identified comparison sources crossmatched": "percent of all identified comparison sources crossmatched",
+                                                   "reference image platescale": "Platescale of the crossmatch reference image"},
+                                               units={"reference image name": "unitless",
+                                                      "comparison image name": "unitless",
+                                                      "reference catalog length": "unitless",
+                                                      "comparison catalog length": "unitless",
+                                                      "number of cross-matches": "unitless",
+                                                      "percent of all identified reference sources crossmatched": "unitless",
+                                                      "percent of all identified comparison sources crossmatched": "unitless",
+                                                      "reference image platescale": "arcseconds/pixel"})
 
-                    # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
-                    # the cross-matched reference sources
-                    matched_ref_coords = filtobj_dict[xmatch_ref_imgname]["sources"].copy()
-                    matched_ref_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
+                        # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
+                        # the cross-matched reference sources
+                        matched_ref_coords = filtobj_dict[xmatch_ref_imgname]["sources"].copy()
+                        matched_ref_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
 
-                    matched_ref_coords = matched_ref_coords[matching_lines_ref]
+                        matched_ref_coords = matched_ref_coords[matching_lines_ref]
 
-                    # store reference matched sources catalog
-                    diag_obj.add_data_item(matched_ref_coords, "Interfilter cross-matched reference catalog",
-                                           descriptions={"xcentroid_ref": "xcentroid_ref",
-                                                         "ycentroid_ref": "ycentroid_ref"},
-                                           units={"xcentroid_ref": "pixels", "ycentroid_ref": "pixels"})
+                        # store reference matched sources catalog
+                        diag_obj.add_data_item(matched_ref_coords, "Interfilter cross-matched reference catalog",
+                                               descriptions={"xcentroid_ref": "xcentroid_ref",
+                                                             "ycentroid_ref": "ycentroid_ref"},
+                                               units={"xcentroid_ref": "pixels", "ycentroid_ref": "pixels"})
 
-                    # write out ds9 region files if log level is 'debug'
-                    if log_level == logutil.logging.DEBUG:
-                        reg_filename = "{}_{}_ref_matches.reg".format(filtername_comp, filtername_ref)
-                        matched_ref_coords.write(reg_filename, format='ascii.csv')
-                        log.debug("wrote region file {}".format(reg_filename))
-                        del reg_filename
+                        # write out ds9 region files if log level is 'debug'
+                        if log_level == logutil.logging.DEBUG:
+                            reg_filename = "{}_{}_ref_matches.reg".format(filtername_comp, filtername_ref)
+                            matched_ref_coords.write(reg_filename, format='ascii.csv')
+                            log.debug("wrote region file {}".format(reg_filename))
+                            del reg_filename
 
-                    # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
-                    # the cross-matched comparison sources
-                    matched_comp_coords = filtobj_dict[imgname]["sources"].copy()
-                    matched_comp_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
-                    matched_comp_coords = matched_comp_coords[matching_lines_comp]
+                        # Generate tables containing just "xcentroid_ref" and "ycentroid_ref" columns with only
+                        # the cross-matched comparison sources
+                        matched_comp_coords = filtobj_dict[imgname]["sources"].copy()
+                        matched_comp_coords.keep_columns(['xcentroid_ref', 'ycentroid_ref'])
+                        matched_comp_coords = matched_comp_coords[matching_lines_comp]
 
-                    # store comparison matched sources catalog
-                    diag_obj.add_data_item(matched_comp_coords,
-                                           "Interfilter cross-matched comparison catalog",
-                                           descriptions={"xcentroid_ref": "xcentroid_ref",
-                                                         "ycentroid_ref": "ycentroid_ref"},
-                                           units={"xcentroid_ref": "pixels", "ycentroid_ref": "pixels"})
+                        # store comparison matched sources catalog
+                        diag_obj.add_data_item(matched_comp_coords,
+                                               "Interfilter cross-matched comparison catalog",
+                                               descriptions={"xcentroid_ref": "xcentroid_ref",
+                                                             "ycentroid_ref": "ycentroid_ref"},
+                                               units={"xcentroid_ref": "pixels", "ycentroid_ref": "pixels"})
 
-                    # write out ds9 region file if log level is 'debug'
-                    if log_level == logutil.logging.DEBUG:
-                        reg_filename = "{}_{}_comp_matches.reg".format(filtername_comp, filtername_ref)
-                        matched_comp_coords.write(reg_filename, format='ascii.csv')
-                        log.debug("wrote region file {}".format(reg_filename))
-                        del reg_filename
+                        # write out ds9 region file if log level is 'debug'
+                        if log_level == logutil.logging.DEBUG:
+                            reg_filename = "{}_{}_comp_matches.reg".format(filtername_comp, filtername_ref)
+                            matched_comp_coords.write(reg_filename, format='ascii.csv')
+                            log.debug("wrote region file {}".format(reg_filename))
+                            del reg_filename
 
-                    # compute statistics
-                    xy_separations_table = Table()
-                    for colname in ["xcentroid_ref", "ycentroid_ref"]:
-                        sep = matched_comp_coords[colname] - matched_ref_coords[colname]
+                        # compute statistics
+                        xy_separations_table = Table()
+                        for colname in ["xcentroid_ref", "ycentroid_ref"]:
+                            sep = matched_comp_coords[colname] - matched_ref_coords[colname]
 
-                        # Add column of comp-ref differences to table
-                        xy_separations_table['delta_{}'.format(colname)] = sep
+                            # Add column of comp-ref differences to table
+                            xy_separations_table['delta_{}'.format(colname)] = sep
 
-                        # Compute and store statistics on separations
-                        sep_stat_dict = collections.OrderedDict()
-                        sep_stat_dict["Non-clipped min"] = np.min(sep)
-                        sep_stat_dict["Non-clipped max"] = np.max(sep)
-                        sep_stat_dict["Non-clipped mean"] = np.mean(sep)
-                        sep_stat_dict["Non-clipped median"] = np.median(sep)
-                        sep_stat_dict["Non-clipped standard deviation"] = np.std(sep)
-                        sigma = 3
-                        maxiters = 3
-                        clipped_stats = sigma_clipped_stats(sep, sigma=sigma, maxiters=maxiters)
-                        sep_stat_dict["{}x{} sigma-clipped mean".format(maxiters, sigma)] = clipped_stats[0]
-                        sep_stat_dict["{}x{} sigma-clipped median".format(maxiters, sigma)] = clipped_stats[1]
-                        sep_stat_dict["{}x{} sigma-clipped standard deviation".format(maxiters, sigma)] = clipped_stats[2]
-                        sep_stat_dict["Reference image platescale"] = filtobj_dict[xmatch_ref_imgname][
-                            'filt_obj'].meta_wcs.pscale
+                            # Compute and store statistics on separations
+                            sep_stat_dict = collections.OrderedDict()
+                            sep_stat_dict["Non-clipped min"] = np.min(sep)
+                            sep_stat_dict["Non-clipped max"] = np.max(sep)
+                            sep_stat_dict["Non-clipped mean"] = np.mean(sep)
+                            sep_stat_dict["Non-clipped median"] = np.median(sep)
+                            sep_stat_dict["Non-clipped standard deviation"] = np.std(sep)
+                            sigma = 3
+                            maxiters = 3
+                            clipped_stats = sigma_clipped_stats(sep, sigma=sigma, maxiters=maxiters)
+                            sep_stat_dict["{}x{} sigma-clipped mean".format(maxiters, sigma)] = clipped_stats[0]
+                            sep_stat_dict["{}x{} sigma-clipped median".format(maxiters, sigma)] = clipped_stats[1]
+                            sep_stat_dict["{}x{} sigma-clipped standard deviation".format(maxiters, sigma)] = clipped_stats[2]
+                            sep_stat_dict["Reference image platescale"] = filtobj_dict[xmatch_ref_imgname][
+                                'filt_obj'].meta_wcs.pscale
 
-                        # Store statistics as new data section
-                        diag_obj.add_data_item(sep_stat_dict, "Interfilter cross-matched {} comparison - reference separation statistics".format(colname),
-                                               descriptions={"Non-clipped min": "Non-clipped min difference",
-                                                             "Non-clipped max": "Non-clipped max difference",
-                                                             "Non-clipped mean": "Non-clipped mean difference",
-                                                             "Non-clipped median": "Non-clipped median difference",
-                                                             "Non-clipped standard deviation": "Non-clipped standard deviation of differences",
-                                                             "3x3 sigma-clipped mean": "3x3 sigma-clipped mean difference",
-                                                             "3x3 sigma-clipped median": "3x3 sigma-clipped median difference",
-                                                             "3x3 sigma-clipped standard deviation": "3x3 sigma-clipped standard deviation of differences",
-                                                             "Reference image platescale": "Platescale of the crossmatch reference image"},
-                                               units={"Non-clipped min": "pixels",
-                                                      "Non-clipped max": "pixels",
-                                                      "Non-clipped mean": "pixels",
-                                                      "Non-clipped median": "pixels",
-                                                      "Non-clipped standard deviation": "pixels",
-                                                      "3x3 sigma-clipped mean": "pixels",
-                                                      "3x3 sigma-clipped median": "pixels",
-                                                      "3x3 sigma-clipped standard deviation": "pixels",
-                                                      "Reference image platescale": "arcseconds/pixel"})
+                            # Store statistics as new data section
+                            diag_obj.add_data_item(sep_stat_dict, "Interfilter cross-matched {} comparison - reference separation statistics".format(colname),
+                                                   descriptions={"Non-clipped min": "Non-clipped min difference",
+                                                                 "Non-clipped max": "Non-clipped max difference",
+                                                                 "Non-clipped mean": "Non-clipped mean difference",
+                                                                 "Non-clipped median": "Non-clipped median difference",
+                                                                 "Non-clipped standard deviation": "Non-clipped standard deviation of differences",
+                                                                 "3x3 sigma-clipped mean": "3x3 sigma-clipped mean difference",
+                                                                 "3x3 sigma-clipped median": "3x3 sigma-clipped median difference",
+                                                                 "3x3 sigma-clipped standard deviation": "3x3 sigma-clipped standard deviation of differences",
+                                                                 "Reference image platescale": "Platescale of the crossmatch reference image"},
+                                                   units={"Non-clipped min": "pixels",
+                                                          "Non-clipped max": "pixels",
+                                                          "Non-clipped mean": "pixels",
+                                                          "Non-clipped median": "pixels",
+                                                          "Non-clipped standard deviation": "pixels",
+                                                          "3x3 sigma-clipped mean": "pixels",
+                                                          "3x3 sigma-clipped median": "pixels",
+                                                          "3x3 sigma-clipped standard deviation": "pixels",
+                                                          "Reference image platescale": "arcseconds/pixel"})
 
-                        # display stats
-                        padding = math.ceil((74 - 61) / 2)
-                        log.info("{}Interfilter cross-matched {} comparison - reference separation statistics".format(" "*padding, colname))
-                        max_str_length = 0
-                        for stat_key in sep_stat_dict.keys():
-                            if len(stat_key) > max_str_length:
-                                max_str_length = len(stat_key)
-                        for stat_key in sep_stat_dict.keys():
-                            padding = " " * (max_str_length - len(stat_key))
-                            log.info("{}{}: {} {}".format(padding, stat_key, sep_stat_dict[stat_key],
-                                                          diag_obj.out_dict['data']["Interfilter cross-matched {} comparison - reference separation statistics".format(colname)]['units'][stat_key]))
-                        log.info("")
+                            # display stats
+                            padding = math.ceil((74 - 61) / 2)
+                            log.info("{}Interfilter cross-matched {} comparison - reference separation statistics".format(" "*padding, colname))
+                            max_str_length = 0
+                            for stat_key in sep_stat_dict.keys():
+                                if len(stat_key) > max_str_length:
+                                    max_str_length = len(stat_key)
+                            for stat_key in sep_stat_dict.keys():
+                                padding = " " * (max_str_length - len(stat_key))
+                                log.info("{}{}: {} {}".format(padding, stat_key, sep_stat_dict[stat_key],
+                                                              diag_obj.out_dict['data']["Interfilter cross-matched {} comparison - reference separation statistics".format(colname)]['units'][stat_key]))
+                            log.info("")
 
-                    # store separations table
-                    diag_obj.add_data_item(xy_separations_table,
-                                           "Interfilter cross-matched comparison - reference separations",
-                                           descriptions={"delta_x": "delta_x",
-                                                         "delta_y": "delta_y"},
-                                           units={"delta_x": "pixels", "delta_y": "pixels"})
+                        # store separations table
+                        diag_obj.add_data_item(xy_separations_table,
+                                               "Interfilter cross-matched comparison - reference separations",
+                                               descriptions={"delta_x": "delta_x",
+                                                             "delta_y": "delta_y"},
+                                               units={"delta_x": "pixels", "delta_y": "pixels"})
 
-                    # write everything out to the json file
-                    json_filename = filtobj_dict[xmatch_comp_imgname]['filt_obj'].drizzle_filename[
-                                    :-9] + "_svm_interfilter_crossmatch.json"
-                    diag_obj.write_json_file(json_filename, clobber=True)
-                else:
-                    filt_names = "{} - {}".format(filtername_comp, filtername_ref)
-                    log.warning("{} interfilter cross match test could not be performed.".format(filt_names))
-
-    # Housekeeping. Delete the *_point-cat-fxm.ecsv files created for cross-matching, and the
+                        # write everything out to the json file
+                        json_filename = filtobj_dict[xmatch_comp_imgname]['filt_obj'].drizzle_filename[
+                                        :-9] + "_svm_interfilter_crossmatch.json"
+                        diag_obj.write_json_file(json_filename, clobber=True)
+                    else:
+                        filt_names = "{} - {}".format(filtername_comp, filtername_ref)
+                        log.warning("{} interfilter cross match test could not be performed.".format(filt_names))
+                except Exception:
+                    log.warning("HAP Point sourcelist interfilter comparison (compare_interfilter_crossmatches) encountered a problem.")
+                    log.exception("message")
+                finally:
+                    if os.path.exists(filtobj_dict[imgname]['cat_name']):
+                        log.info("removing temporary catalog file {}".format(filtobj_dict[imgname]['cat_name'])) # Housekeeping. Delete each temp *_point-cat-fxm.ecsv file after use.
+                        os.remove(filtobj_dict[imgname]['cat_name'])
+    # Housekeeping. Delete the reference *_point-cat-fxm.ecsv file created for cross-matching, and the
     # filtobj_dict dictionary
     log.info("")
-    for imgname in filtobj_dict.keys():
-        log.info("removing temporary catalog file {}".format(filtobj_dict[imgname]['cat_name'])) # TODO: make this section of code fault-reistant, so fxm files are deleted even if code crashes.
-        os.remove(filtobj_dict[imgname]['cat_name'])
+    if os.path.exists(xmatch_ref_catname):
+        log.info("removing temporary reference catalog file {}".format(xmatch_ref_catname))
+        os.remove(xmatch_ref_catname)
     del filtobj_dict
 
 
