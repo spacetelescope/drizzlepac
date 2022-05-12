@@ -1763,7 +1763,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
             # If appropriate, deblend the segmentation image. Otherwise, use the current segmentation image
             ncount += 1
-            if segm_img.big_segments is not None or len(segm_img.big_segments > 0):
+            if segm_img.big_segments is not None:
                 segm_img = self.deblend_segments(segm_img,
                                                  imgarr,
                                                  ncount,
@@ -2716,8 +2716,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.debug("Ignoring {} sources exceeding the deblending limit in size".format(len(big_areas)))
             # Convert back to ndarray
             big_segments = np.array(big_segments)
-
-            segm_img.big_segments = big_segments
+            if len(big_segments) > 0:
+                segm_img.big_segments = big_segments
+            else:
+                segm_img.big_segments = None
             log.info("Total number of sources suitable for deblending: {}".format(len(big_segments)))
         else:
             log.info("There are no big segments larger than the deblending limit.")

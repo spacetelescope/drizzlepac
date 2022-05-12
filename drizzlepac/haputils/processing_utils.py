@@ -245,9 +245,10 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
 
     hdrtab_cols = orig_tab.columns
     if name_col:
-        # define new column with HAP expname
-        max_len = min(max([len(name) for name in name_col]), 51)
-        hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len + 4))
+        # define new column with HAP expname and ensure the column
+        # will accommodate a string of at least 51 characters which handles an ACS image
+        max_len = max(max([len(name) for name in name_col]), 51)
+        hapcol = Column(array=np.array(name_col, dtype=np.str), name=HAPCOLNAME, format='{}A'.format(max_len))
         newcol = fits.ColDefs([hapcol])
         hdrtab_cols += newcol
 
