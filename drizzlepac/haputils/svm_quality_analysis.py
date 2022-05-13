@@ -877,6 +877,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
                 except Exception:
                     log.warning("HAP Point sourcelist interfilter comparison (compare_interfilter_crossmatches) encountered a problem.")
                     log.exception("message")
+                    log.warning("Continuing to next test...")
                 finally:
                     if os.path.exists(filtobj_dict[imgname]['cat_name']):
                         log.info("removing temporary catalog file {}".format(filtobj_dict[imgname]['cat_name'])) # Housekeeping. Delete each temp *_point-cat-fxm.ecsv file after use.
