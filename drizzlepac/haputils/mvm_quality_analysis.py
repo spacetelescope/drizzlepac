@@ -57,6 +57,30 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ------------------------------------------------------------------------------------------------------------
-def run_quality_analysis(total_obj_list, run_overlap_crossmatch, log_level=logutil.logging.NOTSET):
-    pdb.set_trace()
+def run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=logutil.logging.NOTSET):
+    log.setLevel(log_level)
+    if run_overlap_crossmatch:
+        try:
+            overlap_crossmatch_analysis(total_obj_list, log_level=log_level)
+        except Exception:
+            log.warning("The analysis of crossmatched sources in overlap regions encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
+# ------------------------------------------------------------------------------------------------------------
+
+def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET):
+    log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: overlap_crossmatch_analysis.     *****\n')
+    # 1: Determine if there is observations from multiple proposals/visits present in this dataset
+    ippsss_list = []
+    for total_obj in total_obj_list:
+        for exp_obj in total_obj.edp_list:
+            ippsss_list.append(exp_obj.exposure_name[:6])
+    ippsss_list = list(set(ippsss_list))
+    if len(ippsss_list) == 1:
+        log.warning("All observations in this dataset were from a single proposal/visit. This test requires observations from 2 or more proposal/visits.")
+        log.warning("Continuing to next test...")
+        return
+    print("\a\a")
+    pdb.set_trace()
