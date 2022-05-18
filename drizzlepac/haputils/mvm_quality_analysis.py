@@ -82,5 +82,7 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
         log.warning("All observations in this dataset were from a single proposal/visit. This test requires observations from 2 or more proposal/visits.")
         log.warning("Continuing to next test...")
         return
+
+    # Identify if there are any overlapping regions in observations from different proposal/visits
     print("\a\a")
     pdb.set_trace()
