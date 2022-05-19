@@ -82,7 +82,21 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
         log.warning("All observations in this dataset were from a single proposal/visit. This test requires observations from 2 or more proposal/visits.")
         log.warning("Continuing to next test...")
         return
-
+    del ippsss_list
     # Identify if there are any overlapping regions in observations from different proposal/visits
-    print("\a\a")
-    pdb.set_trace()
+    for total_obj in total_obj_list:
+        if not total_obj.drizzle_filename.endswith("_coarse-all_drz.fits"):
+            ippsss_list = []
+            for exp_obj in total_obj.edp_list:
+                ippsss_list.append(exp_obj.exposure_name[:6])
+            ippsss_list = list(set(ippsss_list))
+            for ippsss in ippsss_list:
+                img_list = glob.glob("{}*_fl?.fits".format(ippsss))
+                skycell = cell_utils.SkyCell.from_name(total_obj.skycell.sky_cell_id)
+                footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
+                footprint.build(img_list)
+                footprint_filename = total_obj.drizzle_filename.replace("all_dr", "all_{}_footprint_dr".format(ippsss))  # TODO: REMOVE. this line is for development purposes only.
+                foo = footprint.get_footprint_hdu(footprint_filename)  # TODO: REMOVE. this line is for development purposes only.
+                log.info("Wrote footprint file {}.".format(footprint_filename)) # TODO: REMOVE. this line is for development purposes only.
+                # print("\a\a\a")
+                # pdb.set_trace()
