@@ -86,6 +86,8 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
     # Identify if there are any overlapping regions in observations from different proposal/visits
 
     layer_ctr = 0
+    layer_dict = {}
+    overlap_dict={}
     for total_obj in total_obj_list:
         if not total_obj.drizzle_filename.endswith("_coarse-all_drz.fits"):
             ippsss_list = []
@@ -102,6 +104,10 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
                     ctx_count_ra = np.zeros_like(footprint.total_mask)
                 ctx_count_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 1)  # Build array maps number of overlapping datasets for each skycell pixel
                 ctx_map_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 2**layer_ctr) # Build context arrray that stores footprint information broken down by instrument, detector, filter, proposal and visit
+                layer_dict[2**layer_ctr] = {}
+                layer_dict[2 ** layer_ctr]["mode"] = total_obj.drizzle_filename
+                layer_dict[2 ** layer_ctr]["ippsss"] = ippsss
+
                 array2fitsfile(ctx_map_ra, "ctx_footprint_{}.fits".format(str(layer_ctr)), log_level=log_level) # TODO: REMOVE. this line is for development purposes only.
                 layer_ctr += 1
 
@@ -116,7 +122,9 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
         log.warning("No overlapping footprints found.")
         log.warning("Continuing to next test...")
     array2fitsfile(ctx_map_ra, "ctx_footprint_total.fits", log_level=log_level)
-
+    print("\a\a")
+    pdb.set_trace()
+    # TODO: Identifaction of individual overlap regions by bit value from ctx_map_ra.
 # ------------------------------------------------------------------------------------------------------------
 def array2fitsfile(ra2write, fitsfilename, log_level=logutil.logging.NOTSET):
     log.setLevel(log_level)
