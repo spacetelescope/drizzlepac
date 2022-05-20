@@ -78,12 +78,14 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
         for exp_obj in total_obj.edp_list:
             ippsss_list.append(exp_obj.exposure_name[:6])
     ippsss_list = list(set(ippsss_list))
-    if len(ippsss_list) == 1:
-        log.warning("All observations in this dataset were from a single proposal/visit. This test requires observations from 2 or more proposal/visits.")
+    if len(ippsss_list) == 1:  # return if there is only data from a single visit
+        log.warning("All observations in this dataset were from a single proposal/visit. This test requires observations from two or more proposal/visits.")
         log.warning("Continuing to next test...")
         return
     del ippsss_list
     # Identify if there are any overlapping regions in observations from different proposal/visits
+
+    layer_ctr = 0
     for total_obj in total_obj_list:
         if not total_obj.drizzle_filename.endswith("_coarse-all_drz.fits"):
             ippsss_list = []
@@ -95,8 +97,29 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
                 skycell = cell_utils.SkyCell.from_name(total_obj.skycell.sky_cell_id)
                 footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
                 footprint.build(img_list)
+                if layer_ctr == 0:
+                    ctx_map_ra = np.zeros_like(footprint.total_mask, dtype=np.int64) # This should allow for a max of 35 unique footprints in the skycell
+                    ctx_count_ra = np.zeros_like(footprint.total_mask)
+                ctx_count_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 1)  # Build array maps number of overlapping datasets for each skycell pixel
+                ctx_map_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 2**layer_ctr) # Build context arrray that stores footprint information broken down by instrument, detector, filter, proposal and visit
+                array2fitsfile(ctx_map_ra, "ctx_footprint_{}.fits".format(str(layer_ctr)), log_level=log_level) # TODO: REMOVE. this line is for development purposes only.
+                layer_ctr += 1
+
                 footprint_filename = total_obj.drizzle_filename.replace("all_dr", "all_{}_footprint_dr".format(ippsss))  # TODO: REMOVE. this line is for development purposes only.
                 foo = footprint.get_footprint_hdu(footprint_filename)  # TODO: REMOVE. this line is for development purposes only.
                 log.info("Wrote footprint file {}.".format(footprint_filename)) # TODO: REMOVE. this line is for development purposes only.
-                # print("\a\a\a")
-                # pdb.set_trace()
+
+    num_overlaps = len(list(set(ctx_count_ra.flatten().tolist()))) - 2
+    log.info("Number of datasets with unique instrument, detector, filter, proposal and visit combinations: {}".format(layer_ctr))
+    log.info("Number of regions with two or more overlapping unique dataset footprints: {}".format(num_overlaps))
+    if num_overlaps == 0:  # Return if no overlap regions are found
+        log.warning("No overlapping footprints found.")
+        log.warning("Continuing to next test...")
+    array2fitsfile(ctx_map_ra, "ctx_footprint_total.fits", log_level=log_level)
+
+# ------------------------------------------------------------------------------------------------------------
+def array2fitsfile(ra2write, fitsfilename, log_level=logutil.logging.NOTSET):
+    log.setLevel(log_level)
+    hdu = fits.PrimaryHDU(ra2write)
+    hdu.writeto(fitsfilename)
+    log.info("Wrote fits file {}.".format(fitsfilename))
