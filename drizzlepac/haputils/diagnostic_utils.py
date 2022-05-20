@@ -279,10 +279,11 @@ class HapDiagnostic(object):
 
         Parameters
         ----------
-        header_source : drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct, or
-        drizzlepac.haputils.Product.ExposureProduct, depending on input.
-            hap product object to pull header information and filter information from to populate the json
-        "header" section.
+        header_obj: drizzlepac.haputils.Product.TotalProduct, drizzlepac.haputils.Product.FilterProduct,
+            drizzlepac.haputils.Product.ExposureProduct, drizzlepac.haputils.Product.SkyCellProduct, or
+            drizzlepac.haputils.Product.SkyCellExposure, depending on input.
+            HAP product object to pull header information and filter information from to populate the json
+            "header" section.
 
         data_source : str, optional
             name of the script that generated the data that will be stored in the "data" section. If not
