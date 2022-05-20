@@ -33,6 +33,8 @@ import pickle
 import sys
 import time
 
+import pdb
+
 # Related third party imports
 from astropy.io import fits
 
@@ -82,7 +84,8 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
     log.info('\n\n*****     Begin Quality Analysis Test: report_wcsname.     *****\n')
     aposteriori_list = ['FIT', 'SVM', 'MVM']
 
-    # Generate a separate JSON file for each ExposureProduct object
+    # Generate a separate JSON file for each TotalProduct which is really a filter-level product for MVM processing
+    # The "total product" references are a throw-back to SVM processing
     for total_product in total_product_list:
         detector = total_product.detector
 
@@ -108,19 +111,13 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
             wcsname = fits.getval(edp_object.full_filename, 'WCSNAME', ext=1)
 
             # Obtain the value of S_REGION from all SCI extensions in the file
+            # sregion is a list containing  numpy arrays
             sregion = pu.interpret_sregion(edp_object.full_filename, extname='SCI')
 
-            # Convert the S_REGION into a single list containing lists of RA/Dec coordinates
-            sregion_list = []
-            for item in range(len(sregion)):
-                sregion_list.extend(sregion[item].tolist())
+            all_sregion = np.concatenate(sregion, axis=0)
 
-            # Capture the RA and Dec coordinates into their own lists
-            ra = []
-            dec = []
-            for coord in sregion_list:
-                ra.append(coord[0])
-                dec.append(coord[1])
+            ra = all_sregion[:,0].tolist()
+            dec = all_sregion[:,1].tolist()
 
             # Convert RA, Dec to X, Y
             xpos, ypos = metawcs.all_world2pix(ra, dec, 1)
