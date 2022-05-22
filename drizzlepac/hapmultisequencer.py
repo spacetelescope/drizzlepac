@@ -33,7 +33,7 @@
     The output products can be evaluated to determine the quality of the alignment and
     output data through the use of the environment variable:
 
-    - **SVM_QUALITY_TESTING** : Turn on quality assessment processing.  This environment
+    - **MVM_QUALITY_TESTING** : Turn on quality assessment processing.  This environment
       variable, if found with an affirmative value, will turn on processing to generate a JSON
       file which contains the results of evaluating the quality of the generated products.
 
@@ -58,7 +58,7 @@ from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import poller_utils
 from drizzlepac.haputils import product
 from drizzlepac.haputils import processing_utils as proc_utils
-from drizzlepac.haputils import svm_quality_analysis as svm_qa
+from drizzlepac.haputils import mvm_quality_analysis as mvm_qa
 from . import __version__
 
 from stsci.tools import logutil
@@ -74,7 +74,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # Environment variable which controls the quality assurance testing
 # for the Single Visit Mosaic processing.
 envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
-envvar_qa_svm = "SVM_QUALITY_TESTING"
+envvar_qa_mvm = "MVM_QUALITY_TESTING"
 
 # Default values for these environment variables set to include all available data
 envvar_cat_mvm = {"MVM_INCLUDE_SMALL": 'true',
@@ -429,36 +429,15 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
             log.info("Successfully wrote total_obj_list to pickle file {}!".format(pickle_filename))
 
         # Quality assurance portion of the processing - done only if the environment
-        # variable, SVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
-        qa_switch = _get_envvar_switch(envvar_qa_svm)
-        qa_switch = False  # TODO: temporarily set to False to skip QA stuff
+        # variable, MVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
+        qa_switch = _get_envvar_switch(envvar_qa_mvm)
 
-        # If requested, generate quality assessment statistics for the SVM products
+        # If requested, generate quality assessment statistics for the MVM products
         if qa_switch:
-            log.info("SVM Quality Assurance statistics have been requested for this dataset, {}.".format(input_filename))
+            log.info("MVM Quality Assurance statistics have been requested for this dataset, {}.".format(input_filename))
 
-            # Number of sources in Point and Segment catalogs
-            total_catalog_list = [i for i in catalog_list if 'total' in i]
-            fits_list = [i for i in driz_list if 'fits' in i]
-            total_drizzle_list = [i for i in fits_list if 'total' in i]
-            svm_qa.compare_num_sources(total_catalog_list, total_drizzle_list, log_level=log_level)
-
-            # Get point/segment cross-match RA/Dec statistics
-            for filter_obj in total_obj_list:
-                svm_qa.compare_ra_dec_crossmatches(filter_obj, log_level=log_level)
-
-            # Identify the number of GAIA sources in final product footprints
-            for filter_obj in total_obj_list:
-                svm_qa.find_gaia_sources(filter_obj, log_level=log_level)
-
-            # Photometry of cross-matched sources in Point and Segment catalogs for Filter products
-            tot_len = len(total_obj_list)
-            filter_drizzle_list = []
-            temp_list = []
-            for tot in total_obj_list:
-                temp_list = [x.drizzle_filename for x in tot.fdp_list]
-                filter_drizzle_list.extend(temp_list)
-            svm_qa.compare_photometry(filter_drizzle_list, log_level=log_level)
+            # Get WCSNAMEs of all input exposures for each MVM product
+            mvm_qa.run_quality_analysis(total_obj_list, log_level=log_level)
 
         # 9: Compare results to HLA classic counterparts (if possible)
         # if diagnostic_mode:
@@ -613,7 +592,7 @@ def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logg
 
 def _get_envvar_switch(envvar_name, default=None):
     """
-    This private routine interprets any environment variable, such as SVM_QUALITY_TESTING.
+    This private routine interprets any environment variable, such as MVM_QUALITY_TESTING.
 
     PARAMETERS
     -----------
