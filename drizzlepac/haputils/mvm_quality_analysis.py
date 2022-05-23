@@ -70,7 +70,7 @@ def run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=
 
 # ------------------------------------------------------------------------------------------------------------
 
-def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET):
+def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", goodbits = [0,1], log_level=logutil.logging.NOTSET):
     log.setLevel(log_level)
     log.info('\n\n*****     Begin Quality Analysis Test: overlap_crossmatch_analysis.     *****\n')
     # 1: Determine if there is observations from multiple proposals/visits present in this dataset
@@ -84,6 +84,7 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
         log.warning("Continuing to next test...")
         return
     del ippsss_list
+
     # 2a: Identify if there are any overlapping regions in observations from different proposal/visits
     ctx_count_ra, ctx_map_ra, layer_dict, layer_ctr = determine_if_overlaps_exist(total_obj_list, log_level=log_level)
     num_overlaps = len(list(set(ctx_count_ra.flatten().tolist()))) - 2
@@ -97,6 +98,8 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
     # 2b: Identification of individual overlap regions
     overlap_dict = locate_overlap_regions(ctx_map_ra, layer_dict, log_level=log_level)
 
+    # 3: locate sourcelists of overlapping observations for crossmatch
+    overlap_dict = locate_sourcelists(overlap_dict, sourcelist_type, log_level=log_level)
 
     print("\a\a")
     pdb.set_trace()
@@ -255,3 +258,35 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
     return overlap_dict
 
 # ------------------------------------------------------------------------------------------------------------
+
+
+def locate_sourcelists(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
+    """ Locate sourcelists for crossmatch analysis.
+    Parameters
+    ----------
+    overlap_dict : dict
+        Dictionary keyed by the bit value of the overlap containing the following:
+        1) values: a list of the bit values of the overlapping layers
+        2) idx_ra: the x and y index values of all pixels in ctx_map_ra in this overlap region
+        3) mode_0: the drizzle file name of the first component of the overlap
+        4) ippsss_0: the ippsss of the dataset of the first component of the overlap
+        5) mode_1: the drizzle file name of the second component of the overlap
+        6) ippsss_01: the ippsss of the dataset of the second component of the overlap
+
+    sourcelist_type: str
+        Type of sourcelist to search for. MUST be either "point" or "segment".
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    overlap_dict : dict
+        updated version of input arg 'overlap_dict' updated to include the full paths of the relevant
+        sourcelists. New information is stored in keys "sourcelist_0" and sourcelist_1".
+    """
+    log.setLevel(log_level)
+
+
+    return overlap_dict
