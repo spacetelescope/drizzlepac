@@ -9,6 +9,7 @@ import argparse
 import collections
 from datetime import datetime
 import glob
+import itertools
 import json
 import math
 import os
@@ -26,7 +27,7 @@ from bokeh.layouts import row, column
 from bokeh.plotting import figure, output_file, save
 from bokeh.models import ColumnDataSource, Label
 from bokeh.models.tools import HoverTool
-from itertools import chain
+from itertools import combinations, chain
 import numpy as np
 from photutils.detection import DAOStarFinder
 from scipy import ndimage
@@ -83,11 +84,9 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
         log.warning("Continuing to next test...")
         return
     del ippsss_list
-    # Identify if there are any overlapping regions in observations from different proposal/visits
-
+    # 2a: Identify if there are any overlapping regions in observations from different proposal/visits
     layer_ctr = 0
     layer_dict = {}
-    overlap_dict={}
     for total_obj in total_obj_list:
         if not total_obj.drizzle_filename.endswith("_coarse-all_drz.fits"):
             ippsss_list = []
@@ -122,12 +121,95 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
         log.warning("No overlapping footprints found.")
         log.warning("Continuing to next test...")
     array2fitsfile(ctx_map_ra, "ctx_footprint_total.fits", log_level=log_level)
+
+    # 2b: Identification of individual overlap regions
+    overlap_dict = locate_overlap_regions(ctx_map_ra, layer_dict)
+
+
     print("\a\a")
     pdb.set_trace()
-    # TODO: Identifaction of individual overlap regions by bit value from ctx_map_ra.
 # ------------------------------------------------------------------------------------------------------------
 def array2fitsfile(ra2write, fitsfilename, log_level=logutil.logging.NOTSET):
+    """Temp subroutine. TODO: remove once development is complete."""
     log.setLevel(log_level)
     hdu = fits.PrimaryHDU(ra2write)
     hdu.writeto(fitsfilename)
     log.info("Wrote fits file {}.".format(fitsfilename))
+
+
+# ------------------------------------------------------------------------------------------------------------
+
+def locate_overlap_regions(ctx_map_ra, layer_dict):
+    """Locates all overlap region(s) present
+
+    Parameters
+    ----------
+    ctx_map_ra : numpy.ndarray
+        exposure footprint context array
+
+    layer_dict : dict
+        Dictionary containing the drizzled filename and ippsss information for each exposure keyed by layer
+        number (which ties this information to the ctx_map array)
+
+    Returns
+    -------
+    overlap_dict : dict
+        Dictionary keyed by the bit value of the overlap containing the following:
+        1) values: a list of the bit values of the overlapping layers
+        2) idx_ra: the x and y index values of all pixels in ctx_map_ra in this overlap region
+        3) mode_0: the drizzle file name of the first component of the overlap
+        4) ippsss_0: the ippsss of the dataset of the first component of the overlap
+        5) mode_1: the drizzle file name of the second component of the overlap
+        6) ippsss_01: the ippsss of the dataset of the second component of the overlap
+    """
+    known_bits_list = sorted(layer_dict.keys())
+    overlap_dict = {}
+    test_bits_list = known_bits_list.copy()
+    test_bits_list.reverse()
+    test_bits_list = test_bits_list
+    all_bit_values = list(set(ctx_map_ra.flatten().tolist()))
+    indices = np.argwhere(np.isin(all_bit_values,
+                                  known_bits_list))  # get list indices of list elements that are just single (not combination) bit values
+    all_combo_bit_values = np.delete(all_bit_values, indices)  # remove single values from list.
+    all_combo_bit_values = np.flip(all_combo_bit_values)
+    for combo_value in all_combo_bit_values:
+        idx_ra = np.where(ctx_map_ra == combo_value)
+        bit_list = []
+        for test_bit in test_bits_list:  # deconstruct each combination bit value into it's components
+            if combo_value & test_bit > 0:
+                bit_list.append(test_bit)
+        for item in combinations(bit_list, 2):  # update overlap_dict with information about overlap(s) in this region.
+            bitsum = item[0] + item[1]
+            if bitsum in overlap_dict.keys():
+                overlap_dict[bitsum]["idx_ra"][0] = np.concatenate(
+                    (overlap_dict[bitsum]["idx_ra"][0], idx_ra[0]))
+                overlap_dict[bitsum]["idx_ra"][1] = np.concatenate(
+                    (overlap_dict[bitsum]["idx_ra"][1], idx_ra[1]))
+            else:
+                overlap_dict[bitsum] = {}
+                overlap_dict[bitsum]["values"] = item
+                overlap_dict[bitsum]["idx_ra"] = [idx_ra[0], idx_ra[1]]
+                overlap_dict[bitsum]["mode_0"] = layer_dict[item[0]]["mode"]
+                overlap_dict[bitsum]["ippsss_0"] = layer_dict[item[0]]["ippsss"]
+                overlap_dict[bitsum]["mode_1"] = layer_dict[item[1]]["mode"]
+                overlap_dict[bitsum]["ippsss_1"] = layer_dict[item[1]]["ippsss"]
+
+    for foo in enumerate(sorted(overlap_dict.keys())):  # report basic information about each overlap
+        ctr = foo[0]
+        bit_value = foo[1]
+        num_overlaps = len(overlap_dict.keys())
+        num_pix = len(overlap_dict[bit_value]['idx_ra'][0])
+        if num_pix == 1:
+            plural_str = ""
+        else:
+            plural_str = "s"
+        log.info("Overlap region #{}/{}, with overlap bit value {} contains {} pixel{}.".format(ctr + 1,
+                                                                                                num_overlaps,
+                                                                                                bit_value,
+                                                                                                num_pix,
+                                                                                                plural_str))
+
+        overlap_test = np.zeros_like(ctx_map_ra)  # TODO: REMOVE. this line is for development purposes only.
+        overlap_test[(overlap_dict[bit_value]["idx_ra"])] = 1  # TODO: REMOVE. this line is for development purposes only.
+        array2fitsfile(overlap_test, "overlap_region_{}.fits".format(str(bit_value)))  # TODO: REMOVE. this line is for development purposes only.
+    return overlap_dict
