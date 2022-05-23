@@ -85,6 +85,59 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
         return
     del ippsss_list
     # 2a: Identify if there are any overlapping regions in observations from different proposal/visits
+    ctx_count_ra, ctx_map_ra, layer_dict, layer_ctr = determine_if_overlaps_exist(total_obj_list, log_level=log_level)
+    num_overlaps = len(list(set(ctx_count_ra.flatten().tolist()))) - 2
+    log.info("Number of datasets with unique instrument, detector, filter, proposal and visit combinations: {}".format(layer_ctr))
+    log.info("Number of regions with two or more overlapping unique dataset footprints: {}".format(num_overlaps))
+    if num_overlaps == 0:  # Return if no overlap regions are found
+        log.warning("No overlapping footprints found.")
+        log.warning("Continuing to next test...")
+    array2fitsfile(ctx_map_ra, "ctx_footprint_total.fits", log_level=log_level)
+
+    # 2b: Identification of individual overlap regions
+    overlap_dict = locate_overlap_regions(ctx_map_ra, layer_dict, log_level=log_level)
+
+
+    print("\a\a")
+    pdb.set_trace()
+# ------------------------------------------------------------------------------------------------------------
+def array2fitsfile(ra2write, fitsfilename, log_level=logutil.logging.NOTSET):
+    """Temp subroutine. TODO: remove once development is complete."""
+    log.setLevel(log_level)
+    hdu = fits.PrimaryHDU(ra2write)
+    hdu.writeto(fitsfilename)
+    log.info("Wrote fits file {}.".format(fitsfilename))
+
+
+# ------------------------------------------------------------------------------------------------------------
+def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET):
+    """determines if there are any regions where observartions overlap.
+
+    Parameters
+    ----------
+    total_obj_list : list
+        List of TotalProduct objects, one object per instrument/detector/filter combination
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    ctx_count_ra : numpy.ndarray
+        exposure population context array
+
+    ctx_map_ra : numpy.ndarray
+        exposure footprint context array
+
+    layer_dict : dict
+        Dictionary containing the drizzled filename and ippsss information for each exposure keyed by layer
+        number (which ties this information to the ctx_map array)
+
+    layer_ctr : int
+        total number of individual "layers" or footprints present.
+    """
+    log.setLevel(log_level)
     layer_ctr = 0
     layer_dict = {}
     for total_obj in total_obj_list:
@@ -114,32 +167,13 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
                 foo = footprint.get_footprint_hdu(footprint_filename)  # TODO: REMOVE. this line is for development purposes only.
                 log.info("Wrote footprint file {}.".format(footprint_filename)) # TODO: REMOVE. this line is for development purposes only.
 
-    num_overlaps = len(list(set(ctx_count_ra.flatten().tolist()))) - 2
-    log.info("Number of datasets with unique instrument, detector, filter, proposal and visit combinations: {}".format(layer_ctr))
-    log.info("Number of regions with two or more overlapping unique dataset footprints: {}".format(num_overlaps))
-    if num_overlaps == 0:  # Return if no overlap regions are found
-        log.warning("No overlapping footprints found.")
-        log.warning("Continuing to next test...")
-    array2fitsfile(ctx_map_ra, "ctx_footprint_total.fits", log_level=log_level)
+    return ctx_count_ra, ctx_map_ra, layer_dict, layer_ctr
 
-    # 2b: Identification of individual overlap regions
-    overlap_dict = locate_overlap_regions(ctx_map_ra, layer_dict)
+#-------------------------------------------------------------------------------------------------------------
 
 
-    print("\a\a")
-    pdb.set_trace()
-# ------------------------------------------------------------------------------------------------------------
-def array2fitsfile(ra2write, fitsfilename, log_level=logutil.logging.NOTSET):
-    """Temp subroutine. TODO: remove once development is complete."""
-    log.setLevel(log_level)
-    hdu = fits.PrimaryHDU(ra2write)
-    hdu.writeto(fitsfilename)
-    log.info("Wrote fits file {}.".format(fitsfilename))
 
-
-# ------------------------------------------------------------------------------------------------------------
-
-def locate_overlap_regions(ctx_map_ra, layer_dict):
+def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOTSET):
     """Locates all overlap region(s) present
 
     Parameters
@@ -150,6 +184,10 @@ def locate_overlap_regions(ctx_map_ra, layer_dict):
     layer_dict : dict
         Dictionary containing the drizzled filename and ippsss information for each exposure keyed by layer
         number (which ties this information to the ctx_map array)
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
 
     Returns
     -------
@@ -162,6 +200,7 @@ def locate_overlap_regions(ctx_map_ra, layer_dict):
         5) mode_1: the drizzle file name of the second component of the overlap
         6) ippsss_01: the ippsss of the dataset of the second component of the overlap
     """
+    log.setLevel(log_level)
     known_bits_list = sorted(layer_dict.keys())
     overlap_dict = {}
     test_bits_list = known_bits_list.copy()
