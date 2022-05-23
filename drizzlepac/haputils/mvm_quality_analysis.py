@@ -101,6 +101,8 @@ def overlap_crossmatch_analysis(total_obj_list, log_level=logutil.logging.NOTSET
     print("\a\a")
     pdb.set_trace()
 # ------------------------------------------------------------------------------------------------------------
+
+
 def array2fitsfile(ra2write, fitsfilename, log_level=logutil.logging.NOTSET):
     """Temp subroutine. TODO: remove once development is complete."""
     log.setLevel(log_level)
@@ -108,8 +110,8 @@ def array2fitsfile(ra2write, fitsfilename, log_level=logutil.logging.NOTSET):
     hdu.writeto(fitsfilename)
     log.info("Wrote fits file {}.".format(fitsfilename))
 
-
 # ------------------------------------------------------------------------------------------------------------
+
 def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET):
     """determines if there are any regions where observartions overlap.
 
@@ -170,7 +172,6 @@ def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET
     return ctx_count_ra, ctx_map_ra, layer_dict, layer_ctr
 
 #-------------------------------------------------------------------------------------------------------------
-
 
 
 def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOTSET):
@@ -252,3 +253,5 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
         overlap_test[(overlap_dict[bit_value]["idx_ra"])] = 1  # TODO: REMOVE. this line is for development purposes only.
         array2fitsfile(overlap_test, "overlap_region_{}.fits".format(str(bit_value)))  # TODO: REMOVE. this line is for development purposes only.
     return overlap_dict
+
+# ------------------------------------------------------------------------------------------------------------
