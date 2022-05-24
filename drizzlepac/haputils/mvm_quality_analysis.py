@@ -106,12 +106,13 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", goodbit
 # ------------------------------------------------------------------------------------------------------------
 
 
-def array2fitsfile(ra2write, fitsfilename, log_level=logutil.logging.NOTSET):
+def array2fitsfile(ra2write, fitsfilename, write_fitsfiles=False, log_level=logutil.logging.NOTSET):
     """Temp subroutine. TODO: remove once development is complete."""
     log.setLevel(log_level)
-    hdu = fits.PrimaryHDU(ra2write)
-    hdu.writeto(fitsfilename)
-    log.info("Wrote fits file {}.".format(fitsfilename))
+    if write_fitsfiles:
+        hdu = fits.PrimaryHDU(ra2write)
+        hdu.writeto(fitsfilename, overwrite=True)
+        log.info("Wrote fits file {}.".format(fitsfilename))
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -287,6 +288,40 @@ def locate_sourcelists(overlap_dict, sourcelist_type, log_level=logutil.logging.
         sourcelists. New information is stored in keys "sourcelist_0" and sourcelist_1".
     """
     log.setLevel(log_level)
+    inst_map = {"i": "wfc3", "j": "acs"}
+    for bit_value in overlap_dict.keys():
+        print(overlap_dict[bit_value])
+        for set_num in ["0", "1"]:
+            ippsss = overlap_dict[bit_value]["ippsss_{}".format(set_num)]
+            mode = overlap_dict[bit_value]["mode_{}".format(set_num)]
 
+            # build search strings for svm drz/drc filter image, corresponding sourcelist
+            img_search_string = "{}{}".format(inst_map[ippsss[0]], mode.split(inst_map[ippsss[0]])[1])
+            img_search_string = "hst_*_??_" + img_search_string.replace("all", ippsss)
+            img_search_string = img_search_string.replace("drz", "dr?")
+            sl_search_string = img_search_string.replace("dr?.fits", "{}-cat.ecsv".format(sourcelist_type))
+            print(set_num, ippsss, mode, img_search_string, sl_search_string)
+
+            # build search paths.
+            cwd = os.getcwd()
+            search_path_list = []
+            search_path_list.append(cwd+"/")
+            search_path_list.append(cwd.replace(cwd.split("/")[-1], "svm_{}".format(ippsss))+"/")
+            print(search_path_list)
+
+            # execute searches
+            for search_path in search_path_list:
+                for search_item in [img_search_string, sl_search_string]:
+                    full_search_string = search_path+search_item
+                    results = glob.glob(full_search_string)
+                    if results:
+                        if results[0].endswith(".fits"):
+                            overlap_dict[bit_value]["svm_img_{}".format(set_num)] = results[0]
+                        else:
+                            overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] = results[0]
+            if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] == None:
+                log.warning("SVM sourcelist NOT FOUND!")
+            if overlap_dict[bit_value]["svm_img_{}".format(set_num)] == None:
+                log.warning("SVM drizzled filter image NOT FOUND!")
 
     return overlap_dict
