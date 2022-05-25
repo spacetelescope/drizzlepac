@@ -465,7 +465,17 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         # 9: Compare results to HLA classic counterparts (if possible)
         # if diagnostic_mode:
             # run_sourcelist_comparison(total_obj_list, diagnostic_mode=diagnostic_mode, log_level=log_level)
+
+        pickle_filename = "total_obj_list_full.pickle" # TODO: REMOVE. this line is for development purposes only.VVV
+        if os.path.exists(pickle_filename):
+            os.remove(pickle_filename)
+        pickle_out = open(pickle_filename, "wb")
+        pickle.dump(total_obj_list, pickle_out)
+        pickle_out.close()
+        print("******> Wrote pickle file {} <*****".format(pickle_filename))  # TODO: REMOVE. this line is for development purposes only.^^^
         mvm_qa.run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=log_level)  # TODO: REMOVE OR REPLACE
+        print("\a\a")
+        pdb.set_trace()
         # If we are running in diagnostic_mode, we want to see all inputs
         del_files = []
         # for each total product...

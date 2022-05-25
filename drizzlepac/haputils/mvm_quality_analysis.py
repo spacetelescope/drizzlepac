@@ -103,6 +103,8 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", goodbit
 
     print("\a\a")
     pdb.set_trace()
+
+
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -325,3 +327,11 @@ def locate_sourcelists(overlap_dict, sourcelist_type, log_level=logutil.logging.
                 log.warning("SVM drizzled filter image NOT FOUND!")
 
     return overlap_dict
+
+# ------------------------------------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    pickle_in = open("total_obj_list_full.pickle", "rb")
+    total_obj_list = pickle.load(pickle_in)
+
+    run_quality_analysis(total_obj_list, log_level=logutil.logging.INFO)
