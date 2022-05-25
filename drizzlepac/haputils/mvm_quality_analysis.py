@@ -100,12 +100,12 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", goodbit
     # 2b: Identification of individual overlap regions
     overlap_dict = locate_overlap_regions(ctx_map_ra, layer_dict, log_level=log_level)
 
-    # 3: locate sourcelists of overlapping observations for crossmatch
-    overlap_dict = locate_sourcelists(overlap_dict, sourcelist_type, log_level=log_level)
+    # 3a: locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of overlapping observations for crossmatch
+    overlap_dict = locate_svm_products(overlap_dict, sourcelist_type, log_level=log_level)
 
     num_overlaps = len(overlap_dict.keys())
     for overlap_num, bit_value in zip(range(1, num_overlaps+1), sorted(overlap_dict)):
-        # Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
+        # 3b: Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
         not_found_flag = False
         for set_num in ["0", "1"]:
             if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] == None:
@@ -285,8 +285,10 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
 # ------------------------------------------------------------------------------------------------------------
 
 
-def locate_sourcelists(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
-    """ Locate sourcelists for crossmatch analysis.
+def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
+    """ locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of
+    overlapping observations for crossmatch
+
     Parameters
     ----------
     overlap_dict : dict
@@ -296,7 +298,7 @@ def locate_sourcelists(overlap_dict, sourcelist_type, log_level=logutil.logging.
         3) mode_0: the drizzle file name of the first component of the overlap
         4) ippsss_0: the ippsss of the dataset of the first component of the overlap
         5) mode_1: the drizzle file name of the second component of the overlap
-        6) ippsss_01: the ippsss of the dataset of the second component of the overlap
+        6) ippsss_1: the ippsss of the dataset of the second component of the overlap
 
     sourcelist_type: str
         Type of sourcelist to search for. MUST be either "point" or "segment".
