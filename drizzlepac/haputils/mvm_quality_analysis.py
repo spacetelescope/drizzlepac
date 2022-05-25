@@ -58,20 +58,21 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ------------------------------------------------------------------------------------------------------------
+
 def run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=logutil.logging.NOTSET):
     log.setLevel(log_level)
     if run_overlap_crossmatch:
-        overlap_crossmatch_analysis(total_obj_list, log_level=log_level)
-        # try:
-        #     overlap_crossmatch_analysis(total_obj_list, log_level=log_level)
-        # except Exception:
-        #     log.warning("The analysis of crossmatched sources in overlap regions encountered a problem.")
-        #     log.exception("message")
-        #     log.warning("Continuing to next test...")
+        try:
+            overlap_crossmatch_analysis(total_obj_list, log_level=log_level)
+        except Exception:
+            log.warning("The analysis of crossmatched sources in overlap regions encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
 
 # ------------------------------------------------------------------------------------------------------------
 
-def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", goodbits = [0,1], log_level=logutil.logging.NOTSET):
+
+def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_flags=[0,1], log_level=logutil.logging.NOTSET):
     log.setLevel(log_level)
     log.info('\n\n*****     Begin Quality Analysis Test: overlap_crossmatch_analysis.     *****\n')
     # 1: Determine if there is observations from multiple proposals/visits present in this dataset
@@ -103,6 +104,9 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", goodbit
     # 3a: locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of overlapping observations for crossmatch
     overlap_dict = locate_svm_products(overlap_dict, sourcelist_type, log_level=log_level)
 
+
+    sl_xy_column_name_dict = {"point": ["X-Center", "Y-Center"],
+                              "segment": ["X-Centroid", "Y-Centroid"]}
     num_overlaps = len(overlap_dict.keys())
     for overlap_num, bit_value in zip(range(1, num_overlaps+1), sorted(overlap_dict)):
         # 3b: Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
@@ -121,10 +125,28 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", goodbit
                 log.warning("Continuing to next test...")
             continue
 
+        # 4: Convert RA, Dec, X, Y from sourcelists to MVM skycell frame of reference
+        # 4a: read in SVM-generated sourcelists and drizzled filter product images
+        svm_img_data_list = []
+        svm_sourcelist_list = []
+        for set_num in ["0", "1"]:
+            svm_img_data_list.append(fits.open(overlap_dict[bit_value]["svm_img_{}".format(set_num)]))
+            svm_sourcelist_list.append(Table.read(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)], format='ascii.ecsv'))
 
+        # 5: eliminate sources not in overlap region
+        # 6: eliminate sources in overlap region with DQ values > 0 (non-steller sources and/or sources flagged as having dubious quality)
+        for set_num in ["0", "1"]:
+            just_sl_name = overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)].split("/")[-1]
+            log.info("{} sourcelist initial length: {}".format(just_sl_name, len(svm_sourcelist_list[0])))
+            rows_to_remove = np.argwhere(np.isin(svm_sourcelist_list[int(set_num)]["Flags"], good_flags, invert=True))
+            svm_sourcelist_list[int(set_num)].remove_rows(rows_to_remove)
+            log.info("removed {} rows in sourcelist {} with flag values other than user-defined list of good values ({})".format(len(rows_to_remove), just_sl_name, good_flags))
+            log.info("{} rows remain.\n".format(len(svm_sourcelist_list[int(set_num)])))
 
-
-
+        # 7: perform cross-match (see svm_quality_analysis.compare_interfilter_crossmatches)
+        # 8: perform analysis of crossmatch results (see svm_quality_analysis.compare_interfilter_crossmatches)
+    print("\a\a\a")
+    pdb.set_trace()
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -137,6 +159,7 @@ def array2fitsfile(ra2write, fitsfilename, write_fitsfiles=False, log_level=logu
         log.info("Wrote fits file {}.".format(fitsfilename))
 
 # ------------------------------------------------------------------------------------------------------------
+
 
 def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET):
     """determines if there are any regions where observartions overlap.
@@ -191,9 +214,9 @@ def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET
                 array2fitsfile(ctx_map_ra, "ctx_footprint_{}.fits".format(str(layer_ctr)), log_level=log_level) # TODO: REMOVE. this line is for development purposes only.
                 layer_ctr += 1
 
-                footprint_filename = total_obj.drizzle_filename.replace("all_dr", "all_{}_footprint_dr".format(ippsss))  # TODO: REMOVE. this line is for development purposes only.
+                # footprint_filename = total_obj.drizzle_filename.replace("all_dr", "all_{}_footprint_dr".format(ippsss))  # TODO: REMOVE. this line is for development purposes only.
                 # foo = footprint.get_footprint_hdu(footprint_filename)  # TODO: REMOVE. this line is for development purposes only.
-                log.info("Wrote footprint file {}.".format(footprint_filename)) # TODO: REMOVE. this line is for development purposes only.
+                # log.info("Wrote footprint file {}.".format(footprint_filename)) # TODO: REMOVE. this line is for development purposes only.
 
     return ctx_count_ra, ctx_map_ra, layer_dict, layer_ctr
 
@@ -346,6 +369,7 @@ def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging
     return overlap_dict
 
 # ------------------------------------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     pickle_in = open("total_obj_list_full.pickle", "rb")
