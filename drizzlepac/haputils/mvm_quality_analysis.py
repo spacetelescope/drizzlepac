@@ -61,12 +61,13 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 def run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=logutil.logging.NOTSET):
     log.setLevel(log_level)
     if run_overlap_crossmatch:
-        try:
-            overlap_crossmatch_analysis(total_obj_list, log_level=log_level)
-        except Exception:
-            log.warning("The analysis of crossmatched sources in overlap regions encountered a problem.")
-            log.exception("message")
-            log.warning("Continuing to next test...")
+        overlap_crossmatch_analysis(total_obj_list, log_level=log_level)
+        # try:
+        #     overlap_crossmatch_analysis(total_obj_list, log_level=log_level)
+        # except Exception:
+        #     log.warning("The analysis of crossmatched sources in overlap regions encountered a problem.")
+        #     log.exception("message")
+        #     log.warning("Continuing to next test...")
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -94,6 +95,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", goodbit
         log.warning("No overlapping footprints found.")
         log.warning("Continuing to next test...")
     array2fitsfile(ctx_map_ra, "ctx_footprint_total.fits", log_level=log_level)
+    del(num_overlaps)
 
     # 2b: Identification of individual overlap regions
     overlap_dict = locate_overlap_regions(ctx_map_ra, layer_dict, log_level=log_level)
@@ -101,8 +103,26 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", goodbit
     # 3: locate sourcelists of overlapping observations for crossmatch
     overlap_dict = locate_sourcelists(overlap_dict, sourcelist_type, log_level=log_level)
 
-    print("\a\a")
-    pdb.set_trace()
+    num_overlaps = len(overlap_dict.keys())
+    for overlap_num, bit_value in zip(range(1, num_overlaps+1), sorted(overlap_dict)):
+        # Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
+        not_found_flag = False
+        for set_num in ["0", "1"]:
+            if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] == None:
+                log.warning("Unable to locate one or more SVM sourcelist(s) required for crossmatch!")
+                not_found_flag = True
+            if overlap_dict[bit_value]["svm_img_{}".format(set_num)] == None:
+                log.warning("Unable to locate one or more SVM drizzled filter image(s) required for crossmatch!")
+                not_found_flag = True
+        if not_found_flag == True:
+            if overlap_num < num_overlaps:
+                log.warning("Continuing to next overlap region crossmatch analysis...")
+            if overlap_num == num_overlaps:
+                log.warning("Continuing to next test...")
+            continue
+
+
+
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -148,7 +168,7 @@ def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET
     log.setLevel(log_level)
     layer_ctr = 0
     layer_dict = {}
-    for total_obj in total_obj_list:
+    for tot_obj_list_idx, total_obj in zip(range(0, len(total_obj_list)), total_obj_list):
         if not total_obj.drizzle_filename.endswith("_coarse-all_drz.fits"):
             ippsss_list = []
             for exp_obj in total_obj.edp_list:
@@ -167,12 +187,12 @@ def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET
                 layer_dict[2**layer_ctr] = {}
                 layer_dict[2 ** layer_ctr]["mode"] = total_obj.drizzle_filename
                 layer_dict[2 ** layer_ctr]["ippsss"] = ippsss
-
+                layer_dict[2 ** layer_ctr]["total_obj_list_idx"] = tot_obj_list_idx
                 array2fitsfile(ctx_map_ra, "ctx_footprint_{}.fits".format(str(layer_ctr)), log_level=log_level) # TODO: REMOVE. this line is for development purposes only.
                 layer_ctr += 1
 
                 footprint_filename = total_obj.drizzle_filename.replace("all_dr", "all_{}_footprint_dr".format(ippsss))  # TODO: REMOVE. this line is for development purposes only.
-                foo = footprint.get_footprint_hdu(footprint_filename)  # TODO: REMOVE. this line is for development purposes only.
+                # foo = footprint.get_footprint_hdu(footprint_filename)  # TODO: REMOVE. this line is for development purposes only.
                 log.info("Wrote footprint file {}.".format(footprint_filename)) # TODO: REMOVE. this line is for development purposes only.
 
     return ctx_count_ra, ctx_map_ra, layer_dict, layer_ctr
@@ -237,8 +257,10 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
                 overlap_dict[bitsum]["idx_ra"] = [idx_ra[0], idx_ra[1]]
                 overlap_dict[bitsum]["mode_0"] = layer_dict[item[0]]["mode"]
                 overlap_dict[bitsum]["ippsss_0"] = layer_dict[item[0]]["ippsss"]
+                overlap_dict[bitsum]["total_obj_list_idx_0"] = layer_dict[item[0]]["total_obj_list_idx"]
                 overlap_dict[bitsum]["mode_1"] = layer_dict[item[1]]["mode"]
                 overlap_dict[bitsum]["ippsss_1"] = layer_dict[item[1]]["ippsss"]
+                overlap_dict[bitsum]["total_obj_list_idx_1"] =layer_dict[item[1]]["total_obj_list_idx"]
 
     for foo in enumerate(sorted(overlap_dict.keys())):  # report basic information about each overlap
         ctr = foo[0]
@@ -292,7 +314,6 @@ def locate_sourcelists(overlap_dict, sourcelist_type, log_level=logutil.logging.
     log.setLevel(log_level)
     inst_map = {"i": "wfc3", "j": "acs"}
     for bit_value in overlap_dict.keys():
-        print(overlap_dict[bit_value])
         for set_num in ["0", "1"]:
             ippsss = overlap_dict[bit_value]["ippsss_{}".format(set_num)]
             mode = overlap_dict[bit_value]["mode_{}".format(set_num)]
@@ -302,14 +323,12 @@ def locate_sourcelists(overlap_dict, sourcelist_type, log_level=logutil.logging.
             img_search_string = "hst_*_??_" + img_search_string.replace("all", ippsss)
             img_search_string = img_search_string.replace("drz", "dr?")
             sl_search_string = img_search_string.replace("dr?.fits", "{}-cat.ecsv".format(sourcelist_type))
-            print(set_num, ippsss, mode, img_search_string, sl_search_string)
 
             # build search paths.
             cwd = os.getcwd()
             search_path_list = []
             search_path_list.append(cwd+"/")
             search_path_list.append(cwd.replace(cwd.split("/")[-1], "svm_{}".format(ippsss))+"/")
-            print(search_path_list)
 
             # execute searches
             for search_path in search_path_list:
@@ -321,10 +340,6 @@ def locate_sourcelists(overlap_dict, sourcelist_type, log_level=logutil.logging.
                             overlap_dict[bit_value]["svm_img_{}".format(set_num)] = results[0]
                         else:
                             overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] = results[0]
-            if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] == None:
-                log.warning("SVM sourcelist NOT FOUND!")
-            if overlap_dict[bit_value]["svm_img_{}".format(set_num)] == None:
-                log.warning("SVM drizzled filter image NOT FOUND!")
 
     return overlap_dict
 
