@@ -134,22 +134,32 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             svm_sourcelist_list.append(Table.read(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)], format='ascii.ecsv'))
 
             # 5: eliminate sources in overlap region with DQ values > 0
-            just_sl_name = overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)].split("/")[-1]
+            just_sl_name = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)])
             log.info("{} sourcelist initial length: {}".format(just_sl_name, len(svm_sourcelist_list[0])))
             rows_to_remove = np.argwhere(np.isin(svm_sourcelist_list[setnum]["Flags"], good_flags, invert=True))
             svm_sourcelist_list[setnum].remove_rows(rows_to_remove)
             log.info("removed {} rows in sourcelist {} with flag values other than user-defined list of good values ({})".format(len(rows_to_remove), just_sl_name, good_flags))
             log.info("{} rows remain.\n".format(len(svm_sourcelist_list[setnum])))
 
-            # 6: Convert RA, Dec, X, Y from sourcelists to MVM skycell frame of reference
+            # 6: Compute new skycell-reference X, Y values from SVM sourcelist RA, Dec values
             ra_dec_values = np.stack((svm_sourcelist_list[setnum]['RA'], svm_sourcelist_list[setnum]['DEC']), axis=1)
-            xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].skycell.wcs.wcs_world2pix(ra_dec_values, 0)
+            xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs.all_world2pix(ra_dec_values, 1)
+            # add freshly computed X and Y columns to the existing sourcelist table
             new_x_col = Column(name="X-Skycell", data=xy_skycell[:, 0], dtype=np.float64)
             new_y_col = Column(name="Y-Skycell", data=xy_skycell[:, 1], dtype=np.float64)
             svm_sourcelist_list[setnum].add_column(new_x_col, index=2)
             svm_sourcelist_list[setnum].add_column(new_y_col, index=3)
 
+            #write RA, Dec values to region file # TODO: REMOVE. this line is for development purposes only.
+            table_to_regionfile(svm_sourcelist_list[setnum], ["RA", "DEC"],
+                                just_sl_name.replace(".ecsv", "_radec.reg"))
 
+            #write svm xy values to region file  # TODO: REMOVE. this line is for development purposes only.
+            table_to_regionfile(svm_sourcelist_list[setnum], sl_xy_column_name_dict[sourcelist_type],
+                                just_sl_name.replace(".ecsv", "_xy_svm.reg"))
+            #write new XY values to region file # TODO: REMOVE. this line is for development purposes only.
+            table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
+                                just_sl_name.replace(".ecsv", "_xy_skycell.reg"))
 
 
         # 7: eliminate sources not in overlap region
@@ -158,8 +168,8 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 
         # 8: perform cross-match (see svm_quality_analysis.compare_interfilter_crossmatches)
         # 9: perform analysis of crossmatch results (see svm_quality_analysis.compare_interfilter_crossmatches)
-    print("\a\a\a")
-    pdb.set_trace()
+    # print("\a\a\a")  # TODO: REMOVE. this line is for development purposes only.
+    # pdb.set_trace()  #  TODO: REMOVE. this line is for development purposes only.
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -183,7 +193,7 @@ def table_to_regionfile(source_table, columns_to_write, outfilename):
     """
     out_table = source_table.copy()
     out_table.keep_columns(columns_to_write)
-    out_table.write(outfilename, format="ascii")
+    out_table.write(outfilename, format="ascii", overwrite=True)
     print("Wrote region file '{}' containing {} sources".format(outfilename, len(out_table)))
 
 # ------------------------------------------------------------------------------------------------------------
