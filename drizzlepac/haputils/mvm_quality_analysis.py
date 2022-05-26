@@ -127,6 +127,8 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 
         svm_img_data_list = []
         svm_sourcelist_list = []
+        overlap_region_array = np.full_like(ctx_map_ra, np.nan)
+        overlap_region_array[(overlap_dict[bit_value]["idx_ra"])] = 1
         for set_num in ["0", "1"]:
             setnum = int(set_num)
             # 4: read in SVM-generated sourcelists and drizzled filter product images
@@ -139,7 +141,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             rows_to_remove = np.argwhere(np.isin(svm_sourcelist_list[setnum]["Flags"], good_flags, invert=True))
             svm_sourcelist_list[setnum].remove_rows(rows_to_remove)
             log.info("removed {} rows in sourcelist {} with flag values other than user-defined list of good values ({})".format(len(rows_to_remove), just_sl_name, good_flags))
-            log.info("{} rows remain.\n".format(len(svm_sourcelist_list[setnum])))
+            log.info("{} remain.\n".format(len(svm_sourcelist_list[setnum])))
 
             # 6: Compute new skycell-reference X, Y values from SVM sourcelist RA, Dec values
             ra_dec_values = np.stack((svm_sourcelist_list[setnum]['RA'], svm_sourcelist_list[setnum]['DEC']), axis=1)
@@ -153,7 +155,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             #write RA, Dec values to region file # TODO: REMOVE. this line is for development purposes only.
             table_to_regionfile(svm_sourcelist_list[setnum], ["RA", "DEC"],
                                 just_sl_name.replace(".ecsv", "_radec.reg"))
-
             #write svm xy values to region file  # TODO: REMOVE. this line is for development purposes only.
             table_to_regionfile(svm_sourcelist_list[setnum], sl_xy_column_name_dict[sourcelist_type],
                                 just_sl_name.replace(".ecsv", "_xy_svm.reg"))
@@ -161,15 +162,26 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
                                 just_sl_name.replace(".ecsv", "_xy_skycell.reg"))
 
+            # 7: eliminate sources not in overlap region
+            mask = au.within_footprint(overlap_region_array,
+                                       total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs,
+                                       svm_sourcelist_list[setnum]["X-Skycell"].data,
+                                       svm_sourcelist_list[setnum]["Y-Skycell"].data)
+            log.info("removed {} sources outside overlap region bounds from {}.".format(len(np.where(mask == True)[0]), just_sl_name))
+            svm_sourcelist_list[setnum] = svm_sourcelist_list[setnum][mask]
+            log.info("{} remain.\n".format(len(svm_sourcelist_list[setnum])))
+            #write new XY values from overlap region to region file # TODO: REMOVE. this line is for development purposes only.
+            table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
+                                just_sl_name.replace(".ecsv", "_xy_trimmed_skycell.reg"))
 
-        # 7: eliminate sources not in overlap region
+
 
 
 
         # 8: perform cross-match (see svm_quality_analysis.compare_interfilter_crossmatches)
         # 9: perform analysis of crossmatch results (see svm_quality_analysis.compare_interfilter_crossmatches)
-    # print("\a\a\a")  # TODO: REMOVE. this line is for development purposes only.
-    # pdb.set_trace()  #  TODO: REMOVE. this line is for development purposes only.
+    print("\a\a\a")  # TODO: REMOVE. this line is for development purposes only.
+    pdb.set_trace()  #  TODO: REMOVE. this line is for development purposes only.
 
 # ------------------------------------------------------------------------------------------------------------
 
