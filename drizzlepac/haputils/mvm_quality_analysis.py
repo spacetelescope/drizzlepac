@@ -125,38 +125,66 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                 log.warning("Continuing to next test...")
             continue
 
-        # 4: Convert RA, Dec, X, Y from sourcelists to MVM skycell frame of reference
-        # 4a: read in SVM-generated sourcelists and drizzled filter product images
         svm_img_data_list = []
         svm_sourcelist_list = []
         for set_num in ["0", "1"]:
+            setnum = int(set_num)
+            # 4: read in SVM-generated sourcelists and drizzled filter product images
             svm_img_data_list.append(fits.open(overlap_dict[bit_value]["svm_img_{}".format(set_num)]))
             svm_sourcelist_list.append(Table.read(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)], format='ascii.ecsv'))
 
-        # 5: eliminate sources not in overlap region
-        # 6: eliminate sources in overlap region with DQ values > 0 (non-steller sources and/or sources flagged as having dubious quality)
-        for set_num in ["0", "1"]:
+            # 5: eliminate sources in overlap region with DQ values > 0
             just_sl_name = overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)].split("/")[-1]
             log.info("{} sourcelist initial length: {}".format(just_sl_name, len(svm_sourcelist_list[0])))
-            rows_to_remove = np.argwhere(np.isin(svm_sourcelist_list[int(set_num)]["Flags"], good_flags, invert=True))
-            svm_sourcelist_list[int(set_num)].remove_rows(rows_to_remove)
+            rows_to_remove = np.argwhere(np.isin(svm_sourcelist_list[setnum]["Flags"], good_flags, invert=True))
+            svm_sourcelist_list[setnum].remove_rows(rows_to_remove)
             log.info("removed {} rows in sourcelist {} with flag values other than user-defined list of good values ({})".format(len(rows_to_remove), just_sl_name, good_flags))
-            log.info("{} rows remain.\n".format(len(svm_sourcelist_list[int(set_num)])))
+            log.info("{} rows remain.\n".format(len(svm_sourcelist_list[setnum])))
 
-        # 7: perform cross-match (see svm_quality_analysis.compare_interfilter_crossmatches)
-        # 8: perform analysis of crossmatch results (see svm_quality_analysis.compare_interfilter_crossmatches)
+            # 6: Convert RA, Dec, X, Y from sourcelists to MVM skycell frame of reference
+            ra_dec_values = np.stack((svm_sourcelist_list[setnum]['RA'], svm_sourcelist_list[setnum]['DEC']), axis=1)
+            xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].skycell.wcs.wcs_world2pix(ra_dec_values, 0)
+            new_x_col = Column(name="X-Skycell", data=xy_skycell[:, 0], dtype=np.float64)
+            new_y_col = Column(name="Y-Skycell", data=xy_skycell[:, 1], dtype=np.float64)
+            svm_sourcelist_list[setnum].add_column(new_x_col, index=2)
+            svm_sourcelist_list[setnum].add_column(new_y_col, index=3)
+
+
+
+
+        # 7: eliminate sources not in overlap region
+
+
+
+        # 8: perform cross-match (see svm_quality_analysis.compare_interfilter_crossmatches)
+        # 9: perform analysis of crossmatch results (see svm_quality_analysis.compare_interfilter_crossmatches)
     print("\a\a\a")
     pdb.set_trace()
+
 # ------------------------------------------------------------------------------------------------------------
 
 
 def array2fitsfile(ra2write, fitsfilename, write_fitsfiles=False, log_level=logutil.logging.NOTSET):
-    """Temp subroutine. TODO: remove once development is complete."""
+    """Temp subroutine. TODO: remove once development is complete.
+    Writes a numpy 2-d array to a fits file.
+    """
     log.setLevel(log_level)
     if write_fitsfiles:
         hdu = fits.PrimaryHDU(ra2write)
         hdu.writeto(fitsfilename, overwrite=True)
         log.info("Wrote fits file {}.".format(fitsfilename))
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def table_to_regionfile(source_table, columns_to_write, outfilename):
+    """Temp subroutine. TODO: remove once development is complete.
+    writes out user-specified columns from a user-specified astropy table to a user-specified region file
+    """
+    out_table = source_table.copy()
+    out_table.keep_columns(columns_to_write)
+    out_table.write(outfilename, format="ascii")
+    print("Wrote region file '{}' containing {} sources".format(outfilename, len(out_table)))
 
 # ------------------------------------------------------------------------------------------------------------
 
