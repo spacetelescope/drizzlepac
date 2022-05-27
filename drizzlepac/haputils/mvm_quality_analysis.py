@@ -181,8 +181,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             #                     just_sl_name.replace(".ecsv", "_xy_trimmed_skycell.reg"))
 
         # 8: perform cross-match (see svm_quality_analysis.compare_interfilter_crossmatches)
-        ref_index, comp_index, matched_lines_ref, matched_lines_comp = crossmatch_sources(total_obj_list,
-                                                                                          overlap_dict[bit_value],
+        ref_index, comp_index, matched_lines_ref, matched_lines_comp = crossmatch_sources(overlap_dict[bit_value],
                                                                                           svm_sourcelist_list,
                                                                                           log_level=log_level)
 
@@ -219,14 +218,56 @@ def table_to_regionfile(source_table, columns_to_write, outfilename):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def crossmatch_sources(total_obj_list, overlap_info, svm_sourcelist_list, log_level=logutil.logging.NOTSET):
-    """identify sources found in both sourcelists using stsci.stimage.xyxymatch
+def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_index, comp_index,
+                        matched_lines_ref, matched_lines_comp, log_level=logutil.logging.NOTSET):
+    """Preform statistical analysis of crossmatch results
 
     Parameters
     ----------
     total_obj_list : list
         list of skycell objects that store all the information for a set of observations for a given filter
 
+    overlap_info : dict
+        dictionary containing all relevant information about a single region of overlappoing observations.
+
+    svm_sourcelist_list : list
+        two-element list of astropy.table objects containing the SVM catalogs to crossmatch
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    ref_index : int
+        indicates which of the two svm sourcelists was used as the reference for crossmatch purposes. A value
+        of '0' indicates the sourcelist that is the first element of svm_sourcelist_list was the reference,
+        and a value of '1' indicates that the second svm_sourcelist_list sourcelist was used as the reference.
+
+    comp_index : int
+        indicates which of the two svm sourcelists was used as the comparison for crossmatch purposes. A value
+        of '0' indicates the sourcelist that is the first element of svm_sourcelist_list was the comparison,
+        and a value of '1' indicates that the second svm_sourcelist_list sourcelist was used as the comparison
+
+    matched_lines_ref : list
+        indices of the reference catalog that crossmatch to the corresponding element in matched_lines_comp.
+
+    matched_lines_ref : list
+        indices of the comparison catalog that crossmatch to the corresponding element in matched_lines_ref.
+
+    Returns
+    -------
+    Nothing.
+    """
+    log.setLevel(log_level)
+
+    # TODO: drop in lines 97 - 153 of  interdector_sourcelist_crossmatch.py
+# ------------------------------------------------------------------------------------------------------------
+
+
+def crossmatch_sources(overlap_info, svm_sourcelist_list, log_level=logutil.logging.NOTSET):
+    """identify sources found in both sourcelists using stsci.stimage.xyxymatch
+
+    Parameters
+    ----------
     overlap_info : dict
         dictionary containing all relevant information about a single region of overlappoing observations.
 
