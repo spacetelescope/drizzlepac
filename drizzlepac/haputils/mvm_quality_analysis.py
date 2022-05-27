@@ -33,6 +33,7 @@ from photutils.detection import DAOStarFinder
 from scipy import ndimage
 from scipy.spatial import KDTree
 
+
 # Local application imports
 from drizzlepac import util, wcs_functions
 from drizzlepac.haputils import hla_flag_filter
@@ -44,6 +45,7 @@ import drizzlepac.haputils.diagnostic_utils as du
 
 from drizzlepac.haputils import read_hla_catalog
 from stsci.tools import logutil
+from stsci.stimage import xyxymatch
 from stwcs import wcsutil
 from stwcs.wcsutil import HSTWCS
 
@@ -166,19 +168,23 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                                 just_sl_name.replace(".ecsv", "_xy_skycell.reg"))
 
             # 7: eliminate sources not in overlap region
-            mask = au.within_footprint(overlap_region_array,
-                                       total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs,
-                                       svm_sourcelist_list[setnum]["X-Skycell"].data,
-                                       svm_sourcelist_list[setnum]["Y-Skycell"].data)
-            log.info("removed {} sources outside overlap region bounds from {}.".format(len(np.where(mask == False)[0]), just_sl_name))
-            svm_sourcelist_list[setnum] = svm_sourcelist_list[setnum][mask]
-            log.info("{} remain.\n".format(len(svm_sourcelist_list[setnum])))
-            #write new XY values from overlap region to region file # TODO: REMOVE. this line is for development purposes only.
-            table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
-                                just_sl_name.replace(".ecsv", "_xy_trimmed_skycell.reg"))
+            #  TODO: Not really working correctly. Seek help.
+            # mask = au.within_footprint(overlap_region_array,
+            #                            total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs,
+            #                            svm_sourcelist_list[setnum]["X-Skycell"].data,
+            #                            svm_sourcelist_list[setnum]["Y-Skycell"].data)
+            # log.info("removed {} sources outside overlap region bounds from {}.".format(len(np.where(mask == False)[0]), just_sl_name))
+            # svm_sourcelist_list[setnum] = svm_sourcelist_list[setnum][mask]
+            # log.info("{} remain.\n".format(len(svm_sourcelist_list[setnum])))
+            # #write new XY values from overlap region to region file # TODO: REMOVE. this line is for development purposes only.
+            # table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
+            #                     just_sl_name.replace(".ecsv", "_xy_trimmed_skycell.reg"))
 
         # 8: perform cross-match (see svm_quality_analysis.compare_interfilter_crossmatches)
-
+        ref_index, comp_index, matched_lines_ref, matched_lines_comp = crossmatch_sources(total_obj_list,
+                                                                                          overlap_dict[bit_value],
+                                                                                          svm_sourcelist_list,
+                                                                                          log_level=log_level)
 
 
         # 9: perform analysis of crossmatch results (see svm_quality_analysis.compare_interfilter_crossmatches)
@@ -188,7 +194,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 # ------------------------------------------------------------------------------------------------------------
 
 
-def array2fitsfile(ra2write, fitsfilename, write_fitsfiles=True, log_level=logutil.logging.NOTSET):
+def array2fitsfile(ra2write, fitsfilename, write_fitsfiles=False, log_level=logutil.logging.NOTSET):
     """Temp subroutine. TODO: remove once development is complete.
     Writes a numpy 2-d array to a fits file.
     """
@@ -213,7 +219,85 @@ def table_to_regionfile(source_table, columns_to_write, outfilename):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def crossmatch_sources(total_obj_list, overlap_dict, )
+def crossmatch_sources(total_obj_list, overlap_info, svm_sourcelist_list, log_level=logutil.logging.NOTSET):
+    """identify sources found in both sourcelists using stsci.stimage.xyxymatch
+
+    Parameters
+    ----------
+    total_obj_list : list
+        list of skycell objects that store all the information for a set of observations for a given filter
+
+    overlap_info : dict
+        dictionary containing all relevant information about a single region of overlappoing observations.
+
+    svm_sourcelist_list : list
+        two-element list of astropy.table objects containing the SVM catalogs to crossmatch
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    ref_index : int
+        indicates which of the two svm sourcelists was used as the reference for crossmatch purposes. A value
+        of '0' indicates the sourcelist that is the first element of svm_sourcelist_list was the reference,
+        and a value of '1' indicates that the second svm_sourcelist_list sourcelist was used as the reference.
+
+    comp_index : int
+        indicates which of the two svm sourcelists was used as the comparison for crossmatch purposes. A value
+        of '0' indicates the sourcelist that is the first element of svm_sourcelist_list was the comparison,
+        and a value of '1' indicates that the second svm_sourcelist_list sourcelist was used as the comparision.
+
+    matched_lines_ref : list
+        indices of the reference catalog that crossmatch to the corresponding element in matched_lines_comp.
+
+    matched_lines_ref : list
+        indices of the comparison catalog that crossmatch to the corresponding element in matched_lines_ref.
+    """
+    log.setLevel(log_level)
+    # The sourcelist with more sources is automatically set as the "reference" catalog that the other
+    # sourcelist (aka the "comparison" catalog) will be crossmatched to
+    if len(svm_sourcelist_list[0]) >= len(svm_sourcelist_list[1]):
+        ref_index = 0
+        comp_index = 1
+    else:
+        ref_index = 1
+        comp_index = 0
+
+    log.info("Reference catalog: {}, {} sources".format(os.path.basename(overlap_info["svm_sourcelist_{}".format(str(ref_index))]), len(svm_sourcelist_list[ref_index])))
+    log.info("Comparison catalog: {}, {} sources".format(os.path.basename(overlap_info["svm_sourcelist_{}".format(str(comp_index))]), len(svm_sourcelist_list[comp_index])))
+
+    # prepare xyxymatch inputs
+    ref_xy = np.stack((svm_sourcelist_list[ref_index]['X-Skycell'], svm_sourcelist_list[ref_index]['Y-Skycell']), axis=1)
+    comp_xy = np.stack((svm_sourcelist_list[comp_index]['X-Skycell'], svm_sourcelist_list[comp_index]['Y-Skycell']), axis=1)
+    
+    # execute crossmatch
+    matches = xyxymatch(comp_xy, ref_xy, tolerance=5.0, separation=1.0)
+
+    # Report number and percentage of the total number of detected ref and comp sources that were matched
+    log.info("Sourcelist Matching Results")
+    log.info("Reference sourcelist:  {} of {} total sources matched ({} %)".format(len(matches), len(ref_xy), 100.0 * (float(len(matches)) / float(len(ref_xy)))))
+    log.info("Comparison sourcelist: {} of {} total sources matched ({} %)".format(len(matches), len(comp_xy), 100.0 * (float(len(matches)) / float(len(comp_xy)))))
+
+    # extract indices of the matching ref and comp lines and then use them to compile lists of matched X, Y,
+    # RA and DEC for calculation of differences
+    matched_lines_comp = []
+    matched_lines_ref = []
+    for item in matches:
+        matched_lines_comp.append(item[2])
+        matched_lines_ref.append(item[5])
+
+    table_to_regionfile(svm_sourcelist_list[ref_index][matched_lines_ref], ["X-Skycell", "Y-Skycell"],
+                        os.path.basename(overlap_info["svm_sourcelist_{}".format(str(ref_index))]).replace(".ecsv", "_match_ref_xy_skycell.reg")) #  TODO: REMOVE. this line is for development purposes only.
+    table_to_regionfile(svm_sourcelist_list[comp_index][matched_lines_comp], ["X-Skycell", "Y-Skycell"],
+                        os.path.basename(overlap_info["svm_sourcelist_{}".format(str(comp_index))]).replace(".ecsv", "_match_comp_xy_skycell.reg")) #  TODO: REMOVE. this line is for development purposes only.
+
+    return ref_index, comp_index, matched_lines_ref, matched_lines_comp
+
+#-------------------------------------------------------------------------------------------------------------
+
+
 
 def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET):
     """determines if there are any regions where observartions overlap.
