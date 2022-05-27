@@ -129,6 +129,8 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         svm_sourcelist_list = []
         overlap_region_array = np.full_like(ctx_map_ra, np.nan)
         overlap_region_array[(overlap_dict[bit_value]["idx_ra"])] = 1
+        array2fitsfile(overlap_region_array, "mask.fits", write_fitsfiles=True, log_level=log_level)
+
         for set_num in ["0", "1"]:
             setnum = int(set_num)
             # 4: read in SVM-generated sourcelists and drizzled filter product images
@@ -145,7 +147,8 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 
             # 6: Compute new skycell-reference X, Y values from SVM sourcelist RA, Dec values
             ra_dec_values = np.stack((svm_sourcelist_list[setnum]['RA'], svm_sourcelist_list[setnum]['DEC']), axis=1)
-            xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs.all_world2pix(ra_dec_values, 1)
+            #xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].skycell.wcs.all_world2pix(ra_dec_values, 1)  # generates SVM XY coords in skycell ref frame (also mask, ctx_map_ra)
+            xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs.all_world2pix(ra_dec_values, 1)  # generates SVM XY coords in total image ref frame (NOT IN SKYCELL REF FRAME)
             # add freshly computed X and Y columns to the existing sourcelist table
             new_x_col = Column(name="X-Skycell", data=xy_skycell[:, 0], dtype=np.float64)
             new_y_col = Column(name="Y-Skycell", data=xy_skycell[:, 1], dtype=np.float64)
@@ -167,18 +170,17 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                                        total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs,
                                        svm_sourcelist_list[setnum]["X-Skycell"].data,
                                        svm_sourcelist_list[setnum]["Y-Skycell"].data)
-            log.info("removed {} sources outside overlap region bounds from {}.".format(len(np.where(mask == True)[0]), just_sl_name))
+            log.info("removed {} sources outside overlap region bounds from {}.".format(len(np.where(mask == False)[0]), just_sl_name))
             svm_sourcelist_list[setnum] = svm_sourcelist_list[setnum][mask]
             log.info("{} remain.\n".format(len(svm_sourcelist_list[setnum])))
             #write new XY values from overlap region to region file # TODO: REMOVE. this line is for development purposes only.
             table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
                                 just_sl_name.replace(".ecsv", "_xy_trimmed_skycell.reg"))
 
-
-
-
-
         # 8: perform cross-match (see svm_quality_analysis.compare_interfilter_crossmatches)
+
+
+
         # 9: perform analysis of crossmatch results (see svm_quality_analysis.compare_interfilter_crossmatches)
     print("\a\a\a")  # TODO: REMOVE. this line is for development purposes only.
     pdb.set_trace()  #  TODO: REMOVE. this line is for development purposes only.
@@ -186,7 +188,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 # ------------------------------------------------------------------------------------------------------------
 
 
-def array2fitsfile(ra2write, fitsfilename, write_fitsfiles=False, log_level=logutil.logging.NOTSET):
+def array2fitsfile(ra2write, fitsfilename, write_fitsfiles=True, log_level=logutil.logging.NOTSET):
     """Temp subroutine. TODO: remove once development is complete.
     Writes a numpy 2-d array to a fits file.
     """
@@ -194,7 +196,7 @@ def array2fitsfile(ra2write, fitsfilename, write_fitsfiles=False, log_level=logu
     if write_fitsfiles:
         hdu = fits.PrimaryHDU(ra2write)
         hdu.writeto(fitsfilename, overwrite=True)
-        log.info("Wrote fits file {}.".format(fitsfilename))
+        log.debug("Wrote fits file {}.".format(fitsfilename))
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -206,10 +208,12 @@ def table_to_regionfile(source_table, columns_to_write, outfilename):
     out_table = source_table.copy()
     out_table.keep_columns(columns_to_write)
     out_table.write(outfilename, format="ascii", overwrite=True)
-    print("Wrote region file '{}' containing {} sources".format(outfilename, len(out_table)))
+    log.debug("Wrote region file '{}' containing {} sources".format(outfilename, len(out_table)))
 
 # ------------------------------------------------------------------------------------------------------------
 
+
+def crossmatch_sources(total_obj_list, overlap_dict, )
 
 def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET):
     """determines if there are any regions where observartions overlap.
@@ -352,7 +356,7 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
 
         overlap_test = np.zeros_like(ctx_map_ra)  # TODO: REMOVE. this line is for development purposes only.
         overlap_test[(overlap_dict[bit_value]["idx_ra"])] = 1  # TODO: REMOVE. this line is for development purposes only.
-        array2fitsfile(overlap_test, "overlap_region_{}.fits".format(str(bit_value)))  # TODO: REMOVE. this line is for development purposes only.
+        array2fitsfile(overlap_test, "overlap_region_{}.fits".format(str(bit_value)), log_level=log_level)  # TODO: REMOVE. this line is for development purposes only.
     return overlap_dict
 
 # ------------------------------------------------------------------------------------------------------------
