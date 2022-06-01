@@ -154,7 +154,7 @@ def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.IN
 
     generate_sorted_region_file(diff_xy, ref_xy_in_comp_frame[matched_lines_ref], comp_xy[matched_lines_comp], ref_data['FLAGS'][matched_lines_ref], comp_data['FLAGS'][matched_lines_comp])
 # =======================================================================================================================
-def compute_stats(diff_ra, title):
+def compute_stats(diff_ra, title, log_level=logutil.logging.INFO):
     """Compute linear statistics on specified differences
 
     Parameters
@@ -169,6 +169,7 @@ def compute_stats(diff_ra, title):
     -------
     Nothing!
     """
+    log.setLevel(log_level)
     # 'sigma' and 'iters' input values used for various np.sigma_clipped_stats() runs
     sigma = 3
     n_iters = 3

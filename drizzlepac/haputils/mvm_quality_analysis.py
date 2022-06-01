@@ -42,7 +42,7 @@ from drizzlepac.haputils import astrometric_utils as au
 from drizzlepac.haputils import cell_utils
 import drizzlepac.haputils.comparison_utils as cu
 import drizzlepac.haputils.diagnostic_utils as du
-
+from drizzlepac.devutils.comparison_tools import interdetector_sourcelist_crossmatch as idslxm
 from drizzlepac.haputils import read_hla_catalog
 from stsci.tools import logutil
 from stsci.stimage import xyxymatch
@@ -185,8 +185,9 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                                                                                           svm_sourcelist_list,
                                                                                           log_level=log_level)
 
-
         # 9: perform analysis of crossmatch results (see svm_quality_analysis.compare_interfilter_crossmatches)
+        crossmatch_analysis(total_obj_list, overlap_dict[bit_value], svm_sourcelist_list, ref_index,
+                            comp_index, matched_lines_ref, matched_lines_comp, log_level=log_level)
     print("\a\a\a")  # TODO: REMOVE. this line is for development purposes only.
     pdb.set_trace()  #  TODO: REMOVE. this line is for development purposes only.
 
@@ -250,7 +251,7 @@ def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_i
     matched_lines_ref : list
         indices of the reference catalog that crossmatch to the corresponding element in matched_lines_comp.
 
-    matched_lines_ref : list
+    matched_lines_comp : list
         indices of the comparison catalog that crossmatch to the corresponding element in matched_lines_ref.
 
     Returns
@@ -259,7 +260,58 @@ def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_i
     """
     log.setLevel(log_level)
 
-    # TODO: drop in lines 97 - 153 of  interdector_sourcelist_crossmatch.py
+    # compile lists of matched X, Y, RA and DEC for calculation of differences
+    ref_data = svm_sourcelist_list[ref_index]
+    comp_data = svm_sourcelist_list[comp_index]
+    matching_values_ref_x = ref_data['X-Skycell'][[matched_lines_ref]]
+    matching_values_ref_y = ref_data['Y-Skycell'][[matched_lines_ref]]
+    matching_values_ref_ra = ref_data['RA'][[matched_lines_ref]]
+    matching_values_ref_dec = ref_data['DEC'][[matched_lines_ref]]
+    matching_values_comp_x = comp_data['X-Skycell'][[matched_lines_comp]]
+    matching_values_comp_y = comp_data['Y-Skycell'][[matched_lines_comp]]
+    matching_values_comp_ra = comp_data['RA'][[matched_lines_comp]]
+    matching_values_comp_dec = comp_data['DEC'][[matched_lines_comp]]
+
+    # get coordinate system type total_obj info
+    overlap_info["total_obj_list_idx_{}".format(str(ref_index))]
+    ref_frame = total_obj_list[overlap_info["total_obj_list_idx_{}".format(str(ref_index))]].meta_wcs.wcs.radesys.lower()
+    comp_frame = total_obj_list[overlap_info["total_obj_list_idx_{}".format(str(comp_index))]].meta_wcs.wcs.radesys.lower()
+
+    # force RA and Dec values to be the correct type for SkyCoord() call
+    if str(type(matching_values_ref_ra)) == "<class 'astropy.table.column.Column'>":
+        matching_values_ref_ra = matching_values_ref_ra.tolist()
+    if str(type(matching_values_ref_dec)) == "<class 'astropy.table.column.Column'>":
+        matching_values_ref_dec = matching_values_ref_dec.tolist()
+    if str(type(matching_values_comp_ra)) == "<class 'astropy.table.column.Column'>":
+        matching_values_comp_ra = matching_values_comp_ra.tolist()
+    if str(type(matching_values_comp_dec)) == "<class 'astropy.table.column.Column'>":
+        matching_values_comp_dec = matching_values_comp_dec.tolist()
+
+    # convert reference and comparison RA/Dec values into SkyCoord objects
+    matching_values_ref_rd = SkyCoord(matching_values_ref_ra, matching_values_ref_dec, frame=ref_frame,
+                                      unit="deg")
+    matching_values_comp_rd = SkyCoord(matching_values_comp_ra, matching_values_comp_dec, frame=comp_frame,
+                                       unit="deg")
+    # convert to ICRS coord system
+    if ref_frame != "icrs":
+        matching_values_ref_rd = matching_values_ref_rd.icrs
+    if comp_frame != "icrs":
+        matching_values_comp_rd = matching_values_comp_rd.icrs
+
+    # compute mean-subtracted differences
+    diff_x = (matching_values_comp_x - matching_values_ref_x)
+    diff_x -= sigma_clipped_stats(diff_x, sigma=3, maxiters=3)[0]
+    diff_y = (matching_values_comp_y - matching_values_ref_y)
+    diff_y -= sigma_clipped_stats(diff_y, sigma=3, maxiters=3)[0]
+    diff_xy = np.sqrt(diff_x ** 2 + diff_y ** 2)
+    diff_rd = matching_values_comp_rd.separation(matching_values_ref_rd).arcsec
+
+    diff_list = [diff_x, diff_y, diff_xy, diff_rd]
+    title_list = ["X-axis differences", "Y-axis differences", "Separation", "On-sky separation"]
+    units_list = ["HAP pixels", "HAP pixels", "HAP pixels", "Arcseconds"]
+    for diff_ra, title, units in zip(diff_list, title_list, units_list):
+        log.info("Comparison - reference {} statistics ({})".format(title, units))
+        idslxm.compute_stats(diff_ra, title, log_level=log_level)
 # ------------------------------------------------------------------------------------------------------------
 
 
