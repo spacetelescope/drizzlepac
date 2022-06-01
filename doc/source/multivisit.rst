@@ -91,7 +91,7 @@ Defining each SkyCell
 ----------------------
 Each ProjectionCell is split into a grid of 21 x 21 'sky cells' which serves as the most basic MVM product generated
 during MVM processing.  Sky cells, as defined as the SkyCell object in the code and referred to as **SkyCell**,
-are approximately 0.2° x 0.2° in size (~21500 x ~21500 pixels) and
+are approximately 0.2° x 0.2° in size (~18000 x ~18000 pixels) and
 they have the same WCS as the ProjectionCell.  Each SkyCell gets identified by its position within the ProjectionCell
 as shown in this figure:
 
