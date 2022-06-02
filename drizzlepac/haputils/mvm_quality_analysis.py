@@ -129,10 +129,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 
         svm_img_data_list = []
         svm_sourcelist_list = []
-        overlap_region_array = np.full_like(ctx_map_ra, np.nan)
-        overlap_region_array[(overlap_dict[bit_value]["idx_ra"])] = 1
-        array2fitsfile(overlap_region_array, "mask.fits", write_fitsfiles=True, log_level=log_level)
-
         for set_num in ["0", "1"]:
             setnum = int(set_num)
             # 4: read in SVM-generated sourcelists and drizzled filter product images
@@ -149,8 +145,8 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 
             # 6: Compute new skycell-reference X, Y values from SVM sourcelist RA, Dec values
             ra_dec_values = np.stack((svm_sourcelist_list[setnum]['RA'], svm_sourcelist_list[setnum]['DEC']), axis=1)
-            #xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].skycell.wcs.all_world2pix(ra_dec_values, 1)  # generates SVM XY coords in skycell ref frame (also mask, ctx_map_ra)
-            xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs.all_world2pix(ra_dec_values, 1)  # generates SVM XY coords in total image ref frame (NOT IN SKYCELL REF FRAME)
+            xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].skycell.wcs.all_world2pix(ra_dec_values, 1)  # generates SVM XY coords in skycell ref frame (also mask, ctx_map_ra)
+            # xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs.all_world2pix(ra_dec_values, 1)  # generates SVM XY coords in total image ref frame (NOT IN SKYCELL REF FRAME)
             # add freshly computed X and Y columns to the existing sourcelist table
             new_x_col = Column(name="X-Skycell", data=xy_skycell[:, 0], dtype=np.float64)
             new_y_col = Column(name="Y-Skycell", data=xy_skycell[:, 1], dtype=np.float64)
@@ -167,18 +163,10 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
                                 just_sl_name.replace(".ecsv", "_xy_skycell.reg"))
 
-            # 7: eliminate sources not in overlap region
-            #  TODO: Not really working correctly. Seek help.
-            # mask = au.within_footprint(overlap_region_array,
-            #                            total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].meta_wcs,
-            #                            svm_sourcelist_list[setnum]["X-Skycell"].data,
-            #                            svm_sourcelist_list[setnum]["Y-Skycell"].data)
-            # log.info("removed {} sources outside overlap region bounds from {}.".format(len(np.where(mask == False)[0]), just_sl_name))
-            # svm_sourcelist_list[setnum] = svm_sourcelist_list[setnum][mask]
-            # log.info("{} remain.\n".format(len(svm_sourcelist_list[setnum])))
-            # #write new XY values from overlap region to region file # TODO: REMOVE. this line is for development purposes only.
-            # table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
-            #                     just_sl_name.replace(".ecsv", "_xy_trimmed_skycell.reg"))
+
+
+        # 7: eliminate sources not in overlap region
+        svm_sourcelist_list = reject_sources_not_in_overlap_region(svm_sourcelist_list, ctx_map_ra, overlap_dict[bit_value], bit_value, log_level=log_level)
 
         # 8: perform cross-match (see svm_quality_analysis.compare_interfilter_crossmatches)
         ref_index, comp_index, matched_lines_ref, matched_lines_comp = crossmatch_sources(overlap_dict[bit_value],
@@ -188,8 +176,8 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         # 9: perform analysis of crossmatch results (see svm_quality_analysis.compare_interfilter_crossmatches)
         crossmatch_analysis(total_obj_list, overlap_dict[bit_value], svm_sourcelist_list, ref_index,
                             comp_index, matched_lines_ref, matched_lines_comp, log_level=log_level)
-    print("\a\a\a")  # TODO: REMOVE. this line is for development purposes only.
-    pdb.set_trace()  #  TODO: REMOVE. this line is for development purposes only.
+    # print("\a\a\a")  # TODO: REMOVE. this line is for development purposes only.
+    # pdb.set_trace()  #  TODO: REMOVE. this line is for development purposes only.
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -389,7 +377,6 @@ def crossmatch_sources(overlap_info, svm_sourcelist_list, log_level=logutil.logg
     return ref_index, comp_index, matched_lines_ref, matched_lines_comp
 
 #-------------------------------------------------------------------------------------------------------------
-
 
 
 def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET):
@@ -602,8 +589,72 @@ def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging
 # ------------------------------------------------------------------------------------------------------------
 
 
+def reject_sources_not_in_overlap_region(svm_sourcelist_list, ctx_map_ra, overlap_info, bit_value, log_level=logutil.logging.NOTSET):
+    """Reject sources from sourcelists that are outside overlap region.
+
+    parameters
+    ----------
+    svm_sourcelist_list : list
+        two-element list of astropy.table objects containing the SVM catalogs to crossmatch
+
+    ctx_map_ra : numpy.ndarray
+        exposure footprint context array
+
+    overlap_info : dict
+        dictionary containing all relevant information about a single region of overlappoing observations.
+
+    bit_value : int
+        overlap region bit value
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    svm_sourcelist_list : list
+        updated version of input arg 'svm_sourcelist_list' with sourcelist points trimmed out whose X-Skycell,
+        Y-Skycell coords are outside the overlap region
+
+    """
+    log.setLevel(log_level)
+    # Create region mask. Zero-value pixels are outside region 1-value pixels are inside region.
+    overlap_region_array = np.zeros_like(ctx_map_ra)
+    overlap_region_array[(overlap_info["idx_ra"])] = 1
+    array2fitsfile(overlap_region_array, "region_mask_{}.fits".format(str(bit_value)), write_fitsfiles=True, log_level=log_level) #  TODO: REMOVE. this line is for development purposes only.
+    for setnum in [0, 1]:
+        set_num = str(setnum)
+        just_sl_name = os.path.basename(overlap_info["svm_sourcelist_{}".format(set_num)])
+        # build list of rows to remove from sourcelist
+        rows_to_remove = []
+        for blarg in enumerate(svm_sourcelist_list[setnum]):
+            linenum = blarg[0]
+            line = blarg[1]
+            x = int(line['X-Skycell'])
+            y = int(line['Y-Skycell'])
+            if overlap_region_array[y, x] == 0:
+                rows_to_remove.append(linenum)
+        n_rows_to_remove = len(rows_to_remove)
+        if n_rows_to_remove > 0:
+            svm_sourcelist_list[setnum].remove_rows(rows_to_remove)
+            if n_rows_to_remove == 1:
+                plural_str = ""
+            else:
+                plural_str = "s"
+            log.info("removed {} row{} in sourcelist {} with X, Y coords outside overlap region bounds".format(n_rows_to_remove, plural_str, just_sl_name))
+        else:
+            log.info("No sources found outside overlap region for sourcelist {}".format(just_sl_name))
+        log.info("{} remain.\n".format(len(svm_sourcelist_list[setnum])))
+        #write new XY values from overlap region to region file # TODO: REMOVE. this line is for development purposes only.
+        table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
+                            just_sl_name.replace(".ecsv", "_xy_trimmed_skycell.reg"))
+
+    return svm_sourcelist_list
+# ------------------------------------------------------------------------------------------------------------
+
+
 if __name__ == "__main__":
     pickle_in = open("total_obj_list_full.pickle", "rb")
     total_obj_list = pickle.load(pickle_in)
 
-    run_quality_analysis(total_obj_list, log_level=logutil.logging.INFO)
+    run_quality_analysis(total_obj_list, log_level=logutil.logging.DEBUG)
