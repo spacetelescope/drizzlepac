@@ -107,6 +107,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         svm_sourcelist_list = []
         for set_num in ["0", "1"]:
             setnum = int(set_num)
+            empty_catalog = False
             just_sl_name = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)])
             # 4: read in SVM-generated sourcelists and drizzled filter product images
             svm_img_data_list.append(fits.open(overlap_dict[bit_value]["svm_img_{}".format(set_num)]))
@@ -135,11 +136,15 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             if setnum == 0:
                 log.info("Remove sources from SVM catalogs unsuitable for catalog crossmatch")
             log.info("-----------> Catalog {} of 2: {} <-----------".format(str(setnum+1), just_sl_name))
-            log.info("Initial catalog length: {}".format(just_sl_name, len(svm_sourcelist_list[0])))
+            log.info("Initial catalog length: {}".format(len(svm_sourcelist_list[0])))
             # 6a: eliminate sources not in overlap region
             svm_sourcelist_list[setnum] = reject_sources_not_in_overlap_region(svm_sourcelist_list[setnum],
                                                                                overlap_region_mask,
                                                                                log_level=log_level)
+            if len(svm_sourcelist_list[setnum]) == 0:
+                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they were all outside overlap region bounds.")
+                empty_catalog = True
+                break
             # write new XY values from overlap region to region file # TODO: REMOVE. this line is for development purposes only.
             table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
                                 just_sl_name.replace(".ecsv", "_xy_trimmed_skycell.reg"))
@@ -150,6 +155,16 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             good_flags_str = ", ".join(str(good_flag) for good_flag in good_flags)
             log.info("Removed {} sources from catalog with flag values other than those in user-defined list of good flag values ({})".format(len(rows_to_remove), good_flags_str))
             log.info("{} sources remain".format(len(svm_sourcelist_list[setnum])))
+            if len(svm_sourcelist_list[setnum]) == 0:
+                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they all had unsuitable flag values")
+                empty_catalog = True
+                break
+        if empty_catalog:
+            if overlap_num < num_overlaps:
+                log.warning("Continuing to next overlap region crossmatch analysis...")
+            if overlap_num == num_overlaps:
+                log.warning("Continuing to next test...")
+            continue
         log.info("")
         # 7: perform crossmatch of SVM catalogs
         log.info("SVM catalog crossmatch")
@@ -565,7 +580,6 @@ def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging
                             overlap_dict[bit_value]["svm_img_{}".format(set_num)] = results[0]
                         else:
                             overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] = results[0]
-
     return overlap_dict
 
 # ------------------------------------------------------------------------------------------------------------
@@ -614,7 +628,7 @@ def reject_sources_not_in_overlap_region(svm_sourcelist, overlap_region_mask, lo
         log.info("Removed {} source{} outside overlap region bounds".format(n_rows_to_remove, plural_str))
     else:
         log.info("No sources found outside overlap region bounds")
-    log.info("{} Remain.".format(len(svm_sourcelist)))
+    log.info("{} sources remain.".format(len(svm_sourcelist)))
     return svm_sourcelist
 # ------------------------------------------------------------------------------------------------------------
 
