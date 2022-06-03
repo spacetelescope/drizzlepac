@@ -91,21 +91,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                                                                                                 bit_value,
                                                                                                 num_pix,
                                                                                                 plural_str))
-        not_found_flag = False
-        for set_num in ["0", "1"]:
-            # 3b: Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
-            if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] == None:
-                log.warning("Unable to locate one or more SVM sourcelist(s) required for crossmatch!")
-                not_found_flag = True
-            if overlap_dict[bit_value]["svm_img_{}".format(set_num)] == None:
-                log.warning("Unable to locate one or more SVM drizzled filter image(s) required for crossmatch!")
-                not_found_flag = True
-        if not_found_flag == True:
-            if overlap_num < num_overlaps:
-                log.warning("Continuing to next overlap region crossmatch analysis...")
-            if overlap_num == num_overlaps:
-                log.warning("Continuing to next test...")
-            continue
         # Create region mask. Zero-value pixels are outside region 1-value pixels are inside region.
         overlap_region_mask = np.zeros_like(ctx_map_ra)
         overlap_region_mask[(overlap_dict[bit_value]["idx_ra"])] = 1
@@ -113,7 +98,17 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         svm_sourcelist_list = []
         for set_num in ["0", "1"]:
             setnum = int(set_num)
-            empty_catalog = False
+            error_flag = False
+            # 3b: Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
+            if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] == None:
+                log.warning("Unable to locate one or more SVM sourcelist(s) required for crossmatch!")
+                error_flag = True
+                break
+            if overlap_dict[bit_value]["svm_img_{}".format(set_num)] == None:
+                log.warning(
+                    "Unable to locate one or more SVM drizzled filter image(s) required for crossmatch!")
+                error_flag = True
+                break
             just_sl_name = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)])
             # 4: read in SVM-generated sourcelists and drizzled filter product images
             svm_img_data_list.append(fits.open(overlap_dict[bit_value]["svm_img_{}".format(set_num)]))
@@ -139,7 +134,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                                                                                log_level=log_level)
             if len(svm_sourcelist_list[setnum]) == 0:
                 log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they were outside overlap region bounds.")
-                empty_catalog = True
+                error_flag = True
                 break
 
             # 6b: eliminate sources in overlap region with sourcelist DQ flag values not in input arg "good_flags"
@@ -150,9 +145,9 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             log.info("{} sources remain".format(len(svm_sourcelist_list[setnum])))
             if len(svm_sourcelist_list[setnum]) == 0:
                 log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they had unsuitable flag values")
-                empty_catalog = True
+                error_flag = True
                 break
-        if empty_catalog:
+        if error_flag:
             if overlap_num < num_overlaps:
                 log.warning("Continuing to next overlap region crossmatch analysis...")
             if overlap_num == num_overlaps:
