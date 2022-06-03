@@ -415,13 +415,7 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
     Returns
     -------
     overlap_dict : dict
-        Dictionary keyed by the bit value of the overlap containing the following:
-        1) values: a list of the bit values of the overlapping layers
-        2) idx_ra: the x and y index values of all pixels in ctx_map_ra in this overlap region
-        3) mode_0: the drizzle file name of the first component of the overlap
-        4) ippsss_0: the ippsss of the dataset of the first component of the overlap
-        5) mode_1: the drizzle file name of the second component of the overlap
-        6) ippsss_01: the ippsss of the dataset of the second component of the overlap
+        Dictionary keyed by the bit value of the overlap containing relevant information
     """
     log.setLevel(log_level)
     known_bits_list = sorted(layer_dict.keys())
