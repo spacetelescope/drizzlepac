@@ -68,7 +68,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
     if num_overlaps == 0:  # Return if no overlap regions are found
         log.warning("No overlapping footprints found.")
         log.warning("Continuing to next test...")
-    array2fitsfile(ctx_map_ra, "ctx_footprint_total.fits", log_level=log_level)
     del(num_overlaps)
 
     # 2b: Identification of individual overlap regions
@@ -76,15 +75,25 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 
     # 3a: locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of overlapping observations for crossmatch
     overlap_dict = locate_svm_products(overlap_dict, sourcelist_type, log_level=log_level)
-
-
     sl_xy_column_name_dict = {"point": ["X-Center", "Y-Center"],
                               "segment": ["X-Centroid", "Y-Centroid"]}
     num_overlaps = len(overlap_dict.keys())
     for overlap_num, bit_value in zip(range(1, num_overlaps+1), sorted(overlap_dict)):
-        # 3b: Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
+        # report basic information about each overlap
+        num_overlaps = len(overlap_dict.keys())
+        num_pix = len(overlap_dict[bit_value]['idx_ra'][0])
+        if num_pix == 1:
+            plural_str = ""
+        else:
+            plural_str = "s"
+        log.info("Overlap region #{}/{}, with overlap bit value {} contains {} pixel{}.".format(overlap_num,
+                                                                                                num_overlaps,
+                                                                                                bit_value,
+                                                                                                num_pix,
+                                                                                                plural_str))
         not_found_flag = False
         for set_num in ["0", "1"]:
+            # 3b: Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
             if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] == None:
                 log.warning("Unable to locate one or more SVM sourcelist(s) required for crossmatch!")
                 not_found_flag = True
@@ -100,9 +109,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         # Create region mask. Zero-value pixels are outside region 1-value pixels are inside region.
         overlap_region_mask = np.zeros_like(ctx_map_ra)
         overlap_region_mask[(overlap_dict[bit_value]["idx_ra"])] = 1
-        array2fitsfile(overlap_region_mask, "region_mask_{}.fits".format(str(bit_value)),
-                       write_fitsfiles=True,
-                       log_level=log_level)  # TODO: REMOVE. this line is for development purposes only.
         svm_img_data_list = []
         svm_sourcelist_list = []
         for set_num in ["0", "1"]:
@@ -122,16 +128,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             svm_sourcelist_list[setnum].add_column(new_x_col, index=2)
             svm_sourcelist_list[setnum].add_column(new_y_col, index=3)
 
-            #write RA, Dec values to region file # TODO: REMOVE. this line is for development purposes only.
-            table_to_regionfile(svm_sourcelist_list[setnum], ["RA", "DEC"],
-                                just_sl_name.replace(".ecsv", "_radec.reg"))
-            #write svm xy values to region file  # TODO: REMOVE. this line is for development purposes only.
-            table_to_regionfile(svm_sourcelist_list[setnum], sl_xy_column_name_dict[sourcelist_type],
-                                just_sl_name.replace(".ecsv", "_xy_svm.reg"))
-            #write new XY values to region file # TODO: REMOVE. this line is for development purposes only.
-            table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
-                                just_sl_name.replace(".ecsv", "_xy_skycell.reg"))
-
             # 6: eliminate sources from SVM catalogs unsuitable for the crossmatch
             if setnum == 0:
                 log.info("Remove sources from SVM catalogs unsuitable for catalog crossmatch")
@@ -142,12 +138,9 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                                                                                overlap_region_mask,
                                                                                log_level=log_level)
             if len(svm_sourcelist_list[setnum]) == 0:
-                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they were all outside overlap region bounds.")
+                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they were outside overlap region bounds.")
                 empty_catalog = True
                 break
-            # write new XY values from overlap region to region file # TODO: REMOVE. this line is for development purposes only.
-            table_to_regionfile(svm_sourcelist_list[setnum], ["X-Skycell", "Y-Skycell"],
-                                just_sl_name.replace(".ecsv", "_xy_trimmed_skycell.reg"))
 
             # 6b: eliminate sources in overlap region with sourcelist DQ flag values not in input arg "good_flags"
             rows_to_remove = np.argwhere(np.isin(svm_sourcelist_list[setnum]["Flags"], good_flags, invert=True))
@@ -156,7 +149,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             log.info("Removed {} sources from catalog with flag values other than those in user-defined list of good flag values ({})".format(len(rows_to_remove), good_flags_str))
             log.info("{} sources remain".format(len(svm_sourcelist_list[setnum])))
             if len(svm_sourcelist_list[setnum]) == 0:
-                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they all had unsuitable flag values")
+                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they had unsuitable flag values")
                 empty_catalog = True
                 break
         if empty_catalog:
@@ -167,39 +160,15 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             continue
         log.info("")
         # 7: perform crossmatch of SVM catalogs
-        log.info("SVM catalog crossmatch")
+        log.info("SVM catalog crossmatch results")
         ref_index, comp_index, matched_lines_ref, matched_lines_comp = crossmatch_sources(overlap_dict[bit_value],
                                                                                           svm_sourcelist_list,
                                                                                           log_level=log_level)
         log.info("")
+        log.info("SVM catalog crossmatch analysis results")
         # 8: perform analysis of crossmatch results
         crossmatch_analysis(total_obj_list, overlap_dict[bit_value], svm_sourcelist_list, ref_index,
                             comp_index, matched_lines_ref, matched_lines_comp, log_level=log_level)
-
-# ------------------------------------------------------------------------------------------------------------
-
-
-def array2fitsfile(ra2write, fitsfilename, write_fitsfiles=False, log_level=logutil.logging.NOTSET):
-    """Temp subroutine. TODO: remove once development is complete.
-    Writes a numpy 2-d array to a fits file.
-    """
-    log.setLevel(log_level)
-    if write_fitsfiles:
-        hdu = fits.PrimaryHDU(ra2write)
-        hdu.writeto(fitsfilename, overwrite=True)
-        log.debug("Wrote fits file {}.".format(fitsfilename))
-
-# ------------------------------------------------------------------------------------------------------------
-
-
-def table_to_regionfile(source_table, columns_to_write, outfilename):
-    """Temp subroutine. TODO: remove once development is complete.
-    writes out user-specified columns from a user-specified astropy table to a user-specified region file
-    """
-    out_table = source_table.copy()
-    out_table.keep_columns(columns_to_write)
-    out_table.write(outfilename, format="ascii", overwrite=True)
-    log.debug("Wrote region file '{}' containing {} sources".format(outfilename, len(out_table)))
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -297,6 +266,7 @@ def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_i
     for diff_ra, title, units in zip(diff_list, title_list, units_list):
         log.info("Comparison - reference {} statistics ({})".format(title, units))
         idslxm.compute_stats(diff_ra, title, log_level=log_level)
+
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -365,12 +335,6 @@ def crossmatch_sources(overlap_info, svm_sourcelist_list, log_level=logutil.logg
     for item in matches:
         matched_lines_comp.append(item[2])
         matched_lines_ref.append(item[5])
-
-    table_to_regionfile(svm_sourcelist_list[ref_index][matched_lines_ref], ["X-Skycell", "Y-Skycell"],
-                        os.path.basename(overlap_info["svm_sourcelist_{}".format(str(ref_index))]).replace(".ecsv", "_match_ref_xy_skycell.reg")) #  TODO: REMOVE. this line is for development purposes only.
-    table_to_regionfile(svm_sourcelist_list[comp_index][matched_lines_comp], ["X-Skycell", "Y-Skycell"],
-                        os.path.basename(overlap_info["svm_sourcelist_{}".format(str(comp_index))]).replace(".ecsv", "_match_comp_xy_skycell.reg")) #  TODO: REMOVE. this line is for development purposes only.
-
     return ref_index, comp_index, matched_lines_ref, matched_lines_comp
 
 #-------------------------------------------------------------------------------------------------------------
@@ -426,13 +390,7 @@ def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET
                 layer_dict[2 ** layer_ctr]["mode"] = total_obj.drizzle_filename
                 layer_dict[2 ** layer_ctr]["ippsss"] = ippsss
                 layer_dict[2 ** layer_ctr]["total_obj_list_idx"] = tot_obj_list_idx
-                array2fitsfile(ctx_map_ra, "ctx_footprint_{}.fits".format(str(layer_ctr)), log_level=log_level) # TODO: REMOVE. this line is for development purposes only.
                 layer_ctr += 1
-
-                # footprint_filename = total_obj.drizzle_filename.replace("all_dr", "all_{}_footprint_dr".format(ippsss))  # TODO: REMOVE. this line is for development purposes only.
-                # foo = footprint.get_footprint_hdu(footprint_filename)  # TODO: REMOVE. this line is for development purposes only.
-                # log.info("Wrote footprint file {}.".format(footprint_filename)) # TODO: REMOVE. this line is for development purposes only.
-
     return ctx_count_ra, ctx_map_ra, layer_dict, layer_ctr
 
 #-------------------------------------------------------------------------------------------------------------
@@ -499,25 +457,6 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
                 overlap_dict[bitsum]["mode_1"] = layer_dict[item[1]]["mode"]
                 overlap_dict[bitsum]["ippsss_1"] = layer_dict[item[1]]["ippsss"]
                 overlap_dict[bitsum]["total_obj_list_idx_1"] =layer_dict[item[1]]["total_obj_list_idx"]
-
-    for foo in enumerate(sorted(overlap_dict.keys())):  # report basic information about each overlap
-        ctr = foo[0]
-        bit_value = foo[1]
-        num_overlaps = len(overlap_dict.keys())
-        num_pix = len(overlap_dict[bit_value]['idx_ra'][0])
-        if num_pix == 1:
-            plural_str = ""
-        else:
-            plural_str = "s"
-        log.info("Overlap region #{}/{}, with overlap bit value {} contains {} pixel{}.".format(ctr + 1,
-                                                                                                num_overlaps,
-                                                                                                bit_value,
-                                                                                                num_pix,
-                                                                                                plural_str))
-
-        overlap_test = np.zeros_like(ctx_map_ra)  # TODO: REMOVE. this line is for development purposes only.
-        overlap_test[(overlap_dict[bit_value]["idx_ra"])] = 1  # TODO: REMOVE. this line is for development purposes only.
-        array2fitsfile(overlap_test, "overlap_region_{}.fits".format(str(bit_value)), log_level=log_level)  # TODO: REMOVE. this line is for development purposes only.
     return overlap_dict
 
 # ------------------------------------------------------------------------------------------------------------
