@@ -6,7 +6,6 @@ HLA vs. HLA."""
 
 import argparse
 import os
-import pdb
 import sys
 
 from astropy.coordinates import SkyCoord
@@ -150,7 +149,7 @@ def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.IN
     for diff_ra, title, units in zip(diff_list, title_list, units_list):
         log.info("Comparison - reference {} statistics ({})".format(title, units))
 
-        compute_stats(diff_ra, title)
+        foo = compute_stats(diff_ra, title)
 
     generate_sorted_region_file(diff_xy, ref_xy_in_comp_frame[matched_lines_ref], comp_xy[matched_lines_comp], ref_data['FLAGS'][matched_lines_ref], comp_data['FLAGS'][matched_lines_comp])
 # =======================================================================================================================
@@ -167,7 +166,8 @@ def compute_stats(diff_ra, title, log_level=logutil.logging.INFO):
 
     Returns
     -------
-    Nothing!
+    stats_dict : dict
+        dictionary containing statistics calculated here.
     """
     log.setLevel(log_level)
     # 'sigma' and 'iters' input values used for various np.sigma_clipped_stats() runs
@@ -177,12 +177,17 @@ def compute_stats(diff_ra, title, log_level=logutil.logging.INFO):
     sigma_percentages = []
     for sig_val in [1.0, 2.0, 3.0]:
         sigma_percentages.append((float(np.shape(np.where((diff_ra >= (clipped_stats[0] - sig_val * clipped_stats[2])) & (diff_ra <= (clipped_stats[0] + sig_val * clipped_stats[2]))))[1])/float(np.shape(diff_ra)[0])) * 100.0)
+    unclipped_stats = [np.min(diff_ra),
+                       np.max(diff_ra),
+                       np.mean(diff_ra),
+                       np.median(diff_ra),
+                       np.std(diff_ra)]
     log.info("            Non-Clipped Statistics")
-    log.info("Non-clipped minimum........................... {}".format(np.min(diff_ra)))
-    log.info("Non-clipped maximum........................... {}".format(np.max(diff_ra)))
-    log.info("Non-clipped mean.............................. {}".format(np.mean(diff_ra)))
-    log.info("Non-clipped median............................ {}".format(np.median(diff_ra)))
-    log.info("Non-clipped standard deviation................ {}".format(np.std(diff_ra)))
+    log.info("Non-clipped minimum........................... {}".format(unclipped_stats[0]))
+    log.info("Non-clipped maximum........................... {}".format(unclipped_stats[1]))
+    log.info("Non-clipped mean.............................. {}".format(unclipped_stats[2]))
+    log.info("Non-clipped median............................ {}".format(unclipped_stats[3]))
+    log.info("Non-clipped standard deviation................ {}".format(unclipped_stats[4]))
     log.info(
         "Non-clipped mean in units of SD............... {}\n".format(np.divide(np.mean(diff_ra), np.std(diff_ra))))
     log.info(
@@ -195,6 +200,21 @@ def compute_stats(diff_ra, title, log_level=logutil.logging.INFO):
         log.info(
             "% all diff values within {}\u03C3 of clipped mean... {}%".format(int(sig_val), pct_val))
     log.info("\n\n")
+
+    # Build stats_dict
+    stats_dict = {}
+    stats_dict["Non-clipped minimum"] = unclipped_stats[0]
+    stats_dict["Non-clipped maximum"] = unclipped_stats[1]
+    stats_dict["Non-clipped mean"] = unclipped_stats[2]
+    stats_dict["Non-clipped median"] = unclipped_stats[3]
+    stats_dict["Non-clipped standard deviation"] = unclipped_stats[4]
+    sigma_clipped_str = "{}x{}-sigma clipped ".format(n_iters, sigma)
+    stats_dict["{} mean".format(sigma_clipped_str)] = clipped_stats[0]
+    stats_dict["{} median".format(sigma_clipped_str)] = clipped_stats[1]
+    stats_dict["{} standard deviation".format(sigma_clipped_str)] = clipped_stats[2]
+    for sig_val, pct_val in zip([1.0, 2.0, 3.0], sigma_percentages):
+        stats_dict["Percent of all diff values within {}-sigma of the clipped mean".format(int(sig_val))] = pct_val
+    return stats_dict
     
 # =======================================================================================================================
 def generate_sorted_region_file(diff_ra, ref_xy, comp_xy, ref_flags, comp_flags):
