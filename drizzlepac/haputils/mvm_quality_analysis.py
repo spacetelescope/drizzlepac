@@ -2,10 +2,12 @@
 """
 
 # Standard library imports
+from datetime import datetime
 import glob
 import os
 import pickle
 import sys
+import time
 
 # Related third party imports
 from astropy.coordinates import SkyCoord
@@ -17,6 +19,7 @@ import numpy as np
 
 # Local application imports
 from drizzlepac.haputils import cell_utils
+import drizzlepac.haputils.diagnostic_utils as du
 from drizzlepac.devutils.comparison_tools import interdetector_sourcelist_crossmatch as idslxm
 from stsci.tools import logutil
 from stsci.stimage import xyxymatch
@@ -51,9 +54,16 @@ def run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=
     Nothing.
     """
     log.setLevel(log_level)
+
+    # generate a timestamp values that will be used to make creation time, creation date and epoch values
+    # common to each json file
+    json_timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+    json_time_since_epoch = time.time()
+
     if run_overlap_crossmatch:
         try:
-            overlap_crossmatch_analysis(total_obj_list, log_level=log_level)
+            overlap_crossmatch_analysis(total_obj_list, json_timestamp=json_timestamp,
+                                        json_time_since_epoch=json_time_since_epoch, log_level=log_level)
         except Exception:
             log.warning("The analysis of crossmatched sources in overlap regions encountered a problem.")
             log.exception("message")
@@ -63,6 +73,7 @@ def run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=
 
 
 def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_flags=[0, 1],
+                                json_timestamp=None, json_time_since_epoch=None,
                                 log_level=logutil.logging.NOTSET):
     """Run overlap crossmatch analysis. Analyze differences in positions of sources found in two overlapping
     SVM catalogs from different proposal/visit input components of this MVM run.
@@ -97,6 +108,16 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
     good_flags : list, optional.
         List of the sourcelist flag values deemed suitable for crossmatch. If not explicitly specified, the
         default value is [0, 1], where flag value 0 is "point source" and flag value 1 is "extended source".
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -329,7 +350,7 @@ def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_i
     units_list = ["HAP pixels", "HAP pixels", "HAP pixels", "Arcseconds"]
     for diff_ra, title, units in zip(diff_list, title_list, units_list):
         log.info("Comparison - reference {} statistics ({})".format(title, units))
-        idslxm.compute_stats(diff_ra, title, log_level=log_level)
+        stats_dict = idslxm.compute_stats(diff_ra, title, log_level=log_level)
 
 # ------------------------------------------------------------------------------------------------------------
 
