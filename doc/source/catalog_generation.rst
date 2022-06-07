@@ -136,7 +136,7 @@ values used for these variables for generating the default catalogs are deemed t
 the general situation, but users can tune these values to optimize for their own data. To this end, 
 users can adjust parameter values
 in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
-/drizzlepac/pars/hap_pars/default_parameters/<instrument>/<detector>/.
+/drizzlepac/pars/hap_pars/svm_parameters/<instrument>/<detector>/.
 
 1.4: Image Kernel
 -----------------
