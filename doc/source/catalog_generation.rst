@@ -133,10 +133,17 @@ with the associated updates, are ultimately chosen as the images to use.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Through-out this section variables have been mentioned which can be configured by the user.  The
 values used for these variables for generating the default catalogs are deemed to be the best for 
-the general situation, but users can tune these values to optimize for their own data. To this end, 
-users can adjust parameter values
-in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
-/drizzlepac/pars/hap_pars/svm_parameters/<instrument>/<detector>/.
+the general situation, but users can tune these values to optimize for their own data.
+
+To this end, users can adjust
+parameter values in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
+/drizzlepac/pars/hap_pars/svm_parameters/<instrument>/<detector>/. Alternatively, a safer way for users to tune
+configuration settings is to generate custom parameter files with the drizzlepac/haputils/generate_custom_svm_mvm_param_file.py
+tool, adjust values as needed and use them in their single visit mosaic pipeline runs utilizing the '-c' command-line
+argument or the 'input_custom_pars_file' optional input argument when executing `hapsequencer.run_hap_processing()`
+
+.. warning::
+    Modification of values in the parameter files stored in /drizzlepac/pars/hap_pars/svm_parameters/ is *strongly* discouraged as there is no way to revert these values back to their defaults once they have been changed.
 
 1.4: Image Kernel
 -----------------
