@@ -11,6 +11,11 @@ with the Point catalog created based upon functionality similar to DAOPhot-style
 and the Segment catalog created with Source Extractor segmentation capabilities and output
 in mind.
 
+These catalogs provide aperture photometry in the ABMAG system and are calibrated using the photometric zeropoints
+corresponding to an 'infinite' aperture. To convert to total magnitudes, aperture corrections must be applied to
+account for flux falling outside of the selected aperture. For details, see
+`Whitmore et al., 2016 AJ, 151, 134W <http://adsabs.harvard.edu/abs/2016AJ....151..134W>`_.
+
 1: Support Infrastructure for Catalog Generation
 ================================================
 
