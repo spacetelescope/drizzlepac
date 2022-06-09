@@ -429,6 +429,8 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             no_proc_key = CHINKEY
             no_proc_value = chinject
 
+        # Ramp filter images should not be processed for MVM products.
+        #
         # Filter name which starts with "BLOCK" for internal calibration of SBC
         # The sfilter variable may be the concatenation of two filters (F160_CLEAR)
         #
@@ -458,6 +460,11 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             if item.startswith(('BLOCK')):
                 no_proc_key = FILKEY
                 no_proc_value = sfilter
+
+            if item.startswith(('FR')) and type.upper() == "MVM":
+                no_proc_key = FILKEY
+                no_proc_value = "Ramp data and MVM processing"
+                log.warning("The Ramp data {} with MVM processing will be ignored.".format(input_file))
 
         # If no_proc_key is set to a keyword, then this image has been found to not be viable for
         # alignment purposes.
