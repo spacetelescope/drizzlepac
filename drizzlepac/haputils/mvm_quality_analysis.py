@@ -5,6 +5,7 @@
 from datetime import datetime
 import glob
 import os
+import pdb
 import pickle
 import sys
 import time
@@ -161,6 +162,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
     sl_xy_column_name_dict = {"point": ["X-Center", "Y-Center"],
                               "segment": ["X-Centroid", "Y-Centroid"]}
     num_overlaps = len(overlap_dict.keys())
+    stats_dict = {}
     for overlap_num, bit_value in zip(range(1, num_overlaps+1), sorted(overlap_dict)):
         # report basic information about each overlap
         num_overlaps = len(overlap_dict.keys())
@@ -248,9 +250,11 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                                                                                           log_level=log_level)
         log.info("")
         log.info("SVM catalog crossmatch analysis results")
+
         # 8: perform analysis of crossmatch results
-        crossmatch_analysis(total_obj_list, overlap_dict[bit_value], svm_sourcelist_list, ref_index,
-                            comp_index, matched_lines_ref, matched_lines_comp, log_level=log_level)
+        stats_dict[bit_value] = crossmatch_analysis(total_obj_list, overlap_dict[bit_value],
+                                                    svm_sourcelist_list, ref_index, comp_index,
+                                                    matched_lines_ref, matched_lines_comp, log_level=log_level)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -296,7 +300,13 @@ def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_i
 
     Returns
     -------
-    Nothing.
+    stats_dict : dict
+        Dictionary containing results of crossmatch analysis with two elements. The "statistics" element is a
+        two-layer nested dictionary containing various statistics computed for each of the coordinate
+        differences. It is keyed by difference type ("X-axis differences", "Y-axis differences",
+        "On-sky separation (X-Y)", and "On-sky separation (RA-Dec)"). The "data table" element consists of an
+        astropy table containing the crossmatched coordinate values from the reference catalog, as well as
+        the differences (which were used to compute the statistics sorted in the "statistics" dictionaries.)
     """
     log.setLevel(log_level)
 
@@ -316,21 +326,11 @@ def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_i
     ref_frame = total_obj_list[overlap_info["total_obj_list_idx_{}".format(str(ref_index))]].meta_wcs.wcs.radesys.lower()
     comp_frame = total_obj_list[overlap_info["total_obj_list_idx_{}".format(str(comp_index))]].meta_wcs.wcs.radesys.lower()
 
-    # force RA and Dec values to be the correct type for SkyCoord() call
-    if str(type(matching_values_ref_ra)) == "<class 'astropy.table.column.Column'>":
-        matching_values_ref_ra = matching_values_ref_ra.tolist()
-    if str(type(matching_values_ref_dec)) == "<class 'astropy.table.column.Column'>":
-        matching_values_ref_dec = matching_values_ref_dec.tolist()
-    if str(type(matching_values_comp_ra)) == "<class 'astropy.table.column.Column'>":
-        matching_values_comp_ra = matching_values_comp_ra.tolist()
-    if str(type(matching_values_comp_dec)) == "<class 'astropy.table.column.Column'>":
-        matching_values_comp_dec = matching_values_comp_dec.tolist()
-
     # convert reference and comparison RA/Dec values into SkyCoord objects
-    matching_values_ref_rd = SkyCoord(matching_values_ref_ra, matching_values_ref_dec, frame=ref_frame,
-                                      unit="deg")
-    matching_values_comp_rd = SkyCoord(matching_values_comp_ra, matching_values_comp_dec, frame=comp_frame,
-                                       unit="deg")
+    matching_values_ref_rd = SkyCoord(matching_values_ref_ra.tolist(), matching_values_ref_dec.tolist(),
+                                      frame=ref_frame, unit="deg")
+    matching_values_comp_rd = SkyCoord(matching_values_comp_ra.tolist(), matching_values_comp_dec.tolist(),
+                                       frame=comp_frame, unit="deg")
     # convert to ICRS coord system
     if ref_frame != "icrs":
         matching_values_ref_rd = matching_values_ref_rd.icrs
@@ -339,19 +339,34 @@ def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_i
 
     # compute mean-subtracted differences
     diff_x = (matching_values_comp_x - matching_values_ref_x)
-    diff_x -= sigma_clipped_stats(diff_x, sigma=3, maxiters=3)[0]
+    # diff_x -= sigma_clipped_stats(diff_x, sigma=3, maxiters=3)[0]
     diff_y = (matching_values_comp_y - matching_values_ref_y)
-    diff_y -= sigma_clipped_stats(diff_y, sigma=3, maxiters=3)[0]
+    # diff_y -= sigma_clipped_stats(diff_y, sigma=3, maxiters=3)[0]
     diff_xy = np.sqrt(diff_x ** 2 + diff_y ** 2)
     diff_rd = matching_values_comp_rd.separation(matching_values_ref_rd).arcsec
 
+    # set up return dictionary
+    stats_dict = {}
+    stats_dict["statistics"] = {}
+
+    # Compute crossmatched position difference statistics
     diff_list = [diff_x, diff_y, diff_xy, diff_rd]
-    title_list = ["X-axis differences", "Y-axis differences", "Separation", "On-sky separation"]
+    title_list = ["X-axis differences", "Y-axis differences", "On-sky separation (X-Y)", "On-sky separation (RA-Dec)"]
     units_list = ["HAP pixels", "HAP pixels", "HAP pixels", "Arcseconds"]
     for diff_ra, title, units in zip(diff_list, title_list, units_list):
         log.info("Comparison - reference {} statistics ({})".format(title, units))
-        stats_dict = idslxm.compute_stats(diff_ra, title, log_level=log_level)
+        stats_dict["statistics"][title] = idslxm.compute_stats(diff_ra, title, log_level=log_level)
+        stats_dict["statistics"][title]["Units"] = units
 
+    # build data table of crossmatched coords and differences to be returned.
+    data_col_list = [matching_values_ref_x,
+                     matching_values_ref_y,
+                     matching_values_ref_ra,
+                     matching_values_ref_dec]
+    stats_dict["data table"] = Table(data_col_list)
+    diff_col_list = [diff_x, diff_y, diff_xy, Column(diff_rd)]
+    stats_dict["data table"].add_columns(diff_col_list, names=title_list)
+    return stats_dict
 # ------------------------------------------------------------------------------------------------------------
 
 
