@@ -254,7 +254,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         overlap_dict[bit_value]["ref_index"] = ref_index
         overlap_dict[bit_value]["comp_index"] = comp_index
         overlap_dict[bit_value]["ref cat size"] = len(svm_sourcelist_list[ref_index])
-        overlap_dict[bit_value]["comp cat_size"] = len(svm_sourcelist_list[comp_index])
+        overlap_dict[bit_value]["comp cat size"] = len(svm_sourcelist_list[comp_index])
         overlap_dict[bit_value]["crossmatch details"] = xmatch_details
         log.info("")
         log.info("SVM catalog crossmatch analysis results")
@@ -289,7 +289,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         for foo in enumerate(total_obj_mapping_dict[total_obj_idx]):
             overlap_ctr = foo[0]
             bit_value = foo[1]
-            pdb.set_trace()
             # build dictionary to populate "overlap crossmatch information" section of json file
             overlap_region_info_values = collections.OrderedDict()
             overlap_region_info_descrip = collections.OrderedDict()
@@ -306,11 +305,11 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             overlap_region_info_descrip["comparison catalog name"] = "Name of comparison catalog used in the crossmatch"
             overlap_region_info_units["comparison catalog name"] = "unitless"
 
-            overlap_region_info_values["total reference catalog size"] = overlap_dict[bit_value]["ref cat_size"]
+            overlap_region_info_values["total reference catalog size"] = overlap_dict[bit_value]["ref cat size"]
             overlap_region_info_descrip["total reference catalog size"] = "Total number of sources in the reference catalog"
             overlap_region_info_units["total reference catalog size"] = "unitless"
 
-            overlap_region_info_values["total comparison catalog size"] = overlap_dict[bit_value]["comp cat_size"]
+            overlap_region_info_values["total comparison catalog size"] = overlap_dict[bit_value]["comp cat size"]
             overlap_region_info_descrip["ctotal comparison catalog size"] = "Total number of sources in the comparison catalog"
             overlap_region_info_units["total comparison catalog size"] = "unitless"
 
@@ -318,6 +317,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 
             # parse out "statistics" section of "stats_dict"
             # parse out "data table section of "stats_dict"
+            diagnostic_obj.add_data_item(overlap_region_info_values, descriptions=overlap_region_info_descrip, units=overlap_region_info_units, title="overlap region #{} details".format(overlap_ctr+1))
             diagnostic_obj.add_data_item(stats_dict[bit_value]['statistics'], 'overlap region {}'.format(overlap_ctr + 1, len(total_obj_mapping_dict[total_obj_idx])))
         # Write out the file
         diagnostic_obj.write_json_file(json_filename, clobber=True)
