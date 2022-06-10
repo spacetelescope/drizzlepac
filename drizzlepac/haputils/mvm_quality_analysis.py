@@ -2,6 +2,7 @@
 """
 
 # Standard library imports
+import collections
 from datetime import datetime
 import glob
 import os
@@ -163,6 +164,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                               "segment": ["X-Centroid", "Y-Centroid"]}
     num_overlaps = len(overlap_dict.keys())
     stats_dict = {}
+    total_obj_mapping_dict = collections.OrderedDict()
     for overlap_num, bit_value in zip(range(1, num_overlaps+1), sorted(overlap_dict)):
         # report basic information about each overlap
         num_overlaps = len(overlap_dict.keys())
@@ -243,11 +245,17 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                 log.warning("Continuing to next test...")
             continue
         log.info("")
+
         # 7: perform crossmatch of SVM catalogs
         log.info("SVM catalog crossmatch results")
-        ref_index, comp_index, matched_lines_ref, matched_lines_comp = crossmatch_sources(overlap_dict[bit_value],
-                                                                                          svm_sourcelist_list,
-                                                                                          log_level=log_level)
+        ref_index, comp_index, matched_lines_ref, matched_lines_comp, xmatch_details = crossmatch_sources(overlap_dict[bit_value],
+                                                                                                          svm_sourcelist_list,
+                                                                                                          log_level=log_level)
+        overlap_dict[bit_value]["ref_index"] = ref_index
+        overlap_dict[bit_value]["comp_index"] = comp_index
+        overlap_dict[bit_value]["ref cat size"] = len(svm_sourcelist_list[ref_index])
+        overlap_dict[bit_value]["comp cat_size"] = len(svm_sourcelist_list[comp_index])
+        overlap_dict[bit_value]["crossmatch details"] = xmatch_details
         log.info("")
         log.info("SVM catalog crossmatch analysis results")
 
@@ -255,6 +263,69 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         stats_dict[bit_value] = crossmatch_analysis(total_obj_list, overlap_dict[bit_value],
                                                     svm_sourcelist_list, ref_index, comp_index,
                                                     matched_lines_ref, matched_lines_comp, log_level=log_level)
+
+        # 9a: assemble dictionary that maps the total object element of the ref catalog to overlap region to
+        # provide an organizational structure for the output .json file(s)
+        total_obj_idx_ref = overlap_dict[bit_value]["total_obj_list_idx_{}".format(str(ref_index))]
+        if total_obj_idx_ref in total_obj_mapping_dict.keys():
+            total_obj_mapping_dict[total_obj_idx_ref].append(bit_value)
+        else:
+            total_obj_mapping_dict[total_obj_idx_ref] = [bit_value]
+
+    # 9b: Gather and organize information and write JSON file(s)
+    for total_obj_idx in total_obj_mapping_dict.keys():
+        total_product = total_obj_list[total_obj_idx]
+        # Construct the output JSON filename
+        json_filename = '_'.join([total_product.product_basename, 'overlap_crossmatch.json'])
+
+        # Set up the diagnostic object
+        diagnostic_obj = du.HapDiagnostic()
+        diagnostic_obj.instantiate_from_hap_obj(total_product,
+                                                data_source='{}.overlap_crossmatch_analysis'.format(
+                                                    __taskname__),
+                                                description='overlap crossmatch_analysis results',
+                                                timestamp=json_timestamp,
+                                                time_since_epoch=json_time_since_epoch)
+        for foo in enumerate(total_obj_mapping_dict[total_obj_idx]):
+            overlap_ctr = foo[0]
+            bit_value = foo[1]
+            pdb.set_trace()
+            # build dictionary to populate "overlap crossmatch information" section of json file
+            overlap_region_info_values = collections.OrderedDict()
+            overlap_region_info_descrip = collections.OrderedDict()
+            overlap_region_info_units = collections.OrderedDict()
+            overlap_region_info_values["overlap region size"] = overlap_dict[bit_value]['idx_ra'][0].size
+            overlap_region_info_descrip["overlap region size"] = "Size of overlap region"
+            overlap_region_info_units["overlap region size"] = "pixels"
+
+            overlap_region_info_values["reference catalog name"] = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(overlap_dict[bit_value]["ref_index"])])
+            overlap_region_info_descrip["reference catalog name"] = "Name of reference catalog used in the crossmatch"
+            overlap_region_info_units["reference catalog name"] = "unitless"
+
+            overlap_region_info_values["comparison catalog name"] = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(overlap_dict[bit_value]["comp_index"])])
+            overlap_region_info_descrip["comparison catalog name"] = "Name of comparison catalog used in the crossmatch"
+            overlap_region_info_units["comparison catalog name"] = "unitless"
+
+            overlap_region_info_values["total reference catalog size"] = overlap_dict[bit_value]["ref cat_size"]
+            overlap_region_info_descrip["total reference catalog size"] = "Total number of sources in the reference catalog"
+            overlap_region_info_units["total reference catalog size"] = "unitless"
+
+            overlap_region_info_values["total comparison catalog size"] = overlap_dict[bit_value]["comp cat_size"]
+            overlap_region_info_descrip["ctotal comparison catalog size"] = "Total number of sources in the comparison catalog"
+            overlap_region_info_units["total comparison catalog size"] = "unitless"
+
+
+
+            # parse out "statistics" section of "stats_dict"
+            # parse out "data table section of "stats_dict"
+            diagnostic_obj.add_data_item(stats_dict[bit_value]['statistics'], 'overlap region {}'.format(overlap_ctr + 1, len(total_obj_mapping_dict[total_obj_idx])))
+        # Write out the file
+        diagnostic_obj.write_json_file(json_filename, clobber=True)
+        log.info("Wrote crossmatch results file {}".format(json_filename))
+        # Clean up
+        # del diagnostic_obj #TODO: uncomment once everything is working.
+
+    pdb.set_trace()
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -403,6 +474,10 @@ def crossmatch_sources(overlap_info, svm_sourcelist_list, log_level=logutil.logg
 
     matched_lines_ref : list
         indices of the comparison catalog that crossmatch to the corresponding element in matched_lines_ref.
+
+    cross_match_details : list
+        three-element list containing the number suitable ref and comp sources available for crossmatch, and
+        the number of sources actually crossmatched
     """
     log.setLevel(log_level)
     # The sourcelist with more sources is automatically set as the "reference" catalog that the other
@@ -436,7 +511,8 @@ def crossmatch_sources(overlap_info, svm_sourcelist_list, log_level=logutil.logg
     for item in matches:
         matched_lines_comp.append(item[2])
         matched_lines_ref.append(item[5])
-    return ref_index, comp_index, matched_lines_ref, matched_lines_comp
+    cross_match_details = [len(ref_xy), len(comp_xy), len(matches)]
+    return ref_index, comp_index, matched_lines_ref, matched_lines_comp, cross_match_details
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -666,6 +742,7 @@ def reject_sources_not_in_overlap_region(svm_sourcelist, overlap_region_mask, lo
         log.info("No sources found outside overlap region bounds")
     log.info("{} sources remain.".format(len(svm_sourcelist)))
     return svm_sourcelist
+
 # ------------------------------------------------------------------------------------------------------------
 
 
