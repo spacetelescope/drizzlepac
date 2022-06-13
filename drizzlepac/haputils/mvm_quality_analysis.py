@@ -6,15 +6,12 @@ import collections
 from datetime import datetime
 import glob
 import os
-import pdb
 import pickle
 import sys
 import time
 
 # Related third party imports
 from astropy.coordinates import SkyCoord
-from astropy.io import ascii, fits
-from astropy.stats import sigma_clipped_stats
 from astropy.table import Table, Column
 from itertools import combinations
 import numpy as np
@@ -165,6 +162,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
     num_overlaps = len(overlap_dict.keys())
     stats_dict = {}
     total_obj_mapping_dict = collections.OrderedDict()
+    initial_cat_sizes = {}
     for overlap_num, bit_value in zip(range(1, num_overlaps+1), sorted(overlap_dict)):
         # report basic information about each overlap
         num_overlaps = len(overlap_dict.keys())
@@ -181,8 +179,8 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         # Create region mask. Zero-value pixels are outside region 1-value pixels are inside region.
         overlap_region_mask = np.zeros_like(ctx_map_ra)
         overlap_region_mask[(overlap_dict[bit_value]["idx_ra"])] = 1
-        svm_img_data_list = []
         svm_sourcelist_list = []
+        initial_cat_sizes[bit_value] = []
         for set_num in ["0", "1"]:
             setnum = int(set_num)
             error_flag = False
@@ -197,8 +195,8 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                 error_flag = True
                 break
             just_sl_name = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)])
+
             # 4: read in SVM-generated sourcelists and drizzled filter product images
-            svm_img_data_list.append(fits.open(overlap_dict[bit_value]["svm_img_{}".format(set_num)]))
             svm_sourcelist_list.append(Table.read(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)],
                                                   format='ascii.ecsv'))
 
@@ -216,7 +214,9 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             if setnum == 0:
                 log.info("Remove sources from SVM catalogs unsuitable for catalog crossmatch")
             log.info("-----------> Catalog {} of 2: {} <-----------".format(str(setnum+1), just_sl_name))
-            log.info("Initial catalog length: {}".format(len(svm_sourcelist_list[0])))
+            cat_length = len(svm_sourcelist_list[setnum])
+            log.info("Initial catalog length: {}".format(cat_length))
+            initial_cat_sizes[bit_value].append(cat_length)
             # 6a: eliminate sources not in overlap region
             svm_sourcelist_list[setnum] = reject_sources_not_in_overlap_region(svm_sourcelist_list[setnum],
                                                                                overlap_region_mask,
@@ -286,9 +286,13 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                                                 description='overlap crossmatch_analysis results',
                                                 timestamp=json_timestamp,
                                                 time_since_epoch=json_time_since_epoch)
+        diagnostic_obj.add_update_info_item('general information', "number of overlap regions present",
+                                            len(total_obj_mapping_dict[total_obj_idx]))
         for foo in enumerate(total_obj_mapping_dict[total_obj_idx]):
             overlap_ctr = foo[0]
             bit_value = foo[1]
+            section_title_base_string = "overlap region #{}".format(overlap_ctr + 1)
+
             # build dictionary to populate "overlap crossmatch information" section of json file
             overlap_region_info_values = collections.OrderedDict()
             overlap_region_info_descrip = collections.OrderedDict()
@@ -305,27 +309,81 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             overlap_region_info_descrip["comparison catalog name"] = "Name of comparison catalog used in the crossmatch"
             overlap_region_info_units["comparison catalog name"] = "unitless"
 
-            overlap_region_info_values["total reference catalog size"] = overlap_dict[bit_value]["ref cat size"]
+            overlap_region_info_values["total reference catalog size"] = initial_cat_sizes[bit_value][overlap_dict[bit_value]["ref_index"]]
             overlap_region_info_descrip["total reference catalog size"] = "Total number of sources in the reference catalog"
             overlap_region_info_units["total reference catalog size"] = "unitless"
 
-            overlap_region_info_values["total comparison catalog size"] = overlap_dict[bit_value]["comp cat size"]
-            overlap_region_info_descrip["ctotal comparison catalog size"] = "Total number of sources in the comparison catalog"
+            overlap_region_info_values["total comparison catalog size"] = initial_cat_sizes[bit_value][overlap_dict[bit_value]["comp_index"]]
+            overlap_region_info_descrip["total comparison catalog size"] = "Total number of sources in the comparison catalog"
             overlap_region_info_units["total comparison catalog size"] = "unitless"
 
+            overlap_region_info_values["number of reference sources available for crossmatch"] = overlap_dict[bit_value]["ref cat size"]
+            overlap_region_info_descrip["number of reference sources available for crossmatch"] = "Total number of reference catalog sources in overlap region suitable for crossmatch"
+            overlap_region_info_units["number of reference sources available for crossmatch"] = "unitless"
 
+            overlap_region_info_values["number of comparison sources available for crossmatch"] = overlap_dict[bit_value]["comp cat size"]
+            overlap_region_info_descrip["number of comparison sources available for crossmatch"] = "Total number of comparison catalog sources in overlap region suitable for crossmatch"
+            overlap_region_info_units["number of comparison sources available for crossmatch"] = "unitless"
 
-            # parse out "statistics" section of "stats_dict"
-            # parse out "data table section of "stats_dict"
-            diagnostic_obj.add_data_item(overlap_region_info_values, descriptions=overlap_region_info_descrip, units=overlap_region_info_units, title="overlap region #{} details".format(overlap_ctr+1))
-            diagnostic_obj.add_data_item(stats_dict[bit_value]['statistics'], 'overlap region {}'.format(overlap_ctr + 1, len(total_obj_mapping_dict[total_obj_idx])))
+            overlap_region_info_values["number of crossmatched sources"] = overlap_dict[bit_value]["crossmatch details"][2]
+            overlap_region_info_descrip["number of crossmatched sources"] = "Total number of sources common to both comparison and reference catalogs"
+            overlap_region_info_units["number of crossmatched sources"] = "unitless"
+
+            # add "overlap crossmatch information"
+            diagnostic_obj.add_data_item(overlap_region_info_values, descriptions=overlap_region_info_descrip,
+                                         units=overlap_region_info_units,
+                                         title="{} details".format(section_title_base_string))
+
+            # build dictionary to populate the "statistics" sections of json file
+            for difference_type in stats_dict[bit_value]['statistics'].keys():
+                base_units = stats_dict[bit_value]['statistics'][difference_type]['Units']
+                del(stats_dict[bit_value]['statistics'][difference_type]['Units'])
+                overlap_region_stats_units = collections.OrderedDict()
+                for stat_type in stats_dict[bit_value]['statistics'][difference_type].keys():
+                    if stat_type.startswith("Percent"):
+                        overlap_region_stats_units[stat_type] = "unitless"
+                    else:
+                        overlap_region_stats_units[stat_type] = base_units
+                # add "statistics" section of "stats_dict"
+                diagnostic_obj.add_data_item(stats_dict[bit_value]['statistics'][difference_type],
+                                             units=overlap_region_stats_units,
+                                             title="{} {}".format(section_title_base_string, difference_type))
+
+            # build dictionary to populate "data table" section of json file
+            overlap_region_data_table_units = collections.OrderedDict()
+            overlap_region_data_table_descrips = collections.OrderedDict()
+            unit_list = ["HAP MVM skycell pixels",
+                         "HAP MVM skycell pixels",
+                         "Degrees",
+                         "Degrees",
+                         "HAP MVM skycell pixels",
+                         "HAP MVM skycell pixels",
+                         "HAP MVM skycell pixels",
+                         "Arcseconds"]
+            descrip_list = ["Crossmatched reference X coordinate",
+                            "Crossmatched reference Y coordinate",
+                            "Crossmatched reference right ascention coordinate",
+                            "Crossmatched reference declination coordinate",
+                            "Crossmatched comparison - reference X coordinate differences",
+                            "Crossmatched comparison - reference Y coordinate differences",
+                            "Crossmatched comparison - reference on-sky separation (X-Y)",
+                            "Crossmatched comparison - reference on-sky separation (RA-Dec)"]
+            for key_item, descrip_item, unit_item in zip(stats_dict[bit_value]["data table"].keys(), descrip_list, unit_list):
+                overlap_region_data_table_descrips[key_item] = descrip_item
+                overlap_region_data_table_units[key_item] = unit_item
+            # add "data table section" of "stats_dict"
+            diagnostic_obj.add_data_item(stats_dict[bit_value]["data table"],
+                                         descriptions=overlap_region_data_table_descrips,
+                                         units=overlap_region_data_table_units,
+                                         title="{} crossmatched reference X, Y, RA, Dec, and crossmatched comparison - reference difference values".format(section_title_base_string))
+
         # Write out the file
         diagnostic_obj.write_json_file(json_filename, clobber=True)
         log.info("Wrote crossmatch results file {}".format(json_filename))
-        # Clean up
-        # del diagnostic_obj #TODO: uncomment once everything is working.
 
-    pdb.set_trace()
+        # Clean up
+        del diagnostic_obj
+
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -408,11 +466,9 @@ def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_i
     if comp_frame != "icrs":
         matching_values_comp_rd = matching_values_comp_rd.icrs
 
-    # compute mean-subtracted differences
+    # compute differences
     diff_x = (matching_values_comp_x - matching_values_ref_x)
-    # diff_x -= sigma_clipped_stats(diff_x, sigma=3, maxiters=3)[0]
     diff_y = (matching_values_comp_y - matching_values_ref_y)
-    # diff_y -= sigma_clipped_stats(diff_y, sigma=3, maxiters=3)[0]
     diff_xy = np.sqrt(diff_x ** 2 + diff_y ** 2)
     diff_rd = matching_values_comp_rd.separation(matching_values_ref_rd).arcsec
 
@@ -559,10 +615,10 @@ def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET
                 footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
                 footprint.build(img_list)
                 if layer_ctr == 0:
-                    ctx_map_ra = np.zeros_like(footprint.total_mask, dtype=np.int64) # This should allow for a max of 35 unique footprints in the skycell
+                    ctx_map_ra = np.zeros_like(footprint.total_mask, dtype=np.int64)  # This should allow for a max of 35 unique footprints in the skycell
                     ctx_count_ra = np.zeros_like(footprint.total_mask)
                 ctx_count_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 1)  # Build array maps number of overlapping datasets for each skycell pixel
-                ctx_map_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 2**layer_ctr) # Build context arrray that stores footprint information broken down by instrument, detector, filter, proposal and visit
+                ctx_map_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 2**layer_ctr)  # Build context arrray that stores footprint information broken down by instrument, detector, filter, proposal and visit
                 layer_dict[2**layer_ctr] = {}
                 layer_dict[2 ** layer_ctr]["mode"] = total_obj.drizzle_filename
                 layer_dict[2 ** layer_ctr]["ippsss"] = ippsss
