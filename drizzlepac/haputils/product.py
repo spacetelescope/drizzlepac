@@ -794,7 +794,7 @@ class ExposureProduct(HAPProduct):
 
         # Add HAP keywords as required by pipeline processing
         with fits.open(edp_filename, mode='update') as edp_hdu:
-            edp_hdu[0].header['HAPLEVEL'] = (0, 'Classification level of this product')
+            edp_hdu[0].header['HAPLEVEL'] = (1, 'Classification level of this product')
             edp_hdu[0].header['IPPPSSOO'] = edp_hdu[0].header['ROOTNAME']
             edp_hdu[0].header['FILENAME'] = edp_filename
 
@@ -867,7 +867,7 @@ class GrismExposureProduct(HAPProduct):
 
         # Add HAP keywords as required by pipeline processing
         with fits.open(edp_filename, mode='update') as edp_hdu:
-            edp_hdu[0].header['HAPLEVEL'] = (0, 'Classification level of this product')
+            edp_hdu[0].header['HAPLEVEL'] = (1, 'Classification level of this product')
             edp_hdu[0].header['IPPPSSOO'] = edp_hdu[0].header['ROOTNAME']
             edp_hdu[0].header['FILENAME'] = edp_filename
 
@@ -1060,7 +1060,7 @@ class SkyCellExposure(HAPProduct):
             pass
 
         # Add HAPLEVEL keyword as required by pipeline processing
-        fits.setval(sce_filename, 'HAPLEVEL', value=0, comment='Classification level of this product')
+        fits.setval(sce_filename, 'HAPLEVEL', value=1, comment='Classification level of this product')
 
         return sce_filename
 
