@@ -80,9 +80,24 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
     log.setLevel(log_level)
     log.info('\n\n*****     Begin Quality Analysis Test: report_wcsname.     *****\n')
 
+    # Define the WCS preference dictionary - For visual convenience, the items are ordered with the
+    # preferred WCS names at the beginning of the dictionary.  The assigned values are 2**n where
+    # the items at the beginning of the dictionary get the lower values.
+    wcs_pref_list = {'FIT_SVM_GAIAEDR3': 1, 'FIT_EVM_GAIAEDR3': 2, 'FIT_REL_GAIAEDR3': 4, 'FIT_IMG_GAIAEDR3': 8,
+                     'FIT_SVM_GAIADR2': 16, 'FIT_EVM_GAIADR2': 32, 'FIT_REL_GAIADR2': 64, 'FIT_IMG_GAIADR2': 128,
+                     'FIT_SVM_GAIADR1': 256, 'FIT_EVM_GAIADR1': 512, 'FIT_REL_GAIADR1': 1024, 'FIT_IMG_GAIADR1': 2048,
+                     'FIT_SVM_GSC242': 4096, 'FIT_EVM_GSC242': 8192, 'FIT_REL_GSC242': 16384, 'FIT_IMG_GSC242': 32768,
+                     'FIT_SVM_2MASS': 65536, 'FIT_EVM_2MASS': 131072, 'FIT_REL_2MASS': 262144, 'FIT_IMG_2MASS': 524288,
+                     'FIT_SVM_NONE': 1048576, 'FIT_EVM_NONE': 2097152, 'FIT_REL_NONE': 4194304, 'FIT_IMG_NONE': 8388608,
+                     'HSC30': 16777216, 'GSC240': 33554432}
+
     # Generate a separate JSON file for each TotalProduct which is really a filter-level product for MVM processing
     # The "total product" references are a throw-back to SVM processing
     for total_product in total_product_list:
+
+        # Just process the WFC3 IR "fine" data products
+        if total_product.product_basename.upper().find('COARSE') != -1:
+            continue
 
         instrument = total_product.instrument
         detector = total_product.detector
@@ -101,8 +116,7 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
         # Get the WCS for the entire MVM layer
         metawcs = HSTWCS(total_product.drizzle_filename, ext=1)
 
-        # Numerical count of the SCI extensions to pick out the
-        # correct numpy array from the sregion
+        # Numerical count of the exposures 
         counter = 0
 
         # Loop over all the individual exposures in the list which comprise the layer
@@ -125,7 +139,11 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                 wcs = HSTWCS(exp, ext=sci)
 
                 # Get the WCSNAME for this specific exposure/chip
-                wcsname = exp[sci].header['WCSNAME']
+                wcsname = exp[sci].header['WCSNAME'].upper()
+
+                # Each chip is assigned the 2**n value associated with its WCSNAME
+                suffix = wcsname.split('-')[1]
+                expo_wcs_value = wcs_pref_list[suffix]
 
                 # If this is a multi-chip exposure, get the CHIP number
                 chip_number = 0
@@ -134,14 +152,13 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                 except:
                     pass
 
-                # Compute the sky footprint for this chip and then the X and Y positions
+                # Compute the sky footprint corners for this chip
                 radec = wcs.calc_footprint().tolist()
                 radec.append(radec[0])  # close the polygon/chip
                 ra = [item[0] for item in radec]
                 dec = [item[1] for item in radec]
 
-                # Also save those corner positions as X,Y positions in the footprint
-                # User the xc and yc in visualization
+                # Also save the corner X and Y positions
                 xycorners = metawcs.all_world2pix(radec, 0).astype(np.int32).tolist()
                 xc = [item[0] for item in xycorners]
                 yc = [item[1] for item in xycorners]
@@ -151,8 +168,9 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                                    'instrument': instrument,
                                    'detector': detector,
                                    'primary_wcsname': wcsname,
+                                   'wcs_value': expo_wcs_value,
                                    'chip_number': chip_number,
-                                   'value': expo_img_value,
+                                   'img_value': expo_img_value,
                                    'RA': ra,
                                    'Dec': dec,
                                    'X': xc,
@@ -164,8 +182,9 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                                                            'instrument': 'Instrument',
                                                            'detector': 'Detector',
                                                            'primary_wcsname': 'Active WCS',
+                                                           'wcs_value': 'Value (2^n) as numeric ID of WCSNAME',
                                                            'chip_number': 'CCD Chip Number',
-                                                           'value': 'Value (2^n) to assign to the footprint',
+                                                           'img_value': 'Value (2^n) for fill of the footprint',
                                                            'RA': 'Right Ascension of Polygon which defines footprint corners',
                                                            'Dec': 'Declination of Polygon which defines footprint corners',
                                                            'X': 'X position of Polygon which defines footprint corners',
@@ -174,8 +193,9 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                                                     'instrument': 'unitless',
                                                     'detector': 'unitless',
                                                     'primary_wcsname': 'unitless',
+                                                    'wcs_value': 'unitless',
                                                     'chip_number': 'unitless',
-                                                    'value': 'unitless',
+                                                    'img_value': 'unitless',
                                                     'RA': 'degrees',
                                                     'Dec': 'degrees',
                                                     'X': 'pixels',
