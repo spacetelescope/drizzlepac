@@ -525,7 +525,7 @@ class SkyFootprint(object):
         if len(self.members) == 0:
             print("Please add exposures before looking for corners...")
             return
-
+        label_border = 10
         # Insure footprint has been determined
         if self.footprint_member != member:
             self.find_footprint(member=member)
@@ -548,34 +548,34 @@ class SkyFootprint(object):
             ordered_xy = []
             ordered_edges = []
             sky_corners = []
-
             for label, mask_slice in enumerate(slices):
                 label += 1
+                # Need to guarantee the slice ALWAYS has a border of non-assigned pixels
+                label_shape = (mask_slice[0].stop - mask_slice[0].start + (label_border * 2),
+                               mask_slice[1].stop - mask_slice[1].start + (label_border * 2))
+                label_mask = np.zeros(label_shape, sclabels.dtype)
                 # get slice with just the region/label of interest
-                label_mask = sclabels[mask_slice].copy()
+                label_mask[label_border:-1*label_border, label_border:-1*label_border] = sclabels[mask_slice].copy()
                 # make sure no pixels from other regions are present in this mask
                 label_mask[label_mask != label] = 0
                 # reset label to be a binary mask only
                 label_mask[label_mask == label] = 1000
-                # insure there is a border all around the region
-                # THIS IS CRITICAL to being able to identify corners correctly in slice
-                label_mask = ndimage.binary_erosion(label_mask)
                 print('extracting corners for region {} in slice {}'.format(label, mask_slice))
                 # Perform corner detection on each region/chip separately.
                 mask_corners = corner_peaks(corner_harris(label_mask),
-                                       min_distance=1,
+                                       min_distance=3,
                                        threshold_rel=0.2)
                 xy_corners = mask_corners * 0.
                 xy_corners[:, 0] = mask_corners[:, 1]
                 xy_corners[:, 1] = mask_corners[:, 0]
                 # shift corner positions to full array positions
-                xy_corners += (mask_slice[1].start, mask_slice[0].start)
+                xy_corners += (mask_slice[1].start-label_border, mask_slice[0].start-label_border)
 
                 # Create a mask from the total footprint consisting solely of the
                 # pixels at the outer edge, ordered in clockwise fashion.
                 #
                 # get list of (X,Y) coordinates of all edges from each separate 'region' or chip
-                edge_pixels = trace_polygon(label_mask, mask_slice)
+                edge_pixels = trace_polygon(label_mask > 0, mask_slice)
 
                 # use the ordering of the traced edge pixels to order the corners in the same way
                 cordist = distance.cdist(xy_corners, edge_pixels)  # returns distances for each corner position
@@ -1265,7 +1265,6 @@ def _poly_trace(input_mask, box_size=3):
     mask = np.zeros((input_mask.shape[0] + (border * 2), input_mask.shape[1] + (border * 2)),
                     dtype=input_mask.dtype)
     mask[border:-border, border:-border] = input_mask.copy()
-
     for x in range(mask.shape[1]):
         pts = np.where(mask[:, x] == 1)[0]
         if len(pts) > 0:
