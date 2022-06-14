@@ -35,7 +35,7 @@ photometry.
 
 .. note::
  A catalog file will always be written out for each type of catalog whether or not there are
-any identified sources in the exposure.
+ any identified sources in the exposure.
 
 
 1.2: Generation of Pixel Masks
@@ -180,14 +180,30 @@ These options are selected through the "starfinder_algorithm" parameter in the J
 Source Identification using DAOStarFinder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
-multi-filter detection image. This would be where the background computed using one of the algorithms
-discussed in Section 1.3 is applied to the science data to initialize point-source detection processing.
-This algorithm works by identifying local brightness maxima with roughly gaussian
-distributions whose peak values are above a predefined minimum threshold. Full details of the process are
-described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_.
-The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
-the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
+multi-filter detection image. Here, the background computed using one of the algorithms discussed in Section 1.3 is
+applied to the science data to initialize point-source detection processing. This algorithm works by identifying local
+brightness maxima with roughly gaussian distributions whose peak values are above a predefined minimum threshold. This
+minimum threshold value is computed as the background noise times a detector-dependant scale factor (listed below in
+table 0). Full details of the process are described in
+`Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_. The exact set of input parameters
+fed into DAOStarFinder is detector-dependent. The parameters can be found in the
+<instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
 
+.. table:: Table 0: Background scale factor values used to compute minimum detection thresholds
+
+    +---------------------+--------------+
+    | Instrument/Detector | Scale Factor |
+    +=====================+==============+
+    | ACS/HRC             | 5.0          |
+    +---------------------+--------------+
+    | ACS/SBC             | 6.0          |
+    +---------------------+--------------+
+    | ACS/WFC             | 5.0          |
+    +---------------------+--------------+
+    | WFC3/IR             | 1.0          |
+    +---------------------+--------------+
+    | WFC3/UVIS           | 5.0          |
+    +---------------------+--------------+
 
 Source Identification using PSFs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
