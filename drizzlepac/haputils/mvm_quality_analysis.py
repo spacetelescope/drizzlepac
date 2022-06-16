@@ -146,6 +146,8 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                 expo_wcs_value = wcs_pref_list[suffix]
 
                 # If this is a multi-chip exposure, get the CHIP number
+                # FUTURE: WFPC2 images use the 'DETECTOR' keyword in the SCI headers
+                # to record the 'chip_number'.
                 chip_number = 0
                 try:
                     chip_number = exp[sci].header['CCDCHIP']
@@ -182,9 +184,9 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                                                            'instrument': 'Instrument',
                                                            'detector': 'Detector',
                                                            'primary_wcsname': 'Active WCS',
-                                                           'wcs_value': 'Value (2^n) as numeric ID of WCSNAME',
+                                                           'wcs_value': 'Fill value/numeric ID for WCS visualization (2^n)',
                                                            'chip_number': 'CCD Chip Number',
-                                                           'img_value': 'Value (2^n) for fill of the footprint',
+                                                           'img_value': 'Alt fill Value/numeric ID for WCS visualization (2^n)',
                                                            'RA': 'Right Ascension of Polygon which defines footprint corners',
                                                            'Dec': 'Declination of Polygon which defines footprint corners',
                                                            'X': 'X position of Polygon which defines footprint corners',
