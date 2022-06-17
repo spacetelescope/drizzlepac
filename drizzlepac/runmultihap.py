@@ -54,6 +54,11 @@ def perform(input_filename, **kwargs):
     debug : Boolean
         display all tracebacks, and debug information?
 
+    input_custom_pars_file : str, optional
+        Represents a fully specified input filename of a configuration JSON file which has been
+        customized for specialized processing. This file should contain ALL the input parameters necessary
+        for processing. If not specified, default configuration parameter values will be used.
+
     log_level : string
         The desired level of verboseness in the log statements displayed on the screen and written to the
         .log file.
@@ -95,6 +100,10 @@ def main():
     parser.add_argument('input_filename',
                         help='Name of the input csv file containing information about the files to be '
                              'processed')
+    parser.add_argument('-c', '--input_custom_pars_file', required=False, default=None, help='filename of a '
+                        'configuration JSON file which has been customized for specialized processing. This '
+                        'file should contain ALL the input parameters necessary for processing. If not '
+                        'specified, default configuration parameter values will be used.')
     parser.add_argument('-d', '--diagnostic_mode', required=False, action='store_true',
                         help='If this option is turned on, additional log messages will be displayed and '
                              'additional files will be created during the course of the run.')
@@ -115,6 +124,7 @@ def main():
     print("Multi-visit processing started for: {}".format(user_args.input_filename))
     rv = perform(user_args.input_filename,
                  diagnostic_mode=user_args.diagnostic_mode,
+                 input_custom_pars_file=user_args.input_custom_pars_file,
                  log_level=user_args.log_level,
                  skip_gaia_alignment=user_args.skip_gaia_alignment)
     print("Return Value: ", rv)
