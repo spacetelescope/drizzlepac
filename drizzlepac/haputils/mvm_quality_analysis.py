@@ -276,7 +276,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
     for total_obj_idx in total_obj_mapping_dict.keys():
         total_product = total_obj_list[total_obj_idx]
         # Construct the output JSON filename
-        json_filename = '_'.join([total_product.product_basename, 'overlap_crossmatch.json'])
+        json_filename = '_'.join([total_product.product_basename, 'overlap_crossmatch_mvm.json'])
 
         # Set up the diagnostic object
         diagnostic_obj = du.HapDiagnostic()
