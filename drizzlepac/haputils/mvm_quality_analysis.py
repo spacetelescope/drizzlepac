@@ -339,13 +339,17 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                 base_units = stats_dict[bit_value]['statistics'][difference_type]['Units']
                 del(stats_dict[bit_value]['statistics'][difference_type]['Units'])
                 overlap_region_stats_units = collections.OrderedDict()
+                overlap_region_stats_descrip = collections.OrderedDict()
                 for stat_type in stats_dict[bit_value]['statistics'][difference_type].keys():
                     if stat_type.startswith("Percent"):
                         overlap_region_stats_units[stat_type] = "unitless"
+                        overlap_region_stats_descrip[stat_type] = stat_type
                     else:
                         overlap_region_stats_units[stat_type] = base_units
+                        overlap_region_stats_descrip[stat_type] = stat_type
                 # add "statistics" section of "stats_dict"
                 diagnostic_obj.add_data_item(stats_dict[bit_value]['statistics'][difference_type],
+                                             descriptions=overlap_region_stats_descrip,
                                              units=overlap_region_stats_units,
                                              title="{} {}".format(section_title_base_string, difference_type))
 
