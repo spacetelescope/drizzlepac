@@ -62,8 +62,166 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ------------------------------------------------------------------------------------------------------------
 
+def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoch=None,
+               log_level=logutil.logging.NOTSET):
+    """Report the WCSNAME for each input exposure of an MVM product
 
-def run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=logutil.logging.NOTSET):
+    Parameters
+    ----------
+    total_product_list: list of HAP TotalProduct objects, one object per instrument detector
+    (drizzlepac.haputils.Product.TotalProduct)
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and
+        written to the .log file.  Default value is 'NOTSET'.
+    """
+    log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: report_wcsname.     *****\n')
+
+    # Define the WCS preference dictionary - For visual convenience, the items are ordered with the
+    # preferred WCS names at the beginning of the dictionary.  The assigned values are 2**n where
+    # the items at the beginning of the dictionary get the lower values.
+    wcs_pref_list = {'FIT_SVM_GAIAEDR3': 1, 'FIT_EVM_GAIAEDR3': 2, 'FIT_REL_GAIAEDR3': 4, 'FIT_IMG_GAIAEDR3': 8,
+                     'FIT_SVM_GAIADR2': 16, 'FIT_EVM_GAIADR2': 32, 'FIT_REL_GAIADR2': 64, 'FIT_IMG_GAIADR2': 128,
+                     'FIT_SVM_GAIADR1': 256, 'FIT_EVM_GAIADR1': 512, 'FIT_REL_GAIADR1': 1024, 'FIT_IMG_GAIADR1': 2048,
+                     'FIT_SVM_GSC242': 4096, 'FIT_EVM_GSC242': 8192, 'FIT_REL_GSC242': 16384, 'FIT_IMG_GSC242': 32768,
+                     'FIT_SVM_2MASS': 65536, 'FIT_EVM_2MASS': 131072, 'FIT_REL_2MASS': 262144, 'FIT_IMG_2MASS': 524288,
+                     'FIT_SVM_NONE': 1048576, 'FIT_EVM_NONE': 2097152, 'FIT_REL_NONE': 4194304, 'FIT_IMG_NONE': 8388608,
+                     'HSC30': 16777216, 'GSC240': 33554432}
+
+    # Generate a separate JSON file for each TotalProduct which is really a filter-level product for MVM processing
+    # The "total product" references are a throw-back to SVM processing
+    for total_product in total_product_list:
+
+        # Just process the WFC3 IR "fine" data products
+        if total_product.product_basename.upper().find('COARSE') != -1:
+            continue
+
+        # Construct the output JSON filename
+        json_filename = '_'.join([total_product.product_basename, 'mvm_wcsname.json'])
+
+        # Set up the diagnostic object
+        diagnostic_obj = du.HapDiagnostic()
+        diagnostic_obj.instantiate_from_hap_obj(total_product,
+                                                data_source='{}.report_wcsname'.format(__taskname__),
+                                                description='WCS information',
+                                                timestamp=json_timestamp,
+                                                time_since_epoch=json_time_since_epoch)
+
+        # Get the WCS for the entire MVM layer
+        metawcs = HSTWCS(total_product.drizzle_filename, ext=1)
+
+        # Numerical count of the exposures
+        counter = 0
+
+        # Sky cell ID - used as the prefix for the column names
+        cell_id = total_product.cell_id
+
+        # Define empty lists for each data item to be stored in JSON file
+        ra_list = []
+        dec_list = []
+        xc_list = []
+        yc_list = []
+        expo_wcs_value = []
+        expo_img_value = []
+        expname = []
+        wcsname = []
+
+        # Loop over all the individual exposures in the list which comprise the layer
+        for edp_object in total_product.edp_list:
+
+            # Open the exposure file
+            exp = fits.open(edp_object.full_filename)
+            expname.append(edp_object.full_filename)
+
+            # Determine the number of extensions ...
+            sci_extns = wcs_functions.get_extns(exp)
+            if len(sci_extns) == 0 and '_single' in edp_object.full_filename:
+                sci_extns = [0]
+
+            # Get the WCSNAME for this exposure (all chips have the same WCSNAME)
+            wcs = HSTWCS(exp, ext=sci_extns[0])
+            wcs_name = exp[sci_extns[0]].header['WCSNAME'].upper()
+            suffix = wcs_name.split('-')[1]
+            wcsname.append(suffix)
+
+            # ... and loop over the SCI extensions (each SCI extension is a chip)
+            for sci in sci_extns:
+
+                # Each chip is assigned the 2**n value associated with its WCSNAME
+                expo_wcs_value.append(wcs_pref_list[suffix])
+
+                # Each chip belonging to the same exposure/image in a filter-level product
+                # will be assigned a value of 2**n so the exposure/image can be uniquely identified
+                # ***This may be obsolete.
+                expo_img_value.append(2**counter)
+
+                # Compute the sky footprint corners for this chip
+                radec = wcs.calc_footprint().tolist()
+                radec.append(radec[0])  # close the polygon/chip
+                ra_list.append([item[0] for item in radec])
+                dec_list.append([item[1] for item in radec])
+
+                # Also save the corner X and Y positions
+                xycorners = metawcs.all_world2pix(radec, 0).astype(np.int32).tolist()
+                xc_list.append([item[0] for item in xycorners])
+                yc_list.append([item[1] for item in xycorners])
+
+            # Clean up and get ready for the next exposure
+            counter += 1
+            exp.close()
+
+        # Load the dictionary with the collected data for this layer
+        active_wcs_dict = {'filename': expname,
+                           'wcsname': wcsname,
+                           'wcs_value': expo_wcs_value,
+                           'img_value': expo_img_value,
+                           'RA': ra_list,
+                           'Dec': dec_list,
+                           'X': xc_list,
+                           'Y': yc_list}
+
+        # Make the PrimaryWCS unique for every exposure/chip to ensure no entry is overwritten.
+        diagnostic_obj.add_data_item(active_wcs_dict, cell_id,
+                                     descriptions={'filename': 'Exposure filename',
+                                                   'wcsname': 'Primary WCSNAME',
+                                                   'wcs_value': 'Fill value/numeric ID for WCS visualization (2^n)',
+                                                   'img_value': 'Alt fill Value/numeric ID for WCS visualization (2^n)',
+                                                   'RA': 'Right Ascension of Polygon which defines footprint corners',
+                                                   'Dec': 'Declination of Polygon which defines footprint corners',
+                                                   'X': 'X position of Polygon which defines footprint corners',
+                                                   'Y': 'Y position of Polygon which defines footprint corners'},
+                                     units={'filename': 'unitless',
+                                            'wcsname': 'unitless',
+                                            'wcs_value': 'unitless',
+                                            'img_value': 'unitless',
+                                            'RA': 'degrees',
+                                            'Dec': 'degrees',
+                                            'X': 'pixels',
+                                            'Y': 'pixels'})
+
+        # Write out the file
+        diagnostic_obj.write_json_file(json_filename)
+
+        # Clean up
+        del diagnostic_obj
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def run_quality_analysis(total_obj_list,
+                         run_overlap_crossmatch=True,
+                         run_report_wcsname=True,
+                         log_level=logutil.logging.NOTSET):
     """Simple placeholder calling subroutine.
 
     Parameters
@@ -74,6 +232,9 @@ def run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=
     run_overlap_crossmatch : bool, optional
         Should the overlap crossmatch analysis test be preformed? If not explicitly specified, the default
         value is Boolean 'True'.
+
+    run_report_wcsname : bool, optional
+        Run 'report_wcsname' test? Defult value is True.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -96,6 +257,16 @@ def run_quality_analysis(total_obj_list, run_overlap_crossmatch=True, log_level=
                                         json_time_since_epoch=json_time_since_epoch, log_level=log_level)
         except Exception:
             log.warning("The analysis of crossmatched sources in overlap regions encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
+
+    # Report WCSNAME
+    if run_report_wcsname:
+        try:
+            report_wcsname(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
+                       log_level=log_level)
+        except Exception:
+            log.warning("WCS reporting (report_wcsname) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
 
@@ -839,12 +1010,15 @@ def reject_sources_not_in_overlap_region(svm_sourcelist, overlap_region_mask, lo
 
 if __name__ == "__main__":
     # process command-line inputs with argparse
-    parser = argparse.ArgumentParser(description='Code that evaluates the quality of the MVM products '
-                                                 'generated by the drizzlepac package.')
-    parser.add_argument('-i', '--input_pickle_filename', required=False, default="total_obj_list_full.pickle",
-                        help='Name of the pickle file containing the total object list from an MVM pipeline '
-                             'run to be processed. If not explicitly specified, the default filename '
-                             '"total_obj_list_full.pickle" will be used.')
+    parser = argparse.ArgumentParser(description='Perform quality assessments of the MVM products generated '
+                                                 'by the drizzlepac package. NOTE: if no QA switches '
+                                                 'are specified, ALL QA steps will be executed.')
+    parser.add_argument('input_filename', help='_total_list.pickle file that holds vital information about '
+                                               'the processing run')
+    parser.add_argument('-oxm', '--run_overlap_crossmatch', required=False, action='store_true',
+                        help='Perform overlap crossmatch analysis?')
+    parser.add_argument('-wcs', '--run_report_wcsname', required=False, action='store_true',
+                        help="Report the WCSNAME information for each exposure of an MVM layer product")
     parser.add_argument('-l', '--log_level', required=False, default='info',
                         choices=['critical', 'error', 'warning', 'info', 'debug'],
                         help='The desired level of verboseness in the log statements displayed on the screen '
@@ -861,19 +1035,50 @@ if __name__ == "__main__":
                 "error": logutil.logging.ERROR,
                 "warning": logutil.logging.WARNING,
                 "info": logutil.logging.INFO,
-                "debug": logutil.logging.DEBUG,
-                "notset": logutil.logging.NOTSET}
+                "debug": logutil.logging.DEBUG}
     log_level = log_dict[user_args.log_level]
     log.setLevel(log_level)
 
     # verify that input pickle file exists
-    if not os.path.exists(user_args.input_pickle_filename):
-        err_msg = "File '{}' doesn't exist.".format(user_args.input_pickle_filename)
+    if not os.path.exists(user_args.input_filename):
+        err_msg = "File '{}' doesn't exist.".format(user_args.input_filename)
         log.critical(err_msg)
-        sys.exit(err_msg)
+        raise Exception(err_msg)
 
-    # read in total object list from input pickle file
-    pickle_in = open(user_args.input_pickle_filename, "rb")
-    total_obj_list = pickle.load(pickle_in)
+    #  check that at least one QA switch is turned on
+    all_qa_steps_off = True
+    max_step_str_length = 0
+    for kv_pair in user_args._get_kwargs():
+        if kv_pair[0] not in ['input_filename', 'run_all', 'log_level']:
+            if len(kv_pair[0])-4 > max_step_str_length:
+                max_step_str_length = len(kv_pair[0])-4
+            if kv_pair[1]:
+                all_qa_steps_off = False
 
-    run_quality_analysis(total_obj_list, log_level=log_level)
+    # if no QA steps are explicitly turned on in the command-line call, run ALL the QA steps
+    if all_qa_steps_off:
+        log.info("No specific QA switches were turned on. All QA steps will be executed.")
+        user_args.run_report_wcsname = True
+        user_args.run_overlap_crossmatch = True
+
+
+    # display status summary indicating which QA steps are turned on and which steps are turned off
+    toplinestring = "-"*(int(max_step_str_length/2)-6)
+    log.info("{}QA step run status{}".format(toplinestring, toplinestring))
+    for kv_pair in user_args._get_kwargs():
+        if kv_pair[0] not in ['input_filename', 'run_all', 'log_level']:
+            if kv_pair[1]:
+                run_status = "ON"
+            else:
+                run_status = "off"
+            log.info("{}{}   {}".format(kv_pair[0][4:], " "*(max_step_str_length-(len(kv_pair[0])-4)),
+                                        run_status))
+    log.info("-"*(max_step_str_length+6))
+
+    # execute specified tests
+    filehandler = open(user_args.input_filename, 'rb')
+    total_obj_list = pickle.load(filehandler)
+    run_quality_analysis(total_obj_list,
+                         run_overlap_crossmatch=user_args.run_overlap_crossmatch,
+                         run_report_wcsname=user_args.run_report_wcsname,
+                         log_level=log_level)
