@@ -33,7 +33,7 @@
     The output products can be evaluated to determine the quality of the alignment and
     output data through the use of the environment variable:
 
-    - **SVM_QUALITY_TESTING** : Turn on quality assessment processing.  This environment
+    - **MVM_QUALITY_TESTING** : Turn on quality assessment processing.  This environment
       variable, if found with an affirmative value, will turn on processing to generate a JSON
       file which contains the results of evaluating the quality of the generated products.
 
@@ -75,7 +75,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # Environment variable which controls the quality assurance testing
 # for the Single Visit Mosaic processing.
 envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
-envvar_qa_svm = "SVM_QUALITY_TESTING"
+envvar_qa_mvm = "MVM_QUALITY_TESTING"
 
 # Default values for these environment variables set to include all available data
 envvar_cat_mvm = {"MVM_INCLUDE_SMALL": 'true',
@@ -597,7 +597,7 @@ def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logg
 
 def _get_envvar_switch(envvar_name, default=None):
     """
-    This private routine interprets any environment variable, such as SVM_QUALITY_TESTING.
+    This private routine interprets any environment variable, such as MVM_QUALITY_TESTING.
 
     PARAMETERS
     -----------

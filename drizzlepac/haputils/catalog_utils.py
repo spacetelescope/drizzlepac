@@ -4,6 +4,7 @@ aperture photometry and segmentation-map based photometry."""
 import copy
 import math
 import sys
+from collections import OrderedDict
 from packaging.version import Version
 
 from astropy.io import fits as fits
@@ -852,6 +853,14 @@ class HAPCatalogBase:
         data_table.meta["Aperture RA"] = self.image.keyword_dict["aperture_ra"]
         data_table.meta["Aperture DEC"] = self.image.keyword_dict["aperture_dec"]
         data_table.meta["Aperture PA"] = self.image.keyword_dict["aperture_pa"]
+
+        data_table.meta["Aper1 (arcsec)"] = self.aper_radius_arcsec[0]
+        data_table.meta["Aper2 (arcsec)"] = self.aper_radius_arcsec[1]
+        if proc_type == "segment":
+             data_table.meta["Threshold (sigma)"] = self._nsigma
+        else:
+             data_table.meta["Theshold (sigma)"] = self.param_dict['nsigma']
+
         data_table.meta["Exposure Start"] = self.image.keyword_dict["expo_start"]
         data_table.meta["Total Exposure Time"] = self.image.keyword_dict["texpo_time"]
         if self.image.keyword_dict["detector"].upper() != "SBC":
@@ -876,6 +885,13 @@ class HAPCatalogBase:
 
         data_table.meta["h09"] = ["#================================================================================================="]
         data_table.meta["h10"] = ["IMPORTANT NOTES"]
+
+        data_table.meta["h10.1"] = ["These catalogs provide aperture photometry in the ABMAG system and are calibrated with"]
+        data_table.meta["h10.2"] = ["photometric zeropoints corresponding to an infinite aperture. To convert to total"]
+        data_table.meta["h10.3"] = ["magnitudes, aperture corrections must be applied to account for flux falling outside of"]
+        data_table.meta["h10.4"] = ["the selected aperture. For details, see Whitmore et al., 2016 AJ, 151, 134W."]
+        data_table.meta["h10.5"] = [" "]
+
         data_table.meta["h11"] = ["The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
         data_table.meta["h12"] = ["RA and Dec values in this table are in sky coordinates (i.e. coordinates at the epoch of observation"]
         data_table.meta["h12.1"] = ["and an {}).".format(self.image.keyword_dict["wcs_type"])]
@@ -902,6 +918,9 @@ class HAPCatalogBase:
         if proc_type == "segment":
             if self.is_big_island:
                 data_table.meta["h19"] = ["WARNING: Segmentation catalog is considered to be of poor quality due to a crowded field or large segments."]
+
+        if type(data_table.meta) != OrderedDict:
+            data_table.meta = OrderedDict(data_table.meta)
 
         return (data_table)
 
@@ -2453,7 +2472,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                              "Elongation": "Ratio of the lengths of the semi-major and semi-minor axes of the ellipse",
                              "Ellipticity": "Computed as 1 minus the inverse of the elongation",
                              "Theta": "Angle between the X axis and the major axis of the 2D Gaussian function that has the same second-order moments as the source.",
-
                              "CI": "Concentration Index",
                              "Flags": "Numeric encoding for conditions on detected sources"}
         for fcd_key in final_col_descrip.keys():
@@ -2764,6 +2782,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         """
         self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="segment",
                                               product=self.image.ghd_product)
+
         if reject_catalogs:
             # We still want to write out empty files
             # This will delete all rows from the existing table

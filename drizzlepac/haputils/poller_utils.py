@@ -276,6 +276,11 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0,
         .
         .
 
+
+    Caution: The input ("results") parameter was originally designed to be able to accept a Python
+    list of pipeline product dataset names (e.g., ib4606cdq_flc.fits) for MVM proessing.  However,
+    this was later modified.  MVM processing needs the SVM FLT/FLC files as input.
+
     """
     # set logging level to user-specified level
     log.setLevel(log_level)

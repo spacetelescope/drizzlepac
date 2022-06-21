@@ -222,23 +222,19 @@ def run_quality_analysis(total_obj_list,
                          run_overlap_crossmatch=True,
                          run_report_wcsname=True,
                          log_level=logutil.logging.NOTSET):
-    """Simple placeholder calling subroutine.
+    """Run the quality analysis functions
 
     Parameters
     ----------
     total_obj_list : list
-        List of one or more HAP drizzlepac.haputils.Product.TotalProduct object(s) to process
-
-    run_overlap_crossmatch : bool, optional
-        Should the overlap crossmatch analysis test be preformed? If not explicitly specified, the default
-        value is Boolean 'True'.
+        List of SkyCellProducts (equivalent of SVM FilterDataProducts)
 
     run_report_wcsname : bool, optional
-        Run 'report_wcsname' test? Defult value is True.
+        Run 'report_wcsname' test? Default value is True.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
-        .log file.  Default value is 'NOTSET'.
+        .log file. Default value is 'NOTSET'.
 
     Returns
     -------
@@ -1005,7 +1001,7 @@ def reject_sources_not_in_overlap_region(svm_sourcelist, overlap_region_mask, lo
     log.info("{} sources remain.".format(len(svm_sourcelist)))
     return svm_sourcelist
 
-# ------------------------------------------------------------------------------------------------------------
+# ============================================================================================================
 
 
 if __name__ == "__main__":
@@ -1021,8 +1017,8 @@ if __name__ == "__main__":
                         help="Report the WCSNAME information for each exposure of an MVM layer product")
     parser.add_argument('-l', '--log_level', required=False, default='info',
                         choices=['critical', 'error', 'warning', 'info', 'debug'],
-                        help='The desired level of verboseness in the log statements displayed on the screen '
-                             'and written to the .log file. The level of verboseness from left to right, and '
+                        help='The desired level of verbosity in the log statements displayed on the screen '
+                             'and written to the .log file. The level of verbosity increases from left to right, and '
                              'includes all log statements with a log_level left of the specified level. '
                              'Specifying "critical" will only record/display "critical" log statements, and '
                              'specifying "error" will record/display both "error" and "critical" log '
@@ -1039,7 +1035,7 @@ if __name__ == "__main__":
     log_level = log_dict[user_args.log_level]
     log.setLevel(log_level)
 
-    # verify that input pickle file exists
+    # verify that input file exists
     if not os.path.exists(user_args.input_filename):
         err_msg = "File '{}' doesn't exist.".format(user_args.input_filename)
         log.critical(err_msg)

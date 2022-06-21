@@ -11,6 +11,11 @@ with the Point catalog created based upon functionality similar to DAOPhot-style
 and the Segment catalog created with Source Extractor segmentation capabilities and output
 in mind.
 
+These catalogs provide aperture photometry in the ABMAG system and are calibrated using the photometric zeropoints
+corresponding to an 'infinite' aperture. To convert to total magnitudes, aperture corrections must be applied to
+account for flux falling outside of the selected aperture. For details, see
+`Whitmore et al., 2016 AJ, 151, 134W <http://adsabs.harvard.edu/abs/2016AJ....151..134W>`_.
+
 1: Support Infrastructure for Catalog Generation
 ================================================
 
@@ -30,7 +35,7 @@ photometry.
 
 .. note::
  A catalog file will always be written out for each type of catalog whether or not there are
-any identified sources in the exposure.
+ any identified sources in the exposure.
 
 
 1.2: Generation of Pixel Masks
@@ -133,10 +138,21 @@ with the associated updates, are ultimately chosen as the images to use.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Through-out this section variables have been mentioned which can be configured by the user.  The
 values used for these variables for generating the default catalogs are deemed to be the best for 
-the general situation, but users can tune these values to optimize for their own data. To this end, 
-users can adjust parameter values
-in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
-/drizzlepac/pars/hap_pars/default_parameters/<instrument>/<detector>/.
+the general situation, but users can tune these values to optimize for their own data.
+
+To this end, users can adjust
+parameter values in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
+/drizzlepac/pars/hap_pars/svm_parameters/<instrument>/<detector>/. Alternatively, a safer way for users to tune
+configuration settings is to first utilize `drizzlepac/haputils/generate_custom_svm_mvm_param_file.py` to generate a
+custom parameter .json file. This parameter file, which is written to the user's current working directory by default,
+contains all default pipeline parameters and allows users to adjust any/or all of these parameters as they wish without
+overwriting the hard-coded default values stored in /drizzlepac/pars/hap_pars/svm_parameters/. To run the single visit
+mosaic pipeline using the custom parameter file, users simply need to specify the name of the file with the '-c'
+optional command-line argument when using `drizzlepac/runsinglehap.py` or the 'input_custom_pars_file' optional input
+argument when executing `hapsequencer.run_hap_processing()` from Python or from another python script.
+
+.. warning::
+    Modification of values in the parameter files stored in /drizzlepac/pars/hap_pars/svm_parameters/ is *strongly* discouraged as there is no way to revert these values back to their defaults once they have been changed.
 
 1.4: Image Kernel
 -----------------
@@ -168,14 +184,30 @@ These options are selected through the "starfinder_algorithm" parameter in the J
 Source Identification using DAOStarFinder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
-multi-filter detection image. This would be where the background computed using one of the algorithms
-discussed in Section 1.3 is applied to the science data to initialize point-source detection processing.
-This algorithm works by identifying local brightness maxima with roughly gaussian
-distributions whose peak values are above a predefined minimum threshold. Full details of the process are
-described in `Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_.
-The exact set of input parameters fed into DAOStarFinder is detector-dependent. The parameters can be found in
-the <instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
+multi-filter detection image. Here, the background computed using one of the algorithms discussed in Section 1.3 is
+applied to the science data to initialize point-source detection processing. This algorithm works by identifying local
+brightness maxima with roughly gaussian distributions whose peak values are above a predefined minimum threshold. This
+minimum threshold value is computed as the background noise times a detector-dependant scale factor (listed below in
+table 0). Full details of the process are described in
+`Stetson 1987; PASP 99, 191 <http://adsabs.harvard.edu/abs/1987PASP...99..191S>`_. The exact set of input parameters
+fed into DAOStarFinder is detector-dependent. The parameters can be found in the
+<instrument>_<detector>_catalog_generation_all.json files mentioned in the previous section.
 
+.. table:: Table 0: Background scale factor values used to compute minimum detection thresholds
+
+    +---------------------+--------------+
+    | Instrument/Detector | Scale Factor |
+    +=====================+==============+
+    | ACS/HRC             | 5.0          |
+    +---------------------+--------------+
+    | ACS/SBC             | 6.0          |
+    +---------------------+--------------+
+    | ACS/WFC             | 5.0          |
+    +---------------------+--------------+
+    | WFC3/IR             | 1.0          |
+    +---------------------+--------------+
+    | WFC3/UVIS           | 5.0          |
+    +---------------------+--------------+
 
 Source Identification using PSFs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -211,19 +243,19 @@ listed below in table 1:
 
 .. table:: Table 1: Aperture photometry aperture sizes
 
-    +---------------------+------------------------------+------------------------------+
-    | Instrument/Detector | Inner aperture size (arcsec) | Outer aperture size (arcsec) |
-    +=====================+==============================+==============================+
-    | ACS/HRC             | 0.03                         | 0.125                        |
-    +---------------------+------------------------------+------------------------------+
-    | ACS/SBC             | 0.07                         | 0.125                        |
-    +---------------------+------------------------------+------------------------------+
-    | ACS/WFC	          | 0.05                         | 0.15                         |
-    +---------------------+------------------------------+------------------------------+
-    | WFC3/IR	          | 0.15                         | 0.45                         |
-    +---------------------+------------------------------+------------------------------+
-    | WFC3/UVIS           | 0.05                         | 0.15                         |
-    +---------------------+------------------------------+------------------------------+
+    +---------------------+----------------+----------------+
+    | Instrument/Detector | Aper1 (arcsec) | Aper2 (arcsec) |
+    +=====================+================+================+
+    | ACS/HRC             | 0.03           | 0.125          |
+    +---------------------+----------------+----------------+
+    | ACS/SBC             | 0.07           | 0.125          |
+    +---------------------+----------------+----------------+
+    | ACS/WFC	          | 0.05           | 0.15           |
+    +---------------------+----------------+----------------+
+    | WFC3/IR	          | 0.15           | 0.45           |
+    +---------------------+----------------+----------------+
+    | WFC3/UVIS           | 0.05           | 0.15           |
+    +---------------------+----------------+----------------+
 
 Raw (non-background-subtracted) flux values are computed by summing up the enclosed flux within the two specified
 apertures using the `photutils.aperture.aperture_photometry <https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
