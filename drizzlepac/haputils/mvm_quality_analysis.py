@@ -99,9 +99,6 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
         if total_product.product_basename.upper().find('COARSE') != -1:
             continue
 
-        instrument = total_product.instrument
-        detector = total_product.detector
-
         # Construct the output JSON filename
         json_filename = '_'.join([total_product.product_basename, 'mvm_wcsname.json'])
 
@@ -119,93 +116,91 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
         # Numerical count of the exposures 
         counter = 0
 
+        # Sky cell ID - used as the prefix for the column names
+        cell_id = total_product.cell_id
+
+        # Define empty lists for each data item to be stored in JSON file
+        ra_list = []
+        dec_list = []
+        xc_list = []
+        yc_list = []
+        expo_wcs_value = []
+        expo_img_value = []
+        expname = []
+        wcsname = []
+
         # Loop over all the individual exposures in the list which comprise the layer
         for edp_object in total_product.edp_list:
-            
+
             # Open the exposure file
             exp = fits.open(edp_object.full_filename)
-
-            # Each chip belonging to the same exposure/image in a filter-level product
-            # will be assigned a value of 2**n so the exposure/image can be uniquely identified
-            expo_img_value = 2**counter
+            expname.append(edp_object.full_filename)
 
             # Determine the number of extensions ...
             sci_extns = wcs_functions.get_extns(exp)
             if len(sci_extns) == 0 and '_single' in edp_object.full_filename:
                 sci_extns = [0]
 
+            # Get the WCSNAME for this exposure (all chips have the same WCSNAME)
+            wcs = HSTWCS(exp, ext=sci_extns[0])
+            wcs_name = exp[sci_extns[0]].header['WCSNAME'].upper()
+            suffix = wcs_name.split('-')[1]
+            wcsname.append(suffix)
+
             # ... and loop over the SCI extensions (each SCI extension is a chip)
             for sci in sci_extns:
-                wcs = HSTWCS(exp, ext=sci)
-
-                # Get the WCSNAME for this specific exposure/chip
-                wcsname = exp[sci].header['WCSNAME'].upper()
 
                 # Each chip is assigned the 2**n value associated with its WCSNAME
-                suffix = wcsname.split('-')[1]
-                expo_wcs_value = wcs_pref_list[suffix]
+                expo_wcs_value.append(wcs_pref_list[suffix])
 
-                # If this is a multi-chip exposure, get the CHIP number
-                # FUTURE: WFPC2 images use the 'DETECTOR' keyword in the SCI headers
-                # to record the 'chip_number'.
-                chip_number = 0
-                try:
-                    chip_number = exp[sci].header['CCDCHIP']
-                except:
-                    pass
+                # Each chip belonging to the same exposure/image in a filter-level product
+                # will be assigned a value of 2**n so the exposure/image can be uniquely identified
+                # ***This may be obsolete.
+                expo_img_value.append(2**counter)
 
                 # Compute the sky footprint corners for this chip
                 radec = wcs.calc_footprint().tolist()
                 radec.append(radec[0])  # close the polygon/chip
-                ra = [item[0] for item in radec]
-                dec = [item[1] for item in radec]
+                ra_list.append([item[0] for item in radec])
+                dec_list.append([item[1] for item in radec])
 
                 # Also save the corner X and Y positions
                 xycorners = metawcs.all_world2pix(radec, 0).astype(np.int32).tolist()
-                xc = [item[0] for item in xycorners]
-                yc = [item[1] for item in xycorners]
-
-                # Load the dictionary with the collected data for this exposure
-                active_wcs_dict = {'filename': edp_object.full_filename,
-                                   'instrument': instrument,
-                                   'detector': detector,
-                                   'primary_wcsname': wcsname,
-                                   'wcs_value': expo_wcs_value,
-                                   'chip_number': chip_number,
-                                   'img_value': expo_img_value,
-                                   'RA': ra,
-                                   'Dec': dec,
-                                   'X': xc,
-                                   'Y': yc}
-
-                # Make the PrimaryWCS unique for every exposure/chip to ensure no entry is overwritten.
-                diagnostic_obj.add_data_item(active_wcs_dict, 'PrimaryWCS' + str(counter) + "_" + str(chip_number), 
-                                             descriptions={'filename': 'Exposure filename',
-                                                           'instrument': 'Instrument',
-                                                           'detector': 'Detector',
-                                                           'primary_wcsname': 'Active WCS',
-                                                           'wcs_value': 'Fill value/numeric ID for WCS visualization (2^n)',
-                                                           'chip_number': 'CCD Chip Number',
-                                                           'img_value': 'Alt fill Value/numeric ID for WCS visualization (2^n)',
-                                                           'RA': 'Right Ascension of Polygon which defines footprint corners',
-                                                           'Dec': 'Declination of Polygon which defines footprint corners',
-                                                           'X': 'X position of Polygon which defines footprint corners',
-                                                           'Y': 'Y position of Polygon which defines footprint corners'},
-                                             units={'filename': 'unitless',
-                                                    'instrument': 'unitless',
-                                                    'detector': 'unitless',
-                                                    'primary_wcsname': 'unitless',
-                                                    'wcs_value': 'unitless',
-                                                    'chip_number': 'unitless',
-                                                    'img_value': 'unitless',
-                                                    'RA': 'degrees',
-                                                    'Dec': 'degrees',
-                                                    'X': 'pixels',
-                                                    'Y': 'pixels'})
+                xc_list.append([item[0] for item in xycorners])
+                yc_list.append([item[1] for item in xycorners])
 
             # Clean up and get ready for the next exposure
             counter += 1
             exp.close()
+
+        # Load the dictionary with the collected data for this layer
+        active_wcs_dict = {'filename': expname,
+                           'wcsname': wcsname,
+                           'wcs_value': expo_wcs_value,
+                           'img_value': expo_img_value,
+                           'RA': ra_list,
+                           'Dec': dec_list,
+                           'X': xc_list,
+                           'Y': yc_list}
+
+        # Make the PrimaryWCS unique for every exposure/chip to ensure no entry is overwritten.
+        diagnostic_obj.add_data_item(active_wcs_dict, cell_id, 
+                                     descriptions={'filename': 'Exposure filename',
+                                                   'wcsname': 'Primary WCSNAME',
+                                                   'wcs_value': 'Fill value/numeric ID for WCS visualization (2^n)',
+                                                   'img_value': 'Alt fill Value/numeric ID for WCS visualization (2^n)',
+                                                   'RA': 'Right Ascension of Polygon which defines footprint corners',
+                                                   'Dec': 'Declination of Polygon which defines footprint corners',
+                                                   'X': 'X position of Polygon which defines footprint corners',
+                                                   'Y': 'Y position of Polygon which defines footprint corners'},
+                                     units={'filename': 'unitless',
+                                            'wcsname': 'unitless',
+                                            'wcs_value': 'unitless',
+                                            'img_value': 'unitless',
+                                            'RA': 'degrees',
+                                            'Dec': 'degrees',
+                                            'X': 'pixels',
+                                            'Y': 'pixels'})
 
         # Write out the file
         diagnostic_obj.write_json_file(json_filename)
