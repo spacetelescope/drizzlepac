@@ -439,8 +439,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         if error_flag:
             if overlap_num < num_overlaps:
                 log.warning("Continuing to next overlap region crossmatch analysis...")
-            if overlap_num == num_overlaps:
-                log.warning("Continuing to next test...")
             continue
         log.info("")
 
@@ -449,6 +447,10 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
         ref_index, comp_index, matched_lines_ref, matched_lines_comp, xmatch_details = crossmatch_sources(overlap_dict[bit_value],
                                                                                                           svm_sourcelist_list,
                                                                                                           log_level=log_level)
+        if ref_index == -1:
+            if overlap_num < num_overlaps:
+                log.warning("Continuing to next overlap region crossmatch analysis...")
+            continue
         overlap_dict[bit_value]["ref_index"] = ref_index
         overlap_dict[bit_value]["comp_index"] = comp_index
         overlap_dict[bit_value]["ref cat size"] = len(svm_sourcelist_list[ref_index])
@@ -469,7 +471,10 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             total_obj_mapping_dict[total_obj_idx_ref].append(bit_value)
         else:
             total_obj_mapping_dict[total_obj_idx_ref] = [bit_value]
-
+    if len(total_obj_mapping_dict.keys()) == 0:
+        # bail out early if there aren't any crossmatch results to report
+        log.warning("Continuing to next test...")
+        return
     # 9b: Gather and organize information and write JSON file(s)
     for total_obj_idx in total_obj_mapping_dict.keys():
         total_product = total_obj_list[total_obj_idx]
@@ -755,8 +760,12 @@ def crossmatch_sources(overlap_info, svm_sourcelist_list, log_level=logutil.logg
     comp_xy = np.stack((svm_sourcelist_list[comp_index]['X-Skycell'], svm_sourcelist_list[comp_index]['Y-Skycell']), axis=1)
     
     # execute crossmatch
-    matches = xyxymatch(comp_xy, ref_xy, tolerance=5.0, separation=1.0)
-
+    try:
+        matches = xyxymatch(comp_xy, ref_xy, tolerance=5.0, separation=1.0)
+    except Exception:
+        # If xyxymatch crashes, return with values that the calling code can easily use for error handling.
+        log.warning("Warning: Unable to continue with crossmatch. stsci.stimage.xyxymatch encountered a problem attempting to crossmatch the catalogs in this overlap region.")
+        return -1, -1, [], [], []
     # Report number and percentage of the total number of detected ref and comp sources that were matched
     log.info("Sourcelist Matching Results")
     log.info("Reference sourcelist:  {} of {} total sources matched ({} %)".format(len(matches), len(ref_xy), 100.0 * (float(len(matches)) / float(len(ref_xy)))))
