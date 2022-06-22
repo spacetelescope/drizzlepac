@@ -62,8 +62,9 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 # ------------------------------------------------------------------------------------------------------------
 
+
 def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoch=None,
-               log_level=logutil.logging.NOTSET):
+                   log_level=logutil.logging.NOTSET):
     """Report the WCSNAME for each input exposure of an MVM product
 
     Parameters
@@ -218,6 +219,7 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def run_quality_analysis(total_obj_list,
                          run_overlap_crossmatch=True,
                          run_report_wcsname=True,
@@ -259,8 +261,9 @@ def run_quality_analysis(total_obj_list,
     # Report WCSNAME
     if run_report_wcsname:
         try:
-            report_wcsname(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
-                       log_level=log_level)
+            report_wcsname(total_obj_list, json_timestamp=json_timestamp,
+                           json_time_since_epoch=json_time_since_epoch,
+                           log_level=log_level)
         except Exception:
             log.warning("WCS reporting (report_wcsname) encountered a problem.")
             log.exception("message")
@@ -829,7 +832,7 @@ def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET
                     ctx_map_ra = np.zeros_like(footprint.total_mask, dtype=np.int64)  # This should allow for a max of 35 unique footprints in the skycell
                     ctx_count_ra = np.zeros_like(footprint.total_mask)
                 ctx_count_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 1)  # Build array maps number of overlapping datasets for each skycell pixel
-                ctx_map_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 2**layer_ctr)  # Build context arrray that stores footprint information broken down by instrument, detector, filter, proposal and visit
+                ctx_map_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 2**layer_ctr)  # Build context array that stores footprint information broken down by instrument, detector, filter, proposal and visit
                 layer_dict[2**layer_ctr] = {}
                 layer_dict[2 ** layer_ctr]["mode"] = total_obj.drizzle_filename
                 layer_dict[2 ** layer_ctr]["ippsss"] = ippsss
