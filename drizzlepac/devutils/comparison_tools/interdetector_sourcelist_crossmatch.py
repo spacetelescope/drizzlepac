@@ -149,7 +149,7 @@ def run(sl_names, img_names, diagnostic_mode=False, log_level=logutil.logging.IN
     for diff_ra, title, units in zip(diff_list, title_list, units_list):
         log.info("Comparison - reference {} statistics ({})".format(title, units))
 
-        foo = compute_stats(diff_ra, title)
+        _ = compute_stats(diff_ra, title, log_level=log_level)
 
     generate_sorted_region_file(diff_xy, ref_xy_in_comp_frame[matched_lines_ref], comp_xy[matched_lines_comp], ref_data['FLAGS'][matched_lines_ref], comp_data['FLAGS'][matched_lines_comp])
 # =======================================================================================================================
