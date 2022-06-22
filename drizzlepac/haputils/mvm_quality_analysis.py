@@ -347,6 +347,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
     if num_overlaps == 0:  # Return if no overlap regions are found
         log.warning("No overlapping footprints found.")
         log.warning("Continuing to next test...")
+        return
     del(num_overlaps)
 
     # 2b: Identification of individual overlap regions
