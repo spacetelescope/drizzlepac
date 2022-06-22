@@ -364,7 +364,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
     initial_cat_sizes = {}
     for overlap_num, bit_value in zip(range(1, num_overlaps+1), sorted(overlap_dict)):
         # report basic information about each overlap
-        num_overlaps = len(overlap_dict.keys())
         num_pix = len(overlap_dict[bit_value]['idx_ra'][0])
         if num_pix == 1:
             plural_str = ""
