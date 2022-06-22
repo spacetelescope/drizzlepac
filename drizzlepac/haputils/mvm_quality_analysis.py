@@ -761,7 +761,7 @@ def crossmatch_sources(overlap_info, svm_sourcelist_list, log_level=logutil.logg
     
     # execute crossmatch
     try:
-        matches = xyxymatch(comp_xy, ref_xy, tolerance=5.0, separation=1.0)
+        matches = xyxymatch(comp_xy, ref_xy, tolerance=20.0, separation=1.0)
     except Exception:
         # If xyxymatch crashes, return with values that the calling code can easily use for error handling.
         log.warning("Warning: Unable to continue with crossmatch. stsci.stimage.xyxymatch encountered a problem attempting to crossmatch the catalogs in this overlap region.")
