@@ -30,20 +30,28 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 
 # Standard library imports
 import argparse
+import collections
 from datetime import datetime
+import glob
 import os
 import pickle
 import sys
 import time
 
 # Related third party imports
+from astropy.coordinates import SkyCoord
+from astropy.table import Table, Column
+from itertools import combinations
+import numpy as np
 from astropy.io import fits
 
 # Local application imports
+from drizzlepac.haputils import cell_utils
 from drizzlepac import util, wcs_functions
 import drizzlepac.haputils.diagnostic_utils as du
-import numpy as np
+from drizzlepac.devutils.comparison_tools import interdetector_sourcelist_crossmatch as idslxm
 from stsci.tools import logutil
+from stsci.stimage import xyxymatch
 from stwcs.wcsutil import HSTWCS
 
 __taskname__ = 'mvm_quality_analysis'
@@ -52,10 +60,11 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
+
 
 def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoch=None,
-               log_level=logutil.logging.NOTSET):
+                   log_level=logutil.logging.NOTSET):
     """Report the WCSNAME for each input exposure of an MVM product
 
     Parameters
@@ -113,7 +122,7 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
         # Get the WCS for the entire MVM layer
         metawcs = HSTWCS(total_product.drizzle_filename, ext=1)
 
-        # Numerical count of the exposures 
+        # Numerical count of the exposures
         counter = 0
 
         # Sky cell ID - used as the prefix for the column names
@@ -184,7 +193,7 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                            'Y': yc_list}
 
         # Make the PrimaryWCS unique for every exposure/chip to ensure no entry is overwritten.
-        diagnostic_obj.add_data_item(active_wcs_dict, cell_id, 
+        diagnostic_obj.add_data_item(active_wcs_dict, cell_id,
                                      descriptions={'filename': 'Exposure filename',
                                                    'wcsname': 'Primary WCSNAME',
                                                    'wcs_value': 'Fill value/numeric ID for WCS visualization (2^n)',
@@ -209,7 +218,10 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
         del diagnostic_obj
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+
 def run_quality_analysis(total_obj_list,
+                         run_overlap_crossmatch=True,
                          run_report_wcsname=True,
                          log_level=logutil.logging.NOTSET):
     """Run the quality analysis functions
@@ -220,7 +232,7 @@ def run_quality_analysis(total_obj_list,
         List of SkyCellProducts (equivalent of SVM FilterDataProducts)
 
     run_report_wcsname : bool, optional
-        Run 'report_wcsname' test? Devault value is True.
+        Run 'report_wcsname' test? Default value is True.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the
@@ -237,16 +249,769 @@ def run_quality_analysis(total_obj_list,
     json_timestamp = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
     json_time_since_epoch = time.time()
 
+    if run_overlap_crossmatch:
+        try:
+            overlap_crossmatch_analysis(total_obj_list, json_timestamp=json_timestamp,
+                                        json_time_since_epoch=json_time_since_epoch, log_level=log_level)
+        except Exception:
+            log.warning("The analysis of crossmatched sources in overlap regions encountered a problem.")
+            log.exception("message")
+            log.warning("Continuing to next test...")
+
     # Report WCSNAME
     if run_report_wcsname:
         try:
-            report_wcsname(total_obj_list, json_timestamp=json_timestamp, json_time_since_epoch=json_time_since_epoch,
-                       log_level=log_level)
+            report_wcsname(total_obj_list, json_timestamp=json_timestamp,
+                           json_time_since_epoch=json_time_since_epoch,
+                           log_level=log_level)
         except Exception:
             log.warning("WCS reporting (report_wcsname) encountered a problem.")
             log.exception("message")
             log.warning("Continuing to next test...")
 
+# ------------------------------------------------------------------------------------------------------------
+
+
+def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_flags=[0, 1],
+                                json_timestamp=None, json_time_since_epoch=None,
+                                log_level=logutil.logging.NOTSET):
+    """Run overlap crossmatch analysis. Analyze differences in positions of sources found in two overlapping
+    SVM catalogs from different proposal/visit input components of this MVM run.
+
+    Statistics are generated for the X and Y components of the differences in positions of crossmatched
+    sources (in HAP MVM skycell pixels) as well as the on-sky differences in positions of crossmatched
+    sources (in HAP MVM skycell pixels and arcseconds).
+
+    The following statistical values calculated and reported:
+
+    * non-sigma clipped minimum
+    * non-sigma clipped maximum
+    * non-sigma clipped mean
+    * non-sigma clipped median
+    * non-sigma clipped standard deviation values
+    * 3x3-sigma clipped mean
+    * 3x3-sigma clipped median
+    * 3x3-sigma clipped standard deviation
+    * percent of all difference values within 1 SD of the sigma-clipped mean value
+    * percent of all difference values within 2 SDs of the sigma-clipped mean value
+    * percent of all difference values within 3 SDs of the sigma-clipped mean value
+
+    Parameters
+    ----------
+    total_obj_list : list
+        List of one or more HAP drizzlepac.haputils.Product.TotalProduct object(s) to process
+
+    sourcelist_type : str, optional
+        Type of sourcelist that will be processed. "point" if they both are point sourcelists, and "segment"
+        if they are both segment sourcelists. If not explicitly specified, the default value is "point".
+
+    good_flags : list, optional.
+        List of the sourcelist flag values deemed suitable for crossmatch. If not explicitly specified, the
+        default value is [0, 1], where flag value 0 is "point source" and flag value 1 is "extended source".
+
+    json_timestamp: str, optional
+        Universal .json file generation date and time (local timezone) that will be used in the instantiation
+        of the HapDiagnostic object. Format: MM/DD/YYYYTHH:MM:SS (Example: 05/04/2020T13:46:35). If not
+        specified, default value is logical 'None'
+
+    json_time_since_epoch : float
+        Universal .json file generation time that will be used in the instantiation of the HapDiagnostic
+        object. Format: Time (in seconds) elapsed since January 1, 1970, 00:00:00 (UTC). If not specified,
+        default value is logical 'None'
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    Nothing.
+    """
+    log.setLevel(log_level)
+    log.info('\n\n*****     Begin Quality Analysis Test: overlap_crossmatch_analysis.     *****\n')
+    # 1: Determine if there is observations from multiple proposals/visits present in this dataset
+    ippsss_list = []
+    for total_obj in total_obj_list:
+        for exp_obj in total_obj.edp_list:
+            ippsss_list.append(exp_obj.exposure_name[:6])
+    ippsss_list = list(set(ippsss_list))
+    if len(ippsss_list) == 1:  # return if there is only data from a single visit
+        log.warning("All observations in this dataset were from a single proposal/visit. This test requires observations from two or more proposal/visits.")
+        log.warning("Continuing to next test...")
+        return
+    del ippsss_list
+
+    # 2a: Identify if there are any overlapping regions in observations from different proposal/visits
+    ctx_count_ra, ctx_map_ra, layer_dict, layer_ctr = determine_if_overlaps_exist(total_obj_list,
+                                                                                  log_level=log_level)
+    num_overlaps = len(list(set(ctx_count_ra.flatten().tolist()))) - 2
+    log.info("Number of datasets with unique instrument, detector, filter, proposal and visit combinations: {}".format(layer_ctr))
+    log.info("Number of regions with two or more overlapping unique dataset footprints: {}".format(num_overlaps))
+    if num_overlaps == 0:  # Return if no overlap regions are found
+        log.warning("No overlapping footprints found.")
+        log.warning("Continuing to next test...")
+        return
+    del(num_overlaps)
+
+    # 2b: Identification of individual overlap regions
+    overlap_dict = locate_overlap_regions(ctx_map_ra, layer_dict, log_level=log_level)
+
+    # 3a: locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of
+    # overlapping observations for crossmatch
+    overlap_dict = locate_svm_products(overlap_dict, sourcelist_type, log_level=log_level)
+    sl_xy_column_name_dict = {"point": ["X-Center", "Y-Center"],
+                              "segment": ["X-Centroid", "Y-Centroid"]}
+    num_overlaps = len(overlap_dict.keys())
+    stats_dict = {}
+    total_obj_mapping_dict = collections.OrderedDict()
+    initial_cat_sizes = {}
+    for overlap_num, bit_value in zip(range(1, num_overlaps+1), sorted(overlap_dict)):
+        # report basic information about each overlap
+        num_pix = len(overlap_dict[bit_value]['idx_ra'][0])
+        if num_pix == 1:
+            plural_str = ""
+        else:
+            plural_str = "s"
+        log.info("Overlap region #{}/{}, with overlap bit value {} contains {} pixel{}.".format(overlap_num,
+                                                                                                num_overlaps,
+                                                                                                bit_value,
+                                                                                                num_pix,
+                                                                                                plural_str))
+        # Create region mask. Zero-value pixels are outside region 1-value pixels are inside region.
+        overlap_region_mask = np.zeros_like(ctx_map_ra)
+        overlap_region_mask[(overlap_dict[bit_value]["idx_ra"])] = 1
+        svm_sourcelist_list = []
+        initial_cat_sizes[bit_value] = []
+        for set_num in ["0", "1"]:
+            setnum = int(set_num)
+            error_flag = False
+            # 3b: Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
+            if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] is None:
+                log.warning("Unable to locate one or more SVM sourcelist(s) required for crossmatch!")
+                error_flag = True
+                break
+            if overlap_dict[bit_value]["svm_img_{}".format(set_num)] is None:
+                log.warning(
+                    "Unable to locate one or more SVM drizzled filter image(s) required for crossmatch!")
+                error_flag = True
+                break
+            just_sl_name = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)])
+
+            # 4: read in SVM-generated sourcelists and drizzled filter product images
+            svm_sourcelist_list.append(Table.read(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)],
+                                                  format='ascii.ecsv'))
+
+            # 5: Compute new skycell-reference X, Y values from SVM sourcelist RA, Dec values
+            ra_dec_values = np.stack((svm_sourcelist_list[setnum]['RA'], svm_sourcelist_list[setnum]['DEC']),
+                                     axis=1)
+            xy_skycell = total_obj_list[overlap_dict[bit_value]["total_obj_list_idx_{}".format(set_num)]].skycell.wcs.all_world2pix(ra_dec_values, 1)
+            # add freshly computed X and Y columns to the existing catalog table
+            new_x_col = Column(name="X-Skycell", data=xy_skycell[:, 0], dtype=np.float64)
+            new_y_col = Column(name="Y-Skycell", data=xy_skycell[:, 1], dtype=np.float64)
+            svm_sourcelist_list[setnum].add_column(new_x_col, index=2)
+            svm_sourcelist_list[setnum].add_column(new_y_col, index=3)
+
+            # 6: eliminate sources from SVM catalogs unsuitable for the crossmatch
+            if setnum == 0:
+                log.info("Remove sources from SVM catalogs unsuitable for catalog crossmatch")
+            log.info("-----------> Catalog {} of 2: {} <-----------".format(str(setnum+1), just_sl_name))
+            cat_length = len(svm_sourcelist_list[setnum])
+            log.info("Initial catalog length: {}".format(cat_length))
+            initial_cat_sizes[bit_value].append(cat_length)
+            # 6a: eliminate sources not in overlap region
+            svm_sourcelist_list[setnum] = reject_sources_not_in_overlap_region(svm_sourcelist_list[setnum],
+                                                                               overlap_region_mask,
+                                                                               log_level=log_level)
+            if len(svm_sourcelist_list[setnum]) == 0:
+                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they were outside overlap region bounds.")
+                error_flag = True
+                break
+
+            # 6b: eliminate sources in overlap region with sourcelist DQ flag values not in input arg
+            # "good_flags"
+            rows_to_remove = np.argwhere(np.isin(svm_sourcelist_list[setnum]["Flags"], good_flags,
+                                                 invert=True))
+            svm_sourcelist_list[setnum].remove_rows(rows_to_remove)
+            good_flags_str = ", ".join(str(good_flag) for good_flag in good_flags)
+            log.info("Removed {} sources from catalog with flag values other than those in user-defined list of good flag values ({})".format(len(rows_to_remove), good_flags_str))
+            log.info("{} sources remain".format(len(svm_sourcelist_list[setnum])))
+            if len(svm_sourcelist_list[setnum]) == 0:
+                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they had unsuitable flag values")
+                error_flag = True
+                break
+        if error_flag:
+            if overlap_num < num_overlaps:
+                log.warning("Continuing to next overlap region crossmatch analysis...")
+            continue
+        log.info("")
+
+        # 7: perform crossmatch of SVM catalogs
+        log.info("SVM catalog crossmatch results")
+        ref_index, comp_index, matched_lines_ref, matched_lines_comp, xmatch_details = crossmatch_sources(overlap_dict[bit_value],
+                                                                                                          svm_sourcelist_list,
+                                                                                                          log_level=log_level)
+        if ref_index == -1:
+            if overlap_num < num_overlaps:
+                log.warning("Continuing to next overlap region crossmatch analysis...")
+            continue
+        overlap_dict[bit_value]["ref_index"] = ref_index
+        overlap_dict[bit_value]["comp_index"] = comp_index
+        overlap_dict[bit_value]["ref cat size"] = len(svm_sourcelist_list[ref_index])
+        overlap_dict[bit_value]["comp cat size"] = len(svm_sourcelist_list[comp_index])
+        overlap_dict[bit_value]["crossmatch details"] = xmatch_details
+        log.info("")
+        log.info("SVM catalog crossmatch analysis results")
+
+        # 8: perform analysis of crossmatch results
+        stats_dict[bit_value] = crossmatch_analysis(total_obj_list, overlap_dict[bit_value],
+                                                    svm_sourcelist_list, ref_index, comp_index,
+                                                    matched_lines_ref, matched_lines_comp, log_level=log_level)
+
+        # 9a: assemble dictionary that maps the total object element of the ref catalog to overlap region to
+        # provide an organizational structure for the output .json file(s)
+        total_obj_idx_ref = overlap_dict[bit_value]["total_obj_list_idx_{}".format(str(ref_index))]
+        if total_obj_idx_ref in total_obj_mapping_dict.keys():
+            total_obj_mapping_dict[total_obj_idx_ref].append(bit_value)
+        else:
+            total_obj_mapping_dict[total_obj_idx_ref] = [bit_value]
+    if len(total_obj_mapping_dict.keys()) == 0:
+        # bail out early if there aren't any crossmatch results to report
+        log.warning("Continuing to next test...")
+        return
+    # 9b: Gather and organize information and write JSON file(s)
+    for total_obj_idx in total_obj_mapping_dict.keys():
+        total_product = total_obj_list[total_obj_idx]
+        # Construct the output JSON filename
+        json_filename = '_'.join([total_product.product_basename, 'mvm_overlap_crossmatch.json'])
+
+        # Set up the diagnostic object
+        diagnostic_obj = du.HapDiagnostic()
+        diagnostic_obj.instantiate_from_hap_obj(total_product,
+                                                data_source='{}.overlap_crossmatch_analysis'.format(
+                                                    __taskname__),
+                                                description='overlap crossmatch_analysis results',
+                                                timestamp=json_timestamp,
+                                                time_since_epoch=json_time_since_epoch)
+        diagnostic_obj.add_update_info_item('general information', "number of overlap regions present",
+                                            len(total_obj_mapping_dict[total_obj_idx]))
+        for foo in enumerate(total_obj_mapping_dict[total_obj_idx]):
+            overlap_ctr = foo[0]
+            bit_value = foo[1]
+            section_title_base_string = "overlap region #{}".format(overlap_ctr + 1)
+
+            # build dictionary to populate "overlap crossmatch information" section of json file
+            overlap_region_info_values = collections.OrderedDict()
+            overlap_region_info_descrip = collections.OrderedDict()
+            overlap_region_info_units = collections.OrderedDict()
+            overlap_region_info_values["overlap region size"] = overlap_dict[bit_value]['idx_ra'][0].size
+            overlap_region_info_descrip["overlap region size"] = "Size of overlap region"
+            overlap_region_info_units["overlap region size"] = "pixels"
+
+            overlap_region_info_values["reference catalog name"] = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(overlap_dict[bit_value]["ref_index"])])
+            overlap_region_info_descrip["reference catalog name"] = "Name of reference catalog used in the crossmatch"
+            overlap_region_info_units["reference catalog name"] = "unitless"
+
+            overlap_region_info_values["comparison catalog name"] = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(overlap_dict[bit_value]["comp_index"])])
+            overlap_region_info_descrip["comparison catalog name"] = "Name of comparison catalog used in the crossmatch"
+            overlap_region_info_units["comparison catalog name"] = "unitless"
+
+            overlap_region_info_values["total reference catalog size"] = initial_cat_sizes[bit_value][overlap_dict[bit_value]["ref_index"]]
+            overlap_region_info_descrip["total reference catalog size"] = "Total number of sources in the reference catalog"
+            overlap_region_info_units["total reference catalog size"] = "unitless"
+
+            overlap_region_info_values["total comparison catalog size"] = initial_cat_sizes[bit_value][overlap_dict[bit_value]["comp_index"]]
+            overlap_region_info_descrip["total comparison catalog size"] = "Total number of sources in the comparison catalog"
+            overlap_region_info_units["total comparison catalog size"] = "unitless"
+
+            overlap_region_info_values["number of reference sources available for crossmatch"] = overlap_dict[bit_value]["ref cat size"]
+            overlap_region_info_descrip["number of reference sources available for crossmatch"] = "Total number of reference catalog sources in overlap region suitable for crossmatch"
+            overlap_region_info_units["number of reference sources available for crossmatch"] = "unitless"
+
+            overlap_region_info_values["number of comparison sources available for crossmatch"] = overlap_dict[bit_value]["comp cat size"]
+            overlap_region_info_descrip["number of comparison sources available for crossmatch"] = "Total number of comparison catalog sources in overlap region suitable for crossmatch"
+            overlap_region_info_units["number of comparison sources available for crossmatch"] = "unitless"
+
+            overlap_region_info_values["number of crossmatched sources"] = overlap_dict[bit_value]["crossmatch details"][2]
+            overlap_region_info_descrip["number of crossmatched sources"] = "Total number of sources common to both comparison and reference catalogs"
+            overlap_region_info_units["number of crossmatched sources"] = "unitless"
+
+            # add "overlap crossmatch information"
+            diagnostic_obj.add_data_item(overlap_region_info_values, descriptions=overlap_region_info_descrip,
+                                         units=overlap_region_info_units,
+                                         title="{} details".format(section_title_base_string))
+
+            # build dictionary to populate the "statistics" sections of json file
+            for difference_type in stats_dict[bit_value]['statistics'].keys():
+                base_units = stats_dict[bit_value]['statistics'][difference_type]['Units']
+                del(stats_dict[bit_value]['statistics'][difference_type]['Units'])
+                overlap_region_stats_units = collections.OrderedDict()
+                overlap_region_stats_descrip = collections.OrderedDict()
+                for stat_type in stats_dict[bit_value]['statistics'][difference_type].keys():
+                    if stat_type.startswith("Percent"):
+                        overlap_region_stats_units[stat_type] = "unitless"
+                        overlap_region_stats_descrip[stat_type] = stat_type
+                    else:
+                        overlap_region_stats_units[stat_type] = base_units
+                        overlap_region_stats_descrip[stat_type] = stat_type
+                # add "statistics" section of "stats_dict"
+                diagnostic_obj.add_data_item(stats_dict[bit_value]['statistics'][difference_type],
+                                             descriptions=overlap_region_stats_descrip,
+                                             units=overlap_region_stats_units,
+                                             title="{} {}".format(section_title_base_string, difference_type))
+
+            # build dictionary to populate "data table" section of json file
+            overlap_region_data_table_units = collections.OrderedDict()
+            overlap_region_data_table_descrips = collections.OrderedDict()
+            unit_list = ["HAP MVM skycell pixels",
+                         "HAP MVM skycell pixels",
+                         "Degrees",
+                         "Degrees",
+                         "HAP MVM skycell pixels",
+                         "HAP MVM skycell pixels",
+                         "HAP MVM skycell pixels",
+                         "Arcseconds"]
+            descrip_list = ["Crossmatched reference X coordinate",
+                            "Crossmatched reference Y coordinate",
+                            "Crossmatched reference right ascention coordinate",
+                            "Crossmatched reference declination coordinate",
+                            "Crossmatched comparison - reference X coordinate differences",
+                            "Crossmatched comparison - reference Y coordinate differences",
+                            "Crossmatched comparison - reference on-sky separation (X-Y)",
+                            "Crossmatched comparison - reference on-sky separation (RA-Dec)"]
+            for key_item, descrip_item, unit_item in zip(stats_dict[bit_value]["data table"].keys(), descrip_list, unit_list):
+                overlap_region_data_table_descrips[key_item] = descrip_item
+                overlap_region_data_table_units[key_item] = unit_item
+            # add "data table section" of "stats_dict"
+            diagnostic_obj.add_data_item(stats_dict[bit_value]["data table"],
+                                         descriptions=overlap_region_data_table_descrips,
+                                         units=overlap_region_data_table_units,
+                                         title="{} crossmatched reference X, Y, RA, Dec, and crossmatched comparison - reference difference values".format(section_title_base_string))
+
+        # Write out the file
+        diagnostic_obj.write_json_file(json_filename, clobber=True)
+        log.info("Wrote crossmatch results file {}".format(json_filename))
+
+        # Clean up
+        del diagnostic_obj
+
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def crossmatch_analysis(total_obj_list, overlap_info, svm_sourcelist_list, ref_index, comp_index,
+                        matched_lines_ref, matched_lines_comp, log_level=logutil.logging.NOTSET):
+    """Preform statistical analysis of crossmatch results
+
+    Parameters
+    ----------
+    total_obj_list : list
+        list of skycell objects that store all the information for a set of observations for a given filter
+
+    overlap_info : dict
+        dictionary containing all relevant information about a single region of overlapping observations.
+
+    svm_sourcelist_list : list
+        two-element list of astropy.table objects containing the SVM catalogs to crossmatch
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    ref_index : int
+        indicates which of the two svm sourcelists was used as the reference for crossmatch purposes. A value
+        of '0' indicates the sourcelist that is the first element of svm_sourcelist_list was the reference,
+        and a value of '1' indicates that the second svm_sourcelist_list sourcelist was used as the reference.
+
+    comp_index : int
+        indicates which of the two svm sourcelists was used as the comparison for crossmatch purposes. A value
+        of '0' indicates the sourcelist that is the first element of svm_sourcelist_list was the comparison,
+        and a value of '1' indicates that the second svm_sourcelist_list sourcelist was used as the comparison
+
+    matched_lines_ref : list
+        indices of the reference catalog that crossmatch to the corresponding element in matched_lines_comp.
+
+    matched_lines_comp : list
+        indices of the comparison catalog that crossmatch to the corresponding element in matched_lines_ref.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    stats_dict : dict
+        Dictionary containing results of crossmatch analysis with two elements. The "statistics" element is a
+        two-layer nested dictionary containing various statistics computed for each of the coordinate
+        differences. It is keyed by difference type ("X-axis differences", "Y-axis differences",
+        "On-sky separation (X-Y)", and "On-sky separation (RA-Dec)"). The "data table" element consists of an
+        astropy table containing the crossmatched coordinate values from the reference catalog, as well as
+        the differences (which were used to compute the statistics sorted in the "statistics" dictionaries.)
+    """
+    log.setLevel(log_level)
+
+    # compile lists of matched X, Y, RA and DEC for calculation of differences
+    ref_data = svm_sourcelist_list[ref_index]
+    comp_data = svm_sourcelist_list[comp_index]
+    matching_values_ref_x = ref_data['X-Skycell'][[matched_lines_ref]]
+    matching_values_ref_y = ref_data['Y-Skycell'][[matched_lines_ref]]
+    matching_values_ref_ra = ref_data['RA'][[matched_lines_ref]]
+    matching_values_ref_dec = ref_data['DEC'][[matched_lines_ref]]
+    matching_values_comp_x = comp_data['X-Skycell'][[matched_lines_comp]]
+    matching_values_comp_y = comp_data['Y-Skycell'][[matched_lines_comp]]
+    matching_values_comp_ra = comp_data['RA'][[matched_lines_comp]]
+    matching_values_comp_dec = comp_data['DEC'][[matched_lines_comp]]
+
+    # get coordinate system type total_obj info
+    ref_frame = total_obj_list[overlap_info["total_obj_list_idx_{}".format(str(ref_index))]].meta_wcs.wcs.radesys.lower()
+    comp_frame = total_obj_list[overlap_info["total_obj_list_idx_{}".format(str(comp_index))]].meta_wcs.wcs.radesys.lower()
+
+    # convert reference and comparison RA/Dec values into SkyCoord objects
+    matching_values_ref_rd = SkyCoord(matching_values_ref_ra.tolist(), matching_values_ref_dec.tolist(),
+                                      frame=ref_frame, unit="deg")
+    matching_values_comp_rd = SkyCoord(matching_values_comp_ra.tolist(), matching_values_comp_dec.tolist(),
+                                       frame=comp_frame, unit="deg")
+    # convert to ICRS coord system
+    if ref_frame != "icrs":
+        matching_values_ref_rd = matching_values_ref_rd.icrs
+    if comp_frame != "icrs":
+        matching_values_comp_rd = matching_values_comp_rd.icrs
+
+    # compute differences
+    diff_x = (matching_values_comp_x - matching_values_ref_x)
+    diff_y = (matching_values_comp_y - matching_values_ref_y)
+    diff_xy = np.sqrt(diff_x ** 2 + diff_y ** 2)
+    diff_rd = matching_values_comp_rd.separation(matching_values_ref_rd).arcsec
+
+    # set up return dictionary
+    stats_dict = {}
+    stats_dict["statistics"] = {}
+
+    # Compute crossmatched position difference statistics
+    diff_list = [diff_x, diff_y, diff_xy, diff_rd]
+    title_list = ["X-axis differences", "Y-axis differences", "On-sky separation (X-Y)", "On-sky separation (RA-Dec)"]
+    units_list = ["HAP pixels", "HAP pixels", "HAP pixels", "Arcseconds"]
+    for diff_ra, title, units in zip(diff_list, title_list, units_list):
+        log.info("Comparison - reference {} statistics ({})".format(title, units))
+        stats_dict["statistics"][title] = idslxm.compute_stats(diff_ra, title, log_level=log_level)
+        stats_dict["statistics"][title]["Units"] = units
+
+    # build data table of crossmatched coords and differences to be returned.
+    data_col_list = [matching_values_ref_x,
+                     matching_values_ref_y,
+                     matching_values_ref_ra,
+                     matching_values_ref_dec]
+    stats_dict["data table"] = Table(data_col_list)
+    diff_col_list = [diff_x, diff_y, diff_xy, Column(diff_rd)]
+    stats_dict["data table"].add_columns(diff_col_list, names=title_list)
+    return stats_dict
+# ------------------------------------------------------------------------------------------------------------
+
+
+def crossmatch_sources(overlap_info, svm_sourcelist_list, log_level=logutil.logging.NOTSET):
+    """identify sources found in both sourcelists using stsci.stimage.xyxymatch
+
+    Parameters
+    ----------
+    overlap_info : dict
+        dictionary containing all relevant information about a single region of overlapping observations.
+
+    svm_sourcelist_list : list
+        two-element list of astropy.table objects containing the SVM catalogs to crossmatch
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    ref_index : int
+        indicates which of the two svm sourcelists was used as the reference for crossmatch purposes. A value
+        of '0' indicates the sourcelist that is the first element of svm_sourcelist_list was the reference,
+        and a value of '1' indicates that the second svm_sourcelist_list sourcelist was used as the reference.
+
+    comp_index : int
+        indicates which of the two svm sourcelists was used as the comparison for crossmatch purposes. A value
+        of '0' indicates the sourcelist that is the first element of svm_sourcelist_list was the comparison,
+        and a value of '1' indicates that the second svm_sourcelist_list sourcelist was used as the
+        comparison.
+
+    matched_lines_ref : list
+        indices of the reference catalog that crossmatch to the corresponding element in matched_lines_comp.
+
+    matched_lines_ref : list
+        indices of the comparison catalog that crossmatch to the corresponding element in matched_lines_ref.
+
+    cross_match_details : list
+        three-element list containing the number suitable ref and comp sources available for crossmatch, and
+        the number of sources actually crossmatched
+    """
+    log.setLevel(log_level)
+    # The sourcelist with more sources is automatically set as the "reference" catalog that the other
+    # sourcelist (aka the "comparison" catalog) will be crossmatched to
+    if len(svm_sourcelist_list[0]) >= len(svm_sourcelist_list[1]):
+        ref_index = 0
+        comp_index = 1
+    else:
+        ref_index = 1
+        comp_index = 0
+
+    log.info("Reference catalog: {}, {} sources".format(os.path.basename(overlap_info["svm_sourcelist_{}".format(str(ref_index))]), len(svm_sourcelist_list[ref_index])))
+    log.info("Comparison catalog: {}, {} sources".format(os.path.basename(overlap_info["svm_sourcelist_{}".format(str(comp_index))]), len(svm_sourcelist_list[comp_index])))
+
+    # prepare xyxymatch inputs
+    ref_xy = np.stack((svm_sourcelist_list[ref_index]['X-Skycell'], svm_sourcelist_list[ref_index]['Y-Skycell']), axis=1)
+    comp_xy = np.stack((svm_sourcelist_list[comp_index]['X-Skycell'], svm_sourcelist_list[comp_index]['Y-Skycell']), axis=1)
+    
+    # execute crossmatch
+    try:
+        matches = xyxymatch(comp_xy, ref_xy, tolerance=20.0, separation=1.0)
+    except Exception:
+        # If xyxymatch crashes, return with values that the calling code can easily use for error handling.
+        log.warning("Warning: Unable to continue with crossmatch. stsci.stimage.xyxymatch encountered a problem attempting to crossmatch the catalogs in this overlap region.")
+        return -1, -1, [], [], []
+    # Report number and percentage of the total number of detected ref and comp sources that were matched
+    log.info("Sourcelist Matching Results")
+    log.info("Reference sourcelist:  {} of {} total sources matched ({} %)".format(len(matches), len(ref_xy), 100.0 * (float(len(matches)) / float(len(ref_xy)))))
+    log.info("Comparison sourcelist: {} of {} total sources matched ({} %)".format(len(matches), len(comp_xy), 100.0 * (float(len(matches)) / float(len(comp_xy)))))
+
+    # extract indices of the matching ref and comp lines and then use them to compile lists of matched X, Y,
+    # RA and DEC for calculation of differences
+    matched_lines_comp = []
+    matched_lines_ref = []
+    for item in matches:
+        matched_lines_comp.append(item[2])
+        matched_lines_ref.append(item[5])
+    cross_match_details = [len(ref_xy), len(comp_xy), len(matches)]
+    return ref_index, comp_index, matched_lines_ref, matched_lines_comp, cross_match_details
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET):
+    """determines if there are any regions where observations overlap.
+
+    Parameters
+    ----------
+    total_obj_list : list
+        List of TotalProduct objects, one object per instrument/detector/filter combination
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    ctx_count_ra : numpy.ndarray
+        exposure population context array
+
+    ctx_map_ra : numpy.ndarray
+        exposure footprint context array
+
+    layer_dict : dict
+        Dictionary containing the drizzled filename and ippsss information for each exposure keyed by layer
+        number (which ties this information to the ctx_map array)
+
+    layer_ctr : int
+        total number of individual "layers" or footprints present.
+    """
+    log.setLevel(log_level)
+    layer_ctr = 0
+    layer_dict = {}
+    for tot_obj_list_idx, total_obj in zip(range(0, len(total_obj_list)), total_obj_list):
+        if not total_obj.drizzle_filename.endswith("_coarse-all_drz.fits"):
+            ippsss_list = []
+            for exp_obj in total_obj.edp_list:
+                ippsss_list.append(exp_obj.exposure_name[:6])
+            ippsss_list = list(set(ippsss_list))
+            for ippsss in ippsss_list:
+                img_list = glob.glob("{}*_fl?.fits".format(ippsss))
+                skycell = cell_utils.SkyCell.from_name(total_obj.skycell.sky_cell_id)
+                footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
+                footprint.build(img_list)
+                if layer_ctr == 0:
+                    ctx_map_ra = np.zeros_like(footprint.total_mask, dtype=np.int64)  # This should allow for a max of 35 unique footprints in the skycell
+                    ctx_count_ra = np.zeros_like(footprint.total_mask)
+                ctx_count_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 1)  # Build array maps number of overlapping datasets for each skycell pixel
+                ctx_map_ra += np.where(footprint.total_mask == 0, footprint.total_mask, 2**layer_ctr)  # Build context array that stores footprint information broken down by instrument, detector, filter, proposal and visit
+                layer_dict[2**layer_ctr] = {}
+                layer_dict[2 ** layer_ctr]["mode"] = total_obj.drizzle_filename
+                layer_dict[2 ** layer_ctr]["ippsss"] = ippsss
+                layer_dict[2 ** layer_ctr]["total_obj_list_idx"] = tot_obj_list_idx
+                layer_ctr += 1
+    return ctx_count_ra, ctx_map_ra, layer_dict, layer_ctr
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOTSET):
+    """Locates all overlap region(s) present
+
+    Parameters
+    ----------
+    ctx_map_ra : numpy.ndarray
+        exposure footprint context array
+
+    layer_dict : dict
+        Dictionary containing the drizzled filename and ippsss information for each exposure keyed by layer
+        number (which ties this information to the ctx_map array)
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    overlap_dict : dict
+        Dictionary keyed by the bit value of the overlap containing relevant information
+    """
+    log.setLevel(log_level)
+    known_bits_list = sorted(layer_dict.keys())
+    overlap_dict = {}
+    test_bits_list = known_bits_list.copy()
+    test_bits_list.reverse()
+    test_bits_list = test_bits_list
+    all_bit_values = list(set(ctx_map_ra.flatten().tolist()))
+    indices = np.argwhere(np.isin(all_bit_values,
+                                  known_bits_list))  # get list indices of list elements that are just single (not combination) bit values
+    all_combo_bit_values = np.delete(all_bit_values, indices)  # remove single values from list.
+    all_combo_bit_values = np.flip(all_combo_bit_values)
+    for combo_value in all_combo_bit_values:
+        idx_ra = np.where(ctx_map_ra == combo_value)
+        bit_list = []
+        for test_bit in test_bits_list:  # deconstruct each combination bit value into it's components
+            if combo_value & test_bit > 0:
+                bit_list.append(test_bit)
+        for item in combinations(bit_list, 2):  # update overlap_dict with information about overlap(s) in this region.
+            bitsum = item[0] + item[1]
+            if bitsum in overlap_dict.keys():
+                overlap_dict[bitsum]["idx_ra"][0] = np.concatenate(
+                    (overlap_dict[bitsum]["idx_ra"][0], idx_ra[0]))
+                overlap_dict[bitsum]["idx_ra"][1] = np.concatenate(
+                    (overlap_dict[bitsum]["idx_ra"][1], idx_ra[1]))
+            else:
+                overlap_dict[bitsum] = {}
+                overlap_dict[bitsum]["values"] = item
+                overlap_dict[bitsum]["idx_ra"] = [idx_ra[0], idx_ra[1]]
+                overlap_dict[bitsum]["mode_0"] = layer_dict[item[0]]["mode"]
+                overlap_dict[bitsum]["ippsss_0"] = layer_dict[item[0]]["ippsss"]
+                overlap_dict[bitsum]["total_obj_list_idx_0"] = layer_dict[item[0]]["total_obj_list_idx"]
+                overlap_dict[bitsum]["mode_1"] = layer_dict[item[1]]["mode"]
+                overlap_dict[bitsum]["ippsss_1"] = layer_dict[item[1]]["ippsss"]
+                overlap_dict[bitsum]["total_obj_list_idx_1"] = layer_dict[item[1]]["total_obj_list_idx"]
+    return overlap_dict
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
+    """ locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of
+    overlapping observations for crossmatch
+
+    Parameters
+    ----------
+    overlap_dict : dict
+        Dictionary keyed by the bit value of the overlap containing the following:
+        1) values: a list of the bit values of the overlapping layers
+        2) idx_ra: the x and y index values of all pixels in ctx_map_ra in this overlap region
+        3) mode_0: the drizzle file name of the first component of the overlap
+        4) ippsss_0: the ippsss of the dataset of the first component of the overlap
+        5) total_obj_list_idx_0: the total_obj_list element of the first component of the overlap
+        6) mode_1: the drizzle file name of the second component of the overlap
+        7) ippsss_1: the ippsss of the dataset of the second component of the overlap
+        8) total_obj_list_idx_1: the total_obj_list element of the second component of the overlap
+
+    sourcelist_type: str
+        Type of sourcelist to search for. MUST be either "point" or "segment".
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    overlap_dict : dict
+        updated version of input arg 'overlap_dict' updated to include the full paths of the relevant
+        sourcelists. New information is stored in keys "sourcelist_0" and sourcelist_1".
+    """
+    log.setLevel(log_level)
+    inst_map = {"i": "wfc3", "j": "acs"}
+    for bit_value in overlap_dict.keys():
+        for set_num in ["0", "1"]:
+            ippsss = overlap_dict[bit_value]["ippsss_{}".format(set_num)]
+            mode = overlap_dict[bit_value]["mode_{}".format(set_num)]
+
+            # build search strings for svm drz/drc filter image, corresponding sourcelist
+            img_search_string = "{}{}".format(inst_map[ippsss[0]], mode.split(inst_map[ippsss[0]])[1])
+            img_search_string = "hst_*_??_" + img_search_string.replace("all", ippsss)
+            img_search_string = img_search_string.replace("drz", "dr?")
+            sl_search_string = img_search_string.replace("dr?.fits", "{}-cat.ecsv".format(sourcelist_type))
+
+            # build search paths.
+            cwd = os.getcwd()
+            search_path_list = []
+            search_path_list.append(cwd+"/")
+            search_path_list.append(cwd.replace(cwd.split("/")[-1], "svm_{}".format(ippsss))+"/")
+
+            # execute searches
+            for search_path in search_path_list:
+                for search_item in [img_search_string, sl_search_string]:
+                    full_search_string = search_path+search_item
+                    results = glob.glob(full_search_string)
+                    if results:
+                        if results[0].endswith(".fits"):
+                            overlap_dict[bit_value]["svm_img_{}".format(set_num)] = results[0]
+                        else:
+                            overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] = results[0]
+    return overlap_dict
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+def reject_sources_not_in_overlap_region(svm_sourcelist, overlap_region_mask, log_level=logutil.logging.NOTSET):
+    """Reject sources from sourcelists that are outside overlap region.
+
+    parameters
+    ----------
+    svm_sourcelist : astropy.table
+        SVM catalog to process
+
+    overlap_region_mask : numpy.ndarray
+        mask that describes which pixels are inside the overlap region. Pixel value 0 = outside overlap
+        region and pixel value 1 = inside overlap region.
+
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on the screen and written to the
+        .log file.  Default value is 'NOTSET'.
+
+    Returns
+    -------
+    svm_sourcelist : astropy.table
+        updated version of input catalog with sourcelist points trimmed out whose X-Skycell,
+        Y-Skycell coords are outside the overlap region
+
+    """
+    log.setLevel(log_level)
+    # build list of rows to remove from sourcelist
+    rows_to_remove = []
+    for blarg in enumerate(svm_sourcelist):
+        linenum = blarg[0]
+        line = blarg[1]
+        x = int(line['X-Skycell'])
+        y = int(line['Y-Skycell'])
+        if overlap_region_mask[y, x] == 0:
+            rows_to_remove.append(linenum)
+    n_rows_to_remove = len(rows_to_remove)
+    if n_rows_to_remove > 0:
+        svm_sourcelist.remove_rows(rows_to_remove)
+        if n_rows_to_remove == 1:
+            plural_str = ""
+        else:
+            plural_str = "s"
+        log.info("Removed {} source{} outside overlap region bounds".format(n_rows_to_remove, plural_str))
+    else:
+        log.info("No sources found outside overlap region bounds")
+    log.info("{} sources remain.".format(len(svm_sourcelist)))
+    return svm_sourcelist
 
 # ============================================================================================================
 
@@ -258,6 +1023,8 @@ if __name__ == "__main__":
                                                  'are specified, ALL QA steps will be executed.')
     parser.add_argument('input_filename', help='_total_list.pickle file that holds vital information about '
                                                'the processing run')
+    parser.add_argument('-oxm', '--run_overlap_crossmatch', required=False, action='store_true',
+                        help='Perform overlap crossmatch analysis?')
     parser.add_argument('-wcs', '--run_report_wcsname', required=False, action='store_true',
                         help="Report the WCSNAME information for each exposure of an MVM layer product")
     parser.add_argument('-l', '--log_level', required=False, default='info',
@@ -267,7 +1034,8 @@ if __name__ == "__main__":
                              'includes all log statements with a log_level left of the specified level. '
                              'Specifying "critical" will only record/display "critical" log statements, and '
                              'specifying "error" will record/display both "error" and "critical" log '
-                             'statements, and so on.')
+                             'statements, and so on. If not explicitly specified, the default log level '
+                             '"info" will be used.')
     user_args = parser.parse_args()
 
     # set up logging
@@ -281,7 +1049,7 @@ if __name__ == "__main__":
 
     # verify that input file exists
     if not os.path.exists(user_args.input_filename):
-        err_msg = "File {} doesn't exist.".format(user_args.input_filename)
+        err_msg = "File '{}' doesn't exist.".format(user_args.input_filename)
         log.critical(err_msg)
         raise Exception(err_msg)
 
@@ -298,7 +1066,9 @@ if __name__ == "__main__":
     # if no QA steps are explicitly turned on in the command-line call, run ALL the QA steps
     if all_qa_steps_off:
         log.info("No specific QA switches were turned on. All QA steps will be executed.")
-        user_args.run_report_wcs = True
+        user_args.run_report_wcsname = True
+        user_args.run_overlap_crossmatch = True
+
 
     # display status summary indicating which QA steps are turned on and which steps are turned off
     toplinestring = "-"*(int(max_step_str_length/2)-6)
@@ -317,7 +1087,6 @@ if __name__ == "__main__":
     filehandler = open(user_args.input_filename, 'rb')
     total_obj_list = pickle.load(filehandler)
     run_quality_analysis(total_obj_list,
-                         run_report_wcs=user_args.run_report_wcs,
+                         run_overlap_crossmatch=user_args.run_overlap_crossmatch,
+                         run_report_wcsname=user_args.run_report_wcsname,
                          log_level=log_level)
-
-
