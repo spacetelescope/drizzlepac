@@ -898,7 +898,7 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
                 overlap_dict[bitsum]["mode_1"] = layer_dict[item[1]]["mode"]
                 overlap_dict[bitsum]["ippsss_1"] = layer_dict[item[1]]["ippsss"]
                 overlap_dict[bitsum]["total_obj_list_idx_1"] = layer_dict[item[1]]["total_obj_list_idx"]
-    overlap_dict[5] = overlap_dict[3]  # TODO: remove!!!
+    # overlap_dict[5] = overlap_dict[3]  # TODO: remove!!! Line is for testing only!!!
     return overlap_dict
 
 # ------------------------------------------------------------------------------------------------------------
