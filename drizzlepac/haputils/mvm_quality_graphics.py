@@ -143,9 +143,32 @@ def build_overlap_crossmatch_plots(data_source):
                               "Percent_of_all_diff_values_within_1-sigma_of_the_clipped_mean",
                               "Percent_of_all_diff_values_within_2-sigma_of_the_clipped_mean",
                               "Percent_of_all_diff_values_within_3-sigma_of_the_clipped_mean"]
+    data_table_column_basename = "crossmatched_reference_X,_Y,_RA,_Dec,_and_crossmatched_comparison_-_reference_difference_values"
+    data_table_colnames = ["X-Skycell",
+                           "Y-Skycell",
+                           "RA",
+                           "DEC",
+                           "X-axis differences",
+                           "Y-axis differences",
+                           "On-sky separation (X-Y)",
+                           "On-sky separation (RA-Dec)"]
+
     n_layers_colname = 'gen_info.number of overlap regions present'
     num_layers = get_pandas_data(data_source, [n_layers_colname])[n_layers_colname]
-
+    columns_to_retrieve = []
+    for layer_ctr in range(1, max(num_layers.values)+1):
+        column_basename = "overlap_region_#{}".format(layer_ctr)
+        # add "overlap details" columns
+        for details_colname in details_column_basenames:
+            columns_to_retrieve.append("{}_details.{}".format(column_basename, details_colname))
+        # add stats columns for each difference type
+        for diff_type in difference_column_basenames:
+            for stats_colname in stats_column_basenames:
+                columns_to_retrieve.append("{}_{}.{}".format(column_basename, diff_type, stats_colname))
+        # add all the data table columns
+        for data_table_colname in data_table_colnames:
+            columns_to_retrieve.append("{}_{}.{}".format(column_basename, data_table_column_basename, data_table_colname))
+    overlap_dataframe = get_pandas_data(data_source, columns_to_retrieve)
 
 
     pdb.set_trace()
