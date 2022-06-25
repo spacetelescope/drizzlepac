@@ -155,27 +155,51 @@ def build_overlap_crossmatch_plots(data_source):
 
     n_layers_colname = 'gen_info.number of overlap regions present'
     num_layers = get_pandas_data(data_source, [n_layers_colname])[n_layers_colname]
-    columns_to_retrieve = []
-    for layer_ctr in range(1, max(num_layers.values)+1):
-        column_basename = "overlap_region_#{}".format(layer_ctr)
-        # add "overlap details" columns
-        for details_colname in details_column_basenames:
-            columns_to_retrieve.append("{}_details.{}".format(column_basename, details_colname))
-        # add stats columns for each difference type
-        for diff_type in difference_column_basenames:
-            for stats_colname in stats_column_basenames:
-                columns_to_retrieve.append("{}_{}.{}".format(column_basename, diff_type, stats_colname))
-        # add all the data table columns
-        for data_table_colname in data_table_colnames:
-            columns_to_retrieve.append("{}_{}.{}".format(column_basename, data_table_column_basename, data_table_colname))
-    overlap_dataframe = get_pandas_data(data_source, columns_to_retrieve)
+    # columns_to_retrieve = []
+    # for layer_ctr in range(1, max(num_layers.values)+1):
+    #     column_basename = "overlap_region_#{}".format(layer_ctr)
+    #     # add "overlap details" columns
+    #     for details_colname in details_column_basenames:
+    #         columns_to_retrieve.append("{}_details.{}".format(column_basename, details_colname))
+    #     # add stats columns for each difference type
+    #     for diff_type in difference_column_basenames:
+    #         for stats_colname in stats_column_basenames:
+    #             columns_to_retrieve.append("{}_{}.{}".format(column_basename, diff_type, stats_colname))
+    #     # add all the data table columns
+    #     for data_table_colname in data_table_colnames:
+    #         columns_to_retrieve.append("{}_{}.{}".format(column_basename, data_table_column_basename, data_table_colname))
+    # overlap_dataframe = get_pandas_data(data_source, columns_to_retrieve)
 
     # overlap_dataframe =overlap_dataframe[overlap_dataframe.
     # create blank dataframe restacked_overlap_dataframe"
-    # loop over n_layers
-    #loop over gen_info.dataframe_index
+    restacked_overlap_dataframe = pd.DataFrame()
+
+    for df_indexname, layer_val in zip(num_layers.index.values, num_layers.values):
+        for layer_ctr in range(1, layer_val + 1):
+            columns_to_retrieve = []
+            column_basename = "overlap_region_#{}".format(layer_ctr)
+            # add "overlap details" columns
+            for details_colname in details_column_basenames:
+                columns_to_retrieve.append("{}_details.{}".format(column_basename, details_colname))
+            # add stats columns for each difference type
+            for diff_type in difference_column_basenames:
+                for stats_colname in stats_column_basenames:
+                    columns_to_retrieve.append("{}_{}.{}".format(column_basename, diff_type, stats_colname))
+            # add all the data table columns
+            for data_table_colname in data_table_colnames:
+                columns_to_retrieve.append(
+                    "{}_{}.{}".format(column_basename, data_table_column_basename, data_table_colname))
+            overlap_dataframe = get_pandas_data(data_source, columns_to_retrieve)
+            overlap_dataframe = overlap_dataframe[overlap_dataframe['gen_info.dataframe_index'] == df_indexname]
+            overlap_dataframe['gen_info.dataframe_index'] = "{}_{}".format(overlap_dataframe['gen_info.dataframe_index'],layer_ctr)
+            col_rename_dict = {}
+            for colname in columns_to_retrieve:
+                col_rename_dict[colname] = colname.replace(column_basename, "overlap_region")
+            overlap_dataframe = overlap_dataframe.rename(columns=col_rename_dict)
+            restacked_overlap_dataframe.append(overlap_dataframe)
+
     # use following line of code to filter out all other DF rows besides the one we want:
-    # overlap_dataframe =overlap_dataframe[overlap_dataframe['gen_info.dataframe_index'] == <dataframe_index value>]
+    #
     # add overlap number to then end of dataframe index
     # rename portions of column titles with "overlap_region_#N" to simply "overlap_region"
     # append this updated one-row dataframe to restacked_overlap_dataframe
