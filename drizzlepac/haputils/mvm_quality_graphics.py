@@ -170,6 +170,15 @@ def build_overlap_crossmatch_plots(data_source):
             columns_to_retrieve.append("{}_{}.{}".format(column_basename, data_table_column_basename, data_table_colname))
     overlap_dataframe = get_pandas_data(data_source, columns_to_retrieve)
 
+    # overlap_dataframe =overlap_dataframe[overlap_dataframe.
+    # create blank dataframe restacked_overlap_dataframe"
+    # loop over n_layers
+    #loop over gen_info.dataframe_index
+    # use following line of code to filter out all other DF rows besides the one we want:
+    # overlap_dataframe =overlap_dataframe[overlap_dataframe['gen_info.dataframe_index'] == <dataframe_index value>]
+    # add overlap number to then end of dataframe index
+    # rename portions of column titles with "overlap_region_#N" to simply "overlap_region"
+    # append this updated one-row dataframe to restacked_overlap_dataframe
 
     pdb.set_trace()
 
