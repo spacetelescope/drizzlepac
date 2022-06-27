@@ -112,12 +112,13 @@ def build_mvm_plots(data_source, output_basename='', display_plot=False, log_lev
         output_basename = "mvm_qa"
     else:
         output_basename = "{}_mvm_qa".format(output_basename)
-    build_overlap_crossmatch_plots(data_source)
+    build_overlap_crossmatch_plots(data_source, log_level=log_level)
 
 # ------------------------------------------------------------------------------------------------------------
 
 
-def build_overlap_crossmatch_plots(data_source):
+def build_overlap_crossmatch_plots(data_source, log_level=logutil.logging.INFO):
+    log.setLevel(log_level)
     details_column_basenames = ["overlap_region_size",
                                 "reference_catalog_name",
                                 "comparison_catalog_name",
@@ -170,10 +171,9 @@ def build_overlap_crossmatch_plots(data_source):
     #         columns_to_retrieve.append("{}_{}.{}".format(column_basename, data_table_column_basename, data_table_colname))
     # overlap_dataframe = get_pandas_data(data_source, columns_to_retrieve)
 
-    # overlap_dataframe =overlap_dataframe[overlap_dataframe.
-    # create blank dataframe restacked_overlap_dataframe"
+    # retrieve relevant data and "restack" and rename dataframe so that all the information for each overlap
+    # region is stored in seperate rows
     restacked_overlap_dataframe = pd.DataFrame()
-
     for df_indexname, layer_val in zip(num_layers.index.values, num_layers.values):
         for layer_ctr in range(1, layer_val + 1):
             columns_to_retrieve = []
@@ -191,18 +191,22 @@ def build_overlap_crossmatch_plots(data_source):
                     "{}_{}.{}".format(column_basename, data_table_column_basename, data_table_colname))
             overlap_dataframe = get_pandas_data(data_source, columns_to_retrieve)
             overlap_dataframe = overlap_dataframe[overlap_dataframe['gen_info.dataframe_index'] == df_indexname]
-            overlap_dataframe['gen_info.dataframe_index'] = "{}_{}".format(overlap_dataframe['gen_info.dataframe_index'],layer_ctr)
+            overlap_dataframe['gen_info.dataframe_index'] = "{}_overlap_region_{}".format(overlap_dataframe['gen_info.dataframe_index'][0], layer_ctr)
             col_rename_dict = {}
             for colname in columns_to_retrieve:
                 col_rename_dict[colname] = colname.replace(column_basename, "overlap_region")
             overlap_dataframe = overlap_dataframe.rename(columns=col_rename_dict)
-            restacked_overlap_dataframe.append(overlap_dataframe)
+            restacked_overlap_dataframe = restacked_overlap_dataframe.append(overlap_dataframe)
+    # Sort columns alphabetically to make it more human-friendly
+    restacked_overlap_dataframe = restacked_overlap_dataframe[overlap_dataframe.columns.sort_values()]
+    # optionally write dataframe to .csv file.
+    if log_level == logutil.logging.DEBUG:
+        output_csv_filename = "testout.csv"
+        if os.path.exists(output_csv_filename):
+            os.remove(output_csv_filename)
+        restacked_overlap_dataframe.to_csv(output_csv_filename)
+        log.debug("Wrote restacked dataframe to csv file {}".format(output_csv_filename))
 
-    # use following line of code to filter out all other DF rows besides the one we want:
-    #
-    # add overlap number to then end of dataframe index
-    # rename portions of column titles with "overlap_region_#N" to simply "overlap_region"
-    # append this updated one-row dataframe to restacked_overlap_dataframe
 
     pdb.set_trace()
 
@@ -223,7 +227,7 @@ if __name__ == "__main__":
                         help='If specified, plots will be automatically opened in the default web browser as '
                              'they are generated. Otherwise, .html plot files will be generated but not '
                              'opened.')
-    parser.add_argument('-l', '--log_level', required=False, default='info',
+    parser.add_argument('-l', '--log_level', required=False, default='debug',
                         choices=["critical", "error", "warning", "info", "debug", "notset"],
                         help='The desired level of verboseness in the log statements displayed on the screen '
                              'and written to the .log file.')
