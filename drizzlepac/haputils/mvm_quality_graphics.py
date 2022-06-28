@@ -288,11 +288,9 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                               "Percent_of_all_diff_values_within_3-sigma_of_the_clipped_mean"]
     xmatch_cds = ColumnDataSource(dataframe)
     # generate plots of x vs. y components of various stat. measures for each difference
-    output_basename = "{}_overlap_crossmatch_stats_plots".format(output_basename)
-    if not output_basename.endswith('.html'):
-        output = output_basename + '.html'
-    else:
-        output = output_basename
+    output = "{}_overlap_crossmatch_stats_plots".format(output_basename)
+    if not output.endswith('.html'):
+        output = output + '.html'
     # Set the output file immediately as advised by Bokeh.
     output_file(output)
 
@@ -406,10 +404,74 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
     log.info("Output HTML graphic file {} has been written.\n".format(output))
 
     # generate quad resid (x vs. dx, y vs. dx, x vs. dy, y vs. dy) plots for each DF row
-    # for index, row in dataframe.iterrows():
-    #     pdb.set_trace()
-    # Set the output file immediately as advised by Bokeh.
-    pdb.set_trace()
+
+    for dfindex, dfrow in dataframe.iterrows():
+        qr_df = pd.DataFrame()
+        qr_df = qr_df.append(dfrow)
+        qr_cds = ColumnDataSource(qr_df)
+        qr_dict = {"x": qr_cds.data['overlap_region_crossmatched_reference_X,_Y,_RA,_Dec,_and_crossmatched_comparison_-_reference_difference_values.X-Skycell'][0],
+                   "y": qr_cds.data['overlap_region_crossmatched_reference_X,_Y,_RA,_Dec,_and_crossmatched_comparison_-_reference_difference_values.Y-Skycell'][0],
+                   "dx": qr_cds.data['overlap_region_crossmatched_reference_X,_Y,_RA,_Dec,_and_crossmatched_comparison_-_reference_difference_values.X-axis differences'][0],
+                   "dy": qr_cds.data['overlap_region_crossmatched_reference_X,_Y,_RA,_Dec,_and_crossmatched_comparison_-_reference_difference_values.Y-axis differences'][0]}
+        qr_cds = ColumnDataSource(qr_dict)
+        output = "{} {}_overlap_crossmatch_residuals_plots".format(output_basename, qr_df['gen_info.dataframe_index'].values[0])
+        if not output.endswith('.html'):
+            output = output + '.html'
+        # Set the output file immediately as advised by Bokeh.
+        output_file(output)
+        # Define plots
+        html_title_text = Div(text="""<h1>Crossmatched comparison - reference residuals:<br>{}</h1>""".format(qr_df['gen_info.dataframe_index'].values[0]))
+        # TODO: add text that basically just adds hover_tips info defined for last plot to each plot
+        p1 = HAPFigure(title='X vs DX',
+                       x_label="X (pixels)",
+                       y_label='Delta[X] (pixels)',
+                       use_hover_tips=False)
+        p1.build_glyph('circle',
+                       x='x',
+                       y='dx',
+                       sourceCDS=qr_cds)
+
+        p2 = HAPFigure(title='X vs DY',
+                       x_label="X (pixels)",
+                       y_label='Delta[Y] (pixels)',
+                       use_hover_tips=False)
+        p2.build_glyph('circle',
+                       x='x',
+                       y='dy',
+                       sourceCDS=qr_cds)
+        row1 = row(p1.fig, p2.fig)
+
+        p3 = HAPFigure(title='Y vs DX',
+                       x_label="Y (pixels)",
+                       y_label='Delta[X] (pixels)',
+                       use_hover_tips=False)
+        p3.build_glyph('circle',
+                       x='y',
+                       y='dx',
+                       sourceCDS=qr_cds)
+
+        p4 = HAPFigure(title='Y vs DY',
+                       x_label="Y (pixels)",
+                       y_label='Delta[Y] (pixels)',
+                       use_hover_tips=False)
+        p4.build_glyph('circle',
+                       x='y',
+                       y='dy',
+                       sourceCDS=qr_cds)
+        row2 = row(p3.fig, p4.fig)
+        # Display and save
+        row_list = [html_title_text, row1, row2]
+        if display_plot:
+            show(column(row_list))
+        # Just save
+        else:
+            save(column(row_list))
+        log.info("Output HTML graphic file {} has been written.\n".format(output))
+
+    # TODO: sigma growth plots go here!
+
+    return output
+
 
 # ------------------------------------------------------------------------------------------------------------
 
