@@ -296,13 +296,14 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
     # Set the output file immediately as advised by Bokeh.
     output_file(output)
 
-    # something something something tooltips
+    # Generate the graphic-specific tooltips - be mindful of the default tooltips defined in graph_utils.py
+    # TODO: Add more detail to hovertips
 
     # Define the graphics
     # Create title text at the top of the html file
     html_title_text = Div(text="""<h1>Distribution characteristics of crossmatched sources identified in regions of overlapping observations in the MVM product</h1>""")
 
-    # Scatter plots!
+    # Scatter plots! #TODO: add more detail to hover_tips
     p0 = HAPFigure(title='Minimum difference value',
                    x_label='X minimum difference (pixels)',
                    y_label='Y minimum difference (pixels)')#,hover_tips=gaia_tips)
@@ -313,16 +314,91 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    glyph_color='colormap',
                    legend_group='inst_det')
 
+    p1 = HAPFigure(title='Maximum difference value',
+                   x_label='X maximum difference (pixels)',
+                   y_label='Y maximum difference (pixels)')#,hover_tips=gaia_tips)
+    p1.build_glyph('circle',
+                   x='overlap_region_X-axis_differences.Non-clipped_maximum',
+                   y='overlap_region_Y-axis_differences.Non-clipped_maximum',
+                   sourceCDS=xmatch_cds,
+                   glyph_color='colormap',
+                   legend_group='inst_det')
+    row1 = row(p0.fig, p1.fig)
 
+    p2 = HAPFigure(title='Median difference value',
+                   x_label='X median difference (pixels)',
+                   y_label='Y median difference (pixels)')#,hover_tips=gaia_tips)
+    p2.build_glyph('circle',
+                   x='overlap_region_X-axis_differences.Non-clipped_median',
+                   y='overlap_region_Y-axis_differences.Non-clipped_median',
+                   sourceCDS=xmatch_cds,
+                   glyph_color='colormap',
+                   legend_group='inst_det')
+
+    p3 = HAPFigure(title='Mean difference value',
+                   x_label='X mean difference (pixels)',
+                   y_label='Y mean difference (pixels)')#,hover_tips=gaia_tips)
+    p3.build_glyph('circle',
+                   x='overlap_region_X-axis_differences.Non-clipped_mean',
+                   y='overlap_region_Y-axis_differences.Non-clipped_mean',
+                   sourceCDS=xmatch_cds,
+                   glyph_color='colormap',
+                   legend_group='inst_det')
+    row2 = row(p2.fig, p3.fig)
+
+    p4 = HAPFigure(title='Difference standard deviation value',
+                   x_label='X standard deviation difference (pixels)',
+                   y_label='Y standard deviation difference (pixels)')#,hover_tips=gaia_tips)
+    p4.build_glyph('circle',
+                   x='overlap_region_X-axis_differences.Non-clipped_standard_deviation',
+                   y='overlap_region_Y-axis_differences.Non-clipped_standard_deviation',
+                   sourceCDS=xmatch_cds,
+                   glyph_color='colormap',
+                   legend_group='inst_det')
+
+    p5 = HAPFigure(title='3x3 sigma-clippped median difference value',
+                   x_label='X sigma-clipped median difference (pixels)',
+                   y_label='Y sigma-clipped median difference (pixels)')#,hover_tips=gaia_tips)
+    p5.build_glyph('circle',
+                   x='overlap_region_X-axis_differences.3x3-sigma_clipped_median',
+                   y='overlap_region_Y-axis_differences.3x3-sigma_clipped_median',
+                   sourceCDS=xmatch_cds,
+                   glyph_color='colormap',
+                   legend_group='inst_det')
+    row3 = row(p4.fig, p5.fig)
+
+    p6 = HAPFigure(title='3x3 sigma-clipped mean difference value',
+                   x_label='X sigma-clipped mean difference (pixels)',
+                   y_label='Y sigma-clipped mean difference (pixels)')#,hover_tips=gaia_tips)
+    p6.build_glyph('circle',
+                   x='overlap_region_X-axis_differences.3x3-sigma_clipped_mean',
+                   y='overlap_region_Y-axis_differences.3x3-sigma_clipped_mean',
+                   sourceCDS=xmatch_cds,
+                   glyph_color='colormap',
+                   legend_group='inst_det')
+
+    p7 = HAPFigure(title='3x3 sigma-clippped Difference standard deviation value',
+                   x_label='X sigma-clipped difference standard_deviation (pixels)',
+                   y_label='Y sigma-clipped difference standard_deviation (pixels)')#,hover_tips=gaia_tips)
+    p7.build_glyph('circle',
+                   x='overlap_region_X-axis_differences.3x3-sigma_clipped_standard_deviation',
+                   y='overlap_region_Y-axis_differences.3x3-sigma_clipped_standard_deviation',
+                   sourceCDS=xmatch_cds,
+                   glyph_color='colormap',
+                   legend_group='inst_det')
+    row4 = row(p6.fig, p7.fig)
     # Display and save
+    row_list = [row1, row2, row3, row4]
     if display_plot:
-        show(column(html_title_text, p0.fig))
-        # show(column(p4.fig, p0.fig, p1.fig, p2.fig, p3.fig))
+        show(column(row_list))
     # Just save
     else:
-        save(column(html_title_text, p0.fig))
+        save(column(row_list))
     log.info("Output HTML graphic file {} has been written.\n".format(output))
+
     # generate quad resid (x vs. dx, y vs. dx, x vs. dy, y vs. dy) plots for each DF row
+    for index, row in dataframe.iterrows():
+        pdb.set_trace()
     # Set the output file immediately as advised by Bokeh.
 
 
