@@ -397,7 +397,7 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    legend_group='gen_info.dataframe_index')
     row4 = row(p6.fig, p7.fig)
     # Display and save
-    row_list = [row1, row2, row3, row4]
+    row_list = [html_title_text, row1, row2, row3, row4]
     if display_plot:
         show(column(row_list))
     # Just save
