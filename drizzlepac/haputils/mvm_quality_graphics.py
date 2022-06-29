@@ -305,13 +305,17 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                      'Ref. SVM catalog name',
                      'Comp. SVM catalog name',
                      'Number of crossmatched sources']
-    hover_tips = build_tooltips(tooltips_list, hover_columns, list(range(0, len(hover_columns))))
+    tooltips_list_dynamic = ["X value", "Y value"]
+    # hover_tips = build_tooltips(tooltips_list, hover_columns, list(range(0, len(hover_columns))))
     # Define the graphics
     plot_list = []
     # Create title text at the top of the html file
     html_title_text = Div(text="""<h1>Distribution characteristics of crossmatched sources identified in regions of overlapping observations in the MVM product</h1>""")
     plot_list.append(html_title_text)
     # Scatter plots! #TODO: add more detail to hover_tips
+    hover_columns_dynamic = ['overlap_region_X-axis_differences.Non-clipped_minimum',
+                             'overlap_region_Y-axis_differences.Non-clipped_minimum']
+    hover_tips = build_tooltips(tooltips_list+tooltips_list_dynamic, hover_columns+hover_columns_dynamic, list(range(0, len(hover_columns)+2)))
     p0 = HAPFigure(title='Minimum difference value',
                    x_label='X minimum difference (pixels)',
                    y_label='Y minimum difference (pixels)', hover_tips=hover_tips)
@@ -322,6 +326,9 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    glyph_color='colormap',
                    legend_group='gen_info.dataframe_index')
 
+    hover_columns_dynamic = ['overlap_region_X-axis_differences.Non-clipped_maximum',
+                             'overlap_region_Y-axis_differences.Non-clipped_maximum']
+    hover_tips = build_tooltips(tooltips_list+tooltips_list_dynamic, hover_columns+hover_columns_dynamic, list(range(0, len(hover_columns)+2)))
     p1 = HAPFigure(title='Maximum difference value',
                    x_label='X maximum difference (pixels)',
                    y_label='Y maximum difference (pixels)', hover_tips=hover_tips)
@@ -334,6 +341,9 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
     row1 = row(p0.fig, p1.fig)
     plot_list.append(row1)
 
+    hover_columns_dynamic = ['overlap_region_X-axis_differences.Non-clipped_median',
+                             'overlap_region_Y-axis_differences.Non-clipped_median']
+    hover_tips = build_tooltips(tooltips_list+tooltips_list_dynamic, hover_columns+hover_columns_dynamic, list(range(0, len(hover_columns)+2)))
     p2 = HAPFigure(title='Median difference value',
                    x_label='X median difference (pixels)',
                    y_label='Y median difference (pixels)', hover_tips=hover_tips)
@@ -344,6 +354,9 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    glyph_color='colormap',
                    legend_group='gen_info.dataframe_index')
 
+    hover_columns_dynamic = ['overlap_region_X-axis_differences.Non-clipped_mean',
+                             'overlap_region_Y-axis_differences.Non-clipped_mean']
+    hover_tips = build_tooltips(tooltips_list+tooltips_list_dynamic, hover_columns+hover_columns_dynamic, list(range(0, len(hover_columns)+2)))
     p3 = HAPFigure(title='Mean difference value',
                    x_label='X mean difference (pixels)',
                    y_label='Y mean difference (pixels)', hover_tips=hover_tips)
@@ -356,6 +369,9 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
     row2 = row(p2.fig, p3.fig)
     plot_list.append(row2)
 
+    hover_columns_dynamic = ['overlap_region_X-axis_differences.Non-clipped_standard_deviation',
+                             'overlap_region_Y-axis_differences.Non-clipped_standard_deviation']
+    hover_tips = build_tooltips(tooltips_list+tooltips_list_dynamic, hover_columns+hover_columns_dynamic, list(range(0, len(hover_columns)+2)))
     p4 = HAPFigure(title='Difference standard deviation value',
                    x_label='X standard deviation difference (pixels)',
                    y_label='Y standard deviation difference (pixels)', hover_tips=hover_tips)
@@ -366,6 +382,9 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    glyph_color='colormap',
                    legend_group='gen_info.dataframe_index')
 
+    hover_columns_dynamic = ['overlap_region_X-axis_differences.3x3-sigma_clipped_median',
+                             'overlap_region_Y-axis_differences.3x3-sigma_clipped_median']
+    hover_tips = build_tooltips(tooltips_list+tooltips_list_dynamic, hover_columns+hover_columns_dynamic, list(range(0, len(hover_columns)+2)))
     p5 = HAPFigure(title='3x3 sigma-clipped median difference value',
                    x_label='X sigma-clipped median difference (pixels)',
                    y_label='Y sigma-clipped median difference (pixels)', hover_tips=hover_tips)
@@ -378,6 +397,9 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
     row3 = row(p4.fig, p5.fig)
     plot_list.append(row3)
 
+    hover_columns_dynamic = ['overlap_region_X-axis_differences.3x3-sigma_clipped_mean',
+                             'overlap_region_Y-axis_differences.3x3-sigma_clipped_mean']
+    hover_tips = build_tooltips(tooltips_list+tooltips_list_dynamic, hover_columns+hover_columns_dynamic, list(range(0, len(hover_columns)+2)))
     p6 = HAPFigure(title='3x3 sigma-clipped mean difference value',
                    x_label='X sigma-clipped mean difference (pixels)',
                    y_label='Y sigma-clipped mean difference (pixels)', hover_tips=hover_tips)
@@ -387,6 +409,10 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    sourceCDS=xmatch_cds,
                    glyph_color='colormap',
                    legend_group='gen_info.dataframe_index')
+
+    hover_columns_dynamic = ['overlap_region_X-axis_differences.3x3-sigma_clipped_standard_deviation',
+                             'overlap_region_Y-axis_differences.3x3-sigma_clipped_standard_deviation']
+    hover_tips = build_tooltips(tooltips_list+tooltips_list_dynamic, hover_columns+hover_columns_dynamic, list(range(0, len(hover_columns)+2)))
 
     p7 = HAPFigure(title='3x3 sigma-clipped Difference standard deviation value',
                    x_label='X sigma-clipped difference standard_deviation (pixels)',
@@ -429,7 +455,7 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
         plot_list.append(html_title_text)
         # add descriptive info
         for detail_title, detail_value in zip(tooltips_list[1:], hover_columns[1:]):
-            detail_html_text = Div(text="""{}: {}""".format(detail_title, qr_df[detail_value].values[0]))
+            detail_html_text = Div(text="""<h3>{}: {}</h3>""".format(detail_title, qr_df[detail_value].values[0]))
             plot_list.append(detail_html_text)
         p1 = HAPFigure(title='X vs DX',
                        x_label="X (pixels)",
