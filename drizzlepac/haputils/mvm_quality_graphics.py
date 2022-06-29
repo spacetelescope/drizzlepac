@@ -307,9 +307,10 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                      'Number of crossmatched sources']
     hover_tips = build_tooltips(tooltips_list, hover_columns, list(range(0, len(hover_columns))))
     # Define the graphics
+    plot_list = []
     # Create title text at the top of the html file
     html_title_text = Div(text="""<h1>Distribution characteristics of crossmatched sources identified in regions of overlapping observations in the MVM product</h1>""")
-
+    plot_list.append(html_title_text)
     # Scatter plots! #TODO: add more detail to hover_tips
     p0 = HAPFigure(title='Minimum difference value',
                    x_label='X minimum difference (pixels)',
@@ -331,6 +332,7 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    glyph_color='colormap',
                    legend_group='gen_info.dataframe_index')
     row1 = row(p0.fig, p1.fig)
+    plot_list.append(row1)
 
     p2 = HAPFigure(title='Median difference value',
                    x_label='X median difference (pixels)',
@@ -352,6 +354,7 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    glyph_color='colormap',
                    legend_group='gen_info.dataframe_index')
     row2 = row(p2.fig, p3.fig)
+    plot_list.append(row2)
 
     p4 = HAPFigure(title='Difference standard deviation value',
                    x_label='X standard deviation difference (pixels)',
@@ -373,6 +376,7 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    glyph_color='colormap',
                    legend_group='gen_info.dataframe_index')
     row3 = row(p4.fig, p5.fig)
+    plot_list.append(row3)
 
     p6 = HAPFigure(title='3x3 sigma-clipped mean difference value',
                    x_label='X sigma-clipped mean difference (pixels)',
@@ -394,13 +398,13 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                    glyph_color='colormap',
                    legend_group='gen_info.dataframe_index')
     row4 = row(p6.fig, p7.fig)
-    # Display and save
-    row_list = [html_title_text, row1, row2, row3, row4]
+    plot_list.append(row4)
+
     if display_plot:
-        show(column(row_list))
+        show(column(plot_list))
     # Just save
     else:
-        save(column(row_list))
+        save(column(plot_list))
     log.info("Output HTML graphic file {} has been written.\n".format(output))
 
     # generate quad resid (x vs. dx, y vs. dx, x vs. dy, y vs. dy) plots for each DF row
@@ -420,8 +424,13 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
         # Set the output file immediately as advised by Bokeh.
         output_file(output)
         # Define plots
+        plot_list = []
         html_title_text = Div(text="""<h1>Crossmatched comparison - reference residuals:<br>{}</h1>""".format(qr_df['gen_info.dataframe_index'].values[0]))
-        # TODO: add text that basically just adds hover_tips info defined for last plot to each plot
+        plot_list.append(html_title_text)
+        # add descriptive info
+        for detail_title, detail_value in zip(tooltips_list[1:], hover_columns[1:]):
+            detail_html_text = Div(text="""{}: {}""".format(detail_title, qr_df[detail_value].values[0]))
+            plot_list.append(detail_html_text)
         p1 = HAPFigure(title='X vs DX',
                        x_label="X (pixels)",
                        y_label='Delta[X] (pixels)',
@@ -440,6 +449,7 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                        y='dy',
                        sourceCDS=qr_cds)
         row1 = row(p1.fig, p2.fig)
+        plot_list.append(row1)
 
         p3 = HAPFigure(title='Y vs DX',
                        x_label="Y (pixels)",
@@ -459,13 +469,14 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
                        y='dy',
                        sourceCDS=qr_cds)
         row2 = row(p3.fig, p4.fig)
+        plot_list.append(row2)
+
         # Display and save
-        row_list = [html_title_text, row1, row2]
         if display_plot:
-            show(column(row_list))
+            show(column(plot_list))
         # Just save
         else:
-            save(column(row_list))
+            save(column(plot_list))
         log.info("Output HTML graphic file {} has been written.\n".format(output))
 
     # TODO: sigma growth plots go here!
