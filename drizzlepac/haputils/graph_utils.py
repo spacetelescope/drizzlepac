@@ -249,7 +249,10 @@ class HAPFigure:
         # and legend text.
         self.glyph_color = data_dict.get('glyph_color', self.glyph_color)
         if self.glyph_color is 'colormap':
-            self.legend_group = 'inst_det'
+            try:
+                self.legend_group = data_dict.get('legend_group', self.legend_group)
+            except Exception:
+                self.legend_group = 'inst_det'
             self.color = 'colormap'
         else:
             self.color = self.glyph_color
