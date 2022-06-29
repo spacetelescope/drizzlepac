@@ -38,6 +38,7 @@ import logging
 import os
 import pdb
 import pickle
+import random
 import re
 import sys
 import time
@@ -191,7 +192,9 @@ def build_overlap_crossmatch_plots(data_source, display_plot=False, output_basen
                            "Y-axis differences",
                            "On-sky separation (X-Y)",
                            "On-sky separation (RA-Dec)"]
-
+    color_list = ["black", "blue", "brown", "fuchsia", "gold", "gray", "green", "olive", "orange", "purple",
+                  "rebeccapurple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown",
+                  "seagreen"]
     n_layers_colname = 'gen_info.number of overlap regions present'
     num_layers = get_pandas_data(data_source, [n_layers_colname])[n_layers_colname]
 
@@ -220,6 +223,7 @@ def build_overlap_crossmatch_plots(data_source, display_plot=False, output_basen
             for colname in columns_to_retrieve:
                 col_rename_dict[colname] = colname.replace(column_basename, "overlap_region")
             overlap_dataframe = overlap_dataframe.rename(columns=col_rename_dict)
+            overlap_dataframe['colormap'][0] = random.sample(color_list, 1)[0]
             restacked_overlap_dataframe = restacked_overlap_dataframe.append(overlap_dataframe)
     # Sort columns alphabetically to make it more human-friendly
     restacked_overlap_dataframe = restacked_overlap_dataframe[overlap_dataframe.columns.sort_values()]
@@ -525,7 +529,7 @@ if __name__ == "__main__":
                         help='If specified, plots will be automatically opened in the default web browser as '
                              'they are generated. Otherwise, .html plot files will be generated but not '
                              'opened.')
-    parser.add_argument('-l', '--log_level', required=False, default='info',
+    parser.add_argument('-l', '--log_level', required=False, default='debug',
                         choices=["critical", "error", "warning", "info", "debug", "notset"],
                         help='The desired level of verboseness in the log statements displayed on the screen '
                              'and written to the .log file.')
