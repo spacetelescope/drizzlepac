@@ -202,6 +202,9 @@ def generate_wcs_graphic(wcs_dataDF, output_base_filename='', display_plot=False
     # Get all the row names (dataframe index) - these are the layers of the skycell
     all_rows = wcs_dataDF.index.tolist()
 
+    # Set up for a list of plots
+    plots = []
+
     # Loop over the skycell names for the graphics to be generated
     for skycell in skycell_names:
 
@@ -286,16 +289,20 @@ def generate_wcs_graphic(wcs_dataDF, output_base_filename='', display_plot=False
              width=0.5, color=colors)
         p.legend.location = 'top_left'
 
-        show(p)
-        """
-        # Display and save
-        if display_plot:
-            show(p)
-        # Just save
-        else:
-            save(p)
+        plots.append(p)
+
+    # Setup the grid to have two columns and multiple rows as it is not know a priori 
+    # how many datasets will be processed
+    grid = gridplot(plots, ncols=2)
+
+    # Display and save
+    if display_plot:
+        show(grid)
+        log.info("Output HTML graphic file {} displayed in browser and has been written.\n".format(output_base_filename + ".html"))
+    # Just save
+    else:
+        save(grid)
         log.info("Output HTML graphic file {} has been written.\n".format(output_base_filename + ".html"))
-        """
 
 
 # -----------------------------------------------------------------------------
