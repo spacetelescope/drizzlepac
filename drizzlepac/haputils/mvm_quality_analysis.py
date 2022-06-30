@@ -156,16 +156,16 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
             suffix = wcs_name.split('-')[1]
             wcsname.append(suffix)
 
+            # Each chip is assigned the 2**n value associated with its WCSNAME
+            expo_wcs_value.append(wcs_pref_list[suffix])
+
+            # Each chip belonging to the same exposure/image in a filter-level product
+            # will be assigned a value of 2**n so the exposure/image can be uniquely identified
+            # ***This may be obsolete.
+            expo_img_value.append(2**counter)
+
             # ... and loop over the SCI extensions (each SCI extension is a chip)
             for sci in sci_extns:
-
-                # Each chip is assigned the 2**n value associated with its WCSNAME
-                expo_wcs_value.append(wcs_pref_list[suffix])
-
-                # Each chip belonging to the same exposure/image in a filter-level product
-                # will be assigned a value of 2**n so the exposure/image can be uniquely identified
-                # ***This may be obsolete.
-                expo_img_value.append(2**counter)
 
                 # Compute the sky footprint corners for this chip
                 radec = wcs.calc_footprint().tolist()
@@ -898,7 +898,6 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
                 overlap_dict[bitsum]["mode_1"] = layer_dict[item[1]]["mode"]
                 overlap_dict[bitsum]["ippsss_1"] = layer_dict[item[1]]["ippsss"]
                 overlap_dict[bitsum]["total_obj_list_idx_1"] = layer_dict[item[1]]["total_obj_list_idx"]
-    # overlap_dict[5] = overlap_dict[3]  # TODO: remove!!! Line is for testing only!!!
     return overlap_dict
 
 # ------------------------------------------------------------------------------------------------------------
