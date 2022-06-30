@@ -192,9 +192,11 @@ def build_overlap_crossmatch_plots(data_source, display_plot=False, output_basen
                            "Y-axis differences",
                            "On-sky separation (X-Y)",
                            "On-sky separation (RA-Dec)"]
-    color_list = ["black", "blue", "brown", "fuchsia", "gold", "gray", "green", "olive", "orange", "purple",
+    color_list = ["black", "blue", "brown", "fuchsia", "gold", "green", "olive", "orange", "purple",
                   "rebeccapurple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown",
-                  "seagreen"]
+                  "seagreen", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "turquoise",
+                  "violet", "wheat"]
+
     n_layers_colname = 'gen_info.number of overlap regions present'
     num_layers = get_pandas_data(data_source, [n_layers_colname])[n_layers_colname]
 
@@ -223,7 +225,7 @@ def build_overlap_crossmatch_plots(data_source, display_plot=False, output_basen
             for colname in columns_to_retrieve:
                 col_rename_dict[colname] = colname.replace(column_basename, "overlap_region")
             overlap_dataframe = overlap_dataframe.rename(columns=col_rename_dict)
-            overlap_dataframe['colormap'][0] = random.sample(color_list, 1)[0]
+            overlap_dataframe['colormap'][0] = random.sample(color_list, 1)[0] # assign each row a randomp
             restacked_overlap_dataframe = restacked_overlap_dataframe.append(overlap_dataframe)
     # Sort columns alphabetically to make it more human-friendly
     restacked_overlap_dataframe = restacked_overlap_dataframe[overlap_dataframe.columns.sort_values()]
@@ -316,7 +318,7 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
     # Create title text at the top of the html file
     html_title_text = Div(text="""<h1>Distribution characteristics of crossmatched sources identified in regions of overlapping observations in the MVM product</h1>""")
     plot_list.append(html_title_text)
-    # Scatter plots! #TODO: add more detail to hover_tips
+    # Scatter plots!
     hover_columns_dynamic = ['overlap_region_X-axis_differences.Non-clipped_minimum',
                              'overlap_region_Y-axis_differences.Non-clipped_minimum']
     hover_tips = build_tooltips(tooltips_list+tooltips_list_dynamic, hover_columns+hover_columns_dynamic, list(range(0, len(hover_columns)+2)))
@@ -459,7 +461,11 @@ def generate_overlap_crossmatch_graphics(dataframe, display_plot=False, output_b
         plot_list.append(html_title_text)
         # add descriptive info
         for detail_title, detail_value in zip(tooltips_list[1:], hover_columns[1:]):
-            detail_html_text = Div(text="""<h3>{}: {}</h3>""".format(detail_title, qr_df[detail_value].values[0]))
+            if detail_title in ["Overlap region size (pixels)", "Number of crossmatched sources"]:
+                dv = int(qr_df[detail_value].values[0])
+            else:
+                dv = qr_df[detail_value].values[0]
+            detail_html_text = Div(text="""<h3>{}: {}</h3>""".format(detail_title, dv))
             plot_list.append(detail_html_text)
         p1 = HAPFigure(title='X vs DX',
                        x_label="X (pixels)",
