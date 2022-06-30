@@ -495,7 +495,7 @@ if __name__ == "__main__":
                         help='If specified, plots will be automatically opened in the default web browser as '
                              'they are generated. Otherwise, .html plot files will be generated but not '
                              'opened.')
-    parser.add_argument('-l', '--log_level', required=False, default='debug',
+    parser.add_argument('-l', '--log_level', required=False, default='info',
                         choices=["critical", "error", "warning", "info", "debug", "notset"],
                         help='The desired level of verboseness in the log statements displayed on the screen '
                              'and written to the .log file.')
