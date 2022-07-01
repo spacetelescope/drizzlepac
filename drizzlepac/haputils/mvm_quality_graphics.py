@@ -14,27 +14,19 @@ python mvm_quality_graphics.py mvm_qa_dataframe.h5
 
 # Standard library imports
 import argparse
-import collections
-from datetime import datetime
-import logging
 import math
 import os
 import random
 import re
 import sys
-import time
 
 # Related third party imports
 import pandas as pd
 from bokeh.layouts import row, column, gridplot
 from bokeh.plotting import figure, output_file, save, show
 from bokeh.models import ColumnDataSource, Label, CDSView, Div
-from bokeh.models.tools import HoverTool
-from bokeh.palettes import viridis, Category20, Category20c, Spectral5
-from bokeh.transform import factor_cmap
 
 # Local application imports
-from drizzlepac import util, wcs_functions
 from drizzlepac.haputils.pandas_utils import PandasDFReader, get_pandas_data
 from drizzlepac.haputils.graph_utils import HAPFigure, build_tooltips
 from stsci.tools import logutil

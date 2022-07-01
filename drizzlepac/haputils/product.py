@@ -94,6 +94,9 @@ class HAPProduct:
         # overlapping the WCS.
         self.valid_product = True
 
+        # filenames of all reference catalogs generated for alignment attempts
+        self.refcat_filenames = []
+
     # def print_info(self):
         # """ Generic print at this time to indicate the information used in the
         #     construction of the object for debug purposes.
@@ -228,7 +231,7 @@ class HAPProduct:
 
                     # Override the default self.refname as it really needs to be
                     # catalog-specific to be useful
-                    self.refname = self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
+                    refname = self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
 
                     log.info("Starting alignment to absolute astrometric reference frame '{}'.".format(catalog_item))
                     log.debug('Creating reference catalog {}'.format(self.refname))
@@ -246,6 +249,8 @@ class HAPProduct:
                     else:
                         ref_weight = np.ones_like(ref_catalog['RA'])
                     ref_catalog.add_column(ref_weight, name='weight')
+                    self.refname = refname  # Name of reference file actually used for alignment
+                    self.refcat_filenames.append(refname)
 
                     log.debug("Abbreviated reference catalog displayed below\n{}".format(ref_catalog))
                     align_table.reference_catalogs[self.refname] = ref_catalog
@@ -405,11 +410,10 @@ class HAPProduct:
             # align the data to an absolute astrometric frame is not actually a failure.
             log.debug(traceback.format_exc())
             align_table = None
-
-            # If the align_table is None, it is necessary to clean-up reference catalogs
+            # It is necessary to clean-up reference catalogs
             # created for alignment of each filter product here.
             if self.refname and os.path.exists(self.refname):
-                os.remove(self.refname)
+                self.refname = None
 
         # Return a table which contains data regarding the alignment, as well as the
         # list of the flt/flc exposures which were part of the alignment process

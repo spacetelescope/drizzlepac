@@ -773,13 +773,21 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
     if align_table is None:
         headerlet_filenames = []
         try:
-            os.remove(gaia_obj.refname)
             gaia_obj.refname = None
         except (OSError, TypeError):
             pass
     else:
         # Get names of all headerlet files written out to file
         headerlet_filenames = [f for f in align_table.filtered_table['headerletFile'] if f != "None"]
+
+    # Remove all reference catalogs written out to disk, if not in diagnostic mode
+    if not diagnostic_mode:
+            log.info(f"Removing reference catalogs:\n {gaia_obj.refcat_filenames}")
+            for fname in gaia_obj.refcat_filenames:
+                try:
+                    os.remove(fname)
+                except (OSError, TypeError):
+                    pass
 
     return headerlet_filenames
 # ----------------------------------------------------------------------------------------------------------------------

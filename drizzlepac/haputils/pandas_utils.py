@@ -18,6 +18,7 @@ import os
 import sys
 import pandas as pd
 import pathlib
+import re
 import shutil
 import traceback
 
@@ -33,7 +34,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 DETECTOR_LEGEND = {'UVIS': 'magenta', 'IR': 'red', 'WFC': 'blue',
                    'SBC': 'yellow', 'HRC': 'black'}
 
-def get_pandas_data(storage_filename, data_columns, log_level=logutil.logging.NOTSET):
+def get_pandas_data(storage_filename, data_columns, column_restring = '', log_level=logutil.logging.NOTSET):
     """Load the harvested data from the storage file into local arrays.
 
     Parameters
@@ -65,7 +66,7 @@ def get_pandas_data(storage_filename, data_columns, log_level=logutil.logging.NO
     try:
 
         if storage_filename.endswith('.h5'):
-            data_colsDF = df_handle.get_columns_HDF5(data_columns)
+            data_colsDF = df_handle.get_columns_HDF5(data_columns, column_restring)
         else:
             data_colsDF = df_handle.get_columns_CSV(data_columns)
 
@@ -131,7 +132,7 @@ class PandasDFReader:
 
         return column_data
 
-    def get_columns_HDF5(self, column_names):
+    def get_columns_HDF5(self, column_names = None, column_restring = ''):
         """ Method to do the actual reading of dataframe and get and return the
             data in the specified columns.
 
@@ -140,12 +141,20 @@ class PandasDFReader:
             column_names : list
             A list of the column names which specify the desired data
 
+            column_restring : str
+            Substring to use to match as a regular expression against all available
+            column names. This parameter is ONLY used in the instance column_names
+            is None.
+
             Returns
             -------
             column_dataDF : Pandas dataframe
             A Pandas dataframe containing only the specified named columns, as well
             as all of the 'header', 'gen_info' columns, and the newly created
             'colormap' and 'inst_det' columns.
+
+            If column_names = None and column_restring = '', then all columns are
+            returned.
         """
         # Only read the input dataframe once
         if self.dataframe.empty:
@@ -173,6 +182,14 @@ class PandasDFReader:
             # Always get all the "header" and "general information" columns
             self.header_cols = [hd_cols for hd_cols in self.dataframe if 'header' in hd_cols]
             self.gen_info_cols = [hd_cols for hd_cols in self.dataframe if 'gen_info' in hd_cols]
+
+        # if no column names are supplied, check for the column string to see if the columns
+        # to be extracted are indentified by a substring 
+        all_cols = list(self.dataframe)
+        if column_names is None and column_restring:
+            column_names = [item for item in all_cols if re.search(column_restring, item)]
+        elif column_names is None and not column_restring:
+            column_names = all_cols
 
         # Set up for the final columns to extract from the dataframe and remove any duplicates
         tmp_columns = list(column_names) + self.header_cols + self.gen_info_cols + ['inst_det', 'colormap']
