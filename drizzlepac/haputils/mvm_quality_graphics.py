@@ -179,7 +179,7 @@ def build_overlap_crossmatch_plots(data_source, display_plot=False, output_basen
                            "On-sky separation (RA-Dec)"]
     color_list = ["black", "blue", "brown", "fuchsia", "gold", "green", "olive", "orange", "purple",
                   "rebeccapurple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown",
-                  "seagreen", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "turquoise",
+                  "seagreen", "skyblue", "springgreen", "steelblue", "tan", "teal", "tomato", "turquoise",
                   "violet", "wheat"]
 
     n_layers_colname = 'gen_info.number of overlap regions present'
