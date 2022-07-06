@@ -16,7 +16,6 @@ python mvm_quality_graphics.py mvm_qa_dataframe.h5
 import argparse
 import math
 import os
-import random
 import re
 import sys
 
@@ -177,6 +176,8 @@ def build_overlap_crossmatch_plots(data_source, display_plot=False, output_basen
                            "Y-axis differences",
                            "On-sky separation (X-Y)",
                            "On-sky separation (RA-Dec)"]
+
+    # list of 26 hand-selected bokeh colors that will be used in the stats plots
     color_list = ["black", "blue", "brown", "fuchsia", "gold", "green", "olive", "orange", "purple",
                   "rebeccapurple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown",
                   "seagreen", "skyblue", "springgreen", "steelblue", "tan", "teal", "tomato", "turquoise",
@@ -188,6 +189,8 @@ def build_overlap_crossmatch_plots(data_source, display_plot=False, output_basen
     # retrieve relevant data and "restack" and rename dataframe so that all the information for each overlap
     # region is stored in discrete rows
     restacked_overlap_dataframe = pd.DataFrame()
+    color_ctr = 0
+    color_list_reset = False
     for df_indexname, layer_val in zip(num_layers.index.values, num_layers.values):
         for layer_ctr in range(1, layer_val + 1):
             columns_to_retrieve = []
@@ -205,13 +208,22 @@ def build_overlap_crossmatch_plots(data_source, display_plot=False, output_basen
                     "{}_{}.{}".format(column_basename, data_table_column_basename, data_table_colname))
             overlap_dataframe = get_pandas_data(data_source, columns_to_retrieve)
             overlap_dataframe = overlap_dataframe[overlap_dataframe['gen_info.dataframe_index'] == df_indexname]
-            overlap_dataframe['gen_info.dataframe_index'] = "{}_overlap_region_{}".format(overlap_dataframe['gen_info.dataframe_index'][0], layer_ctr)
+            dataframe_indexname = "{}_overlap_region_{}".format(overlap_dataframe['gen_info.dataframe_index'][0], layer_ctr)
+            overlap_dataframe['gen_info.dataframe_index'] = dataframe_indexname
             col_rename_dict = {}
             for colname in columns_to_retrieve:
                 col_rename_dict[colname] = colname.replace(column_basename, "overlap_region")
             overlap_dataframe = overlap_dataframe.rename(columns=col_rename_dict)
-            overlap_dataframe['colormap'][0] = random.sample(color_list, 1)[0]  # assign each row a random color for the plot
+            overlap_dataframe['colormap'][0] = color_list[color_ctr]
+            if color_list_reset == True:
+                log.info("NOTE: There are more data points than colors defined for the statistics plots. The color assigned to '{}' is NOT unique.".format(dataframe_indexname))
             restacked_overlap_dataframe = restacked_overlap_dataframe.append(overlap_dataframe)
+            color_ctr += 1
+            # reset the counter so that it starts back at the first color in the list if there are more
+            # data points to plot than colors in color_list.
+            if color_ctr == len(color_list):
+                color_list_reset = True
+                color_ctr = 0
     # Sort columns alphabetically to make it more human-friendly
     restacked_overlap_dataframe = restacked_overlap_dataframe[overlap_dataframe.columns.sort_values()]
     # optionally write dataframe to .csv file.
