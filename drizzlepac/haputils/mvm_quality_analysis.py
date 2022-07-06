@@ -950,7 +950,7 @@ def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging
             cwd = os.getcwd()
             search_path_list = []
             search_path_list.append(cwd+"/")
-            search_path_list.append(cwd.replace(cwd.split("/")[-1], "svm_{}".format(ippsss))+"/")
+            search_path_list.append(cwd.replace(cwd.split("/")[-1], "svm_{}".format(ippsss))+"/")  # TODO: update this subroutine to properly find catalogs if they are not stored locally.
 
             # execute searches
             for search_path in search_path_list:
