@@ -117,7 +117,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
                             member_suffix = '_flt.fits'
 
                         candidate_list.append(memname + member_suffix)
-            elif suffix in ['flc', 'flt']:
+            elif suffix in ['flc', 'flt', 'c0m']:
                 if lc_input_item not in candidate_list:
                     candidate_list.append(lc_input_item)
             else:
@@ -298,7 +298,10 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
 
     # Get default alignment parameters if not provided by the user...
     inst = fits.getval(imglist[0], 'instrume')
-    det = fits.getval(imglist[0], 'detector')
+    if inst.lower() == 'wfpc2':
+        det = 'pc'
+    else:
+        det = fits.getval(imglist[0], 'detector')
     apars = get_default_pars(inst, det)
     alignment_pars.update(apars)
     alignment_pars['MAX_SOURCES_PER_CHIP'] = num_sources

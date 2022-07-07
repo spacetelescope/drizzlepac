@@ -170,7 +170,8 @@ class AlignmentTable:
         try:
             for img in self.process_list:
                 log.info("Adding {} to HAPImage list".format(img))
-                detector = fits.getval(img, 'detector')
+                instrume = fits.getval(img, 'instrume')
+                detector = fits.getval(img, 'detector') if instrume.lower() != 'wfpc2' else 'PC'
                 if detector == 'SBC':
                     catimg = SBCHAPImage(img)
                 else:
@@ -697,7 +698,7 @@ class HAPImage:
 
             dqmask = self.build_dqmask(chip=chip)
             sciarr = self.imghdu[("SCI", chip)].data.copy()
-            detector = self.imghdu[0].header['detector']
+            # detector = self.imghdu[0].header['detector']
             #  TODO: replace detector_pars with dict from OO Config class
             # Turning off 'classify' since same CRs are being removed before segmentation now
             extract_pars = {'classify': False,  # alignment_pars['classify'],
