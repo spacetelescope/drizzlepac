@@ -170,8 +170,13 @@ class AlignmentTable:
         try:
             for img in self.process_list:
                 log.info("Adding {} to HAPImage list".format(img))
-                instrume = fits.getval(img, 'instrume')
-                detector = fits.getval(img, 'detector') if instrume.lower() != 'wfpc2' else 'PC'
+                hdr0 = fits.getheader(img)
+                instrume = hdr0.get('instrume')
+                if instrume.lower() == 'wfpc2' and 'detector' not in hdr0:
+                    detector = 'PC'
+                else:
+                    detector = hdr0.get('detector')
+
                 if detector == 'SBC':
                     catimg = SBCHAPImage(img)
                 else:

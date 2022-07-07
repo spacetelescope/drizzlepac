@@ -297,11 +297,12 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     starting_dt = datetime.datetime.now()
 
     # Get default alignment parameters if not provided by the user...
-    inst = fits.getval(imglist[0], 'instrume')
-    if inst.lower() == 'wfpc2':
+    hdr0 = fits.getheader(imglist[0])
+    inst = hdr0.get('instrume')
+    if inst.lower() == 'wfpc2' and 'detector' not in hdr0:
         det = 'pc'
     else:
-        det = fits.getval(imglist[0], 'detector')
+        det = hdr0.get('detector')
     apars = get_default_pars(inst, det)
     alignment_pars.update(apars)
     alignment_pars['MAX_SOURCES_PER_CHIP'] = num_sources

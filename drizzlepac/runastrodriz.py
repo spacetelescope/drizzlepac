@@ -271,7 +271,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     infile_inst = fits.getval(inFilename, 'instrume')
     wfpc2_input = infile_inst == 'WFPC2'
     if not wfpc2_input:
-        infile_det = fits.getval(inFilename, 'detector')
         raw_suffix = '_raw.fits'
         goodpix_name = 'NGOODPIX'
     else:
@@ -280,10 +279,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             inFilename = inFilename.replace('d0m', 'c0m')
         # This returns the name of the _flt.fits file that was created
         inFilename = wfpc2Data.wfpc2_to_flt(inFilename)
-        infile_det = 'PC'
         raw_suffix = '_d0m.fits'
         goodpix_name = 'GPIXELS'
 
+    infile_det = fits.getval(inFilename, 'detector')
     cal_ext = None
 
     # Check input file to see if [DRIZ/DITH]CORR is set to PERFORM
@@ -311,9 +310,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _indx = inFilename.find(raw_suffix)
         if _indx < 0: _indx = len(inFilename)
         # ... and build the CALXXX product rootname.
-        # if wfpc2_input:
-            # force code to define _c0m file as calibrated product to be used
-            # cal_ext = ['_c0m.fits']
         _mname = fileutil.buildRootname(inFilename[:_indx], ext=cal_ext)
 
         _cal_prodname = inFilename[:_indx]
@@ -960,11 +956,12 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
         alignfiles = calfiles_flc if calfiles_flc else calfiles
         align_update_files = calfiles if calfiles_flc else None
-        inst = fits.getval(alignfiles[0], 'instrume').lower()
-        if inst == 'wfpc2':
+        hdr0 = fits.getheader(alignfiles[0])
+        inst = hdr0.get('instrume').lower()
+        if inst == 'wfpc2' and 'detector' not in hdr0:
             det = 'pc'
         else:
-            det = fits.getval(alignfiles[0], 'detector').lower()
+            det = hdr0.get('detector').lower()
 
         if find_crs:
             trlmsg = _timestamp("Resetting CRs ")

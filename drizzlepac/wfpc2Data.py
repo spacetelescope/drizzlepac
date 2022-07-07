@@ -382,6 +382,11 @@ def wfpc2_to_flt(imgname):
     # Read in input SCI file
     in_sci = fits.open(imgname)
 
+    # Add keywords to be more compatible with ACS and WFC3 data
+    num_sci = fileutil.countExtn(imgname)
+    det_name = 'PC' if num_sci == 4 else 'WF'
+    in_sci[0].header['DETECTOR'] = det_name
+
     if is_dq:
         # Read in existing input DQ file
         in_dq = fits.open(dq_file)
