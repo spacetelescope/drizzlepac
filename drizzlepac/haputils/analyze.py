@@ -58,12 +58,12 @@ DRIZKEY = 'DRIZCORR'
 """
 
 WFPC2_KEYS = {'OBSKEY': 'IMAGETYP', 'MTKEY': 'MTFLAG', 'SCNKEY': '',
-              'FILKEY1': 'FILTNAM1', 'FILKEY2': 'FILTNAM2',
+              'FILKEY1': 'FILTNAM1', 'FILKEY2': 'FILTNAM2', 'FILKEY': 'FILTNAM1',
               'APKEY': '', 'TARKEY': 'TARGNAME', 'EXPKEY': 'EXPTIME',
               'FGSKEY': 'FGSLOCK', 'CHINKEY': '', 'DRIZKEY': 'DRIZCORR'}
 
 DEFAULT_KEYS = {'OBSKEY': 'OBSTYPE', 'MTKEY':' MTFLAG', 'SCNKEY': 'SCAN_TYP',
-                'FILKEY1': 'FILTNAM1', 'FILKEY2': 'FILTNAM2',
+                'FILKEY1': 'FILTNAM1', 'FILKEY2': 'FILTNAM2', 'FILKEY': 'FILTER',
                 'APKEY': 'APERTURE', 'TARKEY': 'TARGNAME', 'EXPKEY': 'EXPTIME',
                 'FGSKEY': 'FGSLOCK', 'CHINKEY': 'CHINJECT', 'DRIZKEY': 'DRIZCORR'}
 HEADER_KEYS = {'WFPC2': WFPC2_KEYS, 'DEFAULT':DEFAULT_KEYS}
@@ -361,10 +361,10 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             obstype = 'IMAGING' if (header_data[hdr_keys['OBSKEY']]).upper() == 'EXT' else 'CAL'
 
         else:
+            hdr_keys = HEADER_KEYS['DEFAULT']
             detector = (header_data['DETECTOR']).upper()
             subarray = header_data['SUBARRAY']
             aperture = (header_data[hdr_keys['APKEY']]).upper()
-            hdr_keys = HEADER_KEYS['DEFAULT']
             mtflag = (header_data[hdr_keys['MTKEY']]).upper()
             obstype = (header_data[hdr_keys['OBSKEY']]).upper()
 
