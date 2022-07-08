@@ -703,7 +703,6 @@ class HAPImage:
 
             dqmask = self.build_dqmask(chip=chip)
             sciarr = self.imghdu[("SCI", chip)].data.copy()
-            # detector = self.imghdu[0].header['detector']
             #  TODO: replace detector_pars with dict from OO Config class
             # Turning off 'classify' since same CRs are being removed before segmentation now
             extract_pars = {'classify': False,  # alignment_pars['classify'],
