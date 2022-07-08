@@ -245,6 +245,15 @@ class HapConfig(object):
                     else:
                         log.error("{} is an invalid WFC3 detector!".format(self.detector))
                         sys.exit(1)
+                elif self.instrument == "wfpc2":
+                    if self.hap_pipeline_name == 'mvm':
+                        if n_exp > 1:
+                            self.conditions.append("wfpc2_pc_any_n2")
+                    if self.hap_pipeline_name == 'svm':
+                        if n_exp in [2, 3]:
+                            self.conditions.append("wfpc2_pc_any_n2")
+                        if n_exp >= 4:
+                            self.conditions.append("wfpc2_pc_any_n4")
                 else:
                     log.error("{} is an invalid HST instrument!".format(self.instrument))
                     sys.exit(1)
@@ -656,6 +665,7 @@ def read_index(instrument, detector, hap_pipeline_name='svm'):
 
 # ------------------------------------------------------------------------------
 # Added WFPC2 support to replace use of MDRIZTAB
+
 
 def get_wfpc2_pars(infiles):
 
