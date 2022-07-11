@@ -333,7 +333,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
     ippsss_list = []
     for total_obj in total_obj_list:
         for exp_obj in total_obj.edp_list:
-            ippsss_list.append(exp_obj.exposure_name[:6])
+            ippsss_list.append(exp_obj.full_filename[-17:-11])
     ippsss_list = list(set(ippsss_list))
     if len(ippsss_list) == 1:  # return if there is only data from a single visit
         log.warning("All observations in this dataset were from a single proposal/visit. This test requires observations from two or more proposal/visits.")
@@ -821,10 +821,10 @@ def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET
         if not total_obj.drizzle_filename.endswith("_coarse-all_drz.fits"):
             ippsss_list = []
             for exp_obj in total_obj.edp_list:
-                ippsss_list.append(exp_obj.exposure_name[:6])
+                ippsss_list.append(exp_obj.full_filename[-17:-11])
             ippsss_list = list(set(ippsss_list))
             for ippsss in ippsss_list:
-                img_list = glob.glob("{}*_fl?.fits".format(ippsss))
+                img_list = glob.glob("*{}*_fl?.fits".format(ippsss))
                 skycell = cell_utils.SkyCell.from_name(total_obj.skycell.sky_cell_id)
                 footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
                 footprint.build(img_list)
