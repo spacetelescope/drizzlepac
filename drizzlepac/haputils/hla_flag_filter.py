@@ -368,10 +368,13 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
         for ext_cnt, image_ext in enumerate(image_ext_list):
             ext_part = image_ext.split(',')[1].split(']')[0]
             try:
+                flt_data = fits.getdata(flt_image, 'DQ', int(ext_part))
+                """
                 if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')):
                     flt_data = fits.getdata(flt_image, 'DQ', int(ext_part))
                 if ((channel.lower() == 'wfpc2') or (channel.lower() == 'pc')):
-                    flt_data = fits.getdata(flt_image.replace("_c0m", "_c1m"), 'SCI', int(ext_part))
+                   flt_data = fits.getdata(flt_image.replace("_c0m", "_c1m"), 'SCI', int(ext_part))
+                """
             except KeyError:
                 log.info(' ')
                 log.info('WARNING: There is only one set of file extensions in {}'.format(flt_image))

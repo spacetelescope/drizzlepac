@@ -148,7 +148,7 @@ def refine_product_headers(product, total_obj_list):
         level = 1
 
     # Update PINAME keyword
-    phdu['piname'] = phdu['pr_inv_l']
+    phdu['piname'] = phdu.get('pr_inv_l', '')
 
     # Start by updating the S_REGION keyword.
     compute_sregion(hdu)
@@ -220,6 +220,7 @@ def get_wfpc2_filters(image, delimiter=';', all=False):
         wfpc2_filters = ['clear']
 
     wfpc2_filters = delimiter.join(wfpc2_filters)
+    wfpc2_filters = wfpc2_filters.rstrip(delimiter)
 
     if closefits:
         hdu.close()
