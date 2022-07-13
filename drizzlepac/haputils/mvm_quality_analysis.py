@@ -390,11 +390,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                 log.warning("Unable to locate one or more SVM sourcelist(s) required for crossmatch!")
                 error_flag = True
                 break
-            if overlap_dict[bit_value]["svm_img_{}".format(set_num)] is None:
-                log.warning(
-                    "Unable to locate one or more SVM drizzled filter image(s) required for crossmatch!")
-                error_flag = True
-                break
             just_sl_name = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)])
 
             # 4: read in SVM-generated sourcelists and drizzled filter product images
@@ -949,19 +944,15 @@ def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging
             # build search paths.
             cwd = os.getcwd()
             search_path_list = []
-            search_path_list.append(cwd+"/")
+            search_path_list.append(cwd + "/")
             search_path_list.append(cwd.replace(cwd.split("/")[-1], "svm_{}".format(ippsss))+"/")  # TODO: update this subroutine to properly find catalogs if they are not stored locally.
 
             # execute searches
             for search_path in search_path_list:
-                for search_item in [img_search_string, sl_search_string]:
-                    full_search_string = search_path+search_item
-                    results = glob.glob(full_search_string)
-                    if results:
-                        if results[0].endswith(".fits"):
-                            overlap_dict[bit_value]["svm_img_{}".format(set_num)] = results[0]
-                        else:
-                            overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] = results[0]
+                results = glob.glob(search_path + sl_search_string)
+                if results:
+                    overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] = results[0]
+                    break
     return overlap_dict
 
 # ------------------------------------------------------------------------------------------------------------
