@@ -245,6 +245,15 @@ class HapConfig(object):
                     else:
                         log.error("{} is an invalid WFC3 detector!".format(self.detector))
                         sys.exit(1)
+                elif self.instrument == "wfpc2":
+                    if self.hap_pipeline_name == 'mvm':
+                        if n_exp > 1:
+                            self.conditions.append("wfpc2_pc_any_n2")
+                    if self.hap_pipeline_name == 'svm':
+                        if n_exp in [2, 3]:
+                            self.conditions.append("wfpc2_pc_any_n2")
+                        if n_exp >= 4:
+                            self.conditions.append("wfpc2_pc_any_n4")
                 else:
                     log.error("{} is an invalid HST instrument!".format(self.instrument))
                     sys.exit(1)
@@ -655,6 +664,41 @@ def read_index(instrument, detector, hap_pipeline_name='svm'):
     return full_cfg_index, pars_dir
 
 # ------------------------------------------------------------------------------
+# Added WFPC2 support to replace use of MDRIZTAB
+
+
+def get_wfpc2_pars(infiles):
+
+    pars = {}
+    full_cfg_index, pars_dir = read_index('wfpc2', 'pc', hap_pipeline_name='svm')
+
+    hap_pipeline_name = 'svm'
+    conditions = ["single_basic"]
+    num_files = len(infiles)
+    if num_files == 1:
+        nfiles = 'n1'
+    elif num_files == 2:
+        nfiles = 'n2'
+    elif num_files <=4:
+        nfiles = 'n4'
+    else:
+        nfiles = 'total'
+    conditions.append(f"any_{nfiles}")
+
+    for step_title, step_name in zip(step_title_list, step_name_list):
+        cfg_index = full_cfg_index[step_title]
+        pars[step_title] = step_name(cfg_index,
+                                     conditions,
+                                     hap_pipeline_name,
+                                     pars_dir,
+                                     step_title,
+                                     True,
+                                     None)
+
+    return pars
+# ------------------------------------------------------------------------------
+
+
 
 step_name_list = [AlignmentPars, AstrodrizzlePars, CatalogGenerationPars, QualityControlPars]
 step_title_list = ['alignment', 'astrodrizzle', 'catalog generation', 'quality control']

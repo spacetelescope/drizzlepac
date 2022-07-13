@@ -42,6 +42,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.std
 __all__ = ['analyze_data', 'analyze_wrapper', 'mvm_analyze_wrapper']
 
 # Define global default keyword names for these fields
+"""
 OBSKEY = 'OBSTYPE'
 MTKEY = 'MTFLAG'
 SCNKEY = 'SCAN_TYP'
@@ -54,6 +55,19 @@ EXPKEY = 'EXPTIME'
 FGSKEY = 'FGSLOCK'
 CHINKEY = 'CHINJECT'
 DRIZKEY = 'DRIZCORR'
+"""
+
+WFPC2_KEYS = {'OBSKEY': 'IMAGETYP', 'MTKEY': 'MTFLAG', 'SCNKEY': '',
+              'FILKEY1': 'FILTNAM1', 'FILKEY2': 'FILTNAM2', 'FILKEY': 'FILTNAM1',
+              'APKEY': '', 'TARKEY': 'TARGNAME', 'EXPKEY': 'EXPTIME',
+              'FGSKEY': 'FGSLOCK', 'CHINKEY': '', 'DRIZKEY': 'DRIZCORR'}
+
+DEFAULT_KEYS = {'OBSKEY': 'OBSTYPE', 'MTKEY':' MTFLAG', 'SCNKEY': 'SCAN_TYP',
+                'FILKEY1': 'FILTER1', 'FILKEY2': 'FILTER2', 'FILKEY': 'FILTER',
+                'APKEY': 'APERTURE', 'TARKEY': 'TARGNAME', 'EXPKEY': 'EXPTIME',
+                'FGSKEY': 'FGSLOCK', 'CHINKEY': 'CHINJECT', 'DRIZKEY': 'DRIZCORR'}
+HEADER_KEYS = {'WFPC2': WFPC2_KEYS, 'DEFAULT':DEFAULT_KEYS}
+
 
 # These definitions are for ACS and WFC3
 BAD_DQ_FLAGS = [256,  # full-well saturated pixel
@@ -275,7 +289,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     # Set logging level to user-specified level
     log.setLevel(log_level)
 
-    acs_filt_name_list = [FILKEY1, FILKEY2]
+    acs_filt_name_list = [DEFAULT_KEYS['FILKEY1'], DEFAULT_KEYS['FILKEY2']]
 
     # Interpret input filenames and adjust size of column accordingly
     max_name_length = max([len(f) for f in input_file_list])
@@ -337,22 +351,35 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
 
         # Keywords to use potentially for downstream analysis
         instrume = (header_data['INSTRUME']).upper()
-        detector = (header_data['DETECTOR']).upper()
-        subarray = header_data['SUBARRAY']
+        if instrume == 'WFPC2':
+            detector = 'PC'
+            subarray = False
+            hdr_keys = HEADER_KEYS[instrume]
+            aperture = 'PC'
+            scan_typ = 'N'  # default value of N/A
+            mtflag = 'T' if header_data[hdr_keys['MTKEY']] else 'F'
+            obstype = 'IMAGING' if (header_data[hdr_keys['OBSKEY']]).upper() == 'EXT' else 'CAL'
+
+        else:
+            hdr_keys = HEADER_KEYS['DEFAULT']
+            detector = (header_data['DETECTOR']).upper()
+            subarray = header_data['SUBARRAY']
+            aperture = (header_data[hdr_keys['APKEY']]).upper()
+            mtflag = (header_data[hdr_keys['MTKEY']]).upper()
+            obstype = (header_data[hdr_keys['OBSKEY']]).upper()
+
         date_obs = header_data['DATE-OBS']
         mjdutc = header_data['EXPSTART']
 
         # Obtain keyword values for analysis of viability
-        drizcorr = (header_data[DRIZKEY]).upper()
-        obstype = (header_data[OBSKEY]).upper()
-        mtflag = (header_data[MTKEY]).upper()
+        drizcorr = (header_data[hdr_keys['DRIZKEY']]).upper()
         scan_typ = ''
         if instrume == 'WFC3':
-            scan_typ = (header_data[SCNKEY]).upper()
+            scan_typ = (header_data[hdr_keys['SCNKEY']]).upper()
 
         sfilter = ''
         if instrume == 'WFC3':
-            sfilter = (header_data[FILKEY]).upper()
+            sfilter = (header_data[hdr_keys['FILKEY']]).upper()
         # Concatenate the two ACS filter names together with an underscore
         # If the filter name is blank, skip it
         if instrume == 'ACS':
@@ -370,14 +397,13 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
 
         # The aperture is only read for informational purposes as it is no
         # longer used for filtering input data.
-        aperture = (header_data[APKEY]).upper()
-        targname = (header_data[TARKEY]).upper()
-        exptime = header_data[EXPKEY]
-        fgslock = (header_data[FGSKEY]).upper()
+        targname = (header_data[hdr_keys['TARKEY']]).upper()
+        exptime = header_data[hdr_keys['EXPKEY']]
+        fgslock = (header_data[hdr_keys['FGSKEY']]).upper()
 
         chinject = 'NONE'
         if instrume == 'WFC3' and detector == 'UVIS':
-            chinject = (header_data[CHINKEY]).upper()
+            chinject = (header_data[hdr_keys['CHINKEY']]).upper()
 
         # Determine if the image has one of these conditions.  The routine
         # will exit processing upon the first satisfied condition.
@@ -391,42 +417,42 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         do_process = True
         # Imaging vs spectroscopic or coronagraphic
         if obstype != 'IMAGING':
-            no_proc_key = OBSKEY
+            no_proc_key = hdr_keys['OBSKEY']
             no_proc_value = obstype
 
         # drizzling has been turned off
         elif drizcorr in ['OMIT', 'SKIPPED']:
-            no_proc_key = DRIZKEY
+            no_proc_key = hdr_keys['DRIZKEY']
             no_proc_value = drizcorr
 
         # Moving target
         elif mtflag == 'T':
-            no_proc_key = MTKEY
+            no_proc_key = hdr_keys['MTKEY']
             no_proc_value = mtflag
 
         # Bostrophidon without or with dwell (WFC3 only)
         elif any([scan_typ == 'C', scan_typ == 'D']):
-            no_proc_key = SCNKEY
+            no_proc_key = hdr_keys['SCNKEY']
             no_proc_value = scan_typ
 
         # Calibration target
         elif any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']):
-            no_proc_key = TARKEY
+            no_proc_key = hdr_keys['TARKEY']
             no_proc_value = targname
 
         # Exposure time of effectively zero
         elif math.isclose(exptime, 0.0, abs_tol=1e-5):
-            no_proc_key = EXPKEY
+            no_proc_key = hdr_keys['EXPKEY']
             no_proc_value = exptime
 
         # Commanded FGS lock
         elif any(x in fgslock for x in ['GY', 'COARSE']):
-            no_proc_key = FGSKEY
+            no_proc_key = hdr_keys['FGSKEY']
             no_proc_value = fgslock
 
         # Charge injection mode
         elif chinject != 'NONE':
-            no_proc_key = CHINKEY
+            no_proc_key = hdr_keys['CHINKEY']
             no_proc_value = chinject
 
         # Ramp filter images should not be processed for MVM products.
@@ -458,18 +484,18 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                     log.warning("The Grism/Prism data {} with zero exposure time will be ignored.".format(input_file))
     
             if item.startswith(('BLOCK')):
-                no_proc_key = FILKEY
+                no_proc_key = hdr_keys['FILKEY']
                 no_proc_value = sfilter
 
             if item.startswith(('FR')) and type.upper() == "MVM":
-                no_proc_key = FILKEY
+                no_proc_key = hdr_keys['FILKEY']
                 no_proc_value = "Ramp data and MVM processing"
                 log.warning("The Ramp data {} with MVM processing will be ignored.".format(input_file))
 
         # If no_proc_key is set to a keyword, then this image has been found to not be viable for
         # alignment purposes.
         if no_proc_key is not None:
-            if no_proc_key != FGSKEY:
+            if no_proc_key != hdr_keys['FGSKEY']:
                 do_process = False
                 msg_type = Messages.NOPROC.value
             else:

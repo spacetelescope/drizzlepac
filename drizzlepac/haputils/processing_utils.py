@@ -148,7 +148,7 @@ def refine_product_headers(product, total_obj_list):
         level = 1
 
     # Update PINAME keyword
-    phdu['piname'] = phdu['pr_inv_l']
+    phdu['piname'] = phdu.get('pr_inv_l', '')
 
     # Start by updating the S_REGION keyword.
     compute_sregion(hdu)
@@ -192,6 +192,7 @@ def refine_product_headers(product, total_obj_list):
     if closefits:
         hdu.close()
 
+
 def get_acs_filters(image, delimiter=';', all=False):
     hdu, closefits = _process_input(image)
     filters = [kw[1] for kw in hdu[0].header['filter?'].items()]
@@ -204,8 +205,30 @@ def get_acs_filters(image, delimiter=';', all=False):
         acs_filters = ['clear']
     acs_filters = delimiter.join(acs_filters)
 
+    if closefits:
+        hdu.close()
+
     return acs_filters
 
+
+def get_wfpc2_filters(image, delimiter=';', all=False):
+    hdu, closefits = _process_input(image)
+    filters = [kw[1] for kw in hdu[0].header['filtnam?'].items()]
+    wfpc2_filters = []
+    for f in filters:
+        if (f.strip() != '' and not all) or all:
+            wfpc2_filters.append(f)
+
+    if not wfpc2_filters:
+        wfpc2_filters = ['clear']
+
+    wfpc2_filters = delimiter.join(wfpc2_filters)
+    wfpc2_filters = wfpc2_filters.rstrip(delimiter)
+
+    if closefits:
+        hdu.close()
+
+    return wfpc2_filters
 
 def update_hdrtab(image, level, total_obj_list, input_exposures):
     """Build HAP entry table extension for product"""

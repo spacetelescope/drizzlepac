@@ -118,6 +118,10 @@ from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
 from drizzlepac.haputils import quality_analysis as qa
 from drizzlepac import wcs_functions
+# for WFPC2 support
+from drizzlepac.haputils import config_utils
+from drizzlepac import wfpc2Data
+
 from . import __version__
 
 
@@ -265,8 +269,20 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     # Identify WFPC2 inputs to account for differences in WFPC2 inputs
     infile_inst = fits.getval(inFilename, 'instrume')
-    infile_det = fits.getval(inFilename, 'detector')
     wfpc2_input = infile_inst == 'WFPC2'
+    if not wfpc2_input:
+        raw_suffix = '_raw.fits'
+        goodpix_name = 'NGOODPIX'
+    else:
+        # Convert input c0m file into compatible flt file
+        if 'd0m' in inFilename:
+            inFilename = inFilename.replace('d0m', 'c0m')
+        # This returns the name of the _flt.fits file that was created
+        inFilename = wfpc2Data.wfpc2_to_flt(inFilename)
+        raw_suffix = '_d0m.fits'
+        goodpix_name = 'GPIXELS'
+
+    infile_det = fits.getval(inFilename, 'detector')
     cal_ext = None
 
     # Check input file to see if [DRIZ/DITH]CORR is set to PERFORM
@@ -291,12 +307,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     else:
         # Check to see if input is a _RAW file
         # If it is, strip off the _raw.fits extension...
-        _indx = inFilename.find('_raw')
+        _indx = inFilename.find(raw_suffix)
         if _indx < 0: _indx = len(inFilename)
         # ... and build the CALXXX product rootname.
-        if wfpc2_input:
-            # force code to define _c0m file as calibrated product to be used
-            cal_ext = ['_c0m.fits']
         _mname = fileutil.buildRootname(inFilename[:_indx], ext=cal_ext)
 
         _cal_prodname = inFilename[:_indx]
@@ -342,7 +355,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         dcorr = 'PERFORM'
     else:
         if _mname:
-            _fimg = fits.open(fileutil.buildRootname(_mname, ext=['_raw.fits']), memmap=False)
+            _fimg = fits.open(fileutil.buildRootname(_mname, ext=[raw_suffix]), memmap=False)
             _phdr = _fimg['PRIMARY'].header
             if dkey in _phdr:
                 dcorr = _phdr[dkey]
@@ -461,10 +474,15 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         """
         inst_mode = "{}/{}".format(infile_inst, infile_det)
         _good_images = [f for f in _calfiles if fits.getval(f, 'exptime') > 0.]
-        _good_images = [f for f in _good_images if fits.getval(f, 'ngoodpix', ext=("SCI", 1)) > 0.]
+        _good_images = [f for f in _good_images if fits.getval(f, goodpix_name, ext=("SCI", 1)) > 0.]
         if len(_good_images) == 0:
             _good_images = _calfiles
-        adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
+        if not wfpc2_input:
+            adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
+        else:
+            default_pars = config_utils.get_wfpc2_pars(_good_images)
+            adriz_pars = default_pars['astrodrizzle'].outpars
+
         adriz_pars.update(pipeline_pars)
         adriz_pars['mdriztab'] = False
         adriz_pars['final_fillval'] = "INDEF"
@@ -495,11 +513,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         if align_with_apriori or force_alignment or align_to_gaia:
             # Generate initial default products and perform verification
             align_dicts, align_table = verify_alignment(_inlist,
-                                             _calfiles, _calfiles_flc,
-                                             _trlfile,
-                                             tmpdir=None, debug=debug,
-                                             force_alignment=force_alignment,
-                                             find_crs=True, **adriz_pars)
+                                                        _calfiles, _calfiles_flc,
+                                                        _trlfile,
+                                                        tmpdir=None, debug=debug,
+                                                        force_alignment=force_alignment,
+                                                        find_crs=True, **adriz_pars)
 
         if align_with_apriori:
             _trlmsg = _timestamp('Starting alignment with a priori solutions')
@@ -616,6 +634,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         pipeline_pars['in_memory'] = inmemory
         pipeline_pars['clean'] = True
         pipeline_pars['num_cores'] = num_cores
+        if wfpc2_input:
+            pipeline_pars.update(adriz_pars)
+            pipeline_pars['mdriztab'] = False
 
         drz_products, asn_dicts, diff_dicts = run_driz(_inlist, _trlfile, _calfiles,
                                              verify_alignment=False,
@@ -935,8 +956,12 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
         alignfiles = calfiles_flc if calfiles_flc else calfiles
         align_update_files = calfiles if calfiles_flc else None
-        inst = fits.getval(alignfiles[0], 'instrume').lower()
-        det = fits.getval(alignfiles[0], 'detector').lower()
+        hdr0 = fits.getheader(alignfiles[0])
+        inst = hdr0.get('instrume').lower()
+        if inst == 'wfpc2' and 'detector' not in hdr0:
+            det = 'pc'
+        else:
+            det = hdr0.get('detector').lower()
 
         if find_crs:
             trlmsg = _timestamp("Resetting CRs ")

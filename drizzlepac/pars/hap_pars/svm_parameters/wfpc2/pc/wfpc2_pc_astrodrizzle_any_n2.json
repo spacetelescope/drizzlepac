@@ -1,0 +1,121 @@
+{
+    "_mdriztab_btn_": "Update From MDRIZTAB",
+    "runfile": "astrodrizzle.log",
+    "wcskey": "",
+    "proc_unit": "native",
+    "coeffs": true,
+    "context": true,
+    "group": "",
+    "build": true,
+    "crbit": 4096,
+    "stepsize": 10,
+    "resetbits": "4096",
+    "num_cores": 1,
+    "in_memory": false,
+    "STEP 1: STATIC MASK": {
+        "static": true,
+        "static_sig": 4.0
+    },
+    "STEP 2: SKY SUBTRACTION": {
+        "skysub": true,
+        "skymethod": "match",
+        "skystat": "median",
+        "skywidth": 0.1,
+        "skylower": -100.0,
+        "sky_bits": "16",
+        "skyupper": null,
+        "skyclip": 5,
+        "skylsigma": 4.0,
+        "skyusigma": 4.0,
+        "skymask_cat": "",
+        "use_static": true,
+        "skyfile": "",
+        "skyuser": ""
+    },
+    "STEP 3: DRIZZLE SEPARATE IMAGES": {
+        "driz_separate": true,
+        "driz_sep_bits": "65535",
+        "driz_sep_kernel": "turbo",
+        "driz_sep_wt_scl": "exptime",
+        "driz_sep_pixfrac": 1.0,
+        "driz_sep_fillval": null,
+        "driz_sep_compress": false
+    },
+    "STEP 4: CREATE MEDIAN IMAGE": {
+        "median": true,
+        "median_newmasks": true,
+        "combine_type": "minmed",
+        "combine_nlow": 0,
+        "combine_nhigh": 1,
+        "combine_maskpt": 0.3,
+        "combine_nsigma": "4 3",
+        "combine_lthresh": null,
+        "combine_hthresh": null,
+        "combine_grow": 1,
+        "combine_bufsize": null
+    },
+    "STEP 5: BLOT BACK THE MEDIAN IMAGE": {
+        "blot": true,
+        "blot_interp": "poly5",
+        "blot_sinscl": 1.0,
+        "blot_addsky": true,
+        "blot_skyval": 0.0
+    },
+    "STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR": {
+        "driz_cr": true,
+        "driz_cr_snr": "5.0 4.0",
+        "driz_cr_grow": 1,
+        "driz_cr_ctegrow": 0,
+        "driz_cr_scale": "3.0 2.4",
+        "driz_cr_corr": false
+    },
+    "STEP 7: DRIZZLE FINAL COMBINED IMAGE": {
+        "driz_combine": true,
+        "final_pixfrac": 1.0,
+        "final_fillval": null,
+        "final_bits": "528",
+        "final_maskval": null,
+        "final_wht_type": "EXP",
+        "final_kernel": "square",
+        "final_wt_scl": "exptime",
+        "final_units": "cps"
+    },
+    "STEP 7a: CUSTOM WCS FOR FINAL OUTPUT": {
+        "final_wcs": true,
+        "final_rot": 0.0,
+        "final_refimage": "",
+        "final_scale": null,
+        "final_outnx": null,
+        "final_outny": null,
+        "final_ra": null,
+        "final_dec": null,
+        "final_crpix1": null,
+        "final_crpix2": null
+    },
+    "INSTRUMENT PARAMETERS": {
+        "gnkeyword": "ATODGNA,ATODGNB,ATODGNC,ATODGND",
+        "rnkeyword": "READNSEA,READNSEB,READNSEC,READNSED",
+        "expkeyword": "EXPTIME",
+        "gain": "",
+        "rdnoise": "",
+        "exptime": ""
+    },
+    "STATE OF INPUT FILES": {
+        "restore": false,
+        "preserve": false,
+        "overwrite": false,
+        "clean": true
+    },
+    "STEP 3a: CUSTOM WCS FOR SEPARATE OUTPUTS": {
+        "driz_sep_wcs": false,
+        "driz_sep_refimage": "",
+        "driz_sep_rot": null,
+        "driz_sep_scale": null,
+        "driz_sep_outnx": null,
+        "driz_sep_outny": null,
+        "driz_sep_ra": null,
+        "driz_sep_dec": null,
+        "driz_sep_crpix1": null,
+        "driz_sep_crpix2": null
+    }
+}

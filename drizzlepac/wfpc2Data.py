@@ -6,6 +6,7 @@
 :License: :doc:`LICENSE`
 
 """
+import copy
 import os
 
 from astropy.io import fits
@@ -350,3 +351,81 @@ class WFPC2InputImage (imageObject):
                 chip._gain,chip._rdnoise = WFPC2_GAINS[chip.detnum][chip._headergain]
             except KeyError:
                 raise ValueError("! Header gain value is not valid for WFPC2")
+
+
+# ----------------------------------------------------------------------------
+# Functions to convert WFPC2 C0M/C1M files into a single MEF FLT file
+#
+# ----------------------------------------------------------------------------
+def wfpc2_to_flt(imgname):
+    """Convert separate GEIS-based FITS files into single FLT file
+
+    Parameters
+    ----------
+    imgname : str
+        Filename of calibrated WFPC2 SCI (*_c0m.fits) image
+
+    Returns
+    -------
+    flt_filename : str
+        Filename of WFPC2 MEF _*flt.fits file that was written out
+
+    """
+    is_mef = 'c0m' in imgname
+    if not is_mef:
+        raise TypeError("MEF C0M file needed as input.")
+
+    dq_file = imgname.replace('c0m', 'c1m')
+    is_dq = os.path.exists(dq_file)
+    flt_filename = imgname.replace('c0m', 'flt')
+
+    # Read in input SCI file
+    in_sci = fits.open(imgname)
+
+    # Add keywords to be more compatible with ACS and WFC3 data
+    num_sci = fileutil.countExtn(imgname)
+    det_name = 'PC' if num_sci == 4 else 'WF'
+    in_sci[0].header['DETECTOR'] = det_name
+
+    if is_dq:
+        # Read in existing input DQ file
+        in_dq = fits.open(dq_file)
+        dq_extns = [extn for extn in in_dq[1:]]
+    else:
+        # Could not find a DQ file, so create empty DQ arrays
+        # based on SCI arrays
+        dq_extns = [extn for extn in copy.deepcopy(in_sci[1:])]
+        for extn in dq_extns:
+            extn.data = np.zeros(extn.data.shape, dtype=np.int32)
+
+    # Update EXTNAME to be consistent with ACS and WFC3 DQ extname
+    for i,extn in enumerate(dq_extns):
+        extn.header['extname'] = 'DQ'
+        extn.header['extver'] = i+1
+
+    # Now create ERR arrays as well...
+    err_extns =[extn for extn in copy.deepcopy(in_sci[1:])]
+    for i, extn in enumerate(err_extns):
+        # Initialize using Poisson error estimate
+        extn.data = np.sqrt(extn.data)
+        extn.header['extname'] = 'ERR'
+        extn.header['extver'] = i+1
+
+    # Create output FLT file now to avoid having astropy
+    # create a tmp* file that doesn't always get cleaned up...
+    out_hdu = copy.deepcopy(in_sci)
+    fname_kw = out_hdu[0].header['filename']
+    out_hdu[0].header['filename'] = f"{fname_kw[:-8]}flt.fits"
+    for dq_extn, err_extn in zip(dq_extns, err_extns):
+        out_hdu.append(dq_extn)
+        out_hdu.append(err_extn)
+
+    print(f"Writing out {flt_filename}")
+    out_file = open(flt_filename, 'wb')
+    out_hdu.writeto(out_file, overwrite=True)
+    in_sci.close()
+    del in_sci
+    if is_dq:
+        in_dq.close()
+
+    return flt_filename

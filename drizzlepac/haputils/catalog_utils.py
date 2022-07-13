@@ -480,11 +480,19 @@ class CatalogImage:
         keyword_dict["exptime"] = self.imghdu[0].header["EXPTIME"]
         keyword_dict["ndrizim"] = self.imghdu[0].header["NDRIZIM"]
         if keyword_dict["detector"].upper() != "SBC":
-            keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
-            keyword_dict["readnse"] = self._get_max_key_value(self.imghdu[0].header, 'READNSE')
-            keyword_dict["atodgn"] = self._get_max_key_value(self.imghdu[0].header, 'ATODGN')
+            if keyword_dict["instrument"].upper() == 'WFPC2':
+                atodgn = self._get_max_key_value(self.imghdu[0].header, 'ATODGAIN')
+                keyword_dict["ccd_gain"] = atodgn
+                keyword_dict["atodgn"] = atodgn
+                keyword_dict["readnse"] = 5.0
+                keyword_dict["gain_keys"] = [self.imghdu[0].header[k[:8]] for k in self.imghdu[0].header["ATODGAI*"]]
+            else:
+                keyword_dict["ccd_gain"] = self.imghdu[0].header["CCDGAIN"]
+                keyword_dict["readnse"] = self._get_max_key_value(self.imghdu[0].header, 'READNSE')
+                keyword_dict["atodgn"] = self._get_max_key_value(self.imghdu[0].header, 'ATODGN')
+                keyword_dict["gain_keys"] = [self.imghdu[0].header[k[:8]] for k in self.imghdu[0].header["ATODGN*"]]
+
         keyword_dict["aperture_pa"] = self.imghdu[0].header["PA_V3"]
-        keyword_dict["gain_keys"] = [self.imghdu[0].header[k[:8]] for k in self.imghdu[0].header["ATODGN*"]]
 
         # The total detection product has the FILTER keyword in
         # the primary header - read it for any instrument.
@@ -499,16 +507,28 @@ class CatalogImage:
             if keyword_dict["instrument"] == "ACS":
                 keyword_dict["filter1"] = self.imghdu[0].header["FILTER1"]
                 keyword_dict["filter2"] = self.imghdu[0].header["FILTER2"]
+            elif keyword_dict["instrument"] == "WFPC2":
+                keyword_dict["filter1"] = self.imghdu[0].header["FILTNAM1"]
+                keyword_dict["filter2"] = self.imghdu[0].header["FILTNAM2"]
             else:
                 keyword_dict["filter1"] = self.imghdu[0].header["FILTER"]
                 keyword_dict["filter2"] = ""
+
+        if keyword_dict["instrument"] == "ACS":
+            keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
+            keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
+        elif keyword_dict["instrument"] == "WFPC2":
+            keyword_dict["aperture_ra"] = self.imghdu[0].header["RA_TARG"]
+            keyword_dict["aperture_dec"] = self.imghdu[0].header["DEC_TARG"]
+        else:
+            keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
+            keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
+
 
         # Get the HSTWCS object from the first extension
         keyword_dict["wcs_name"] = self.imghdu[1].header["WCSNAME"]
         keyword_dict["wcs_type"] = self.imghdu[1].header["WCSTYPE"]
         keyword_dict["orientation"] = self.imghdu[1].header["ORIENTAT"]
-        keyword_dict["aperture_ra"] = self.imghdu[1].header["RA_APER"]
-        keyword_dict["aperture_dec"] = self.imghdu[1].header["DEC_APER"]
         keyword_dict["photflam"] = proc_utils.find_flt_keyword(self.imghdu, "PHOTFLAM")
         keyword_dict["photplam"] = proc_utils.find_flt_keyword(self.imghdu, "PHOTPLAM")
 
@@ -1333,7 +1353,7 @@ class HAPPointCatalog(HAPCatalogBase):
         # Write out catalog to ecsv file
         # self.source_cat.meta['comments'] = \
         #     ["NOTE: The X and Y coordinates in this table are 0-indexed (i.e. the origin is (0,0))."]
-        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format, overwrite=True)
         log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # Write out region file if in diagnostic_mode.
@@ -2792,7 +2812,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self.source_cat = fill_nans_maskvalues (self.source_cat, fill_value=constants.FLAG)
 
         # Write out catalog to ecsv file
-        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format)
+        self.source_cat.write(self.sourcelist_filename, format=self.catalog_format, overwrite=True)
         log.info("Wrote catalog file '{}' containing {} sources".format(self.sourcelist_filename, len(self.source_cat)))
 
         # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.

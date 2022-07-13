@@ -1052,6 +1052,9 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
                     filters = processing_utils.get_acs_filters(dhdu, all=True)
                 elif d[0] == 'i':
                     filters = hdr['filter']
+                elif d[0] == 'u':
+                    filters = processing_utils.get_wfpc2_filters(dhdu, all=True)
+
                 cols['filters'].append(filters)
         if poller_type == 'mvm':
             # interpret_scells returns:
