@@ -205,6 +205,9 @@ def get_acs_filters(image, delimiter=';', all=False):
         acs_filters = ['clear']
     acs_filters = delimiter.join(acs_filters)
 
+    if closefits:
+        hdu.close()
+
     return acs_filters
 
 
