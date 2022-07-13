@@ -942,10 +942,10 @@ def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging
             sl_search_string = img_search_string.replace("dr?.fits", "{}-cat.ecsv".format(sourcelist_type))
 
             # build search paths.
+            # TODO: Update search paths as necessary once sourcelists are automatically downloaded from catalog
             cwd = os.getcwd()
             search_path_list = []
             search_path_list.append(cwd + "/")
-            search_path_list.append(cwd.replace(cwd.split("/")[-1], "svm_{}".format(ippsss))+"/")  # TODO: update this subroutine to properly find catalogs if they are not stored locally.
 
             # execute searches
             for search_path in search_path_list:
