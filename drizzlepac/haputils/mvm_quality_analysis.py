@@ -358,7 +358,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 
     # 3a: locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of
     # overlapping observations for crossmatch
-    overlap_dict = locate_svm_products(overlap_dict, sourcelist_type, log_level=log_level)
+    overlap_dict = locate_svm_catalogs(overlap_dict, sourcelist_type, log_level=log_level)
     sl_xy_column_name_dict = {"point": ["X-Center", "Y-Center"],
                               "segment": ["X-Centroid", "Y-Centroid"]}
     num_overlaps = len(overlap_dict.keys())
@@ -898,7 +898,7 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
 # ------------------------------------------------------------------------------------------------------------
 
 
-def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
+def locate_svm_catalogs(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
     """ locate SVM-generated sourcelists of overlapping observations for crossmatch
 
     Parameters
