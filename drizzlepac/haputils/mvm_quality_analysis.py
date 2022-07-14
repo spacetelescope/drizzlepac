@@ -899,8 +899,7 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
 
 
 def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
-    """ locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of
-    overlapping observations for crossmatch
+    """ locate SVM-generated sourcelists of overlapping observations for crossmatch
 
     Parameters
     ----------
@@ -932,20 +931,18 @@ def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging
     inst_map = {"i": "wfc3", "j": "acs"}
     for bit_value in overlap_dict.keys():
         for set_num in ["0", "1"]:
-            ippsss = overlap_dict[bit_value]["ippsss_{}".format(set_num)]
-            mode = overlap_dict[bit_value]["mode_{}".format(set_num)]
-
-            # build search strings for svm drz/drc filter image, corresponding sourcelist
-            img_search_string = "{}{}".format(inst_map[ippsss[0]], mode.split(inst_map[ippsss[0]])[1])
-            img_search_string = "hst_*_??_" + img_search_string.replace("all", ippsss)
-            img_search_string = img_search_string.replace("drz", "dr?")
-            sl_search_string = img_search_string.replace("dr?.fits", "{}-cat.ecsv".format(sourcelist_type))
-
             # build search paths.
             # TODO: Update search paths as necessary once sourcelists are automatically downloaded from catalog
-            cwd = os.getcwd()
-            search_path_list = []
-            search_path_list.append(cwd + "/")
+            search_path_list = [os.getcwd() + "/"]
+            # add additional search paths here as necessary
+
+            # build SVM catalog search string
+            ippsss = overlap_dict[bit_value]["ippsss_{}".format(set_num)]
+            mode = overlap_dict[bit_value]["mode_{}".format(set_num)]
+            sl_search_string = "{}{}".format(inst_map[ippsss[0]], mode.split(inst_map[ippsss[0]])[1])
+            sl_search_string = "hst_*_??_" + sl_search_string.replace("all", ippsss)
+            sl_search_string = sl_search_string.replace(sl_search_string[-8:],
+                                                        "{}-cat.ecsv".format(sourcelist_type))
 
             # execute searches
             for search_path in search_path_list:
