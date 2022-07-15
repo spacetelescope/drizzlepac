@@ -333,7 +333,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
     ippsss_list = []
     for total_obj in total_obj_list:
         for exp_obj in total_obj.edp_list:
-            ippsss_list.append(exp_obj.exposure_name[:6])
+            ippsss_list.append(exp_obj.full_filename[-17:-11])
     ippsss_list = list(set(ippsss_list))
     if len(ippsss_list) == 1:  # return if there is only data from a single visit
         log.warning("All observations in this dataset were from a single proposal/visit. This test requires observations from two or more proposal/visits.")
@@ -358,7 +358,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
 
     # 3a: locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of
     # overlapping observations for crossmatch
-    overlap_dict = locate_svm_products(overlap_dict, sourcelist_type, log_level=log_level)
+    overlap_dict = locate_svm_catalogs(overlap_dict, sourcelist_type, log_level=log_level)
     sl_xy_column_name_dict = {"point": ["X-Center", "Y-Center"],
                               "segment": ["X-Centroid", "Y-Centroid"]}
     num_overlaps = len(overlap_dict.keys())
@@ -388,11 +388,6 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             # 3b: Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
             if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] is None:
                 log.warning("Unable to locate one or more SVM sourcelist(s) required for crossmatch!")
-                error_flag = True
-                break
-            if overlap_dict[bit_value]["svm_img_{}".format(set_num)] is None:
-                log.warning(
-                    "Unable to locate one or more SVM drizzled filter image(s) required for crossmatch!")
                 error_flag = True
                 break
             just_sl_name = os.path.basename(overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)])
@@ -821,10 +816,10 @@ def determine_if_overlaps_exist(total_obj_list, log_level=logutil.logging.NOTSET
         if not total_obj.drizzle_filename.endswith("_coarse-all_drz.fits"):
             ippsss_list = []
             for exp_obj in total_obj.edp_list:
-                ippsss_list.append(exp_obj.exposure_name[:6])
+                ippsss_list.append(exp_obj.full_filename[-17:-11])
             ippsss_list = list(set(ippsss_list))
             for ippsss in ippsss_list:
-                img_list = glob.glob("{}*_fl?.fits".format(ippsss))
+                img_list = glob.glob("*{}*_fl?.fits".format(ippsss))
                 skycell = cell_utils.SkyCell.from_name(total_obj.skycell.sky_cell_id)
                 footprint = cell_utils.SkyFootprint(meta_wcs=skycell.wcs)
                 footprint.build(img_list)
@@ -903,9 +898,10 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
 # ------------------------------------------------------------------------------------------------------------
 
 
-def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
-    """ locate SVM-generated sourcelists and corresponding drizzled filter-level product imagery of
-    overlapping observations for crossmatch
+def locate_svm_catalogs(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
+    """ locate SVM-generated sourcelists of overlapping observations for crossmatch. Catalogs are assumed to
+    be in the current working directory; additional search paths may be added by appending new paths to
+    the list `search_path_list`.
 
     Parameters
     ----------
@@ -937,31 +933,25 @@ def locate_svm_products(overlap_dict, sourcelist_type, log_level=logutil.logging
     inst_map = {"i": "wfc3", "j": "acs"}
     for bit_value in overlap_dict.keys():
         for set_num in ["0", "1"]:
+            # build search paths.
+            # TODO: Update search paths as necessary once sourcelists are automatically downloaded from catalog
+            search_path_list = [os.getcwd() + "/"]
+            # add additional search paths here as necessary
+
+            # build SVM catalog search string
             ippsss = overlap_dict[bit_value]["ippsss_{}".format(set_num)]
             mode = overlap_dict[bit_value]["mode_{}".format(set_num)]
-
-            # build search strings for svm drz/drc filter image, corresponding sourcelist
-            img_search_string = "{}{}".format(inst_map[ippsss[0]], mode.split(inst_map[ippsss[0]])[1])
-            img_search_string = "hst_*_??_" + img_search_string.replace("all", ippsss)
-            img_search_string = img_search_string.replace("drz", "dr?")
-            sl_search_string = img_search_string.replace("dr?.fits", "{}-cat.ecsv".format(sourcelist_type))
-
-            # build search paths.
-            cwd = os.getcwd()
-            search_path_list = []
-            search_path_list.append(cwd+"/")
-            search_path_list.append(cwd.replace(cwd.split("/")[-1], "svm_{}".format(ippsss))+"/")  # TODO: update this subroutine to properly find catalogs if they are not stored locally.
+            sl_search_string = "{}{}".format(inst_map[ippsss[0]], mode.split(inst_map[ippsss[0]])[1])
+            sl_search_string = "hst_*_??_" + sl_search_string.replace("all", ippsss)
+            sl_search_string = sl_search_string.replace(sl_search_string[-8:],
+                                                        "{}-cat.ecsv".format(sourcelist_type))
 
             # execute searches
             for search_path in search_path_list:
-                for search_item in [img_search_string, sl_search_string]:
-                    full_search_string = search_path+search_item
-                    results = glob.glob(full_search_string)
-                    if results:
-                        if results[0].endswith(".fits"):
-                            overlap_dict[bit_value]["svm_img_{}".format(set_num)] = results[0]
-                        else:
-                            overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] = results[0]
+                results = glob.glob(search_path + sl_search_string)
+                if results:
+                    overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] = results[0]
+                    break
     return overlap_dict
 
 # ------------------------------------------------------------------------------------------------------------
