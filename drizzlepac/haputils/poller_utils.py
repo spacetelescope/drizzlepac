@@ -939,7 +939,7 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
                 if len(rows_to_drop) == len(input_table):
                     err_msg = "All images have already been MVM processed. No new MVM processing is needed. Exiting..."
                     log.error(err_msg)
-                    raise Exception(err_msg)
+                    sys.exit(analyze.Ret_code.NO_VIABLE_DATA.value)
                 elif len(rows_to_drop) == 0:
                     log.info("None of the input images have previously been MVM processed. Proceeding with MVM processing of all input images... ")
                 else:
