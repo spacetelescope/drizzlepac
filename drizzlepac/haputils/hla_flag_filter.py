@@ -34,20 +34,18 @@ Dependencies
 * ci_table.py
 """
 import glob
-import json
 import math
 import os
 import sys
 import time
 
 from astropy.io import fits as fits
-from astropy.table import Table
 import numpy
 import scipy
 import scipy.ndimage
 
-from drizzlepac.haputils import ci_table
 from stsci.tools import logutil
+from stsci.tools import fileutil
 from stwcs import wcsutil
 
 
@@ -324,6 +322,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     """
     image_split = drizzled_image.split('/')[-1]
     channel = drizzled_image.split("_")[4].upper()
+    instrume = drizzled_image.split("_")[3].upper()
 
     if channel == 'IR':  # TODO: Test and IR case just to make sure that IR shouldn't be skipped
         return catalog_data
@@ -354,11 +353,11 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
         if channel.lower() in ['sbc', 'hrc']:
             image_ext_list = ["[sci,1]"]
         dq_sat_bit = 256
-    if channel.lower() == 'wfpc2':
-        image_ext_list = ["[sci,1]", "[sci,2]", "[sci,3]", "[sci,4]"]
-        dq_sat_bit = 8
-    if channel.lower() == 'pc':
-        image_ext_list = ["[sci,1]"]
+
+    if instrume.lower() == 'wfpc2':
+        numext = fileutil.countExtn(flt_list[0], extname='SCI')
+        # This accounts for readouts of only some detectors instead of all 4
+        image_ext_list = [f"[sci,{i+1}]" for i in range(numext)]
         dq_sat_bit = 8
 
     # build list of arrays
