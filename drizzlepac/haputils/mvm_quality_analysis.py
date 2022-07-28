@@ -251,6 +251,7 @@ def run_quality_analysis(total_obj_list,
 
     if run_overlap_crossmatch:
         try:
+            log.warning("Overlap crossmatch analysis requires SVM catalogs from the different visits to be available for proper quality analysis.")
             overlap_crossmatch_analysis(total_obj_list, json_timestamp=json_timestamp,
                                         json_time_since_epoch=json_time_since_epoch, log_level=log_level)
         except Exception:
