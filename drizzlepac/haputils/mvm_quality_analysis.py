@@ -251,6 +251,7 @@ def run_quality_analysis(total_obj_list,
 
     if run_overlap_crossmatch:
         try:
+            log.warning("Overlap crossmatch analysis requires SVM catalogs from the different visits to be available for proper quality analysis.")
             overlap_crossmatch_analysis(total_obj_list, json_timestamp=json_timestamp,
                                         json_time_since_epoch=json_time_since_epoch, log_level=log_level)
         except Exception:
@@ -386,7 +387,12 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             setnum = int(set_num)
             error_flag = False
             # 3b: Raise warnings if SVM sourcelists and/or drizzled filter images couldn't be found
-            if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] is None:
+            try:
+                if overlap_dict[bit_value]["svm_sourcelist_{}".format(set_num)] is None:
+                    log.warning("Unable to locate one or more SVM sourcelist(s) required for crossmatch!")
+                    error_flag = True
+                    break
+            except KeyError:
                 log.warning("Unable to locate one or more SVM sourcelist(s) required for crossmatch!")
                 error_flag = True
                 break
@@ -986,9 +992,13 @@ def reject_sources_not_in_overlap_region(svm_sourcelist, overlap_region_mask, lo
     for blarg in enumerate(svm_sourcelist):
         linenum = blarg[0]
         line = blarg[1]
-        x = int(line['X-Skycell'])
-        y = int(line['Y-Skycell'])
-        if overlap_region_mask[y, x] == 0:
+        try:
+            x = int(line['X-Skycell'])
+            y = int(line['Y-Skycell'])
+            if overlap_region_mask[y, x] == 0:
+                rows_to_remove.append(linenum)
+        # IndexError caused by x or y 
+        except IndexError:
             rows_to_remove.append(linenum)
     n_rows_to_remove = len(rows_to_remove)
     if n_rows_to_remove > 0:
