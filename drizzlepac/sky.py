@@ -348,7 +348,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
                  verbose     = True,
                  flog        = MultiFileLog(console = True, enableBold = False),
                  _taskname4history = 'AstroDrizzle')
-    except AssertionError:
+    except Exception:
         if 'match' in paramDict['skymethod']:  # This catches 'match' and 'globalmin+match'
             new_method = 'globalmin' if 'globalmin' in paramDict['skymethod'] else 'localmin'
 
