@@ -347,6 +347,10 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
     # EXTRACT DQ DATA FROM FLT IMAGE AND CREATE A LIST
     # OF "ALL" PIXEL COORDINATES WITH A FLAG VALUE OF 256
     # ----------------------------------------------------
+    # instrume: name of instrument from INSTRUME keyword used in filename
+    # Channel: detector or chip ID from instrument used for exposure
+    #          WFPC2 does not define this in the image headers,
+    #          so default values 'PC' and 'WF' are used
     if ((channel.lower() != 'wfpc2') and (channel.lower() != 'pc')):
         if channel.lower() in ['wfc', 'uvis']:
             image_ext_list = ["[sci,1]", "[sci,2]"]
