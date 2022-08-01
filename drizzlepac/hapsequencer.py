@@ -92,7 +92,8 @@ envvar_cat_svm = {"SVM_CATALOG_SBC": 'on',
                   "SVM_CATALOG_WFC": 'on',
                   "SVM_CATALOG_UVIS": 'on',
                   "SVM_CATALOG_IR": 'on',
-                  "SVM_CATALOG_PC": 'on'}
+                  "SVM_CATALOG_PC": 'on',
+                  "SVM_CATALOG_WF": 'on'}
 envvar_cat_str = "SVM_CATALOG_{}"
 
 # --------------------------------------------------------------------------------------------------------------
