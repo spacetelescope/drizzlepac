@@ -92,13 +92,13 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
     # Define the WCS preference dictionary - For visual convenience, the items are ordered with the
     # preferred WCS names at the beginning of the dictionary.  The assigned values are 2**n where
     # the items at the beginning of the dictionary get the lower values.
-    wcs_pref_list = {'FIT_SVM_GAIAEDR3': 1, 'FIT_EVM_GAIAEDR3': 2, 'FIT_REL_GAIAEDR3': 4, 'FIT_IMG_GAIAEDR3': 8,
-                     'FIT_SVM_GAIADR2': 16, 'FIT_EVM_GAIADR2': 32, 'FIT_REL_GAIADR2': 64, 'FIT_IMG_GAIADR2': 128,
-                     'FIT_SVM_GAIADR1': 256, 'FIT_EVM_GAIADR1': 512, 'FIT_REL_GAIADR1': 1024, 'FIT_IMG_GAIADR1': 2048,
-                     'FIT_SVM_GSC242': 4096, 'FIT_EVM_GSC242': 8192, 'FIT_REL_GSC242': 16384, 'FIT_IMG_GSC242': 32768,
-                     'FIT_SVM_2MASS': 65536, 'FIT_EVM_2MASS': 131072, 'FIT_REL_2MASS': 262144, 'FIT_IMG_2MASS': 524288,
-                     'FIT_SVM_NONE': 1048576, 'FIT_EVM_NONE': 2097152, 'FIT_REL_NONE': 4194304, 'FIT_IMG_NONE': 8388608,
-                     'HSC30': 16777216, 'GSC240': 33554432}
+    wcs_pref_list = {'FIT_SVM_GAIAEDR3': 1, 'FIT_REL_GAIAEDR3': 2, 'FIT_IMG_GAIAEDR3': 4,
+                     'FIT_SVM_GAIADR2': 8, 'FIT_REL_GAIADR2': 16, 'FIT_IMG_GAIADR2': 32,
+                     'FIT_SVM_GAIADR1': 64, 'FIT_REL_GAIADR1': 128, 'FIT_IMG_GAIADR1': 256,
+                     'FIT_SVM_GSC242': 512, 'FIT_REL_GSC242': 1024, 'FIT_IMG_GSC242': 2048,
+                     'FIT_SVM_2MASS': 4096, 'FIT_REL_2MASS': 8192, 'FIT_IMG_2MASS': 16384,
+                     'FIT_SVM_NONE': 32768, 'FIT_REL_NONE': 65536, 'FIT_IMG_NONE': 131072,
+                     'HSC30': 262144, 'GSC240': 524288}
 
     # Generate a separate JSON file for each TotalProduct which is really a filter-level product for MVM processing
     # The "total product" references are a throw-back to SVM processing
@@ -133,6 +133,7 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
         dec_list = []
         xc_list = []
         yc_list = []
+        shape = []
         expo_wcs_value = []
         expo_img_value = []
         expname = []
@@ -140,6 +141,9 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
 
         # Loop over all the individual exposures in the list which comprise the layer
         for edp_object in total_product.edp_list:
+            # Record the output dimensions (shape) of the drizzled skycell layer
+            # This will be the same for each exposure so the report is a bit redundant.
+            shape.append(metawcs.pixel_shape)
 
             # Open the exposure file
             exp = fits.open(edp_object.full_filename)
@@ -151,7 +155,6 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                 sci_extns = [0]
 
             # Get the WCSNAME for this exposure (all chips have the same WCSNAME)
-            wcs = HSTWCS(exp, ext=sci_extns[0])
             wcs_name = exp[sci_extns[0]].header['WCSNAME'].upper()
             suffix = wcs_name.split('-')[1]
             wcsname.append(suffix)
@@ -164,27 +167,41 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
             # ***This may be obsolete.
             expo_img_value.append(2**counter)
 
-            # ... and loop over the SCI extensions (each SCI extension is a chip)
+            # Set up empty temporary lists
+            ra_tmp = []
+            dec_tmp = []
+            xc_tmp = []
+            yc_tmp = []
+
+            # Loop over the SCI extensions (each SCI extension is a chip)
             for sci in sci_extns:
 
-                # Compute the sky footprint corners for this chip
+                # Get the WCS for this SCI extension
+                wcs = HSTWCS(exp, ext=sci)
+
+                # Compute the sky footprint corners for this chip ...
                 radec = wcs.calc_footprint().tolist()
                 radec.append(radec[0])  # close the polygon/chip
-                ra_list.append([item[0] for item in radec])
-                dec_list.append([item[1] for item in radec])
+                ra_tmp.append([item[0] for item in radec])
+                dec_tmp.append([item[1] for item in radec])
 
-                # Also save the corner X and Y positions
+                # ... save the corner X and Y positions
                 xycorners = metawcs.all_world2pix(radec, 0).astype(np.int32).tolist()
-                xc_list.append([item[0] for item in xycorners])
-                yc_list.append([item[1] for item in xycorners])
+                xc_tmp.append([item[0] for item in xycorners])
+                yc_tmp.append([item[1] for item in xycorners])
 
             # Clean up and get ready for the next exposure
+            ra_list.append(ra_tmp)
+            dec_list.append(dec_tmp)
+            xc_list.append(xc_tmp)
+            yc_list.append(yc_tmp)
             counter += 1
             exp.close()
 
         # Load the dictionary with the collected data for this layer
         active_wcs_dict = {'filename': expname,
                            'wcsname': wcsname,
+                           'shape': shape,
                            'wcs_value': expo_wcs_value,
                            'img_value': expo_img_value,
                            'RA': ra_list,
@@ -196,6 +213,7 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
         diagnostic_obj.add_data_item(active_wcs_dict, cell_id,
                                      descriptions={'filename': 'Exposure filename',
                                                    'wcsname': 'Primary WCSNAME',
+                                                   'shape': 'Dimensions of the output drizzled (layer) MVM product',
                                                    'wcs_value': 'Fill value/numeric ID for WCS visualization (2^n)',
                                                    'img_value': 'Alt fill Value/numeric ID for WCS visualization (2^n)',
                                                    'RA': 'Right Ascension of Polygon which defines footprint corners',
@@ -204,6 +222,7 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
                                                    'Y': 'Y position of Polygon which defines footprint corners'},
                                      units={'filename': 'unitless',
                                             'wcsname': 'unitless',
+                                            'shape': 'pixels',
                                             'wcs_value': 'unitless',
                                             'img_value': 'unitless',
                                             'RA': 'degrees',
