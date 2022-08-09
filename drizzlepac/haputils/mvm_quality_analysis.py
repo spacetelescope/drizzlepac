@@ -60,6 +60,17 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
+# Define the WCS preference dictionary - For visual convenience, the items are ordered with the
+# preferred WCS names at the beginning of the dictionary.  The assigned values are 2**n where
+# the items at the beginning of the dictionary get the lower values.
+wcs_pref_list = {'FIT_SVM_GAIAEDR3': 1, 'FIT_REL_GAIAEDR3': 2, 'FIT_IMG_GAIAEDR3': 4,
+                 'FIT_SVM_GAIADR2': 8, 'FIT_REL_GAIADR2': 16, 'FIT_IMG_GAIADR2': 32,
+                 'FIT_SVM_GAIADR1': 64, 'FIT_REL_GAIADR1': 128, 'FIT_IMG_GAIADR1': 256,
+                 'FIT_SVM_GSC242': 512, 'FIT_REL_GSC242': 1024, 'FIT_IMG_GSC242': 2048,
+                 'FIT_SVM_2MASS': 4096, 'FIT_REL_2MASS': 8192, 'FIT_IMG_2MASS': 16384,
+                 'FIT_SVM_NONE': 32768, 'FIT_REL_NONE': 65536, 'FIT_IMG_NONE': 131072,
+                 'HSC30': 262144, 'GSC240': 524288}
 # ------------------------------------------------------------------------------------------------------------
 
 
@@ -88,17 +99,6 @@ def report_wcsname(total_product_list, json_timestamp=None, json_time_since_epoc
     """
     log.setLevel(log_level)
     log.info('\n\n*****     Begin Quality Analysis Test: report_wcsname.     *****\n')
-
-    # Define the WCS preference dictionary - For visual convenience, the items are ordered with the
-    # preferred WCS names at the beginning of the dictionary.  The assigned values are 2**n where
-    # the items at the beginning of the dictionary get the lower values.
-    wcs_pref_list = {'FIT_SVM_GAIAEDR3': 1, 'FIT_REL_GAIAEDR3': 2, 'FIT_IMG_GAIAEDR3': 4,
-                     'FIT_SVM_GAIADR2': 8, 'FIT_REL_GAIADR2': 16, 'FIT_IMG_GAIADR2': 32,
-                     'FIT_SVM_GAIADR1': 64, 'FIT_REL_GAIADR1': 128, 'FIT_IMG_GAIADR1': 256,
-                     'FIT_SVM_GSC242': 512, 'FIT_REL_GSC242': 1024, 'FIT_IMG_GSC242': 2048,
-                     'FIT_SVM_2MASS': 4096, 'FIT_REL_2MASS': 8192, 'FIT_IMG_2MASS': 16384,
-                     'FIT_SVM_NONE': 32768, 'FIT_REL_NONE': 65536, 'FIT_IMG_NONE': 131072,
-                     'HSC30': 262144, 'GSC240': 524288}
 
     # Generate a separate JSON file for each TotalProduct which is really a filter-level product for MVM processing
     # The "total product" references are a throw-back to SVM processing

@@ -20,8 +20,6 @@ import os
 import re
 import sys
 
-import pdb
-
 # Related third party imports
 import numpy as np
 import pandas as pd
@@ -36,6 +34,7 @@ from spherical_geometry.polygon import SphericalPolygon
 import drizzlepac.haputils.astrometric_utils as au
 from drizzlepac.haputils.pandas_utils import PandasDFReader, get_pandas_data
 from drizzlepac.haputils.graph_utils import HAPFigure, build_tooltips
+import drizzlepac.haputils.mvm_quality_analysis as mqa
 from stsci.tools import logutil
 
 __taskname__ = 'mvm_quality_graphics'
@@ -51,14 +50,6 @@ color20 = ['#1f77b4', '#393b79', '#aec7e8', '#ffbb78', '#2ca02c',
            '#6b6ecf', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
            '#8c564b', '#e377c2', '#f7b6d2', '#a55194', '#7f7f7f',
            '#c7c7c7', '#bcbd22', '#dbdb8d', '#ce6dbd', '#9edae5']
-
-wcs_list = {'FIT_SVM_GAIAEDR3': 1, 'FIT_REL_GAIAEDR3': 2, 'FIT_IMG_GAIAEDR3': 4,
-            'FIT_SVM_GAIADR2': 8, 'FIT_REL_GAIADR2': 16, 'FIT_IMG_GAIADR2': 32,
-            'FIT_SVM_GAIADR1': 64, 'FIT_REL_GAIADR1': 128, 'FIT_IMG_GAIADR1': 256,
-            'FIT_SVM_GSC242': 512, 'FIT_REL_GSC242': 1024, 'FIT_IMG_GSC242': 2048,
-            'FIT_SVM_2MASS': 4096, 'FIT_REL_2MASS': 8192, 'FIT_IMG_2MASS': 16384,
-            'FIT_SVM_NONE': 32768, 'FIT_REL_NONE': 65536, 'FIT_IMG_NONE': 131072,
-            'HSC30': 262144, 'GSC240': 524288}
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -556,6 +547,8 @@ def wcs_graphics_driver(storage_filename, output_base_filename='', display_plot=
 
     generate_wcs_footprint(wcs_dataDF, output_base_filename, display_plot, log_level)
 
+# ------------------------------------------------------------------------------------------------------------
+
 def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=False,
                          log_level=logutil.logging.NOTSET):
     """Generate the graphics associated with this particular type of data.
@@ -592,7 +585,7 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         output_base_filename = '{}_wcs'.format(output_base_filename)
 
     # Create a clean dictionary of the wcsnames
-    wcs_bins = copy.copy(wcs_list)
+    wcs_bins = copy.copy(mqa.wcs_pref_list)
     for key, value in wcs_bins.items():
         wcs_bins[key] = 0
 
@@ -605,7 +598,8 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
     for skycell in skycell_names:
 
         # There is one html page for each skycell
-        output_file(skycell + '_' + output_base_filename + '.html')
+        output_filename = skycell + '_' + output_base_filename + '.html'
+        output_file(output_filename)
 
         # Get only the rows (aka layers) for the specified skycell
         layer_names = [item for item in all_rows if re.search(skycell, item)]
@@ -615,9 +609,9 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         cnt_all_layers_mask = None
         all_layers_mask = None
 
-        log.info("")
-        log.info("Values of '--' indicate perfect overlap of all exposures with same WCS solution.")
+        log.info("Processing skycell {}".format(skycell))
         layer_stats = "<h3>Overlap Region Statistics for Mismatched WCS Solutions</h3>"
+        layer_stats += "<p>Values of '--' indicate constituent exposures had same WCS solution.</p>"
         layer_stats += "<table><tr><th>Layer</th><th>Min</th><th>Max</th><th>Mean</th><th>Std</th><th># Pixels in Use</th><th># Pixels in Overlap</th><th>%Pixels in Overlap</th></tr>"
         exposure_info = "<table><tr><th>Layer</th><th>Exposure</th><th>WCSNAME</th><th>WCS Value</th></tr>"
         
@@ -680,7 +674,7 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
                     cnt_layer_mask += cnt_expo_mask
                     cnt_all_layers_mask += cnt_expo_mask
 
-                    # Set filled portion of the exposure mask to the WCS 2^n value
+                    # Set filled portion of the exposure mask to the WCS 2^N value
                     # and update the bitwise_OR mask
                     layer_img = Image.new("I", (naxis2, naxis1), color=0)
                     ImageDraw.Draw(layer_img).polygon(polygon, outline=1, fill=1)
@@ -696,28 +690,39 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         # Compute statistics for the composite of all the layers
         stats = compute_overlap_stats(all_layers_mask, "All Layers")
         layer_stats += stats
-        max_color = cnt_all_layers_mask.max() + 1
 
         # Resample the output footprint overlay image of all the layers in the skycell
         # as the original image is large and deep (Based on code in astrometric_utils.py.)
         scale = 8
+
         yend = all_layers_mask.shape[0] % scale
         xend = all_layers_mask.shape[1] % scale
         yend = -1 * yend if yend > 0 else None
         xend = -1 * xend if xend > 0 else None
         new_shape = (all_layers_mask.shape[0] // scale, all_layers_mask.shape[1] // scale)
-
-        # Resample
         all_layers_mask = np.log10(all_layers_mask)
         max_color_wcs = all_layers_mask.max() + 1
         all_layers_mask = au.rebin(all_layers_mask[:yend, :xend], new_shape)
+
+        max_color = cnt_all_layers_mask.max() + 1
+        """
+        yend = cnt_all_layers_mask.shape[0] % scale
+        xend = cnt_all_layers_mask.shape[1] % scale
+        yend = -1 * yend if yend > 0 else None
+        xend = -1 * xend if xend > 0 else None
+        cnt_new_shape = (cnt_all_layers_mask.shape[0] // scale, cnt_all_layers_mask.shape[1] // scale)
+        max_color = cnt_all_layers_mask.max() + 1
+        cnt_all_layers_mask = au.rebin(cnt_all_layers_mask[:yend, :xend], cnt_new_shape)
+        """
 
         # Image of footprints where the value of a pixel is the number of images
         # contributing to the pixel
         color_mapper = LinearColorMapper(palette="Spectral11", low=0, high=max_color)
         pcnt = figure(title="Skycell: " + skycell.upper() + "       Image of Layer Overlap       Total Number of Layers: "
+                      #+ str(num_layers), x_range=(0, cnt_new_shape[1]), y_range=(0, cnt_new_shape[0]))
                       + str(num_layers), x_range=(0, naxis2), y_range=(0, naxis1))
         pcnt.image(image=[cnt_all_layers_mask[0:naxis2, 0:naxis1]], color_mapper=color_mapper,
+                   #x=0, y=0, dw=cnt_new_shape[1], dh=cnt_new_shape[0])
                    x=0, y=0, dw=naxis2, dh=naxis1)
         color_bar = ColorBar(color_mapper=color_mapper, location=(0,0))
         pcnt.add_layout(color_bar, "right")
@@ -728,7 +733,6 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         pwcs = figure(title="Skycell: " + skycell.upper() + 
                       "       Image of Mismatched Overlap       Value is log10(WCS Value)",
                       x_range=(0, new_shape[1]), y_range=(0, new_shape[0]))
-        #pwcs.image(image=[all_layers_mask], x=0, y=0, dw=new_shape[1], dh=new_shape[0], palette="Spectral11")
         pwcs.image(image=[all_layers_mask], x=0, y=0, dw=new_shape[1], dh=new_shape[0], color_mapper=color_mapper_wcs)
         color_bar_wcs = ColorBar(color_mapper=color_mapper_wcs, location=(0,0))
         pwcs.add_layout(color_bar_wcs, "right")
@@ -739,19 +743,18 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         exposure_table = Div(text = exposure_info)
         stat_table = Div(text = layer_stats)
 
-        ## Setup the grid to have two columns
-        #show(gridplot([[pcnt, pwcs], [stat_table, exposure_table], [wcs_legend, None]))
-
         wcs_value_legend = "<h3>Legend: WCS Value Assignment to WCSNAMEs</h3>"
         wcs_value_legend += "<table><tr><th>WCSNAME</th><th>WCS Value (2^N)</th></tr>"
-        for key, value in wcs_list.items():
+        for key, value in mqa.wcs_pref_list.items():
             wcs_value_legend += f"<tr><td>{key}</td><td align='right'>{value}</td></tr>"
-            #log.info("WCSNAME: {}   Value: {}".format(key, value))
         wcs_value_legend +="</table>"
         wcs_legend_table = Div(text = wcs_value_legend)
 
         # Setup the grid to have two columns
         show(gridplot([[pcnt, pwcs], [stat_table, exposure_table], [wcs_legend_table, None]]))
+        log.info("Output HTML graphic file {} has been written.\n".format(output_filename))
+
+# ------------------------------------------------------------------------------------------------------------
 
 def compute_overlap_stats(footprint, layer_name, log_level=logutil.logging.NOTSET):
     """Compute general statistics on the overlap regions. 
@@ -767,10 +770,10 @@ def compute_overlap_stats(footprint, layer_name, log_level=logutil.logging.NOTSE
     # Number of pixels in footprint which are overlaid with data (i.e., pixels are not 0)
     total_pixels_in_use = (footprint > 0).sum()
 
-    # Identify all the *overlap* pixels (value is NOT 2^n and NOT zero)
+    # Identify all the *overlap* pixels (value is NOT 2^N and NOT zero)
     #
-    # These pixels are a *combination* of the 2^n values in wcs_list.
-    # The overlap_pixel_mask retains the value of the combination 2^n values or zero.
+    # These pixels are a *combination* of the 2^N values in wcs_list.
+    # The overlap_pixel_mask retains the value of the combination 2^N values or zero.
     overlap_pixel_mask = (np.ceil(np.log2(footprint)) != np.floor(np.log2(footprint))) * footprint
     masked_overlap_pixel_mask = np.ma.masked_equal(overlap_pixel_mask, 0, copy=False)
 
@@ -791,6 +794,7 @@ def compute_overlap_stats(footprint, layer_name, log_level=logutil.logging.NOTSE
 
     return text
 
+# ------------------------------------------------------------------------------------------------------------
 
 def generate_wcs_graphic(wcs_dataDF, output_base_filename='', display_plot=False,
                          log_level=logutil.logging.NOTSET):
@@ -913,7 +917,7 @@ def generate_wcs_graphic(wcs_dataDF, output_base_filename='', display_plot=False
 
         # Map the WCSNAMEs to specific colors so any particular WCSNAME will always have
         # the same color
-        dict_wcs_color = dict(zip(wcs_list.keys(), color20))
+        dict_wcs_color = dict(zip(mqa.wcs_pref_list.keys(), color20))
         colors = [dict_wcs_color.get(item) for item in wcsnames_all_layers]
 
         # The graphic
