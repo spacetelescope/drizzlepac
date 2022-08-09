@@ -96,7 +96,6 @@ def build_mvm_plots(data_source, output_basename='', display_plot=False, log_lev
         output_basename = "{}_mvm_qa".format(output_basename)
 
     # Generate overlap crossmatch plots
-    """
     try:
         build_overlap_crossmatch_plots(data_source,
                                        display_plot,
@@ -106,7 +105,6 @@ def build_mvm_plots(data_source, output_basename='', display_plot=False, log_lev
         log.warning("Overlap crossmatch plot generation encountered a problem.")
         log.exception("message")
         log.warning("Continuing to next plot...")
-    """
 
     # Generate the WCS graphics
     try:
@@ -554,7 +552,7 @@ def wcs_graphics_driver(storage_filename, output_base_filename='', display_plot=
             wcs_dataDF.rename(columns={old_col_name: new_col_name}, inplace=True)
 
     # Generate the WCS graphic for specific skycell layer
-    #generate_wcs_graphic(wcs_dataDF, output_base_filename, display_plot, log_level)
+    generate_wcs_graphic(wcs_dataDF, output_base_filename, display_plot, log_level)
 
     generate_wcs_footprint(wcs_dataDF, output_base_filename, display_plot, log_level)
 
@@ -741,12 +739,19 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         exposure_table = Div(text = exposure_info)
         stat_table = Div(text = layer_stats)
 
-        # Setup the grid to have two columns
-        show(gridplot([[pcnt, pwcs], [stat_table, exposure_table]]))
+        ## Setup the grid to have two columns
+        #show(gridplot([[pcnt, pwcs], [stat_table, exposure_table], [wcs_legend, None]))
 
-    log.info("Map of WCSNAMES to values for decomposition:")
-    for key, value in wcs_list.items():
-        log.info("WCSNAME: {}   Value: {}".format(key, value))
+        wcs_value_legend = "<h3>Legend: WCS Value Assignment to WCSNAMEs</h3>"
+        wcs_value_legend += "<table><tr><th>WCSNAME</th><th>WCS Value (2^N)</th></tr>"
+        for key, value in wcs_list.items():
+            wcs_value_legend += f"<tr><td>{key}</td><td align='right'>{value}</td></tr>"
+            #log.info("WCSNAME: {}   Value: {}".format(key, value))
+        wcs_value_legend +="</table>"
+        wcs_legend_table = Div(text = wcs_value_legend)
+
+        # Setup the grid to have two columns
+        show(gridplot([[pcnt, pwcs], [stat_table, exposure_table], [wcs_legend_table, None]]))
 
 def compute_overlap_stats(footprint, layer_name, log_level=logutil.logging.NOTSET):
     """Compute general statistics on the overlap regions. 
