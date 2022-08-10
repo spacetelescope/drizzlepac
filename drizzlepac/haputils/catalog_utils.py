@@ -2087,10 +2087,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # segmentation. Sextractor uses a multi-thresholding technique.
             # npixels = number of connected pixels in source
             # npixels and filter_kernel should match those used by detect_sources()
-            segm_deblended_img = deblend_sources(imgarr,
+            segm_deblended_img = deblend_sources(convolve(imgarr, filter_kernel),
                                                  segm_img,
                                                  npixels=source_box,
-                                                 filter_kernel=filter_kernel,
                                                  nlevels=self._nlevels,
                                                  contrast=self._contrast,
                                                  labels=segm_img.big_segments)

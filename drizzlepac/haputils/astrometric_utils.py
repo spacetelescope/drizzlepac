@@ -996,8 +996,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         segm = detect_sources(convolve(imgarr, kernel), segment_threshold, npixels=source_box)
 
     if deblend:
-        segm = deblend_sources(imgarr, segm, npixels=5,
-                               filter_kernel=kernel, nlevels=32,
+        segm = deblend_sources(convolve(imgarr, kernel), segm, npixels=5,
+                               nlevels=32,
                                contrast=0.01)
 
     # If classify is turned on, it should modify the segmentation map
@@ -1180,8 +1180,8 @@ def crclean_image(imgarr, segment_threshold, kernel, fwhm,
         return imgarr
 
     if deblend:
-        segm = deblend_sources(imgarr, segm, npixels=5,
-                               filter_kernel=kernel, nlevels=32,
+        segm = deblend_sources(convolve(imgarr, kernel), segm, npixels=5,
+                               nlevels=32,
                                contrast=0.01)
 
     # Measure segment sources to compute centralized moments for each source
