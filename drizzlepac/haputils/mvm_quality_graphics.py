@@ -704,25 +704,14 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         max_color_wcs = all_layers_mask.max() + 1
         all_layers_mask = au.rebin(all_layers_mask[:yend, :xend], new_shape)
 
-        max_color = cnt_all_layers_mask.max() + 1
-        """
-        yend = cnt_all_layers_mask.shape[0] % scale
-        xend = cnt_all_layers_mask.shape[1] % scale
-        yend = -1 * yend if yend > 0 else None
-        xend = -1 * xend if xend > 0 else None
-        cnt_new_shape = (cnt_all_layers_mask.shape[0] // scale, cnt_all_layers_mask.shape[1] // scale)
-        max_color = cnt_all_layers_mask.max() + 1
-        cnt_all_layers_mask = au.rebin(cnt_all_layers_mask[:yend, :xend], cnt_new_shape)
-        """
-
         # Image of footprints where the value of a pixel is the number of images
         # contributing to the pixel
+        max_color = cnt_all_layers_mask.max() + 1
         color_mapper = LinearColorMapper(palette="Spectral11", low=0, high=max_color)
-        pcnt = figure(title="Skycell: " + skycell.upper() + "       Image of Layer Overlap       Total Number of Layers: "
-                      #+ str(num_layers), x_range=(0, cnt_new_shape[1]), y_range=(0, cnt_new_shape[0]))
+        pcnt = figure(title="Skycell: " + skycell.upper() 
+                      + "       Image of Layer Overlap       Total Number of Layers: "
                       + str(num_layers), x_range=(0, naxis2), y_range=(0, naxis1))
-        pcnt.image(image=[cnt_all_layers_mask[0:naxis2, 0:naxis1]], color_mapper=color_mapper,
-                   #x=0, y=0, dw=cnt_new_shape[1], dh=cnt_new_shape[0])
+        pcnt.image(image=[cnt_all_layers_mask], color_mapper=color_mapper,
                    x=0, y=0, dw=naxis2, dh=naxis1)
         color_bar = ColorBar(color_mapper=color_mapper, location=(0,0))
         pcnt.add_layout(color_bar, "right")
@@ -733,7 +722,8 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         pwcs = figure(title="Skycell: " + skycell.upper() + 
                       "       Image of Mismatched Overlap       Value is log10(WCS Value)",
                       x_range=(0, new_shape[1]), y_range=(0, new_shape[0]))
-        pwcs.image(image=[all_layers_mask], x=0, y=0, dw=new_shape[1], dh=new_shape[0], color_mapper=color_mapper_wcs)
+        pwcs.image(image=[all_layers_mask], color_mapper=color_mapper_wcs,
+                   x=0, y=0, dw=new_shape[1], dh=new_shape[0])
         color_bar_wcs = ColorBar(color_mapper=color_mapper_wcs, location=(0,0))
         pwcs.add_layout(color_bar_wcs, "right")
 
@@ -750,9 +740,13 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         wcs_value_legend +="</table>"
         wcs_legend_table = Div(text = wcs_value_legend)
 
-        # Setup the grid to have two columns
-        show(gridplot([[pcnt, pwcs], [stat_table, exposure_table], [wcs_legend_table, None]]))
-        log.info("Output HTML graphic file {} has been written.\n".format(output_filename))
+        # Display and save
+        if display_plot:
+            show(gridplot([[pcnt, pwcs], [stat_table, exposure_table], [wcs_legend_table, None]]))
+            log.info("Output HTML graphic file {} displayed in browser and has been written.\n".format(output_filename))
+        else:
+            save(gridplot([[pcnt, pwcs], [stat_table, exposure_table], [wcs_legend_table, None]]))
+            log.info("Output HTML graphic file {} has been written.\n".format(output_filename))
 
 # ------------------------------------------------------------------------------------------------------------
 
