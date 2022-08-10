@@ -37,7 +37,7 @@ from astropy.table import Table, vstack, Column
 from astropy.coordinates import SkyCoord
 from astropy.io import fits as fits
 from astropy.io import ascii
-from astropy.convolution import Gaussian2DKernel
+from astropy.convolution import Gaussian2DKernel, convolve
 from astropy.stats import gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, sigma_clipped_stats
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
@@ -962,8 +962,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         dao_threshold, bkg = sigma_clipped_bkg(imgarr, sigma=4.0, nsigma=dao_nsigma)
         segment_threshold = np.ones(imgarr.shape, imgarr.dtype) * dao_threshold
 
-    segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
-                          filter_kernel=kernel, connectivity=4)
+    segm = detect_sources(convolve(imgarr, kernel), segment_threshold, npixels=source_box,
+                          connectivity=4)
 
     # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
     if segm is None or segm.nlabels == 0:
@@ -993,7 +993,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                         kcenter - koffset: kcenter + koffset + 1].copy()
         kernel /= kernel.sum()  # normalize to total sum == 1
         log.info("Looking for crowded sources using smaller kernel with shape: {}".format(kernel.shape))
-        segm = detect_sources(imgarr, segment_threshold, npixels=source_box, filter_kernel=kernel)
+        segm = detect_sources(convolve(imgarr, kernel), segment_threshold, npixels=source_box)
 
     if deblend:
         segm = deblend_sources(imgarr, segm, npixels=5,
@@ -1170,8 +1170,8 @@ def crclean_image(imgarr, segment_threshold, kernel, fwhm,
         Input array with pixels flagged as CRs set to 0.0
     """
     # Perform basic image segmentation to look for sources in image
-    segm = detect_sources(imgarr, segment_threshold, npixels=source_box,
-                          filter_kernel=kernel, connectivity=4)
+    segm = detect_sources(convolve(imgarr, kernel), segment_threshold, npixels=source_box,
+                          connectivity=4)
 
     log.debug("Detected {} sources of all types ".format(segm.nlabels))
     # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
