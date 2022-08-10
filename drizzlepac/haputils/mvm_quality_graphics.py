@@ -694,7 +694,6 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         # Resample the output footprint overlay image of all the layers in the skycell
         # as the original image is large and deep (Based on code in astrometric_utils.py.)
         scale = 8
-
         yend = all_layers_mask.shape[0] % scale
         xend = all_layers_mask.shape[1] % scale
         yend = -1 * yend if yend > 0 else None
@@ -704,17 +703,24 @@ def generate_wcs_footprint(wcs_dataDF, output_base_filename='', display_plot=Fal
         max_color_wcs = all_layers_mask.max() + 1
         all_layers_mask = au.rebin(all_layers_mask[:yend, :xend], new_shape)
 
+ 
+        # Slice the output *count* footprint overlay image of all the layers in the skycell.
+        # We do NOT want the data values to change - we just want a smaller image.
+        cnt_scale = 4
+        max_color = cnt_all_layers_mask.max() + 1
+        cnt_all_layers_mask = cnt_all_layers_mask[::cnt_scale, ::cnt_scale]
+        cnt_naxis1, cnt_naxis2 = cnt_all_layers_mask.shape
+
         # Image of footprints where the value of a pixel is the number of images
         # contributing to the pixel
-        max_color = cnt_all_layers_mask.max() + 1
-        color_mapper = LinearColorMapper(palette="Spectral11", low=0, high=max_color)
+        cnt_color_mapper = LinearColorMapper(palette="Spectral11", low=0, high=max_color)
         pcnt = figure(title="Skycell: " + skycell.upper() 
                       + "       Image of Layer Overlap       Total Number of Layers: "
-                      + str(num_layers), x_range=(0, naxis2), y_range=(0, naxis1))
-        pcnt.image(image=[cnt_all_layers_mask], color_mapper=color_mapper,
-                   x=0, y=0, dw=naxis2, dh=naxis1)
-        color_bar = ColorBar(color_mapper=color_mapper, location=(0,0))
-        pcnt.add_layout(color_bar, "right")
+                      + str(num_layers), x_range=(0, cnt_naxis2), y_range=(0, cnt_naxis1))
+        pcnt.image(image=[cnt_all_layers_mask], color_mapper=cnt_color_mapper,
+                   x=0, y=0, dw=cnt_naxis2, dh=cnt_naxis1)
+        cnt_color_bar = ColorBar(color_mapper=cnt_color_mapper, location=(0,0))
+        pcnt.add_layout(cnt_color_bar, "right")
 
         # Image of footprints where the value of a pixel is a bitwise_or of all contributing images
         # This is the resampled image.
