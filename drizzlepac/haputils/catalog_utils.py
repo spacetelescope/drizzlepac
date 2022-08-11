@@ -10,7 +10,7 @@ from packaging.version import Version
 from astropy.io import fits as fits
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Column, MaskedColumn, Table, join, vstack
-from astropy.convolution import RickerWavelet2DKernel
+from astropy.convolution import RickerWavelet2DKernel, convolve
 from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage, stats
@@ -2027,10 +2027,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
         segm_img = None
-        segm_img = detect_sources(img_bkg_sub,
+        segm_img = detect_sources(convolve(img_bkg_sub, filter_kernel),
                                   thresh0,
                                   npixels=source_box,
-                                  filter_kernel=filter_kernel,
                                   mask=mask)
 
         # If no segments were found, there are no detectable sources in the total detection image.
@@ -2088,10 +2087,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # segmentation. Sextractor uses a multi-thresholding technique.
             # npixels = number of connected pixels in source
             # npixels and filter_kernel should match those used by detect_sources()
-            segm_deblended_img = deblend_sources(imgarr,
+            segm_deblended_img = deblend_sources(convolve(imgarr, filter_kernel),
                                                  segm_img,
                                                  npixels=source_box,
-                                                 filter_kernel=filter_kernel,
                                                  nlevels=self._nlevels,
                                                  contrast=self._contrast,
                                                  labels=segm_img.big_segments)
