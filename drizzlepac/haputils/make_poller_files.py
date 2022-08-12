@@ -75,9 +75,14 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
     if poller_file_type == 'svm' and skycell_name:
         print("PROTIP: Users only need to provide a skycell name for the creation of MVM poller files, not SVM poller files.")
     # Open rootname list file
-    f = open(input_list, 'r')
-    rootname_list = f.readlines()
-    f.close()
+    if isinstance(input_list, str):
+        f = open(input_list, 'r')
+        rootname_list = f.readlines()
+        f.close()
+    elif isinstance(input_list, list):
+        rootname_list = input_list
+    else:
+        raise ValueError("Parameter `input_list` should be either a filename or list of filenames")
     output_list = []
     for rootname in rootname_list:
         rootname = rootname.strip()
@@ -103,13 +108,19 @@ def generate_poller_file(input_list, poller_file_type='svm', output_poller_filen
         imghdr = imghdu[0].header
         linelist.append("{}".format(imghdr['proposid']))
         linelist.append(imgname.split("_")[-2][1:4].upper())
-        if imghdr['primesi'].lower() == imghdr['instrume']:
+        if imghdr['instrume'].lower() == 'wfpc2':
+            _primesi = 'wfpc2'
+        else:
+            _primesi = imghdr['primesi']
+        if _primesi.lower() == imghdr['instrume']:
             linelist.append(imghdr['linenum'].split(".")[0])
         else:
             linelist.append(imghdr['rootname'][-5:-3].upper())
         linelist.append("{}".format(imghdr['exptime']))
         if imghdr['INSTRUME'].lower() == "acs":
             filter = poller_utils.determine_filter_name("{};{}".format(imghdr['FILTER1'], imghdr['FILTER2']))
+        elif imghdr['INSTRUME'].lower() == "wfpc2":
+            filter = poller_utils.determine_filter_name("{};{}".format(imghdr['FILTNAM1'], imghdr['FILTNAM2']))
         elif imghdr['INSTRUME'].lower() == "wfc3":
             filter = poller_utils.determine_filter_name(imghdr['FILTER'])
         linelist.append(filter.upper())

@@ -1,0 +1,32 @@
+{
+    "ci filter": {
+      "aperture": {
+        "bthresh": 5.0,
+        "lookup_ci_limits_from_table": true,
+        "ci_lower_limit": 0.25,
+        "ci_upper_limit": 0.55
+      },
+      "segment": {
+        "bthresh": 5.0,
+        "lookup_ci_limits_from_table": true,
+        "ci_lower_limit": 0.25,
+        "ci_upper_limit": 0.55
+      }
+    },
+    "swarm filter": {
+      "HLA_plate_scale": 0.09,
+      "upper_epp_limit": 70000.0,
+      "lower_epp_limit": 2000.0,
+      "eppsky_limit": 100.0,
+      "selfradius": 10.0,
+      "cuts_list": [2000000.0, 1800000.0, 1000000.0, 500000.0, 70000.0, 20000.0, 0.0],
+      "selfradii_list": [125.0, 100.0, 35.0, 30.0, 20.0, 15.0, 10.0],
+      "swarm_thresh": 1.0,
+      "clip_radius_list": [140.0, 120.0, 100.0, 80.0, 60.0, 40.0, 20.0, 10.0, 5.0, 2.0, 0.0],
+      "scale_factor_list_orig": [0.0, 0.000000e+00, 6.498530e-06, 3.687270e-05, 1.412972e-04, 3.151877e-04, 1.023391e-03, 3.134859e-03, 2.602436e-02, 1.820539e-01, 1.000000e+00],
+      "scale_factor_list": [1.0e-05, 2.3e-05, 4.00e-05, 8.0e-05, 2.00e-04, 6.00e-04, 1.50e-02, 5.00e-02, 1.50e-01, 9.00e-01, 1.000000e+00],
+      "proximity_binary": true,
+      "ctrList_radiusList": [125, 100, 80, 30, 50, 20, 15],
+      "ctrList_thresholdList": [2000000, 1800000, 500000, 250000, 100000, 40000, 20000]
+    }
+}
