@@ -486,7 +486,6 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 prod_list = prod_info.split(" ")
                 multi_scale = prod_list[2].upper() in ['IR', 'PC', 'WF']
                 pscale = 'fine' if not multi_scale else 'coarse'
-                # pscale = 'fine' if prod_list[2].upper() != 'IR' else 'coarse'
                 prod_info += " {:s}".format(pscale)
 
                 if prod_list[5].strip() != '':
