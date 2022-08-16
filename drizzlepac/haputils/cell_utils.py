@@ -37,7 +37,7 @@ SKYCELL_OVERLAP = 256
 SUPPORTED_SCALES = {'fine': 0.04, 'coarse': 0.12}  # arcseconds/pixel
 
 
-def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
+def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diagnostic_mode=False):
     """Return all sky cells that overlap the exposures in the input.
 
     Parameters
@@ -142,8 +142,12 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None):
             footprint = SkyFootprint(meta_wcs)
             footprint.build([expname])
 
+            if diagnostic_mode:
+                wcshdr = meta_wcs.to_header()
+                fits.PrimaryHDU(data=footprint.total_mask.astype(np.int16), header=wcshdr).writeto(f"{visit_id}_{expname.split('_')[-2]}_footprint.fits", overwrite=True)
+
             # Use this footprint to identify overlapping sky cells
-            visit_cells = sky_grid.get_sky_cells(footprint)
+            visit_cells = sky_grid.get_sky_cells(footprint, diagnostic_mode=diagnostic_mode)
             print('Exposure {} from visit {} overlapped SkyCells:\n{}'.format(expname, visit_id, visit_cells))
 
             for scell in visit_cells:
@@ -756,13 +760,14 @@ class GridDefs(object):
         else:
             self.projection_cells = [ProjectionCell(index=i, scale=self.scale) for i in id]
 
-    def get_sky_cells(self, skyfootprint, member='total'):
+    def get_sky_cells(self, skyfootprint, member='total', diagnostic_mode=False):
 
         self.get_projection_cells(skyfootprint)
 
         # Find sky cells from identified projection cell(s) that overlap footprint
         sky_cells = {}
         for pcell in self.projection_cells:
+            pcell.diagnostic_mode = diagnostic_mode
             sky_cells.update(pcell.find_sky_cells(skyfootprint,
                                                  nxy=self.sc_nxy,
                                                  overlap=self.sc_overlap))
@@ -872,6 +877,7 @@ class ProjectionCell(object):
         self.mask = None
         # Generate WCS for projection cell
         self._build_wcs()
+        self.diagnostic_mode = False
 
     def _from_index(self, id):
         grid_defs = GridDefs()
@@ -956,6 +962,13 @@ class ProjectionCell(object):
         for xi in range(mosaic_xr[0], mosaic_xr[1]):
             for yi in range(mosaic_yr[0], mosaic_yr[1]):
                 skycell = SkyCell(x=xi, y=yi, projection_cell=self)
+
+                if self.diagnostic_mode:
+                    mask_fits_name = f'skycell_{skycell.sky_cell_id}_mask.fits'
+                    if not os.path.exists(mask_fits_name):
+                        skycell.build_mask()
+                        fits.PrimaryHDU(data=skycell.mask.astype(np.int16), header=skycell.wcs.to_header()).writeto(
+                            mask_fits_name, overwrite=True)
 
                 sc_overlap = self.compute_overlap(skycell, mosaic_ra, mosaic_dec)
 
