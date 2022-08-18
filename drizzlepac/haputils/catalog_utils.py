@@ -46,6 +46,10 @@ except Exception:
 
 CATALOG_TYPES = ['aperture', 'segment']
 
+# B1950, J2000 and other valid RADESYS values do not transform natively to ICRS
+# Only these options support conversion to/from ICRS in WCSLIB.
+RADESYS_OPTIONS = ['FK4', 'FK5', 'ICRS']
+
 if OLD_PHOTUTILS:
     id_colname = 'id'
     flux_colname = 'source_sum'
@@ -1823,6 +1827,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                     kernel=self.kernel, wcs=self.image.imgwcs,
                                                     kron_params=[self._kron_scaling_radius, self._kron_minimum_radius])
 
+            # Guard against a non-standard coordinate system being defined in the input image headers
+            # If something non-standard is found, set the value to 'ICRS' to insure that the
+            # table conversion works.  Checking against the set of valid options recognized by WCSLIB and
+            # documented in http://ds9.si.edu/doc/ref/region.html#RegionFileFormat is necessary since the
+            # header keyword REFFRAME can be populated with anything specified by the user in the original
+            # proposal.
+            if self.source_cat._wcs.wcs.radesys.upper() not in RADESYS_OPTIONS:
+                self.source_cat._wcs.wcs.radesys = 'ICRS'
+                log.warning(f"Assuming input coordinates are ICRS, instead of {self.source_cat._wcs.wcs.radesys}")
+                log.warning(f"Sky coordinates of source objects may not be accurate.")
 
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
@@ -2173,6 +2187,17 @@ class HAPSegmentCatalog(HAPCatalogBase):
             include_filter_cols.append('fwhm')
             self.source_cat = SourceCatalog(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
                                                 error=total_error, kernel=self.kernel, wcs=self.image.imgwcs)
+
+        # Guard against a non-standard coordinate system being defined in the input image headers
+        # If something non-standard is found, set the value to 'ICRS' to insure that the
+        # table conversion works.  Checking against the set of valid options recognized by WCSLIB and
+        # documented in http://ds9.si.edu/doc/ref/region.html#RegionFileFormat is necessary since the
+        # header keyword REFFRAME can be populated with anything specified by the user in the original
+        # proposal.
+        if self.source_cat._wcs.wcs.radesys.upper() not in RADESYS_OPTIONS:
+            self.source_cat._wcs.wcs.radesys = 'ICRS'
+            log.warning(f"Assuming input coordinates are ICRS, instead of {self.source_cat._wcs.wcs.radesys}")
+            log.warning(f"Sky coordinates of source objects may not be accurate.")
 
         filter_measurements_table = Table(self.source_cat.to_table(columns=include_filter_cols))
 
