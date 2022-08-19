@@ -46,6 +46,10 @@ except Exception:
 
 CATALOG_TYPES = ['aperture', 'segment']
 
+# B1950, J2000 and other valid RADESYS values do not transform natively to ICRS
+# Only these options support conversion to/from ICRS in WCSLIB.
+RADESYS_OPTIONS = ['FK4', 'FK5', 'ICRS']
+
 if OLD_PHOTUTILS:
     id_colname = 'id'
     flux_colname = 'source_sum'
@@ -1824,6 +1828,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                     kron_params=[self._kron_scaling_radius, self._kron_minimum_radius])
 
 
+            enforce_icrs_compatibility(self.source_cat)
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
             total_measurements_table = Table(self.source_cat.to_table(columns=['label', 'xcentroid', 'ycentroid', 'sky_centroid_icrs']))
@@ -2173,6 +2178,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             include_filter_cols.append('fwhm')
             self.source_cat = SourceCatalog(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
                                                 error=total_error, kernel=self.kernel, wcs=self.image.imgwcs)
+
+        enforce_icrs_compatibility(self.source_cat)
 
         filter_measurements_table = Table(self.source_cat.to_table(columns=include_filter_cols))
 
@@ -2913,3 +2920,19 @@ def fill_nans_maskvalues(catalog, fill_value=constants.FLAG):
         np.nan_to_num(col, copy=False, nan=fill_value)
 
     return catalog
+
+
+def enforce_icrs_compatibility(catalog):
+    """This function insures that the source catalog can return ICRS sky coordinates.
+
+    # This function guards against a non-standard coordinate system being defined in the input image headers
+    # If something non-standard is found, set the value to 'ICRS' to insure that the
+    # table conversion works.  Checking against the set of valid options recognized by WCSLIB and
+    # documented in http://ds9.si.edu/doc/ref/region.html#RegionFileFormat is necessary since the
+    # header keyword REFFRAME can be populated with anything specified by the user in the original
+    # proposal.
+    """
+    if catalog._wcs.wcs.radesys.upper() not in RADESYS_OPTIONS:
+        catalog._wcs.wcs.radesys = 'ICRS'
+        log.warning(f"Assuming input coordinates are ICRS, instead of {catalog._wcs.wcs.radesys}")
+        log.warning(f"Sky coordinates of source objects may not be accurate.")

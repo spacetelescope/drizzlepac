@@ -25,6 +25,9 @@ number of the code change for that issue.  These PRs can be viewed at:
   ``tweakback()``. ``apply_tweak()`` preserves the functionality of ``tweakback``
   with a re-designed API. Existing ``tweakback`` was deprecated. [#1372]
 
+- Updated segmentation source catalog generation to use ICRS as input RADESYS
+  when input images have an unsupported REFFRAME value (like OTHER or B1950). [#1423]
+
 
 3.4.1 (5-Apr-2022)
 ==================
