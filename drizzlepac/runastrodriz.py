@@ -533,6 +533,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # have a priori solutions as extensions
             # FIX: This should probably only be done in the apriori sub-directory!
             updatewcs.updatewcs(_calfiles)
+            for _file in _calfiles:
+                confirm_aposteriori_hdrlets(_file, logfile=_trlfile)
+
             _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles)
             _trlmsg += verify_gaia_wcsnames(_calfiles) + '\n'
             _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in _calfiles]
@@ -542,6 +545,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             if _calfiles_flc:
                 _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles_flc)
                 updatewcs.updatewcs(_calfiles_flc)
+                for _file in _calfiles_flc:
+                    confirm_aposteriori_hdrlets(_file, logfile=_trlfile)
+
                 _trlmsg += verify_gaia_wcsnames(_calfiles_flc) + '\n'
 
             try:
@@ -1308,6 +1314,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                                 fhdu[('sci', extn + 1)].header['idcscale'] = fhdu_idscale
     return msg
 
+
 def restore_pipeline_default(files):
     """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
     print("Restoring pipeline-default WCS as PRIMARY WCS... using updatewcs.")
@@ -1726,6 +1733,44 @@ def update_active_wcs(filename, wcsname, logfile=None):
     if logfile:
         _updateTrlFile(logfile, update_msg)
 
+
+def confirm_aposteriori_hdrlets(filename, logfile=None):
+    """Confirm that all the a posteriori headerlets are valid, and remove any that are invalid."""
+    update_msg = ""
+    num_sci_ext, extname = util.count_sci_extensions(filename)
+    extname_list = [(extname, x + 1) for x in range(num_sci_ext)]
+
+    hdu = fits.open(filename, mode='update')
+    # Get a list of all HDRLET extensions
+    hdrlet_extensions = wcsutil.headerlet.get_extname_extver_list(hdu, sciext='HDRLET')
+    hdrlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(hdu, 'wcsname')
+
+
+    invalid_extns = []
+    for wname, extname in zip(hdrlet_wcsnames, hdrlet_extensions):
+        # Only evaluate a posteriori headerlets -- those with '-FIT' in WCSNAME
+        if '-FIT' in wname:
+            hdrlet = hdu[extname].headerlet
+            valid_ctype = '-SIP' in hdrlet[1].header['ctype1']
+            valid_dist_kws = 'A_ORDER' in hdrlet[1].header
+            if not valid_ctype or not valid_dist_kws:
+                key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wname)
+                invalid_extns.append({'extname':extname, 'wcsname':wname, 'key':key})
+
+    hdu.close()
+    # If any invalid headerlets are found, remove them from
+    if invalid_extns:
+        for extn in reversed(invalid_extns):
+            wcsutil.headerlet.delete_headerlet(filename, hdrext=extn['extname'])
+            # also remove this solution from SCI headers
+            if extn['key']:
+                wcsutil.altwcs.deleteWCS(filename, extname_list, wcskey=extn['key'])
+            update_msg += "Delete duplicate headerlet extension {} in filename {}.\n".format(extn, filename)
+
+    if logfile:
+        _updateTrlFile(logfile, update_msg)
+
+
 def _update_wcs_fit_keywords(fltfile, flcfile):
     """Update the header of the FLT file with the a posteriori fit results"""
     fit_kws_sci = [('RMS_RA', -1.0), ('RMS_DEC', -1.0),
@@ -1769,6 +1814,7 @@ def _update_wcs_fit_keywords(fltfile, flcfile):
     del hdulist
     del hdulist_flc
 
+
 def _lowerAsn(asnfile):
     """ Create a copy of the original asn file and change
         the case of all members to lower-case.
@@ -1788,6 +1834,7 @@ def _lowerAsn(asnfile):
     fasn.close()
 
     return _new_asn
+
 
 def _updateTrlFile(trlfile, trl_lines):
     tmptrl = trlfile.replace('.tra', '_tmp.tra')
@@ -1827,11 +1874,13 @@ def _appendTrlFile(trlfile, drizfile):
     except Exception:
         pass
 
+
 def _timestamp(_process_name):
     """Create formatted time string recognizable by OPUS."""
     _prefix = time.strftime("%Y%j%H%M%S-I-----", time.localtime())
     _lenstr = 60 - len(_process_name)
     return _prefix + _process_name + (_lenstr * '-') + '\n'
+
 
 def _getTime():
     # Format time values for keywords IRAF-TLM, and DATE
@@ -1853,6 +1902,7 @@ def _createWorkingDir(rootdir, input):
         os.mkdir(newdir)
     return newdir
 
+
 def _copyToNewWorkingDir(newdir, input):
     """ Copy input file and all related files necessary for processing to the new working directory.
 
@@ -1873,6 +1923,7 @@ def _copyToNewWorkingDir(newdir, input):
         for fname in glob.glob(rootname + '*'):
             shutil.copy(fname, os.path.join(newdir, fname))
 
+
 def _get_envvar_switch(envvar_name):
     # interpret envvar variable, if specified
     if envvar_name in os.environ:
@@ -1887,16 +1938,19 @@ def _get_envvar_switch(envvar_name):
 
     return switch_val
 
+
 def _restoreResults(newdir, origdir):
     """ Move (not copy) all files from newdir back to the original directory
     """
     for fname in glob.glob(os.path.join(newdir, '*')):
         shutil.move(fname, os.path.join(origdir, os.path.basename(fname)))
 
+
 def _removeWorkingDir(newdir):
     """ Delete working directory
     """
     os.rmdir(newdir)
+
 
 def rmtree2(path, n=3):
     """Wrapper around shutil.rmtree to make it more robust when used on NFS mounted file systems."""
@@ -1916,6 +1970,7 @@ def rmtree2(path, n=3):
     else:
         print("Path %s successfully removed." % path)
 
+
 def handle_remove_readonly(func, path, exc):
     excvalue = exc[1]
     if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
@@ -1923,6 +1978,7 @@ def handle_remove_readonly(func, path, exc):
         func(path)
     else:
         raise
+
 
 # Functions to support execution from the shell.
 def main():
