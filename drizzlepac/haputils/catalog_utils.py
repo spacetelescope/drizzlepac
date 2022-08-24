@@ -762,14 +762,15 @@ class HAPCatalogBase:
 
         self.sourcelist_filename = self.imgname.replace(self.imgname[-9:], self.catalog_suffix)
 
-        # Compute average gain - there will always be at least one gain value in the primary header
-        gain_keys = self.image.keyword_dict['gain_keys']
-        gain_values = [g for g in gain_keys if g > 0.0]
-        self.gain = self.image.keyword_dict['exptime'] * np.mean(gain_values)
-
         # Set the gain for ACS/SBC and WFC3/IR to 1.0
         if self.image.keyword_dict["detector"].upper() in ["IR", "SBC"]:
             self.gain = 1.0
+            gain_values = 1.0
+        else:
+            # Compute average gain - there will always be at least one gain value in the primary header
+            gain_keys = self.image.keyword_dict['gain_keys']
+            gain_values = [g for g in gain_keys if g > 0.0]
+            self.gain = self.image.keyword_dict['exptime'] * np.mean(gain_values)
 
         # Convert photometric aperture radii from arcsec to pixels
         self.aper_radius_arcsec = [self.param_dict['aperture_1'], self.param_dict['aperture_2']]
