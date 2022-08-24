@@ -29,6 +29,74 @@ number of the code change for that issue.  These PRs can be viewed at:
   when input images have an unsupported REFFRAME value (like OTHER or B1950). [#1423]
 
 
+3.4.3 (24-Aug-2022)
+===================
+This release includes includes updates for these features in addition to various bug fixes:
+  - Initial support for aligning and creating SVM and MVM products for WFPC2 data
+    based on unoptimized processing parameters
+  - Python 3.10 support
+  - Photutils 1.4.0 (and newer) support
+  - Updated documentation on SVM processing and output mosaics
+
+The list of specific changes for the significant issues includes:
+
+- Fixed skycell size in pixels as quoted in the documentation. (#1387)
+- Ensure Ramp filter data is not used for MVM processing (#1393)
+- Added requested values and clarification text regarding photometry to the catalogs (#1390)
+- Modified the docstring which defines the HAPLEVEL and its associated meaning (#1395)
+- Modified the "exposure level" products to have a HAPLEVEL = 1 (#1398)
+- Get full S_REGION outline (#1401)
+- Update readthedocs for SVM catalog generation (#1400)
+- Delete all reference catalogs during SVM processing (#1409)
+- Update runastrodriz to work with WFPC2 data as singletons (#1412)
+- Revert sky matching to use local sky minimization upon any error (#1411)
+- Update SVM to support processing WFPC2 exposures (#1418)
+- Add support for Python 3.10 (#1420)
+- Add WFPC2 support for MVM processing (#1422)
+- Support additional RADESYS options for input files (#1423)
+- Ensure the gain variables are defined for all detectors (#1425)
+- Essentially remove restriction on PhotUtils package version (#1426)
+
+
+3.4.2 (27-May-2022)
+===================
+This release addresses a number of issues related to SVM and MVM processing.
+
+- Reset tasknames to work with TEAL (#1285)
+- Protect computations when photflam is equal to 0.0 (#1295)
+- MVM: Define MVM-specific processing parameters for drizzling (#1277)
+- Remove IPPPSSOO keyword from MVM product headers (again) (#1297)
+- Fix problem with astropy 5.0 table interpretation (#1292)
+- Statistics for SVM and MVM  (#1300)
+- SVM: add/remove/update Astrodrizzle Parameter files (#1303)
+- Explicitly update boolean column in ASN tables (#1307)
+- Synchronize output WCS specifications for SVM processing (#1312)
+- Smooth out determination of S_REGION vertices (#1315)
+- Ensure units of catalog variables comply with Astropy (#1316)
+- Apply default alignment fit parameters for zero exptime exposures (#1319)
+- Fix bug caused by Astropy Tables being interpreted as QTables (#1320)
+- Revise logic for when mask keywords are computed (#1323)
+- Restrict version of Photutils to < 1.4.0. (#1326)
+- Add MEANWHT and MEDWHT keywords to drizzle products (#1324, #1349)
+- Add documentation describing mvm products and artifacts (#1322)
+- Add release notes for 3.4.1final (#1328)
+- Fix typo in ACS MVM header rules file (#1332)
+- Update astropy min version to 5.0.4 (#1335)
+- Avoid archiving duplicate WCS solutions in SVM processing (#1333)
+- Update installation dependencies for fitsblender and skypac (#1354)
+- Flag and ignore bad images based on detecting linear features (#1351)
+- Improve algorithm for identifying and filtering large segments (#1357)
+- Carry over IDCSCALE keyword when updating WCS to match Grism WCS (#1355)
+- Ignore MVM layers with no overlapping exposures (#1360)
+- Update crder units (#1362)
+- This change addresses bugs associated with the big_segments attribute of the segmentation image (#1365)
+- Update the WFC3 rules files (#1366)
+- Only allow "verify_guiding" check for MVM processing (#1368)
+- Fix the size of the HAPEXPNAME column in the HDRTAB of the MVM output DRZ/DRZ file (#1371)
+- Pass along default WCSNAME (#1370)
+- Re-design tweakback (#1372)
+- Bugfix: point-cat-fxm files being left around (#1369)
+
 3.4.1 (5-Apr-2022)
 ==================
 This release addresses issues found in v3.4.0.  The most significant
