@@ -39,6 +39,7 @@ This release includes includes updates for these features in addition to various
   - Updated documentation on SVM processing and output mosaics
 
 The list of specific changes for the significant issues includes:
+
 - Fixed skycell size in pixels as quoted in the documentation. (#1387)
 - Ensure Ramp filter data is not used for MVM processing (#1393)
 - Added requested values and clarification text regarding photometry to the catalogs (#1390)
