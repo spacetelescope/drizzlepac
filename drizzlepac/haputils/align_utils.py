@@ -37,7 +37,8 @@ from . import astrometric_utils as amutils
 from . import analyze
 from . import deconvolve_utils as decutils
 
-import tweakwcs
+from tweakwcs.matchutils import XYXYMatch
+from tweakwcs.imalign import align_wcs
 
 __taskname__ = 'align_utils'
 
@@ -222,7 +223,7 @@ class AlignmentTable:
             self.close()
 
         # Initialize computed attributes
-        self.imglist = []  # list of FITSWCS objects for tweakwcs
+        self.imglist = []  # list of FITSWCSCorrector objects for tweakwcs
         self.reference_catalogs = {}
         self.group_id_dict = {}
 
@@ -277,7 +278,7 @@ class AlignmentTable:
 
 
     def configure_fit(self):
-        # Convert input images to tweakwcs-compatible FITSWCS objects and
+        # Convert input images to tweakwcs-compatible FITSWCSCorrector objects and
         # attach source catalogs to them.
         self.imglist = []
         for group_id, image in enumerate(self.process_list):
@@ -834,21 +835,22 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     Parameters
     ----------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
 
     fit_pars : dict
         Set of parameters and values to be used for the fit.  This should include
-        `fitgeom` as well as any `tweakwcs.TPMatch
-        <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.TPMatch>`_
+        `fitgeom` as well as any `tweakwcs.XYXYMatch
+        <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.XYXYMatch>`_
         parameter which the user feels needs to be adjusted to work best with the input data.
 
     Returns
     --------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects
+        with metadata and source catalogs
 
     """
     log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
@@ -866,9 +868,8 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
 
     # 0: Specify matching algorithm to use
-    match = tweakwcs.TPMatch(**fit_pars)
-    # match = tweakwcs.TPMatch(searchrad=250, separation=0.1,
-    #                          tolerance=100, use2dhist=False)
+    match = XYXYMatch(**fit_pars)
+    # match = XYXYMatch(searchrad=250, separation=0.1, tolerance=100, use2dhist=False)
 
     # Align images and correct WCS
     # NOTE: this invocation does not use an astrometric catalog. This call
@@ -877,12 +878,10 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     # 1: Perform relative alignment
     # Setting 'minobj' to None allows 'tweakwcs' to use its own built-in
     # limits.
-    match_relcat = tweakwcs.align_wcs(imglist, None,
-                                      match=match,
-                                      minobj=common_pars['minobj'][rel_fitgeom],
-                                      expand_refcat=True,
-                                      fitgeom=rel_fitgeom,
-                                      nclip=1)
+    match_relcat = align_wcs(imglist, None, match=match,
+                             minobj=common_pars['minobj'][rel_fitgeom],
+                             expand_refcat=True, fitgeom=rel_fitgeom,
+                             nclip=1)
     # Implement a consistency check even before trying absolute alignment
     # If relative alignment in question, no use in aligning to GAIA
     if not check_consistency(imglist):
@@ -916,11 +915,9 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         for image in imglist:
             image.meta["group_id"] = 1234567
         # 2: Perform absolute alignment
-        matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
-                                         match=match,
-                                         minobj=common_pars['minobj'][fitgeom],
-                                         fitgeom=fitgeom,
-                                         nclip=nclip)
+        matched_cat = align_wcs(imglist, reference_catalog, match=match,
+                                inobj=common_pars['minobj'][fitgeom],
+                                fitgeom=fitgeom, nclip=nclip)
         # Insure the expanded reference catalog has all the information needed
         # to complete processing.
         # TODO: Work out how to get the 'mag' column from input source catalog
@@ -949,21 +946,21 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     Parameters
     ----------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
 
     fit_pars : dict
         Set of parameters and values to be used for the fit.  This should include
-        `fitgeom` as well as any `tweakwcs.TPMatch
-        <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.TPMatch>`_
+        `fitgeom` as well as any `tweakwcs.XYXYMatch
+        <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.XYXYMatch>`_
         parameter which the user feels needs to be adjusted to work best with the input data.
 
     Returns
     --------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
 
     """
     if 'fitgeom' in fit_pars:
@@ -980,15 +977,12 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
-    match = tweakwcs.TPMatch(**fit_pars)
+    match = XYXYMatch(**fit_pars)
 
     # Align images and correct WCS
-    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
-                                     match=match,
-                                     minobj=common_pars['minobj'][fitgeom],
-                                     expand_refcat=False,
-                                     fitgeom=fitgeom,
-                                     nclip=nclip)
+    matched_cat = align_wcs(imglist, reference_catalog, match=match,
+                            minobj=common_pars['minobj'][fitgeom],
+                            expand_refcat=False, fitgeom=fitgeom, nclip=nclip)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)
@@ -1013,21 +1007,21 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     Parameters
     ----------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
 
     fit_pars : dict
         Set of parameters and values to be used for the fit.  This should include
-        `fitgeom` as well as any `tweakwcs.TPMatch
-        <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.TPMatch>`_
+        `fitgeom` as well as any `tweakwcs.XYXYMatch
+        <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.XYXYMatch>`_
         parameter which the user feels needs to be adjusted to work best with the input data.
 
     Returns
     --------
     imglist : list
-        List of input image `~tweakwcs.tpwcs.FITSWCS` objects with metadata and source catalogs
+        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
 
     """
     if 'fitgeom' in fit_pars:
@@ -1044,14 +1038,11 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     log.info("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
-    match = tweakwcs.TPMatch(**fit_pars)
+    match = XYXYMatch(**fit_pars)
     # Align images and correct WCS
-    matched_cat = tweakwcs.align_wcs(imglist, reference_catalog,
-                                     match=match,
-                                     minobj=common_pars['minobj'][fitgeom],
-                                     expand_refcat=False,
-                                     fitgeom=fitgeom,
-                                     nclip=nclip)
+    matched_cat = align_wcs(imglist, reference_catalog, match=match,
+                            minobj=common_pars['minobj'][fitgeom],
+                            expand_refcat=False, fitgeom=fitgeom, nclip=nclip)
 
     # Interpret RMS values from tweakwcs
     interpret_fit_rms(imglist, reference_catalog)

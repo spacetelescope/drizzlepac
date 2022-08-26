@@ -25,7 +25,7 @@ dependencies:
       - stsci.imagestats
       - stsci.skypac
       - stsci.stimage
-      - "tweakwcs>=0.7.2"
+      - "tweakwcs>=0.8.0"
       - stregion
       - astroquery
       - photutils
