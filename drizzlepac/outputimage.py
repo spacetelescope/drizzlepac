@@ -745,9 +745,9 @@ def addWCSKeywords(wcs, hdr, blot=False, single=False, after=None):
     if after in WCS_KEYWORDS:
         after = None
 
-    if 'CTYPE1' not in hdr:
-        hdr.set('CTYPE2', value=wcs.wcs.ctype[1], after=after)
-        hdr.set('CTYPE1', value=wcs.wcs.ctype[0], after=after)
+    # if 'CTYPE1' not in hdr:
+    hdr.set('CTYPE2', value=wcs.wcs.ctype[1], after=after)
+    hdr.set('CTYPE1', value=wcs.wcs.ctype[0], after=after)
     hdr.set('CRPIX2', value=wcs.wcs.crpix[1], after=after)
     hdr.set('CRPIX1', value=wcs.wcs.crpix[0], after=after)
     hdr.set('CRVAL2', value=wcs.wcs.crval[1], after=after)
