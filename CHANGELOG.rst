@@ -18,8 +18,8 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.5.0 (unreleased)
-==================
+3.5.0 (31-Aug-2022)
+====================
 
 - Introduced a new ``apply_tweak()`` function as a replacement to the
   ``tweakback()``. ``apply_tweak()`` preserves the functionality of ``tweakback``
