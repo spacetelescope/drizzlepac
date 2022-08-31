@@ -1087,6 +1087,7 @@ class HAPPointCatalog(HAPCatalogBase):
                         daofind = DAOStarFinder(fwhm=source_fwhm,
                                                 threshold=self.param_dict['nsigma'] * reg_rms_median)
                         reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
+                        reg_sources = Table(reg_sources)  # Insure 'reg_sources' is NOT a QTable
 
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
@@ -1118,7 +1119,8 @@ class HAPPointCatalog(HAPCatalogBase):
             sources.add_column(dec_col, index=4)
 
             for col in sources.colnames:
-                sources[col].info.format = '.8g'  # for consistent table output
+                if col != 'id':
+                    sources[col].info.format = '.8g'  # for consistent table output
 
             # format output table columns
             final_col_format = {"xcentroid": "10.3f", "ycentroid": "10.3f", "RA": "13.7f", "DEC": "13.7f", "id": "7d"}
@@ -2727,7 +2729,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Biggest source %.4f percent exceeds %f percent of the image", (100.0*biggest_source), (100.0*max_biggest_source))
             is_poor_quality = True
 
-        # Filter the big_segments array to remove the prohibitively large segments 
+        # Filter the big_segments array to remove the prohibitively large segments
         if big_segments.size > 0:
             # Sort the areas and get the indices of the sorted areas
             area_indices = np.argsort(segm_img.areas)
@@ -2743,7 +2745,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     continue
                 # determine ratio of area with next smallest area
                 # make sure there are enough entries in areas since the first/largest segment was skipped
-                if len(areas) <= 2:
+                if len(areas) <= 2 or (i+2) > len(areas):
                     break
                 r = a / areas[-1*(i+2)]
                 if r >= self._ratio_bigsource_deblend_limit:
