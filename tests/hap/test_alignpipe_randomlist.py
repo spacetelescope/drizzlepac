@@ -68,7 +68,7 @@ def test_alignpipe_randomlist(tmpdir, dataset):
             for the found sources in the input images' field-of-view using
             GAIADR2 (preferred) or GAIADR1.
           * Cross matching/fitting is done between found sources and catalog
-            coordinates with the Tweakwcs package.
+            coordinates with the TweakWCS package.
           * The quality of the fit is evaluated against a minimum threshold and
             potentially another fit algorithm is invoked or an alternative
             catalog is used in an effort to obtain a better quality fit.

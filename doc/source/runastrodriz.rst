@@ -653,7 +653,7 @@ an attempt to perform an ``a posteriori`` fit to GAIA:
 
     * Evaluate the success/failure state of the fit and the quality of any
       successful fit.
-    * Repeat the fit with ``tweakwcs.align_wcs`` with other GAIA catalogs;
+    * Repeat the fit with ``tweakwcs.imalign.align_wcs`` with other GAIA catalogs;
       including GAIA DR1 or any others specified for use in ``runastrodriz`` itself.
     * Select the fit to the GAIA catalog which results in the lowest RMS.
 

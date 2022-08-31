@@ -53,11 +53,12 @@ import numpy as np
 from stwcs.wcsutil import HSTWCS
 from stsci.tools.fileutil import countExtn
 from stsci.tools import logutil
-import tweakwcs
+from tweakwcs.correctors import FITSWCSCorrector
+from tweakwcs.matchutils import XYXYMatch
+from tweakwcs.imalign import align_wcs
 
 from . import astrometric_utils as amutils
 from . import diagnostic_utils as du
-
 
 
 MSG_DATEFMT = '%Y%j%H%M%S'
@@ -157,24 +158,18 @@ def determine_alignment_residuals(input, files,
         imglist += amutils.build_wcscat(f, i, cat)
 
     # Setup matching algorithm using parameters tuned to well-aligned images
-    match = tweakwcs.TPMatch(searchrad=5, separation=4.0,
-                             tolerance=1.0, use2dhist=True)
+    match = XYXYMatch(searchrad=5, separation=4.0, tolerance=1.0, use2dhist=True)
     try:
         # perform relative fitting
-        matchlist = tweakwcs.align_wcs(imglist, None,
-                                       minobj=6,
-                                       match=match,
-                                       expand_refcat=False)
+        matchlist = align_wcs(imglist, None, minobj=6, match=match, expand_refcat=False)
         del matchlist
     except Exception:
         try:
             # Try without 2dHist use to see whether we can get any matches at all
-            match = tweakwcs.TPMatch(searchrad=5, separation=4.0,
-                                     tolerance=1.0, use2dhist=False)
-            matchlist = tweakwcs.align_wcs(imglist, None,
-                                           minobj=6,
-                                           match=match,
-                                           expand_refcat=False)
+            match = XYXYMatch(searchrad=5, separation=4.0, tolerance=1.0,
+                              use2dhist=False)
+            matchlist = align_wcs(imglist, None, minobj=6, match=match,
+                                  expand_refcat=False)
             del matchlist
 
         except Exception:
@@ -403,20 +398,20 @@ def match_to_gaia(imcat, refcat, product, output, searchrad=5.0):
     reftab = Table.read(refcat, format='ascii.ecsv')
 
     # define WCS for matching
-    tpwcs = tweakwcs.FITSWCS(HSTWCS(product, ext=1))
+    wcscorr = FITSWCSCorrector(HSTWCS(product, ext=1))
 
     # define matching parameters
-    tpmatch = tweakwcs.TPMatch(searchrad=searchrad)
+    xyxymatch = XYXYMatch(searchrad=searchrad)
 
     # perform match
-    ref_indx, im_indx = tpmatch(reftab, imtab, tpwcs)
+    ref_indx, im_indx = xyxymatch(reftab, imtab, wcscorr)
     print('Found {} matches'.format(len(ref_indx)))
 
     # Obtain tangent plane positions for both image sources and reference sources
-    im_x, im_y = tpwcs.det_to_tanp(imtab['x'][im_indx], imtab['y'][im_indx])
-    ref_x, ref_y = tpwcs.world_to_tanp(reftab['RA'][ref_indx], reftab['DEC'][ref_indx])
+    im_x, im_y = wcscorr.det_to_tanp(imtab['x'][im_indx], imtab['y'][im_indx])
+    ref_x, ref_y = wcscorr.world_to_tanp(reftab['RA'][ref_indx], reftab['DEC'][ref_indx])
     if 'RA' not in imtab.colnames:
-        im_ra, im_dec = tpwcs.det_to_world(imtab['x'][im_indx], imtab['y'][im_indx])
+        im_ra, im_dec = wcscorr.det_to_world(imtab['x'][im_indx], imtab['y'][im_indx])
     else:
         im_ra = imtab['RA'][im_indx]
         im_dec = imtab['DEC'][im_indx]

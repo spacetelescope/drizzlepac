@@ -28,6 +28,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Updated segmentation source catalog generation to use ICRS as input RADESYS
   when input images have an unsupported REFFRAME value (like OTHER or B1950). [#1423]
 
+- Refactored code to work with changes in ``tweakwcs`` version 0.8.0. [#1430]
+
 
 3.4.3 (24-Aug-2022)
 ===================

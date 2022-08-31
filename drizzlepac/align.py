@@ -397,7 +397,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
         starting_dt = datetime.datetime.now()
         # 5: Retrieve list of astrometric sources from database
 
-        # Convert input images to tweakwcs-compatible FITSWCS objects and
+        # Convert input images to tweakwcs-compatible FITSWCSCorrector objects and
         # attach source catalogs to them.
         imglist = []
         for group_id, image in enumerate(process_list):
