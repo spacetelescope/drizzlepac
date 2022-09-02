@@ -30,6 +30,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Refactored code to work with changes in ``tweakwcs`` version 0.8.0. [#1430]
 
+- Ignore non-CTE-corrected exposures when SVM or MVM products also include
+  CTE-corrected exposures as inputs. [#1433]
+
 
 3.4.3 (24-Aug-2022)
 ===================
