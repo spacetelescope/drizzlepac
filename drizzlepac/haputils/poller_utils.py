@@ -442,9 +442,6 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
 
     tdp_list = []
 
-    # Determine if the individual files being processed are flt or flc and
-    # set the filetype accordingly (flt->drz or flc->drc).
-    filetype = ''
     # Setup products for each detector used
     #
     # det_tree = {'UVIS': {'f200lp': [('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits'),
@@ -466,14 +463,17 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
             # Populate single exposure dictionary entry now as well
             # filename = ('skycell_p1234_x01y01 WFC3 UVIS IACS01T9Q F200LP 1', 'iacs01t9q_flt.fits')
             #
-            for filename in filter_files:
-                # Parse the first filename[1] to determine if the products are flt or flc
+            filter_members, filetype = select_common_filetype(filter_files)
+
+            for filename, is_member in zip(filter_files, filter_members):
+
                 if det_indx != prev_det_indx:
-                    filetype = "drc"
-                    if filename[1][-8:-5].lower().endswith("flt"):
-                        filetype = "drz"
                     prev_det_indx = det_indx
 
+                # If this input exposure does not have the same filetype (FLT/FLC) as the
+                # rest of the images in this layer, ignore it.
+                if not is_member:
+                    continue
                 # Generate the full product dictionary information string:
                 #
                 # [row['proposal_id'], row['obset_id'], row['instrument'],
@@ -624,9 +624,6 @@ def parse_obset_tree(det_tree, log_level):
 
     tdp_list = []
 
-    # Determine if the individual files being processed are flt or flc and
-    # set the filetype accordingly (flt->drz or flc->drc).
-    filetype = ''
     # Setup products for each detector used
     for filt_tree in det_tree.values():
         totprod = TDP_STR.format(det_indx)
@@ -639,23 +636,30 @@ def parse_obset_tree(det_tree, log_level):
             obset_products[fprod] = {'info': "", 'files': []}
             filt_indx += 1
             # Populate single exposure dictionary entry now as well
-            for filename in filter_files:
-                # Parse the first filename[1] to determine if the products are flt or flc
+            filter_members, filetype = select_common_filetype(filter_files)
+
+            for filename, is_member in zip(filter_files, filter_members):
                 if det_indx != prev_det_indx:
-                    filetype = "drc"
-                    if filename[1][10:13].lower().endswith("flt"):
-                        filetype = "drz"
                     prev_det_indx = det_indx
+
+                if not is_member:
+                    # This logic should get the opposite filetype from the
+                    # value returned for the entire filter (at least that is the plan)
+                    exp_filetype = 'drz' if filetype == 'drc' else 'drc'
+                else:
+                    exp_filetype = filetype
 
                 # Generate the full product dictionary information string:
                 # proposal_id, obset_id, instrument, detector, ipppssoot, filter, and filetype
                 # filename = ('11515 01 WFC3 UVIS IACS01T9Q F200LP', 'iacs01t9q_flt.fits')
-                prod_info = (filename[0] + " " + filetype).lower()
+                exp_prod_info = (filename[0] + " " + exp_filetype).lower()
 
                 # Set up the single exposure product dictionary
                 sep = SEP_STR.format(sep_indx)
-                obset_products[sep] = {'info': prod_info,
+                obset_products[sep] = {'info': exp_prod_info,
                                        'files': [filename[1]]}
+                # Increment single exposure index
+                sep_indx += 1
 
                 # Create a single exposure product object
                 #
@@ -666,7 +670,7 @@ def parse_obset_tree(det_tree, log_level):
                 # Grism/Prism products.
                 #
                 # The GrismExposureProduct is only an attribute of the TotalProduct.
-                prod_list = prod_info.split(" ")
+                prod_list = exp_prod_info.split(" ")
 
                 # Determine if this image is a Grism/Prism or a nominal direct exposure
                 is_grism = False
@@ -679,6 +683,16 @@ def parse_obset_tree(det_tree, log_level):
                 else:
                     sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
                                               filename[1], prod_list[5], prod_list[6], log_level)
+                # Now that we have defined the ExposureProduct for this input exposure,
+                # do not include it any total or filter product.
+                if not is_member:
+                    continue
+
+                prod_info = (filename[0] + " " + filetype).lower()
+
+                # Redefine for the filter and total product definitions
+                # This will insure the correct product type (DRZ vs DRC) gets passed along
+                prod_list = prod_info.split(" ")
 
                 # Set up the filter product dictionary and create a filter product object
                 # Initialize `info` key for this filter product dictionary
@@ -707,9 +721,6 @@ def parse_obset_tree(det_tree, log_level):
                     # Append exposure object to the list of exposure objects for this specific total detection product
                     tdp_obj.add_member(sep_obj)
 
-                    # Increment single exposure index
-                    sep_indx += 1
-
                     # Populate total detection product dictionary with input filename
                     obset_products[totprod]['files'].append(filename[1])
 
@@ -722,8 +733,6 @@ def parse_obset_tree(det_tree, log_level):
                     if is_ccd and len(filt_obj.edp_list) == 1:
                         for e in filt_obj.edp_list:
                             e.crclean = True
-
-                    #tdp_obj.add_product(filt_obj)
 
                 elif is_grism:
                     tdp_obj.add_grism_member(grism_sep_obj)
@@ -750,9 +759,46 @@ def parse_obset_tree(det_tree, log_level):
     # Done... return dict and object product list
     return obset_products, tdp_list
 
+
 # ------------------------------------------------------------------------------
+def select_common_filetype(filter_files):
+    """Select common filter type and set of filter_files for input list of filenames.
+
+    Parameters
+    -----------
+    filter_files : list
+        List of tuples describing input files for the filter product
+
+    Returns
+    -------
+    filter_members : list
+        Mask indicating which input files are members correspond to the output product type
+
+    prod_type : str
+        String corresponding to the suffix (DRZ vs DRC) to be used for the output product based
+        on the common filter type (FLT vs FLC)
+
+    """
+    filetypes = np.array([f[1][:-5].split("_")[-1] for f in filter_files])
+    # Check whether or not all input files for this filter product have the same filetype (suffix)
+    filetypes_flt = filetypes == 'flt'
+    filetypes_flc = filetypes == 'flc'
+    num_flt = len(np.where(filetypes_flt)[0])
+    num_flc = len(np.where(filetypes_flc)[0])
+
+    # determine which file type is the majority of the inputs
+    filter_type = 'flc' if num_flc >= num_flt else 'flt'
+
+    filter_members = filetypes_flc if filter_type == 'flc' else filetypes_flt
+
+    # Return the updated/cleaned list of input files,
+    # along with the suffix for the files in the input list for this filter product
+    prod_type = 'drc' if filter_type == 'flc' else 'drz'
+
+    return filter_members, prod_type
 
 
+# ------------------------------------------------------------------------------
 def define_exp_layers(obset_table, method='hard', exp_limit=None):
     """Determine what exposures will be grouped into the same layer of a sky cell"""
     # Add 'exp_layer' column to table
