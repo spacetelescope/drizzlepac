@@ -783,11 +783,11 @@ def select_common_filetype(filter_files):
     # Check whether or not all input files for this filter product have the same filetype (suffix)
     filetypes_flt = filetypes == 'flt'
     filetypes_flc = filetypes == 'flc'
-    num_flt = len(np.where(filetypes_flt)[0])
     num_flc = len(np.where(filetypes_flc)[0])
 
-    # determine which file type is the majority of the inputs
-    filter_type = 'flc' if num_flc >= num_flt else 'flt'
+    # determine whether we have FLC images in set or not
+    # and set the filter_type accordingly
+    filter_type = 'flc' if num_flc > 0 else 'flt'
 
     filter_members = filetypes_flc if filter_type == 'flc' else filetypes_flt
 
