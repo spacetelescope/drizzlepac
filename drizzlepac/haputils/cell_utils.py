@@ -337,8 +337,8 @@ class SkyFootprint(object):
                 meta_x = np.clip(meta_x, 0, self.meta_wcs.array_shape[1] - 1)
 
                 # define subarray spanned by this chip on the SkyCell
-                scell_slice = [slice(meta_y.min(), meta_y.max()),
-                               slice(meta_x.min(), meta_x.max())]
+                scell_slice = (slice(meta_y.min(), meta_y.max()),
+                               slice(meta_x.min(), meta_x.max()))
                 scell_ltm = [meta_x.min(), meta_y.min()]
                 # Reset range of pixels to be relative to starting pixel position in SkyCell
                 meta_x -= scell_ltm[0]
