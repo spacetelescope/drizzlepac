@@ -916,7 +916,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
             image.meta["group_id"] = 1234567
         # 2: Perform absolute alignment
         matched_cat = align_wcs(imglist, reference_catalog, match=match,
-                                inobj=common_pars['minobj'][fitgeom],
+                                minobj=common_pars['minobj'][fitgeom],
                                 fitgeom=fitgeom, nclip=nclip)
         # Insure the expanded reference catalog has all the information needed
         # to complete processing.
