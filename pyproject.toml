@@ -4,8 +4,8 @@ description = 'HST image combination using drizzle'
 readme = 'README.md'
 requires-python = '>=3.8'
 long_description = [
-    'drizzle tools: combines astronomical images, including '
-    'modeling distortion, removing cosmic rays, and generally '
+    'drizzle tools: combines astronomical images, including ',
+    'modeling distortion, removing cosmic rays, and generally ',
     'improving fidelity of data in the final image',
 ]
 long_description_content_type = 'text/plain'
@@ -67,14 +67,7 @@ test = [
     'documentation' = 'https://drizzlepac.readthedocs.io/en/latest'
     'source code' = 'https://github.com/spacetelescope/drizzlepac'
 [project.entry-points]
-'console_scripts' = {
-    mdriz = 'drizzlepac.mdriz:main',
-    resetbits = 'drizzlepac.resetbits:main',
-    updatenpol = 'drizzlepac.updatenpol:main',
-    runastrodriz = 'drizzlepac.runastrodriz:main',
-    runsinglehap = 'drizzlepac.runsinglehap:main',
-    runmultihap = 'drizzlepac.runmultihap:main',
-}
+'console_scripts' = { mdriz = 'drizzlepac.mdriz:main', resetbits = 'drizzlepac.resetbits:main', updatenpol = 'drizzlepac.updatenpol:main', runastrodriz = 'drizzlepac.runastrodriz:main', runsinglehap = 'drizzlepac.runsinglehap:main', runmultihap = 'drizzlepac.runmultihap:main' }
 
 [build-system]
 requires = ["setuptools>=61",
@@ -86,7 +79,6 @@ requires = ["setuptools>=61",
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-use_scm_version = true
 
 [tool.setuptools]
 zip-safe = false
