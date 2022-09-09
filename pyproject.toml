@@ -3,18 +3,12 @@ name = 'drizzlepac'
 description = 'HST image combination using drizzle'
 readme = 'README.md'
 requires-python = '>=3.8'
-long_description = [
-    'drizzle tools: combines astronomical images, including ',
-    'modeling distortion, removing cosmic rays, and generally ',
-    'improving fidelity of data in the final image',
-]
-long_description_content_type = 'text/plain'
-authors = ['Warren Hack', 'Megan Sosey', 'Christopher Hanley', 'Chris Sontag', 'Mihai Cara']
+version = "3.5.0rc1"
+# authors = ['Warren Hack', 'Megan Sosey', 'Christopher Hanley', 'Chris Sontag', 'Mihai Cara']
 license = { file = "LICENSE.txt" }
-url = 'https://github.com/spacetelescope/drizzlepac'
 classifiers = [
     'Intended Audience :: Science/Research',
-    'Topic :: Scientific/Engineering :: Astronomy',
+    "Topic :: Scientific/Engineering :: Astronomy's",
     'License :: OSI Approved :: BSD License',
     'Operating System :: MacOS :: MacOS X',
     'Operating System :: POSIX',
@@ -63,12 +57,16 @@ test = [
     'pytest-remotedata',
 ]
 [project.urls]
-    'tracker' = 'https://github.com/spacetelescope/drizzlepac/issues'
-    'documentation' = 'https://drizzlepac.readthedocs.io/en/latest'
-    'source code' = 'https://github.com/spacetelescope/drizzlepac'
-[project.entry-points]
-'console_scripts' = { mdriz = 'drizzlepac.mdriz:main', resetbits = 'drizzlepac.resetbits:main', updatenpol = 'drizzlepac.updatenpol:main', runastrodriz = 'drizzlepac.runastrodriz:main', runsinglehap = 'drizzlepac.runsinglehap:main', runmultihap = 'drizzlepac.runmultihap:main' }
-
+tracker = 'https://github.com/spacetelescope/drizzlepac/issues'
+documentation = 'https://drizzlepac.readthedocs.io/en/latest'
+source = 'https://github.com/spacetelescope/drizzlepac'
+[project.scripts]
+mdriz = 'drizzlepac.mdriz:main'
+resetbits = 'drizzlepac.resetbits:main'
+updatenpol = 'drizzlepac.updatenpol:main'
+runastrodriz = 'drizzlepac.runastrodriz:main'
+runsinglehap = 'drizzlepac.runsinglehap:main'
+runmultihap = 'drizzlepac.runmultihap:main'
 [build-system]
 requires = ["setuptools>=61",
             "setuptools_scm[toml]>=3.4",
@@ -87,11 +85,9 @@ zip-safe = false
 
 [tool.setuptools.package-data]
 # package_data values are glob patterns relative to each specific subpackage.
-'' = [
+drizzlepac = [
     'README.md',
-    'LICENSE.txt'
-]
-'drizzlepac' = [
+    'LICENSE.txt',
     'pars/*',
     'pars/hap_pars/*',
     'pars/hap_pars/mvm_parameters/*',
