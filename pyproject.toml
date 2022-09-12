@@ -4,7 +4,6 @@ description = 'HST image combination using drizzle'
 readme = 'README.md'
 requires-python = '>=3.8'
 version = "3.5.0rc1"
-# authors = ['Warren Hack', 'Megan Sosey', 'Christopher Hanley', 'Chris Sontag', 'Mihai Cara']
 license = { file = "LICENSE.txt" }
 classifiers = [
     'Intended Audience :: Science/Research',
@@ -56,10 +55,12 @@ test = [
     'pytest',
     'pytest-remotedata',
 ]
+
 [project.urls]
 tracker = 'https://github.com/spacetelescope/drizzlepac/issues'
 documentation = 'https://drizzlepac.readthedocs.io/en/latest'
 source = 'https://github.com/spacetelescope/drizzlepac'
+
 [project.scripts]
 mdriz = 'drizzlepac.mdriz:main'
 resetbits = 'drizzlepac.resetbits:main'
@@ -67,6 +68,7 @@ updatenpol = 'drizzlepac.updatenpol:main'
 runastrodriz = 'drizzlepac.runastrodriz:main'
 runsinglehap = 'drizzlepac.runsinglehap:main'
 runmultihap = 'drizzlepac.runmultihap:main'
+
 [build-system]
 requires = ["setuptools>=61",
             "setuptools_scm[toml]>=3.4",
