@@ -17,19 +17,6 @@ data_config.server_id = 'bytesalad'
 data_config.root = 'tests_output'
 data_config.match_prefix = '(.*)_result' // .json is appended automatically
 
-bc = new BuildConfig()
-bc.nodetype = 'linux'
-bc.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
-bc.name = '3.7'
-bc.conda_channels = ['http://ssb.stsci.edu/astroconda']
-bc.conda_packages = ['python=3.7']
-bc.build_cmds = ["pip install numpy astropy codecov pytest-cov",
-		 "pip install --upgrade -e '.[test]'",
-                 "pip freeze"]
-bc.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
-                "codecov"]
-bc.test_configs = [data_config]
-
 bc1 = new BuildConfig()
 bc1.nodetype = 'linux'
 bc1.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
@@ -65,4 +52,4 @@ bc3.test_configs = [data_config]
 // Iterate over configurations that define the (distributed) build matrix.
 // Spawn a host (or workdir) for each combination and run in parallel.
 // Also apply the job configuration defined in `jobconfig` above.
-utils.run([bc, bc1, bc3, jobconfig])
+utils.run([bc1, bc3, jobconfig])
