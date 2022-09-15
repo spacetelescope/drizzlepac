@@ -26,72 +26,51 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Python 3.10 Tests
+          - name: Python 3.10 Linux Tests
             python-version: '3.10'
             os: ubuntu-latest
-            toxenv: py310
+            toxenv: py310-mylinux
 
-          - name: Latest dependency versions w/coverage
+          - name: Latest Linux dependency versions w/coverage
             os: ubuntu-latest
             python-version: 3.9
-            toxenv: py39-cov
+            toxenv: py39-mylinux
 
-          - name: Oldest dependency versions
+          - name: Oldest Linux dependency versions
             os: ubuntu-latest
             python-version: 3.8
-            toxenv: py38-oldestdeps-cov
+            toxenv: py38-mylinux
 
-          - name: macOS
+          - name: macOS Python 3.9
             os: macos-latest
             python-version: 3.9
-            toxenv: macos-py39
+            toxenv: py39-mymacos
 
-          - name: macOS
+          - name: macOS Python 3.10
             os: macos-latest
             python-version: 3.10
-            toxenv: macos-py310
+            toxenv: py310-mymacos
 
-          - name: windows
+          - name: windows Python 3.9
             os: windows-latest
             python-version: 3.9
-            toxenv: win-py39
+            toxenv: py39-mywindows
 
-          - name: SDP dependencies in requirements-dev.txt
+          - name: SDP Linux dependencies in requirements-dev.txt
             os: ubuntu-latest
             python-version: 3.9
             toxenv: devdeps
 
-          - name: Installed package with --pyargs
-            os: ubuntu-latest
-            python-version: 3.9
-            toxenv: pyargs
-
-          - name: Verify install_requires in setup.py
-            os: ubuntu-latest
-            python-version: 3.9
-            toxenv: verify-install-requires
-
-          - name: Code style check
-            os: ubuntu-latest
-            python-version: 3.9
-            toxenv: style
-
-          - name: Security audit
+          - name: Security audit under Linux
             os: ubuntu-latest
             python-version: 3.9
             toxenv: security
 
-          - name: Docs build
+          - name: Docs build under Linux
             os: ubuntu-latest
             python-version: 3.9
             toxenv: docs
 
-          # MacOS job is flaky on Github actions and fails routinely.
-          # Re-enable when things get more reliable.
-          # - name: macOS
-          #   os: macos-latest
-          #   python-version: 3.9
-          #   toxenv: py39
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -110,10 +89,10 @@ jobs:
       - name: Run tests
         run: tox -e ${{ matrix.toxenv }}
 
-      - name: Upload coverage to codecov
-        if: ${{ contains(matrix.toxenv,'-cov') }}
-        uses: codecov/codecov-action@v2
-        with:
-          file: ./coverage.xml
-          flags: unit
-          fail_ci_if_error: true
+      #- name: Upload coverage to codecov
+      #  if: ${{ contains(matrix.toxenv,'-cov') }}
+      #  uses: codecov/codecov-action@v2
+      #  with:
+      #    file: ./coverage.xml
+      #    flags: unit
+      #    fail_ci_if_error: true
