@@ -86,6 +86,10 @@ jobs:
         run: |
           pip install tox
 
+      - name: Build C extensions
+        - run: |
+           pip install -e .
+
       - name: Run tests
         run: tox -e ${{ matrix.toxenv }}
 
