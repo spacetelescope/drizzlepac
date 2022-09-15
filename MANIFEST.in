@@ -1,8 +1,7 @@
 recursive-include doc *
-global-include *.py *.md *.notes *.yml *.toml
+global-include *.py *.md *.yml *.toml
 global-include *.x *.c *.h *.par
 exclude */version.py
 prune .pytest_cache
 prune .eggs
 prune .git
-prune drizzlepac/htmlhelp

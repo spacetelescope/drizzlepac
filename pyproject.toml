@@ -113,9 +113,9 @@ drizzlepac = [
     'pars/psfs/wfc3/ir/*',
     'pars/psfs/wfc3/uvis/*',
     '*.help',
-    'htmlhelp/*',
-    'htmlhelp/_*/*',
-    'htmlhelp/_*/*/*',
+    'html/*',
+    'html/_*/*',
+    'html/_*/*/*',
 ]
 [tool.pytest.ini_options]
 minversion = 5
@@ -123,8 +123,8 @@ norecursedirs = [
     '.eggs',
     'build',
     '.tox',
-    'docs/_build',
-    'docs/exts'
+    'doc/build',
+    'doc/exts'
 ]
 junit_family = 'xunit2'
 inputs_root = 'drizzlepac'

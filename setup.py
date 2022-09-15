@@ -62,9 +62,9 @@ setup(
             'pars/psfs/wfc3/ir/*',
             'pars/psfs/wfc3/uvis/*',
             '*.help',
-            'htmlhelp/*',
-            'htmlhelp/_*/*',
-            'htmlhelp/_*/*/*',
+            'html/*',
+            'html/_*/*',
+            'html/_*/*/*',
         ]
     },
     ext_modules=[
