@@ -61,10 +61,10 @@ jobs:
             python-version: 3.9
             toxenv: devdeps
 
-          - name: Security audit under Linux
-            os: ubuntu-latest
-            python-version: 3.9
-            toxenv: security
+          #- name: Security audit under Linux
+          #  os: ubuntu-latest
+          #  python-version: 3.9
+          #  toxenv: security
 
           - name: Docs build under Linux
             os: ubuntu-latest
