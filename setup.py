@@ -6,7 +6,7 @@ import numpy
 from astropy import wcs
 
 from glob import glob
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, Extension
 
 
 # Setup C module include directories

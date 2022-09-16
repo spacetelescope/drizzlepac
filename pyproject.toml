@@ -1,5 +1,83 @@
+[project]
+name = 'drizzlepac'
+description = 'HST image combination using drizzle'
+readme = 'README.md'
+requires-python = '>=3.8'
+long_description = [
+    'drizzle tools: combines astronomical images, including '
+    'modeling distortion, removing cosmic rays, and generally '
+    'improving fidelity of data in the final image',
+]
+long_description_content_type = 'text/plain'
+authors = ['Warren Hack', 'Megan Sosey', 'Christopher Hanley', 'Chris Sontag', 'Mihai Cara']
+license = { file = "LICENSE.txt" }
+url = 'https://github.com/spacetelescope/drizzlepac'
+classifiers = [
+    'Intended Audience :: Science/Research',
+    'Topic :: Scientific/Engineering :: Astronomy',
+    'License :: OSI Approved :: BSD License',
+    'Operating System :: MacOS :: MacOS X',
+    'Operating System :: POSIX',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9'
+]
+dependencies = [
+    'astropy>=5.0.4',
+    'fitsblender>=0.4.2',
+    'scipy',
+    'matplotlib',
+    'stsci.tools>=4.0',
+    'stsci.image>=2.3.4',
+    'stsci.imagestats',
+    'stsci.skypac>=1.0.9',
+    'stsci.stimage',
+    'stwcs>=1.5.3',
+    'tweakwcs>=0.8.0',
+    'stregion',
+    'requests',
+    'scikit-learn>=0.20',
+    'bokeh',
+    'pandas',
+    'spherical_geometry>=1.2.22',
+    'astroquery>=0.4',
+    'photutils>1.2.0',
+    'lxml',
+    'PyPDF2',
+    'scikit-image>=0.14.2',
+    'tables',
+    'typing_extensions>4.0',
+    'markupsafe<=2.0.1',
+]
+[project.optional-dependencies]
+docs = [
+    'sphinx',
+    'stsci_rtd_theme',
+    'packaging',
+]
+test = [
+    'ci_watson',
+    'crds',
+    'pytest',
+    'pytest-remotedata',
+]
+[project.urls]
+    'tracker' = 'https://github.com/spacetelescope/drizzlepac/issues'
+    'documentation' = 'https://drizzlepac.readthedocs.io/en/latest'
+    'source code' = 'https://github.com/spacetelescope/drizzlepac'
+[project.entry-points]
+'console_scripts' = {
+    mdriz = 'drizzlepac.mdriz:main',
+    resetbits = 'drizzlepac.resetbits:main',
+    updatenpol = 'drizzlepac.updatenpol:main',
+    runastrodriz = 'drizzlepac.runastrodriz:main',
+    runsinglehap = 'drizzlepac.runsinglehap:main',
+    runmultihap = 'drizzlepac.runmultihap:main',
+}
+
 [build-system]
-requires = ["setuptools>=42.0",
+requires = ["setuptools>=61",
             "setuptools_scm[toml]>=3.4",
             "wheel",
             "numpy>=1.18",
@@ -8,3 +86,56 @@ requires = ["setuptools>=42.0",
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
+use_scm_version = true
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+
+[tool.setuptools.package-data]
+# package_data values are glob patterns relative to each specific subpackage.
+'' = [
+    'README.md',
+    'LICENSE.txt'
+]
+'drizzlepac' = [
+    'pars/*',
+    'pars/hap_pars/*',
+    'pars/hap_pars/mvm_parameters/*',
+    'pars/hap_pars/mvm_parameters/acs/hrc/*',
+    'pars/hap_pars/mvm_parameters/acs/sbc/*',
+    'pars/hap_pars/mvm_parameters/acs/wfc/*',
+    'pars/hap_pars/mvm_parameters/any/*',
+    'pars/hap_pars/mvm_parameters/wfc3/ir/*',
+    'pars/hap_pars/mvm_parameters/wfc3/uvis/*',
+    'pars/hap_pars/svm_parameters/*',
+    'pars/hap_pars/svm_parameters/acs/hrc/*',
+    'pars/hap_pars/svm_parameters/acs/sbc/*',
+    'pars/hap_pars/svm_parameters/acs/wfc/*',
+    'pars/hap_pars/svm_parameters/any/*',
+    'pars/hap_pars/svm_parameters/wfc3/ir/*',
+    'pars/hap_pars/svm_parameters/wfc3/uvis/*',
+    'pars/psfs/*',
+    'pars/psfs/acs/hrc/*',
+    'pars/psfs/acs/sbc/*',
+    'pars/psfs/acs/wfc/*',
+    'pars/psfs/wfc3/ir/*',
+    'pars/psfs/wfc3/uvis/*',
+    '*.help',
+    'htmlhelp/*',
+    'htmlhelp/_*/*',
+    'htmlhelp/_*/*/*',
+]
+[tool.pytest.ini_options]
+minversion = 5
+norecursedirs = [
+    '.eggs',
+    'build',
+    '.tox',
+    'docs/_build',
+    'docs/exts'
+]
+junit_family = 'xunit2'
+inputs_root = 'drizzlepac'
+results_root = 'drizzlepac-results'
