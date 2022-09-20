@@ -5,6 +5,7 @@ readme = 'README.md'
 requires-python = '>=3.8'
 version = "3.5.0rc1"
 license = { file = "LICENSE.txt" }
+authors = [{ name = 'Megan Sosey' }, { name = 'Warren Hack' }, { name = 'Christopher Hanley' }, { name = 'Chris Sontag' }, { name = 'Mihai Cara' }]
 classifiers = [
     'Intended Audience :: Science/Research',
     "Topic :: Scientific/Engineering :: Astronomy's",
@@ -121,6 +122,7 @@ drizzlepac = [
     'html/_*/*',
     'html/_*/*/*',
 ]
+
 [tool.pytest.ini_options]
 minversion = 5
 norecursedirs = [
