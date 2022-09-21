@@ -51,3 +51,16 @@ $ python setup.py build_sphinx
 ```bash
 $ python setup.py install
 ```
+
+##### NOTE:
+Installation tools are evolving to rely on commands such as `pip` 
+to build and install software.  This package can now be installed 
+using the following command:
+
+```bash
+$ pip install --no-use-pep517 .
+```
+The option `--no-use-pep517` is required in order to correctly build 
+the C extensions with `pip` versions up to 22.2.  
+**Support for installing using `pip` is still evolving, so use of this 
+command is provided on an as-is basis for now.**

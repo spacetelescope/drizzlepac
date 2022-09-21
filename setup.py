@@ -6,7 +6,7 @@ import numpy
 from astropy import wcs
 
 from glob import glob
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, Extension
 
 
 # Setup C module include directories
@@ -29,44 +29,6 @@ if sys.platform == 'win32':
     ]
 
 setup(
-    use_scm_version=True,
-    setup_requires=["setuptools_scm"],
-    packages=find_packages(),
-    package_data={
-        '': ['README.md', 'LICENSE.txt'],
-        'drizzlepac': [
-            'pars/*',
-            'pars/hap_pars/*',
-            'pars/hap_pars/mvm_parameters/*',
-            'pars/hap_pars/mvm_parameters/acs/hrc/*',
-            'pars/hap_pars/mvm_parameters/acs/sbc/*',
-            'pars/hap_pars/mvm_parameters/acs/wfc/*',
-            'pars/hap_pars/mvm_parameters/any/*',
-            'pars/hap_pars/mvm_parameters/wfc3/ir/*',
-            'pars/hap_pars/mvm_parameters/wfc3/uvis/*',
-            'pars/hap_pars/mvm_parameters/wfpc2/wf/*',
-            'pars/hap_pars/mvm_parameters/wfpc2/pc/*',
-            'pars/hap_pars/svm_parameters/*',
-            'pars/hap_pars/svm_parameters/acs/hrc/*',
-            'pars/hap_pars/svm_parameters/acs/sbc/*',
-            'pars/hap_pars/svm_parameters/acs/wfc/*',
-            'pars/hap_pars/svm_parameters/any/*',
-            'pars/hap_pars/svm_parameters/wfc3/ir/*',
-            'pars/hap_pars/svm_parameters/wfc3/uvis/*',
-            'pars/hap_pars/svm_parameters/wfpc2/wf/*',
-            'pars/hap_pars/svm_parameters/wfpc2/pc/*',
-            'pars/psfs/*',
-            'pars/psfs/acs/hrc/*',
-            'pars/psfs/acs/sbc/*',
-            'pars/psfs/acs/wfc/*',
-            'pars/psfs/wfc3/ir/*',
-            'pars/psfs/wfc3/uvis/*',
-            '*.help',
-            'html/*',
-            'html/_*/*',
-            'html/_*/*/*',
-        ]
-    },
     ext_modules=[
         Extension('drizzlepac.cdriz',
                   glob('src/*.c'),

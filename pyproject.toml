@@ -1,6 +1,11 @@
 [project]
 name = 'drizzlepac'
-description = 'HST image combination using drizzle'
+description = """
+    HST image combination using the drizzle algorithm to
+    combine astronomical images, to model image distortion,
+    to remove cosmic rays, and
+    generally to improve the fidelity of data in the final image.
+    """
 readme = 'README.md'
 requires-python = '>=3.8'
 version = "3.5.0rc1"
@@ -77,7 +82,7 @@ requires = ["setuptools>=61",
             "numpy>=1.18",
             "astropy>=5.0.4",
             "markupsafe<=2.0.1"]
-build-backend = "setuptools.build_meta"
+# build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 
@@ -118,10 +123,16 @@ drizzlepac = [
     'pars/psfs/wfc3/ir/*',
     'pars/psfs/wfc3/uvis/*',
     '*.help',
-    'html/*',
-    'html/_*/*',
-    'html/_*/*/*',
+    'htmlhelp/*',
+    'htmlhelp/_*/*',
+    'htmlhelp/_*/*/*',
 ]
+
+[tool.build_sphinx]
+builder = 'html'
+configuration = 'docs/source/conf.py'
+fail_on_warning = false
+
 
 [tool.pytest.ini_options]
 minversion = 5
