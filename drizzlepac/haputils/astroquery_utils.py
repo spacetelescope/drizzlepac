@@ -138,6 +138,8 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
                 download_dir = os.path.dirname(os.path.abspath(file))
             # Move or copy downloaded file to current directory
             local_file = os.path.abspath(os.path.basename(file))
+            if not os.path.exists(file):
+                continue
             if archive:
                 shutil.copy(file, local_file)
             else:
