@@ -1,0 +1,15 @@
+[flake8]
+count = True
+doctests = True
+show_source = True
+statistics = True
+exclude =
+    .git,
+    __pycache__,
+    doc/source/conf.py,
+    build,
+    dist,
+ignore =
+    E501,
+    E402,
+    F403

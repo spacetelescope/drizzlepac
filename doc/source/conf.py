@@ -17,6 +17,8 @@
 import os
 import sys
 import sphinx
+import tomli
+from pathlib import Path
 
 from packaging.version import Version
 
@@ -50,9 +52,10 @@ needs_sphinx = '1.3'
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # -- General configuration ------------------------------------------------
-conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
-
-
+# conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
+with open(Path(__file__).parent.parent.parent / "pyproject.toml", "rb") as configuration_file:
+    conf = tomli.load(configuration_file)
+setup_cfg = conf['project']
 
 
 def check_sphinx_version(expected_version):
