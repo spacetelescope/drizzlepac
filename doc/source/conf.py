@@ -319,3 +319,6 @@ latex_documents = [
 # latex_use_modindex = True
 
 latex_elements = { 'pointsize' : '11pt' }
+
+# Enable nitpicky mode - which ensures that all references in the docs resolve.
+nitpicky = True
