@@ -1986,7 +1986,7 @@ def main():
     import getopt
 
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 'bdahfginv:')
+        optlist, args = getopt.getopt(sys.argv[1:], 'bdahfgin:v:')
     except getopt.error as e:
         print(str(e))
         print(__doc__)
