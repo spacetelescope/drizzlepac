@@ -17,6 +17,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
+3.5.1 (unreleased)
+==================
+
+- Turn on use of ``verify_guiding()`` to ignore exposures where guide star
+  lock was lost and the stars are trailed. [#1443]
+
 
 3.5.0 (31-Aug-2022)
 ====================
