@@ -8,6 +8,7 @@
 """
 import copy
 import os
+import shutil
 
 from astropy.io import fits
 import numpy as np
@@ -435,22 +436,119 @@ def wfpc2_to_flt(imgname):
 # Optional code for updating headers to latest
 # reference files from CRDS
 # -----------------------------
-def apply_bestrefs(uref_dir, dirname=None):
+def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=None):
+    """Update WFPC2 data to use the latest reference files from CRDS
 
-    os.environ['CRDS_SERVER_URL'] = "https://hst-crds.stsci.edu"
-    os.environ['CRDS_PATH'] = "D:\data\crds_cache"
-    os.environ['CRDS_OBSERVATORY'] = "hst"
-    os.environ['uref'] = uref_dir
-#    os.environ['uref'] = "D:\\data\\crds_cache\\references\\hst\\"
+    .. note::
+        See https://hst-crds.stsci.edu/docs/cmdline_bestrefs/ for details
+        on how to configure CRDS for your local system and for definitions
+        of all the environment variables used by CRDS.
 
-    import crds
+    Parameters
+    ----------
+    raw_filename : str, optional
+        Filename of RAW (*d0m.fits) input file to be updated
+        The corresponding calibrated (*c0m.fits) file also needs to be
+        present in the directory to be updated as well.
+
+    dirname : str, optional
+        Name of directory containing WFPC2 data to be updated.
+        If not specified, current directory will be checked.
+
+    uref_path : str
+        Path for ``uref`` directory on local system.
+
+    crds_path : str
+        Path for the ``CRDS_PATH`` directory on local system.
+        .. warning:: If no value is specified and ``CRDS_PATH`` is not
+        already defined locally, this function will create a temporary
+        ``CRDS_PATH`` directory tree under the directory with the files
+        to be processed, populate it with the latest reference files
+        and mappings needed by CRDS, then delete it when done.
+
+    """
+    starting_dir = os.getcwd()
     import glob
 
-    if dirname:
-        os.chdir(dirname)
+    wfpc2_dir = dirname if dirname else os.getcwd()
+    os.chdir(wfpc2_dir)
 
-    c0m = sorted(glob.glob("*c0m.fits"))
-    d0m = sorted(glob.glob("*d0m.fits"))
+    d0m = []
+    c0m = []
+    if raw_filename:
+        if os.path.exists(raw_filename):
+            d0m = [raw_filename]
+            c0m = [raw_filename.replace('d0m', 'c0m')]
+    else:
+        # Get the list of WFPC2 images from the specified directory
+        c0m = sorted(glob.glob("*c0m.fits"))
+        d0m = sorted(glob.glob("*d0m.fits"))
+
+    # Make sure we are in a directory with WFPC2 images
+    if len(d0m) == 0:
+        # Return to original starting directory
+        os.chdir(starting_dir)
+        raise ValueError(f"ERROR: No WFPC2 data in {wfpc2_dir}")
+
+    orig_crds = {'CRDS_PATH': os.environ.get('CRDS_PATH'),
+                 'uref': os.environ.get('uref'),
+                 'CRDS_SERVER_URL': os.environ.get('CRDS_SERVER_URL'),
+                 'CRDS_OBSERVATORY': os.environ.get('CRDS_OBSERVATORY')}
+
+    # Now, define what CRDS directories will be used for this update...
+    remove_local_cache = False
+    if crds_path is None:
+        if orig_crds['CRDS_PATH'] is None:
+            # User has not set up any local CRDS cache, so
+            # we need to define one under the current working directory
+            crds_cache = os.path.join(wfpc2_dir, 'crds_cache')
+            crds_hst_cache = os.path.join(crds_cache, 'references', 'hst')
+            crds_map_cache = os.path.join(crds_cache, 'mappings', 'hst')
+            crds_uref_path = uref_path if uref_path else os.path.join(crds_hst_cache, 'wfpc2', os.sep)
+            if not os.path.exists(crds_hst_cache):
+                os.makedirs(crds_hst_cache)
+            if not os.path.exists(crds_map_cache):
+                os.makedirs(crds_map_cache)
+            remove_local_cache = True
+        else:
+            # User has already defined a local CRDS cache, so use it.
+            crds_cache = orig_crds['CRDS_PATH']
+            crds_uref_path = orig_crds['uref']
+    else:
+        # User wants to explicitly use a CRDS cache they specify on input
+        crds_cache = crds_path
+        crds_hst_cache = os.path.join(crds_cache, 'references', 'hst')
+        crds_uref_path = uref_path if uref_path else os.path.join(crds_hst_cache, 'wfpc2', os.sep)
+
+    # Now that we have confirmed we have images to update...
+    # configure CRDS for use in updating the WFPC2 data
+    os.environ['CRDS_SERVER_URL'] = "https://hst-crds.stsci.edu"
+    os.environ['CRDS_OBSERVATORY'] = "hst"
+    os.environ['CRDS_PATH'] = crds_cache
+    os.environ['uref'] = crds_uref_path
+
+    #    os.environ['CRDS_PATH'] = "D:\data\crds_cache"
+    #    os.environ['uref'] = "D:\\data\\crds_cache\\references\\hst\\wfpc2\\"
+
+    # Only import this package if there is data to be updated
+    import crds
+
+    # Apply bestrefs to images after downloading references to local CRDS cache
     crds.assign_bestrefs(c0m, sync_references=True)
     crds.assign_bestrefs(d0m, sync_references=True)
 
+    # clean up temp crds_cache dir, if created
+    if remove_local_cache:
+        shutil.rmtree(crds_cache)
+
+    # Now, revert os.environ to original state prior to running this function
+    for crds_key, crds_val in orig_crds.items():
+        if crds_val is None:
+            # If it was originally None, then
+            # there was no key defined originally, so delete it.
+            del os.environ[crds_key]
+        else:
+            os.environ[crds_key] = crds_val
+
+    # Return to original starting directory
+    os.chdir(starting_dir)
