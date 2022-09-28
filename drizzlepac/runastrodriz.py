@@ -188,7 +188,7 @@ wcs_preference = ['IDC_?????????-FIT_REL_GAIA*', 'IDC_?????????-FIT_IMG_GAIA*', 
 
 # Primary user interface
 def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
-            headerlets=True, align_to_gaia=True, force_alignment=False, do_verify_guiding=False, debug=False):
+            headerlets=True, align_to_gaia=True, force_alignment=False, do_verify_guiding=True, debug=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
@@ -380,7 +380,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
         _inlist = [_infile]
 
-        print("_calfiles initialized as: {}".format(_calfiles))
         if len(_calfiles) == 1 and "_raw" in _calfiles[0]:
             _verify = False
 
@@ -420,6 +419,15 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     for f in _calfiles+_calfiles_flc:
         processing_utils.compute_sregion(f)
 
+    # Run updatewcs on each list of images to define pipeline default WCS
+    # based on latest distortion models
+    # Always apply latest distortion to replace pipeline-default OPUS WCS
+    # for successful creation of updated headerlets for the cases where
+    # all inputs having EXPTIME==0 (for example) or guiding is bad.
+    updatewcs.updatewcs(_calfiles, use_db=False, checkfiles=False)
+    if _calfiles_flc:
+        updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
+
     # Check to see whether or not guide star failure affected these observations
     # They would show up as images all sources streaked as if taken in SCAN mode or with a GRISM
     # 
@@ -428,17 +436,32 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # parameter "do_verify_guiding".
     if do_verify_guiding:
         for fltimg in _calfiles:
-            flcimg = f.replace('_flt.fits', '_flc.fits')
-            if os.path.exists(flcimg):
-                fltimg = flcimg
+            flcimg = fltimg.replace('_flt.fits', '_flc.fits')
+            guide_img = flcimg if os.path.exists(flcimg) else fltimg
             # We want to use the FLC image, if possible, to avoid any
             # possible detection of CTE tails as false guide-star trailing lines
-            bad_guiding = analyze.verify_guiding(fltimg)
+            bad_guiding = analyze.verify_guiding(guide_img)
             if bad_guiding:
-                # Remove the affected image(s) from further processing
-                _calfiles.remove(fltimg)
-                if os.path.exists(flcimg):
-                    _calfiles_flc.remove(flcimg)
+                # If the user did not specify they wanted a drizzle product no matter what...
+                if not force:
+                    # Remove the affected image(s) from further processing
+                    # except when user specifies they want to make a product no matter what (force=True)
+                    _calfiles.remove(fltimg)
+                    if os.path.exists(flcimg):
+                        _calfiles_flc.remove(flcimg)
+                    # If ANY input exposure has bad guiding, none of the data can be
+                    # trusted.  However, only allow alignment if the user forces the alignment.
+                if not force_alignment:
+                    # Turn off any alignment to GAIA
+                    # After all, if one exposure has bad guiding,
+                    # none of the WCS information can be trusted.
+                    align_to_gaia = False
+                    align_with_apriori = False
+
+    # If we no longer have any valid images to process due to guiding problems,
+    # set drizcorr to OMIT and finish processing gracefully.
+    if len(_calfiles) == 0:
+        dcorr = 'OMIT'
 
     if dcorr == 'PERFORM':
 
@@ -479,6 +502,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _good_images = [f for f in _good_images if fits.getval(f, goodpix_name, ext=("SCI", 1)) > 0.]
         if len(_good_images) == 0:
             _good_images = _calfiles
+            # Turn off alignment to GAIA since there is no valid data in the exposure.
+            align_to_gaia = False
+
         if not wfpc2_input:
             adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
         else:
@@ -497,15 +523,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         if exptimes.max() / exptimes.min() > 2:
             adriz_pars['combine_type'] = 'median'
             adriz_pars['combine_nhigh'] = 0
-
-        # Run updatewcs on each list of images to define pipeline default WCS
-        # based on latest distortion models
-        # Always apply latest distortion to replace pipeline-default OPUS WCS
-        # for successful creation of updated headerlets for the cases where
-        # all inputs having EXPTIME==0 (for example)
-        updatewcs.updatewcs(_calfiles, use_db=False, checkfiles=False)
-        if _calfiles_flc:
-            updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
 
         # Integrate user-specified drizzle parameters into pipeline_pars
         _trlmsg = _timestamp('Starting alignment with bad-pixel identification')

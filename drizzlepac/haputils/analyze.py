@@ -567,6 +567,18 @@ def verify_guiding(filename, min_length=33):
     log.info(f"Verifying that {filename} was not affected by guiding problems.")
 
     hdu = fits.open(filename)
+    # Let's start by checking whether the header indicates any problems with
+    # the guide stars or tracking.
+    # Using .get() insures that this check gets done even if keyword is missing.
+    gs_quality = hdu[0].header.get('quality', default="").lower()
+    if 'gsfail' in gs_quality or 'tdf-down' in gs_quality:
+        hdu.close()
+        log.warning(f"Image {filename}'s GUIDING detected as: BAD.")
+        return True  # Yes, there was bad guiding...
+
+    # No guide star problems indicated in header, so let's check the
+    # data.  There are many instances where the data is compromised
+    # despite what values are found in the header.
     data = hdu[("SCI", 1)].data.copy()
     scale_data = hdu[("SCI",1)].header["bunit"].endswith('/S')
     data = np.nan_to_num(data, nan=0.0)  # just to be careful
