@@ -432,16 +432,17 @@ def wfpc2_to_flt(imgname):
     return flt_filename
 
 
-# -----------------------------
-# Optional code for updating headers to latest
+# ------------------------------------------------------
+# Function for updating headers to latest
 # reference files from CRDS
-# -----------------------------
+# ------------------------------------------------------
 def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=None):
     """Update WFPC2 data to use the latest reference files from CRDS
 
     .. note::
-        See https://hst-crds.stsci.edu/docs/cmdline_bestrefs/ for details
-        on how to configure CRDS for your local system and for definitions
+        See `https://hst-crds.stsci.edu/docs/cmdline_bestrefs/
+        <https://hst-crds.stsci.edu/docs/cmdline_bestrefs/>`_
+        for details on how to configure CRDS for your local system and for definitions
         of all the environment variables used by CRDS.
 
     Parameters
@@ -450,6 +451,9 @@ def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=No
         Filename of RAW (*d0m.fits) input file to be updated
         The corresponding calibrated (*c0m.fits) file also needs to be
         present in the directory to be updated as well.
+        If not specified, **all RAW and calibrated files** from the
+        current directory, or ``dirname`` directory if given, will
+        be updated.
 
     dirname : str, optional
         Name of directory containing WFPC2 data to be updated.

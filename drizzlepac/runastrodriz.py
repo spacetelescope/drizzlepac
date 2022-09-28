@@ -276,6 +276,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         raw_suffix = '_raw.fits'
         goodpix_name = 'NGOODPIX'
     else:
+        # Update header of WFPC2 data to use latest reference
+        # files from CRDS
+        wfpc2Data.apply_bestrefs(inFilename)
         # Convert input c0m file into compatible flt file
         if 'd0m' in inFilename:
             inFilename = inFilename.replace('d0m', 'c0m')
