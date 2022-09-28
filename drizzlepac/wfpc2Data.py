@@ -429,3 +429,28 @@ def wfpc2_to_flt(imgname):
         in_dq.close()
 
     return flt_filename
+
+
+# -----------------------------
+# Optional code for updating headers to latest
+# reference files from CRDS
+# -----------------------------
+def apply_bestrefs(uref_dir, dirname=None):
+
+    os.environ['CRDS_SERVER_URL'] = "https://hst-crds.stsci.edu"
+    os.environ['CRDS_PATH'] = "D:\data\crds_cache"
+    os.environ['CRDS_OBSERVATORY'] = "hst"
+    os.environ['uref'] = uref_dir
+#    os.environ['uref'] = "D:\\data\\crds_cache\\references\\hst\\"
+
+    import crds
+    import glob
+
+    if dirname:
+        os.chdir(dirname)
+
+    c0m = sorted(glob.glob("*c0m.fits"))
+    d0m = sorted(glob.glob("*d0m.fits"))
+    crds.assign_bestrefs(c0m, sync_references=True)
+    crds.assign_bestrefs(d0m, sync_references=True)
+
