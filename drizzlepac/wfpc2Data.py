@@ -472,7 +472,6 @@ def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=No
 
     """
     starting_dir = os.getcwd()
-    import glob
 
     wfpc2_dir = dirname if dirname else os.getcwd()
     os.chdir(wfpc2_dir)
