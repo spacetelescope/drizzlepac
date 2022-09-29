@@ -281,6 +281,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             inFilename = inFilename.replace('d0m', 'c0m')
         # This returns the name of the _flt.fits file that was created
         inFilename = wfpc2Data.wfpc2_to_flt(inFilename)
+        # Update header of WFPC2 data to use latest reference
+        # files from CRDS
+        print(f"Updating distortion reference files for: {inFilename}")
+        wfpc2Data.apply_bestrefs(inFilename)
+
         raw_suffix = '_d0m.fits'
         goodpix_name = 'GPIXELS'
 
