@@ -9,6 +9,7 @@
 import copy
 import os
 import shutil
+import glob
 
 from astropy.io import fits
 import numpy as np
@@ -436,7 +437,9 @@ def wfpc2_to_flt(imgname):
 # Function for updating headers to latest
 # reference files from CRDS
 # ------------------------------------------------------
-def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=None):
+def apply_bestrefs(filename=None, dirname=None,
+                   uref_path=None, crds_path=None,
+                   reftypes=['idctab', 'dgeofile', 'offtab']):
     """Update WFPC2 data to use the latest reference files from CRDS
 
     .. note::
@@ -447,10 +450,8 @@ def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=No
 
     Parameters
     ----------
-    raw_filename : str, optional
-        Filename of RAW (*d0m.fits) input file to be updated
-        The corresponding calibrated (*c0m.fits) file also needs to be
-        present in the directory to be updated as well.
+    filename : str, optional
+        Filename of input file to be updated.
         If not specified, **all RAW and calibrated files** from the
         current directory, or ``dirname`` directory if given, will
         be updated.
@@ -459,8 +460,9 @@ def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=No
         Name of directory containing WFPC2 data to be updated.
         If not specified, current directory will be checked.
 
-    uref_path : str
+    uref_path : str, optional
         Path for ``uref`` directory on local system.
+        If not provided, the one defined in `os.environ` will be used.
 
     crds_path : str
         Path for the ``CRDS_PATH`` directory on local system.
@@ -470,7 +472,14 @@ def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=No
         to be processed, populate it with the latest reference files
         and mappings needed by CRDS, then delete it when done.
 
+    reftypes : list, optional
+        List of reference files to be updated.  If None or an empty list,
+        all reference files will be updated.
+
     """
+    if reftypes is None:
+        reftypes = []
+
     starting_dir = os.getcwd()
 
     wfpc2_dir = dirname if dirname else os.getcwd()
@@ -478,12 +487,19 @@ def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=No
 
     d0m = []
     c0m = []
-    if raw_filename:
-        if os.path.exists(raw_filename):
-            d0m = [raw_filename]
-            c0m = [raw_filename.replace('d0m', 'c0m')]
+    if filename:
+        if os.path.exists(filename):
+            # User specified a single filename to process (default case)
+            d0m = [filename]
+        elif '*' in filename:
+            # User specified a wild-carded filename to use as input
+            d0m = sorted(glob.glob(filename))
+        else:
+            # Single input filename provided that could not be found
+            os.chdir(starting_dir)
+            raise ValueError(f"WFPC2 image {filename} not found in {wfpc2_dir}")
     else:
-        # Get the list of WFPC2 images from the specified directory
+        # Get the list of ALL WFPC2 images from the specified directory
         c0m = sorted(glob.glob("*c0m.fits"))
         d0m = sorted(glob.glob("*d0m.fits"))
 
@@ -536,9 +552,11 @@ def apply_bestrefs(raw_filename=None, dirname=None, uref_path=None, crds_path=No
     # Only import this package if there is data to be updated
     import crds
 
+    print(f"Running CRDS.assign_bestrefs on: {d0m} for reftypes={reftypes}")
     # Apply bestrefs to images after downloading references to local CRDS cache
-    crds.assign_bestrefs(c0m, sync_references=True)
-    crds.assign_bestrefs(d0m, sync_references=True)
+    crds.assign_bestrefs(d0m, reftypes=reftypes, sync_references=True)
+    if len(c0m) > 0:
+        crds.assign_bestrefs(c0m, reftypes=reftypes, sync_references=True)
 
     # clean up temp crds_cache dir, if created
     if remove_local_cache:
