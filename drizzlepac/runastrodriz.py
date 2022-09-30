@@ -799,6 +799,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         print([ofile.path for ofile in Process().open_files()])
 
     if not debug:
+        # clean up any temporary ref files created for WFPC2 data
+        if wfpc2_input:
+            d2im_file = f"{inFilename.split('_')[0]}_flt_d2im.fits"
+            if os.path.exists(d2im_file):
+                os.remove(d2im_file)
         try:
             # Remove all temp sub-directories now that we are done
             for sd in sub_dirs:
