@@ -493,6 +493,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     return_value: int
         A return exit code used by the calling Condor/OWL workflow code: 0 (zero) for success, 1 for error
     """
+
     # This routine needs to return an exit code, return_value, for use by the calling
     # Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
     return_value = 0
@@ -515,6 +516,10 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     ramp_product_list = []
     manifest_name = ""
     found_data = False
+
+    #MDD The product_list is a list of all the output products which will be put into the manifest file
+    mfile_list = []
+
     try:
         # Parse the poller file and generate the the obs_info_dict, as well as the total detection
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
@@ -536,7 +541,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
         # The product_list is a list of all the output products which will be put into the manifest file
         product_list = []
-        mfile_list = []
+        #MDD mfile_list = []
 
         # It is possible the total_obj_list output from the poller_utils contains only Grism/Prism
         # data and no direct images, so no further processing should be done.  If this is the case,
@@ -658,6 +663,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         # 10: Return exit code for use by calling Condor/OWL workflow code: 0 (zero) for success, 1 for error condition
         return_value = 0
     except Exception:
+        #MDD
+        log.info("In Exception")
         return_value = 1
         print("\a\a\a")
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -665,6 +672,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         logging.exception("message")
     # This except handles sys.exit() which raises the SystemExit exception which inherits from BaseException.
     except BaseException:
+        #MDD
+        log.info("In BaseException")
         exc_type, exc_value, exc_tb = sys.exc_info()
         formatted_lines = traceback.format_exc().splitlines()
         log.info(formatted_lines[-1])
