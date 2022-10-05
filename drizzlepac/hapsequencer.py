@@ -515,11 +515,15 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     ramp_product_list = []
     manifest_name = ""
     found_data = False
+    # The product_list is a list of all the output products which will be put into the manifest file
+    product_list = []
+    mfile_list = []
+
     try:
-        # Parse the poller file and generate the the obs_info_dict, as well as the total detection
+        # Parse the poller file and generate the obs_info_dict, as well as the total detection
         # product lists which contain the ExposureProduct, FilterProduct, and TotalProduct objects
         # A poller file contains visit data for a single instrument.  The TotalProduct discriminant
-        # is the detector.  A TotalProduct object is comprised of FilterProducts and ExposureProducts
+        # is the detector.  A TotalProduct object is composed of FilterProducts and ExposureProducts
         # where its FilterProduct is distinguished by the filter in use, and the ExposureProduct
         # is the atomic exposure data. Note: the TotalProduct was enhanced to also be comprised
         # of an GrismExposureProduct list which is exclusive to the TotalProduct.
@@ -533,10 +537,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         manifest_name = total_obj_list[0].manifest_name
         log.info("Generate the manifest name for this visit.")
         log.info("The manifest will contain the names of all the output products.")
-
-        # The product_list is a list of all the output products which will be put into the manifest file
-        product_list = []
-        mfile_list = []
 
         # It is possible the total_obj_list output from the poller_utils contains only Grism/Prism
         # data and no direct images, so no further processing should be done.  If this is the case,
