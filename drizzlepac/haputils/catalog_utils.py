@@ -686,7 +686,8 @@ class HAPCatalogs:
                 n_sources = source_cat.sources_num_good  # len(source_cat)
                 all_sources = len(source_cat)
                 log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
-                if n_sources < thresh:
+                # n_sources == 0 should never get here, but just to cover the past case of 0 < 0.0
+                if n_sources == 0 or n_sources < thresh:
                     reject_catalogs = True
                     log.info("{} catalog FAILED CR threshold.  Rejecting both catalogs...".format(cat_type))
                     break
