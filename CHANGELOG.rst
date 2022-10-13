@@ -23,6 +23,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Turn on use of ``verify_guiding()`` to ignore exposures where guide star
   lock was lost and the stars are trailed. [#1443]
 
+- Ensure when no sources are found and the variable thresh is zero, the 
+  ``verify_crthesh()`` properly indicates the catalog failed the CR threshold.
+  [#1450]
+
 - Added informational text when the catalog service fails (e.g., service cannot
   be reached or the request was somehow malformed) to make the default response
   more helpful. The request specification is also sent to the log, so the user
