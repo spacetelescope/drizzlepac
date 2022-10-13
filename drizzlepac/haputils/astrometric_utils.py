@@ -473,7 +473,6 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
         # More information is still needed for the user. Regardless of the
         # portion of the the specification which is incorrect, the returned
         # error is still "Cannot find table 0".
-        out_string = spec.replace("&", " ")
         log.warning("Check request for bad specification, unsupported catalog, or "
                     "service may be unavailable.")
         log.warning("Request: {}".format(spec.replace("&", " ")))
@@ -545,7 +544,6 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
         # More information is still needed for the user. Regardless of the
         # portion of the the specification which is incorrect, the returned
         # error is still "Cannot find table 0".
-        out_string = spec.replace("&", " ")
         log.warning("Check request for bad specification, unsupported catalog, or "
                     "service may be unavailable.")
         log.warning("Request: {}".format(spec.replace("&", " ")))
