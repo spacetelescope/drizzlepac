@@ -1,19 +1,20 @@
 #!/usr/bin/env python
-import os.path
 import sys
+from glob import glob
+from pathlib import Path
 
 import numpy
 from astropy import wcs
-
-from glob import glob
 from setuptools import setup, Extension
-
 
 # Setup C module include directories
 include_dirs = []
 numpy_includes = [numpy.get_include()]
-wcs_includes = [os.path.join(wcs.get_include(), 'astropy_wcs'),
-                os.path.join(wcs.get_include(), 'wcslib')]
+wcs_include_path = Path(wcs.get_include())
+wcs_includes = [
+    str(wcs_include_path / 'astropy_wcs'),
+    str(wcs_include_path / 'wcslib'),
+]
 
 include_dirs.extend(numpy_includes)
 include_dirs.extend(wcs_includes)
@@ -28,11 +29,15 @@ if sys.platform == 'win32':
         ('__STDC__', 1)
     ]
 
+ext_modules = [
+    Extension(
+        'drizzlepac.cdriz',
+        glob('src/*.c'),
+        include_dirs=include_dirs,
+        define_macros=define_macros,
+    )
+]
+
 setup(
-    ext_modules=[
-        Extension('drizzlepac.cdriz',
-                  glob('src/*.c'),
-                  include_dirs=include_dirs,
-                  define_macros=define_macros),
-    ],
+    ext_modules=ext_modules,
 )
