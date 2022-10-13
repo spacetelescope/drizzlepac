@@ -467,7 +467,15 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
 
     # If we still have an error returned by the web-service, report the exact error
     if rstr[0].startswith('Error'):
-        log.warning("Astrometric catalog generation FAILED with: \n{}".format(rstr))
+        log.warning("Astrometric catalog generation FAILED with: \n{}." 
+                    " No output table has been generated.".format(rstr))
+         
+        # More information is still needed for the user. Regardless of the
+        # portion of the the specification which is incorrect, the returned
+        # error is still "Cannot find table 0".
+        log.warning("Check request for bad specification, unsupported catalog, or "
+                    "service may be unavailable.")
+        log.warning("Request: {}".format(spec.replace("&", " ")))
 
     del rstr[0]
     r_csv = Table.read(rstr, format='ascii.csv')
@@ -532,6 +540,13 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     # If we still have an error returned by the web-service, report the exact error
     if rstr[0].startswith('Error'):
         log.warning("Astrometric catalog generation FAILED with: \n{}".format(rstr))
+
+        # More information is still needed for the user. Regardless of the
+        # portion of the the specification which is incorrect, the returned
+        # error is still "Cannot find table 0".
+        log.warning("Check request for bad specification, unsupported catalog, or "
+                    "service may be unavailable.")
+        log.warning("Request: {}".format(spec.replace("&", " ")))
 
     # remove initial line describing the number of sources returned
     # CRITICAL to proper interpretation of CSV data
