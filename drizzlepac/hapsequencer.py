@@ -62,6 +62,7 @@ from astropy.table import Table
 
 import drizzlepac
 from drizzlepac import util
+from drizzlepac import updatehdr
 from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import diagnostic_utils
 from drizzlepac.haputils import hla_flag_filter
@@ -977,10 +978,8 @@ def update_wcs_in_visit(tdp):
     grism_wcs_set, skip_grism_list, g_keyword_wcs_names_dict, grism_dict = collect_wcs_names(tdp.grism_edp_list, 'GRISM')
     log.info("WCS solutions common to all viable Grism/Prism images: {}".format(grism_wcs_set))
 
-    # There is a preference for the active WCS for the viable images in the visit
+    # There is a preference list for the active WCS for the viable images in the visit
     # Check the grism_wcs_set for the preferential solutions
-    # If a common name is found here, wait to report it as the active WCS may still need to
-    # be rolled back depending upon the WCS solutions available in the direct images.
     match_list = []
     grism_wcsname = ''
     for wcs_item in wcs_preference:
@@ -1043,7 +1042,7 @@ def update_wcs_in_visit(tdp):
         log.info("    The common WCS solutions are: {}".format(grism_wcs_set))
 
         # There is a preference for the active WCS for the viable images in the visit
-        # Check the grism_wcs_set for the preferential solutions
+        # Check the updated grism_wcs_set for the preferential solutions
         match_list = []
         final_wcsname = ''
         for wcs_item in wcs_preference:
@@ -1215,11 +1214,10 @@ def update_active_wcs(filename, wcsname):
     # Get original value of IDCSCALE keyword
     idcscale = hdu['SCI', 1].header['idcscale']
 
-    # Check if the desired WCS solution is already the active solution
-    # whereupon there is nothing to do
+    # Get the current key for the desired WCS solution
     key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wcsname)
 
-    # No need to keep this file handle open anymore
+    # No need to keep this file handle open anymore here
     hdu.close()
 
     # Ensure ALL alternate WCS solutions have been saved as headerlets
@@ -1245,6 +1243,7 @@ def update_active_wcs(filename, wcsname):
         # just restore the desired solution from the headerlet.
         try:
             wcsutil.headerlet.restore_from_headerlet(filename, hdrname=hdrname, archive=True)
+
             # Update value of nmatches based on headerlet
             log.debug("{}: Updating NMATCHES from EXT={}".format(filename, extensions[0]))
             fhdu = fits.open(filename, mode='update')
@@ -1254,6 +1253,11 @@ def update_active_wcs(filename, wcsname):
                 if 'idcscale' not in fhdu[(extname, sciext)].header:
                     fhdu[(extname, sciext)].header['idcscale'] = idcscale  # Restore this if it was overwritten/deleted
             fhdu.close()
+
+            # If the active WCS solution is now 'a priori', need to clean up any 'a posteriori'
+            # keyword values which may be remaining from a previous WCS solution
+            reset_keywords_apriori(filename)
+
         except:
             _, _, tb = sys.exc_info()
             tb_info = traceback.extract_tb(tb)
@@ -1283,14 +1287,15 @@ def archive_alternate_wcs(filename):
     Ex. hst_9029_01_acs_wfc_f775w_j8ca01at_flc_IDC_0461802ej-FIT_SVM_GAIAeDR3-hlet.fits
 
     """
-    # Get all the alternate WCSNAMEs in the science header
+    # Get all the alternate keys and corresponding wcsnames in the science header,
+    # including the 'active' information
     wcs_key_dict = wcsutil.altwcs.wcsnames(filename, ext=1, include_primary=True)
 
     # Loop over the WCSNAMEs looking for the HDRNAMEs.  If a corresponding
     # HDRNAME does not exist, create one.
     header = fits.getheader(filename, ext=0)
 
-    # Check if this alternate WCS is already a headerlet
+    # Get all the wcsnames and hdrnames for the existing headerlets
     headerlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="WCSNAME")
     headerlet_hdrnames = wcsutil.headerlet.get_headerlet_kw_names(filename, kw="HDRNAME")
 
@@ -1316,6 +1321,7 @@ def archive_alternate_wcs(filename):
         try:
             keyword = "HDRNAME" + wkey.upper()
             hdrname = header[keyword]
+
         # Handle the case where the HDRNAME keyword does not exist - create
         # a value from the FITS filename by removing the ".fits" suffix and
         # adding information.
@@ -1381,6 +1387,8 @@ def delete_ramp_exposures(obj_list, type_of_list):
 
     return ramp_filenames_list
 
+# ------------------------------------------------------------------------------
+
 
 def _verify_sci_hdrname(filename):
     """Insures that HDRNAME keyword is populated in SCI extensions.
@@ -1411,3 +1419,62 @@ def _verify_sci_hdrname(filename):
     if closefits:
         fhdu.close()
         del fhdu
+
+# ------------------------------------------------------------------------------
+
+
+def reset_keywords_apriori(filename):
+    """
+    Check the SCI extension(s) of the output FLT/FLC and DRZ/DRC files.  If the active
+    WCS solution is 'a priori', there should not be any valid values for NMATCHES,
+    RMS_RA/RMS_DEC, FITGEOM, and CRDER1/CRDER2 as these keywords are associated with 
+    'a posteriori' solutions.  Ensure the WCSTYPE is based upon the active WCSNAME.
+
+    Parameters
+    ----------
+    filename : str
+        Name of file to evaluate
+
+    Returns
+    -------
+    None
+    """
+    wcs_keys = {'NMATCHES': 0, 'RMS_RA': 0.0, 'RMS_DEC': 0.0, 'FITGEOM': '', 
+                'CRDER1': 0.0, 'CRDER2': 0.0}
+
+    # Determine the number of SCI extensions
+    num_sci, extname = util.count_sci_extensions(filename)
+    extname_list = [(extname, x + 1) for x in range(num_sci)]
+
+    # Open the file in anticipation of updating 'a priori' solution associated keywords
+    hdu = fits.open(filename, mode='update')
+
+    # Loop over the SCI extensions in the file
+    for ext in extname_list:
+        active_wcsname = hdu[ext].header['WCSNAME']
+
+        # An 'a priori' solution is of the form <Starting WCS>-<Astrometric Catalog>
+        # Catalogs: GSC240, HSC30, GAIAD1, GAIADR2, and GAIAeDR3
+        wcsname_list = active_wcsname.split('-')
+
+        # If the WCS solution is 'a priori' ensure any keywords in wcs_keys are set to default values
+        is_apriori = len(wcsname_list) == 2 and wcsname_list[1].upper().startswith(('GSC', 'HSC', 'GAIA'))
+        if is_apriori:
+            try:
+                # Make sure the WCSTYPE is consistent with the active 'a priori' WCSNAME
+                if hdu[ext].header['WCSTYPE']:
+                    hdu[ext].header['WCSTYPE'] = updatehdr.interpret_wcsname_type(active_wcsname)
+            except KeyError:
+                pass
+
+            # Loop over the keyword values for this particular solution to update
+            for wkey, wvalue in wcs_keys.items():
+                try:
+                    if hdu[ext].header[wkey]:
+                        hdu[ext].header[wkey] = wvalue
+                except KeyError:
+                    pass
+
+    hdu.flush()
+    hdu.close()
+    del hdu
