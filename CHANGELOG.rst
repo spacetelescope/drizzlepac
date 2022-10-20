@@ -32,6 +32,12 @@ number of the code change for that issue.  These PRs can be viewed at:
   more helpful. The request specification is also sent to the log, so the user
   can see what was actually requested. [#1451]
 
+- Check the SCI extension(s) of the output FLT/FLC and DRZ/DRC files.  If the active
+  WCS solution is 'a priori', there should not be any valid values for NMATCHES,
+  RMS_RA/RMS_DEC, FITGEOM, and CRDER1/CRDER2 as these keywords are associated with 
+  'a posteriori' solutions.  Ensure the WCSTYPE is based upon the active WCSNAME.
+  [#1465]
+
 - Protect against there being no sources left to measure
   the properties after cleaning cosmic rays from the input
   in ``verify_guiding()``.
