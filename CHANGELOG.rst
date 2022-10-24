@@ -32,6 +32,11 @@ number of the code change for that issue.  These PRs can be viewed at:
   more helpful. The request specification is also sent to the log, so the user
   can see what was actually requested. [#1451]
 
+- Protect against there being no sources left to measure
+  the properties after cleaning cosmic rays from the input
+  in ``verify_guiding()``.
+  [#1466]
+
 
 3.5.0 (31-Aug-2022)
 ====================
