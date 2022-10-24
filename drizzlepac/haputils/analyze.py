@@ -627,6 +627,11 @@ def verify_guiding(filename, min_length=33):
     # Get the label IDs for sources flagged as CRs, IDs are 1-based not 0-based
     pt_srcs = np.where(bad_srcs == 0)[0] + 1
     segm.remove_labels(pt_srcs)
+    # If there are no sources left, this is akin to the check above where number
+    # of sources < 2, so just return False
+    if segm.nlabels == 0:
+        log.warning("After removal of suspected cosmic rays, there are no sources remaining in the image.")
+        return False
     src_cat = SourceCatalog(imgarr, segm)  # clean up source catalog now...
     num_sources = len(src_cat)
 
