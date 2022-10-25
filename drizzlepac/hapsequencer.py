@@ -1426,9 +1426,10 @@ def _verify_sci_hdrname(filename):
 def reset_keywords_apriori(filename):
     """
     Check the SCI extension(s) of the output FLT/FLC and DRZ/DRC files.  If the active
-    WCS solution is 'a priori', there should not be any valid values for NMATCHES,
-    RMS_RA/RMS_DEC, FITGEOM, and CRDER1/CRDER2 as these keywords are associated with 
-    'a posteriori' solutions.  Ensure the WCSTYPE is based upon the active WCSNAME.
+    WCS solution is 'a priori', delete the following keywords if they are associated
+    with the active WCS as they are residue from a previous 'a posteriori' solution:
+    NMATCHES, RMS_RA/RMS_DEC, FITGEOM, and CRDER1/CRDER2. Ensure the WCSTYPE is based
+    upon the active WCSNAME to clarify any confusion.
 
     Parameters
     ----------
@@ -1439,8 +1440,7 @@ def reset_keywords_apriori(filename):
     -------
     None
     """
-    wcs_keys = {'NMATCHES': 0, 'RMS_RA': 0.0, 'RMS_DEC': 0.0, 'FITGEOM': '', 
-                'CRDER1': 0.0, 'CRDER2': 0.0}
+    keys_to_delete = ['NMATCHES', 'RMS_RA', 'RMS_DEC', 'FITGEOM', 'CRDER1', 'CRDER2']
 
     # Determine the number of SCI extensions
     num_sci, extname = util.count_sci_extensions(filename)
@@ -1457,23 +1457,29 @@ def reset_keywords_apriori(filename):
         # Catalogs: GSC240, HSC30, GAIAD1, GAIADR2, and GAIAeDR3
         wcsname_list = active_wcsname.split('-')
 
-        # If the WCS solution is 'a priori' ensure any keywords in wcs_keys are set to default values
+        # If the active WCS solution is 'a priori', delete the keywords in the keys_to_delete
+        # list from the header which are remaining from a previous 'a posteriori' solution
         is_apriori = len(wcsname_list) == 2 and wcsname_list[1].upper().startswith(('GSC', 'HSC', 'GAIA'))
         if is_apriori:
             try:
                 # Make sure the WCSTYPE is consistent with the active 'a priori' WCSNAME
-                if hdu[ext].header['WCSTYPE']:
-                    hdu[ext].header['WCSTYPE'] = updatehdr.interpret_wcsname_type(active_wcsname)
-            except KeyError:
-                pass
+                # This keyword is not required for the WCS, but it provides an explanation
+                # in a succinct way.  If WCSTYPE does not exist, create it.
+                hdu[ext].header['WCSTYPE'] = updatehdr.interpret_wcsname_type(active_wcsname)
 
-            # Loop over the keyword values for this particular solution to update
-            for wkey, wvalue in wcs_keys.items():
+            # Log a problem, but keep going as this keyword is a convenience.
+            except KeyError:
+                log.warning('Could not modify/add the WCSTYPE keyword for the active WCS solution.')
+
+            # Loop over the keys_to_delete list
+            for key in keys_to_delete:
                 try:
-                    if hdu[ext].header[wkey]:
-                        hdu[ext].header[wkey] = wvalue
+                    if key in hdu[ext].header:
+                        del hdu[ext].header[key]
+
+                # Log a problem, but keep going as this is just a bit of cleanup
                 except KeyError:
-                    pass
+                    log.warning(f'Could not delete the {key} keyword from the active WCS solution.')
 
     hdu.flush()
     hdu.close()
