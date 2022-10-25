@@ -1473,13 +1473,8 @@ def reset_keywords_apriori(filename):
 
             # Loop over the keys_to_delete list
             for key in keys_to_delete:
-                try:
-                    if key in hdu[ext].header:
-                        del hdu[ext].header[key]
-
-                # Log a problem, but keep going as this is just a bit of cleanup
-                except KeyError:
-                    log.warning(f'Could not delete the {key} keyword from the active WCS solution.')
+                if key in hdu[ext].header:
+                    del hdu[ext].header[key]
 
     hdu.flush()
     hdu.close()
