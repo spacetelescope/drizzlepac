@@ -37,6 +37,13 @@ number of the code change for that issue.  These PRs can be viewed at:
   in ``verify_guiding()``.
   [#1466]
 
+- Check the SCI extension(s) of the output FLT/FLC and DRZ/DRC files.  If the active
+  WCS solution is 'a priori', delete the following keywords if they are associated
+  with the active WCS as they are residue from a previous 'a posteriori' solution:
+  NMATCHES, RMS_RA/RMS_DEC, FITGEOM, and CRDER1/CRDER2. Ensure the WCSTYPE is based
+  upon the active WCSNAME to clean up any confusion.
+  [#1465]
+
 
 3.5.0 (31-Aug-2022)
 ====================
