@@ -861,14 +861,18 @@ def find_fwhm(psf, default_fwhm):
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
     gaussian_prf = IntegratedGaussianPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
-    itr_phot_obj = IterativelySubtractedPSFPhotometry(finder=iraffind,
-                                                      group_maker=daogroup,
-                                                      bkg_estimator=mmm_bkg,
-                                                      psf_model=gaussian_prf,
-                                                      fitter=fitter,
-                                                      fitshape=(11, 11),
-                                                      niters=2)
-    phot_results = itr_phot_obj(psf)
+    try:
+        itr_phot_obj = IterativelySubtractedPSFPhotometry(finder=iraffind,
+                                                          group_maker=daogroup,
+                                                          bkg_estimator=mmm_bkg,
+                                                          psf_model=gaussian_prf,
+                                                          fitter=fitter,
+                                                          fitshape=(11, 11),
+                                                          niters=2)
+        phot_results = itr_phot_obj(psf)
+    except Exception:
+        log.error("The find_fwhm() failed due to problem with fitting.")
+        return None
     # Insure none of the fluxes determined by photutils is np.nan
     phot_results['flux_fit'] = np.nan_to_num(phot_results['flux_fit'].data, nan=0)
 
