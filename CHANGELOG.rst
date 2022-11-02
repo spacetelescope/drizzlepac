@@ -44,7 +44,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   upon the active WCSNAME to clean up any confusion.
   [#1465]
 
-- Protect against inability to find a FWHM due to a fitting problem.
+- Protect against inability to find a FWHM due to a fitting problem. [#1467]
 
 
 3.5.0 (31-Aug-2022)
