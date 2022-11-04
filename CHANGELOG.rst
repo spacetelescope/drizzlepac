@@ -47,7 +47,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Protect against inability to find a FWHM due to a fitting problem. [#1467]
 
 
-3.5.0 (31-Aug-2022)
+3.5.0 (10-Oct-2022)
 ====================
 
 - Introduced a new ``apply_tweak()`` function as a replacement to the
