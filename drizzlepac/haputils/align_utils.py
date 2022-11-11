@@ -234,7 +234,6 @@ class AlignmentTable:
         for img in self.haplist:
             img.close()
 
-
     def find_alignment_sources(self, output=True, crclean=None):
         """Find observable sources in each input exposure."""
         if crclean is None:
@@ -275,7 +274,6 @@ class AlignmentTable:
         for image in self.imglist:
             image.meta["group_id"] = self.group_id_dict["{}_{}".format(image.meta["rootname"], image.meta["chip"])]
             image.meta['num_ref_catalog'] = num_ref
-
 
     def configure_fit(self):
         # Convert input images to tweakwcs-compatible FITSWCSCorrector objects and
