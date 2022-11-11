@@ -149,6 +149,7 @@ def buildMaskImage(rootname, bitvalue, output, extname='DQ', extver=1):
     # Return the name of the mask image written out
     return maskname
 
+
 # Utility functions for generating X and Y arrays for
 # creating the WFPC2 shadow masks.
 # Coefficients are from WMOSAIC function 'get_edge2.x'
@@ -158,35 +159,48 @@ _coeffs = {'1':[[52.20921,0.009072887,0.009072887],[42.62779,0.009122855,-1.1067
           '3':[[44.18944,0.0138938,-1.412296E-5],[30.23626,0.008156041,-1.491324E-5]],
           '4':[[44.56632,0.003509023,-1.278723E-5],[40.91462,0.01273679,-1.063462E-5]]}
 """
+
+
 def _func_Shadow_WF1y(x,y):
     return y + 0.5 - (42.62779 + 0.009122855*y - 1.106709E-5*y**2)
+
+
 def _func_Shadow_WF1x(x,y):
     return x + 0.5 - (52.20921 + 0.009072887*x - 9.941337e-6*x**2)
 
+
 def _func_Shadow_WF2y(x,y):
     return y + 0.5 - (47.68184 + 0.00265608*y - 1.468158E-5*y**2)
+
+
 def _func_Shadow_WF2x(x,y):
     return x + 0.5 - (21.77283 + 0.01842164*x - 1.398300E-5*x**2)
 
+
 def _func_Shadow_WF3y(x,y):
     return y + 0.5 - (30.23626 + 0.008156041*y - 1.491324E-5*y**2 )
+
+
 def _func_Shadow_WF3x(x,y):
     return x + 0.5 - (44.18944 + 0.0138938*x - 1.412296E-5*x**2)
 
+
 def _func_Shadow_WF4y(x,y):
     return y + 0.5 - (40.91462 + 0.01273679*y - 1.063462E-5*y**2)
+
+
 def _func_Shadow_WF4x(x,y):
     return x + 0.5 - (44.56632 + 0.003509023*x - 1.278723E-5*x**2)
 
+
 # Function for creating the weighting image for WFPC2 drizzling
 # from the 'wmosaic' shadow mask polynomials.
-
-def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
+def buildShadowMaskImage(dqfile, detnum, extnum, maskname, bitvalue=None, binned=1):
     """ Builds mask image from WFPC2 shadow calibrations.
       detnum - string value for 'DETECTOR' detector
     """
     # insure detnum is a string
-    if type(detnum) != type(''):
+    if not isinstance(detnum, str):
         detnum = repr(detnum)
 
     _funcroot = '_func_Shadow_WF'
@@ -198,16 +212,16 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
         fileutil.removeFile(maskname)
 
     _use_inmask = not fileutil.findFile(dqfile) or bitvalue is None
+    _flt_file = dqfile.endswith('flt.fits')  # check to see if DQ file is just an extension from an FLT file
 
     # Check for existance of input .c1h file for use in making inmask file
     if _use_inmask:
-        #_mask = 'wfpc2_inmask'+detnum+'.fits'
         _mask = maskname
         # Check to see if file exists...
         if not fileutil.findFile(_mask):
-        # If not, create the file.
-        # This takes a long time to run, so it should be done
-        # only when absolutely necessary...
+            # If not, create the file.
+            # This takes a long time to run, so it should be done
+            # only when absolutely necessary...
             try:
                 _funcx = _funcroot+detnum+'x'
                 _funcy = _funcroot+detnum+'y'
@@ -217,22 +231,23 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
                 maskarr = _xarr * _yarr
 
                 if binned !=1:
-                    bmaskarr = maskarr[::2,::2]
-                    bmaskarr *= maskarr[1::2,::2]
-                    bmaskarr *= maskarr[::2,1::2]
-                    bmaskarr *= maskarr[1::2,1::2]
+                    bmaskarr = maskarr[::2, ::2]
+                    bmaskarr *= maskarr[1::2, ::2]
+                    bmaskarr *= maskarr[::2, 1::2]
+                    bmaskarr *= maskarr[1::2, 1::2]
                     maskarr = bmaskarr.copy()
                     del bmaskarr
-
-                #Write out the mask file as simple FITS file
+                print(f"Created shadow mask from calibrations for chip {detnum}.")
+                # Write out the mask file as simple FITS file
                 fmask = fits.open(_mask, mode='append', memmap=False)
                 maskhdu = fits.PrimaryHDU(data=maskarr)
+                print(f"Wrote out shadow mask as {_mask}")
                 fmask.append(maskhdu)
 
-                #Close files
+                # Close files
                 fmask.close()
                 del fmask
-            except:
+            except Exception:
                 return None
 
     else:
@@ -240,36 +255,132 @@ def buildShadowMaskImage(dqfile,detnum,extnum,maskname,bitvalue=None,binned=1):
         # Build full mask based on .c1h and shadow mask
         #
         fdq = fileutil.openImage(dqfile, mode='readonly', memmap=False)
+        if _flt_file:
+            _extnum = ('DQ', int(extnum))
+        else:
+            _extnum = int(extnum)
         try:
             # Read in DQ array from .c1h and from shadow mask files
-            dqarr = fdq[int(extnum)].data
-            #maskarr = fsmask[0].data
+            dqarr = fdq[_extnum].data
 
             # Build mask array from DQ array
-            dqmaskarr = buildMask(dqarr,bitvalue)
-
-            #Write out the mask file as simple FITS file
+            dqmaskarr = buildMask(dqarr, bitvalue)
+            print(f"Created mask from DQ array for {_extnum} using bits {bitvalue}.")
+            # Write out the mask file as simple FITS file
             fdqmask = fits.open(maskname, mode='append', memmap=False)
             maskhdu = fits.PrimaryHDU(data=dqmaskarr)
+            print(f"Wrote out DQ mask to {maskname}.")
             fdqmask.append(maskhdu)
 
-            #Close files
+            # Close files
             fdqmask.close()
             del fdqmask
             fdq.close()
             del fdq
 
-        except:
+        except Exception:
             fdq.close()
             del fdq
             # Safeguard against leaving behind an incomplete file
             if fileutil.findFile(maskname):
                 os.remove(maskname)
-            _errstr = "\nWarning: Problem creating DQMASK file for "+rootname+".\n"
-            #raise IOError, _errstr
+            _errstr = "\nWarning: Problem creating DQMASK file for "+dqfile+".\n"
             print(_errstr)
             return None
 
+    # Return the name of the mask image written out
+    return maskname
+
+
+def _buildMultiShadowMaskImage(dqfile, detnum, extnum, maskname, bitvalue=None, binned=1):
+    """ Builds mask image from WFPC2 shadow calibrations.
+      detnum - string value for 'DETECTOR' detector
+    """
+    bitvalue = None
+    # insure detnum is a string
+    if not isinstance(detnum, str):
+        detnum = repr(detnum)
+
+    _funcroot = '_func_Shadow_WF'
+
+    # build template shadow mask's filename
+
+    # If an old version of the maskfile was present, remove it and rebuild it.
+    if fileutil.findFile(maskname):
+        fileutil.removeFile(maskname)
+
+    _flt_file = dqfile.endswith('flt.fits')  # check to see if DQ file is just an extension from an FLT file
+    # Check for existance of input .c1h file for use in making inmask file
+    # Check to see if file exists...
+    if not fileutil.findFile(maskname):
+        # If not, create the file.
+        # This takes a long time to run, so it should be done
+        # only when absolutely necessary...
+        try:
+            _funcx = _funcroot+detnum+'x'
+            _funcy = _funcroot+detnum+'y'
+
+            _xarr = np.clip(np.fromfunction(eval(_funcx), (800, 800)), 0.0, 1.0).astype(np.uint8)
+            _yarr = np.clip(np.fromfunction(eval(_funcy), (800, 800)), 0.0, 1.0).astype(np.uint8)
+            maskarr = _xarr * _yarr
+
+            if binned !=1:
+                bmaskarr = maskarr[::2, ::2]
+                bmaskarr *= maskarr[1::2, ::2]
+                bmaskarr *= maskarr[::2, 1::2]
+                bmaskarr *= maskarr[1::2, 1::2]
+                maskarr = bmaskarr.copy()
+                del bmaskarr
+
+        except Exception:
+            return None
+
+    if bitvalue:
+        #
+        # Build full mask based on .c1h combined with shadow mask
+        #
+        fdq = fileutil.openImage(dqfile, mode='readonly', memmap=False)
+        if _flt_file:
+            _extnum = ('DQ', int(extnum))
+        else:
+            _extnum = int(extnum)
+        try:
+            # Read in DQ array from .c1h and from shadow mask files
+            dqarr = fdq[_extnum].data
+
+            # Build mask array from DQ array
+            dqmaskarr = buildMask(dqarr, bitvalue)
+
+        except Exception:
+            # Safeguard against leaving behind an incomplete file
+            if fileutil.findFile(maskname):
+                os.remove(maskname)
+            _errstr = "\nWarning: Problem creating DQMASK file for " + dqfile + ".\n"
+            print(_errstr)
+            return None
+        finally:
+            fdq.close()
+            del fdq
+
+        # Now combine with shadow mask created from calibrated functions
+        # Start by only keeping pixels flagged with DQ=2 in shadowmask region defined in maskarr
+        dq2mask = buildMask(dqarr, ~2)
+        smaskarr = np.bitwise_and(dq2mask, (~maskarr.astype(bool)).astype(np.int16))
+        # finally, combine this shadowmask with the DQ mask requested by the user based on bitvalue
+        dqmaskarr = np.bitwise_or(dqmaskarr, smaskarr)
+
+    else:
+        # simply use the functional shadow mask
+        dqmaskarr = maskarr
+
+    # Write out the mask file as simple FITS file
+    fdqmask = fits.open(maskname, mode='append', memmap=False)
+    maskhdu = fits.PrimaryHDU(data=dqmaskarr)
+    fdqmask.append(maskhdu)
+
+    # Close files
+    fdqmask.close()
+    del fdqmask
 
     # Return the name of the mask image written out
     return maskname
