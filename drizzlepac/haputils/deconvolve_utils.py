@@ -512,6 +512,7 @@ def _create_input_psf(psf_name, calimg, total_flux):
 
     return psf_flt_name
 
+
 def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
 
     coords = [(row[1], row[0]) for row in star_list]
@@ -990,6 +991,7 @@ def find_point_sources(drzname, data=None, mask=None,
     del peak_mask
 
     return peaks, psf_fwhm
+
 
 def determine_input_image(image):
     """Determine the name of an input exposure for the given drizzle product"""

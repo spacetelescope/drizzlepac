@@ -69,8 +69,13 @@ class WFPC2InputImage (imageObject):
         # Look for additional file with DQ array, primarily for WFPC2 data
 
         indx = self._filename.find('.fits')
+        _flt_file = False
 
-        if indx > 3:
+        if self._filename.endswith('_flt.fits'):
+            dqfile = self._filename
+            _flt_file = True
+
+        elif indx > 3:
             suffix = self._filename[indx-4:indx]
             dqfile = self._filename.replace(suffix[:3],'_c1')
 
@@ -95,7 +100,10 @@ class WFPC2InputImage (imageObject):
                         "a FITS file nor a GEIS file.".format(self._filename))
 
         if os.path.exists(dqfile):
-            dq_suffix = fits.getval(dqfile, "EXTNAME", ext=1, memmap=False)
+            if _flt_file:
+                dq_suffix = 'DQ'
+            else:
+                dq_suffix = fits.getval(dqfile, "EXTNAME", ext=1, memmap=False)
         else:
             dq_suffix = "SCI"
 
