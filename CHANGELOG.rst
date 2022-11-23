@@ -46,6 +46,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Protect against inability to find a FWHM due to a fitting problem. [#1467]
 
+- Implement photometric equalization for standard pipeline processing
+  (runastrodriz) of WFPC2 data. [#1471]
 
 3.5.0 (10-Oct-2022)
 ====================
