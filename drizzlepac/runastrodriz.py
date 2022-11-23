@@ -121,6 +121,7 @@ from drizzlepac import wcs_functions
 # for WFPC2 support
 from drizzlepac.haputils import config_utils
 from drizzlepac import wfpc2Data
+from drizzlepac import photeq
 
 from . import __version__
 
@@ -287,6 +288,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # files from CRDS
         print(f"Updating distortion reference files for: {inFilename}")
         wfpc2Data.apply_bestrefs(inFilename)
+        photeq.photeq(files=inFilename, ref_phot_ext=3, readonly=False)
 
         raw_suffix = '_d0m.fits'
         goodpix_name = 'GPIXELS'
