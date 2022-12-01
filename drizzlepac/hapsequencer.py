@@ -94,8 +94,7 @@ envvar_cat_svm = {"SVM_CATALOG_SBC": 'on',
                   "SVM_CATALOG_WFC": 'on',
                   "SVM_CATALOG_UVIS": 'on',
                   "SVM_CATALOG_IR": 'on',
-                  "SVM_CATALOG_PC": 'on',
-                  "SVM_CATALOG_WF": 'on'}
+                  "SVM_CATALOG_WFPC": 'on'}
 envvar_cat_str = "SVM_CATALOG_{}"
 
 # --------------------------------------------------------------------------------------------------------------
@@ -123,7 +122,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                        Specify which, if any, catalogs should be generated at all, based on detector.  This dictionary
                        needs to contain values for all instruments; namely:
 
-                       SVM_CATALOG_HRC, SVM_CATALOG_SBC, SVM_CATALOG_WFC, SVM_CATALOG_UVIS, SVM_CATALOG_IR, SVM_CATALOG_PC
+                       SVM_CATALOG_HRC, SVM_CATALOG_SBC, SVM_CATALOG_WFC, SVM_CATALOG_UVIS, SVM_CATALOG_IR, SVM_CATALOG_WFPC
 
                        These variables can be defined with values of 'on'/'off'/'yes'/'no'/'true'/'false'.
 

@@ -174,7 +174,7 @@ class AlignmentTable:
                 hdr0 = fits.getheader(img)
                 instrume = hdr0.get('instrume')
                 if instrume.lower() == 'wfpc2' and 'detector' not in hdr0:
-                    detector = 'PC'
+                    detector = 'WFPC'
                 else:
                     detector = hdr0.get('detector')
 
@@ -1440,6 +1440,7 @@ def register_photutils_function(name):
 # http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html    #
 ########################################################################################
 
+
 def normxcorr2(template, image, mode="full"):
     """
     Input arrays should be floating point numbers.
@@ -1481,6 +1482,7 @@ def normxcorr2(template, image, mode="full"):
     out[np.where(np.logical_not(np.isfinite(out)))] = 0
 
     return out
+
 
 def compute_xcorr_offset(image, refimage, window=32):
     """Use normxcorr2 to determine sub-pixel offset between two images.

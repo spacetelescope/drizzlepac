@@ -158,8 +158,7 @@ focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
               "ACS/WFC": {'sigma': 1.5, 'good_bits': 1360},
               "ACS/SBC": {'sigma': 2.0, 'good_bits': 0},
               "ACS/HRC": {'sigma': 1.5, 'good_bits': 1360},
-              "WFPC2/PC": {'sigma': 1.5, 'good_bits': 1360},
-              "WFPC2/WF": {'sigma': 1.5, 'good_bits': 1360}}
+              "WFPC2/WFPC": {'sigma': 1.5, 'good_bits': 1360}}
 
 sub_dirs = ['OrIg_files', 'pipeline-default']
 valid_alignment_modes = ['apriori', 'aposteriori', 'default-pipeline']

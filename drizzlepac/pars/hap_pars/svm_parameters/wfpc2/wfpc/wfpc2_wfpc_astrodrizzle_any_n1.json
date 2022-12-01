@@ -17,7 +17,7 @@
         "static_sig": 4.0
     },
     "STEP 2: SKY SUBTRACTION": {
-        "skysub": true,
+        "skysub": false,
         "skymethod": "match",
         "skystat": "median",
         "skywidth": 0.1,
@@ -33,18 +33,18 @@
         "skyuser": ""
     },
     "STEP 3: DRIZZLE SEPARATE IMAGES": {
-        "driz_separate": true,
-        "driz_sep_bits": "528",
-        "driz_sep_kernel": "turbo",
+        "driz_separate": false,
+        "driz_sep_bits": "16",
+        "driz_sep_kernel": "square",
         "driz_sep_wt_scl": "exptime",
         "driz_sep_pixfrac": 1.0,
         "driz_sep_fillval": null,
         "driz_sep_compress": false
     },
     "STEP 4: CREATE MEDIAN IMAGE": {
-        "median": true,
+        "median": false,
         "median_newmasks": true,
-        "combine_type": "median",
+        "combine_type": "minmed",
         "combine_nlow": 0,
         "combine_nhigh": 1,
         "combine_maskpt": 0.3,
@@ -55,14 +55,14 @@
         "combine_bufsize": null
     },
     "STEP 5: BLOT BACK THE MEDIAN IMAGE": {
-        "blot": true,
+        "blot": false,
         "blot_interp": "poly5",
         "blot_sinscl": 1.0,
         "blot_addsky": true,
         "blot_skyval": 0.0
     },
     "STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR": {
-        "driz_cr": true,
+        "driz_cr": false,
         "driz_cr_snr": "5.0 4.0",
         "driz_cr_grow": 1,
         "driz_cr_ctegrow": 0,
@@ -73,7 +73,7 @@
         "driz_combine": true,
         "final_pixfrac": 1.0,
         "final_fillval": null,
-        "final_bits": "528",
+        "final_bits": "65535",
         "final_maskval": null,
         "final_wht_type": "EXP",
         "final_kernel": "square",
@@ -84,7 +84,7 @@
         "final_wcs": true,
         "final_rot": 0.0,
         "final_refimage": "",
-        "final_scale": null,
+        "final_scale": 0.0455,
         "final_outnx": null,
         "final_outny": null,
         "final_ra": null,
