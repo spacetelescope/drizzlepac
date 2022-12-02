@@ -283,14 +283,18 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             inFilename = inFilename.replace('d0m', 'c0m')
         # This returns the name of the _flt.fits file that was created
         inFilename = wfpc2Data.wfpc2_to_flt(inFilename)
-        # Update header of WFPC2 data to use latest reference
-        # files from CRDS
-        print(f"Updating distortion reference files for: {inFilename}")
-        wfpc2Data.apply_bestrefs(inFilename)
-        photeq.photeq(files=inFilename, ref_phot_ext=3, readonly=False)
+        if _analyze_exposure(inFilename):
+            # Update header of WFPC2 data to use latest reference
+            # files from CRDS
+            print(f"Updating distortion reference files for: {inFilename}")
+            wfpc2Data.apply_bestrefs(inFilename)
+            photeq.photeq(files=inFilename, ref_phot_ext=3, readonly=False)
 
-        raw_suffix = '_d0m.fits'
-        goodpix_name = 'GPIXELS'
+            raw_suffix = '_d0m.fits'
+            goodpix_name = 'GPIXELS'
+        else:
+            print("ERROR: Inappropriate input file.")
+            return
 
     infile_det = fits.getval(inFilename, 'detector')
     cal_ext = None
@@ -2034,6 +2038,18 @@ def handle_remove_readonly(func, path, exc):
     else:
         raise
 
+def _analyze_exposure(filename):
+    """Evaluate whether or not this exposure should be processed at all."""
+
+    process_exposure = True
+
+    fhdu = fits.getheader(filename)
+    targname = fhdu['targname']
+
+    if any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']):
+        process_exposure = False
+
+    return process_exposure
 
 # Functions to support execution from the shell.
 def main():

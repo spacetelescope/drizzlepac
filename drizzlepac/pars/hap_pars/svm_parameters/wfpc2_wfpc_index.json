@@ -4,11 +4,11 @@
     },
     "astrodrizzle": {
         "any_n1": "wfpc2/wfpc/wfpc2_wfpc_astrodrizzle_any_n1.json",
-        "filter_basic": "any/any_astrodrizzle_filter_hap_basic.json",
-        "single_basic": "any/any_astrodrizzle_single_hap_basic.json",
+        "filter_basic": "wfpc2/wfpc/wfpc2_wfpc_astrodrizzle_any_total.json",
+        "single_basic": "wfpc2/wfpc/wfpc2_wfpc_astrodrizzle_any_n1.json",
         "total_basic": "wfpc2/wfpc/wfpc2_wfpc_astrodrizzle_any_total.json",
-        "wfpc2_pc_any_n2":"wfpc2/wfpc/wfpc2_wfpc_astrodrizzle_any_n2.json",
-        "wfpc2_pc_any_n4":"wfpc2/wfpc/wfpc2_wfpc_astrodrizzle_any_n4.json"
+        "wfpc2_wfpc_any_n2":"wfpc2/wfpc/wfpc2_wfpc_astrodrizzle_any_n2.json",
+        "wfpc2_wfpc_any_n4":"wfpc2/wfpc/wfpc2_wfpc_astrodrizzle_any_n4.json"
     },
     "catalog generation": {
         "all": "wfpc2/wfpc/wfpc2_wfpc_catalog_generation_all.json"
