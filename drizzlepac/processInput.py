@@ -557,6 +557,11 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
         if '_flc.fits' in img:
             drz_extn = '_drc.fits'
             break
+        # Redefine the output suffix for WFPC2 data so statically archived
+        # ipppssoott_drz.fits products are not overwritten.
+        if fits.getval(img, 'instrume').upper() == 'WFPC2':
+            drz_extn = '_drw.fits'
+            break
 
     if output in [None,'']:
         output = fileutil.buildNewRootname(asndict['output'],
