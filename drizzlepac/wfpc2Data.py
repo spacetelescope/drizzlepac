@@ -394,7 +394,7 @@ def wfpc2_to_flt(imgname):
 
     # Add keywords to be more compatible with ACS and WFC3 data
     num_sci = fileutil.countExtn(imgname)
-    det_name = 'WFPC'
+    det_name = 'WFPC2'
     in_sci[0].header['DETECTOR'] = det_name
 
     if is_dq:
