@@ -1206,16 +1206,11 @@ class HAPPointCatalog(HAPCatalogBase):
         image = self.image.data.copy()
 
         # load in coords of sources identified in total product
-        try:
-            if len(self.sources) > 1:
-                positions = (self.sources['xcentroid'], self.sources['ycentroid'])
-            else:
-                positions = (Column(self.sources['xcentroid']), Column(self.sources['ycentroid']))
-        except Exception:
-            if len(self.sources) > 1:
-                positions = (self.sources['X-Center'], self.sources['Y-Center'])
-            else:
-                positions = (Column(self.sources['X-Center']), Column(self.sources['Y-Center']))
+        _cnames = ['X-Center', 'Y-Center'] if 'X-Center' in self.sources.colnames else ['xcentroid', 'ycentroid']
+        if len(self.sources) > 1:
+            positions = (self.sources[_cnames[0]], self.sources[_cnames[1]])
+        else:
+            positions = (Column(self.sources[_cnames[0]]), Column(self.sources[_cnames[1]]))
 
         pos_xy = np.vstack(positions).T
 
