@@ -300,7 +300,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     hdr0 = fits.getheader(imglist[0])
     inst = hdr0.get('instrume')
     if inst.lower() == 'wfpc2' and 'detector' not in hdr0:
-        det = 'pc'
+        det = 'wfpc2'
     else:
         det = hdr0.get('detector')
     apars = get_default_pars(inst, det)

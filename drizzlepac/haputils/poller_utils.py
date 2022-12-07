@@ -484,7 +484,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 # mvm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
                 #
                 prod_list = prod_info.split(" ")
-                multi_scale = prod_list[2].upper() in ['IR', 'PC', 'WF']
+                multi_scale = prod_list[2].upper() in ['IR']
                 pscale = 'fine' if not multi_scale else 'coarse'
                 prod_info += " {:s}".format(pscale)
 
@@ -1144,7 +1144,6 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
         # file overlaps...
         #
         poller_table['skycell_obj'] = [None] * len(poller_table)
-
         #
         # Make a copy of the original poller_table
         #
