@@ -550,13 +550,13 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     asndict['original_file_names'] = origflist
 
     # Build output filename
-    drz_extn = '_drz.fits'
-    for img in newfilelist:
-        # special case logic to automatically recognize when _flc.fits files
-        # are provided as input and produce a _drc.fits file instead
-        if '_flc.fits' in img:
-            drz_extn = '_drc.fits'
-            break
+    # special case logic to automatically recognize when _flc.fits files
+    # are provided as input and produce a _drc.fits file instead
+    drz_extn = '_drc.fits' if newfilelist[0].endswith('_flc.fits') else '_drz.fits'
+    if fits.getval(newfilelist[0], 'instrume').upper() == 'WFPC2':
+        # Redefine the output suffix for WFPC2 data so statically archived
+        # ipppssoott_drz.fits products are not overwritten.
+        drz_extn = '_drw.fits'
 
     if output in [None,'']:
         output = fileutil.buildNewRootname(asndict['output'],
