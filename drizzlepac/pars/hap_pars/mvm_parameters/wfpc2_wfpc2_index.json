@@ -6,9 +6,9 @@
         "any_n1": "wfpc2/wfpc2/wfpc2_wfpc2_astrodrizzle_any_n1.json",
         "filter_basic": "wfpc2/wfpc2/wfpc2_wfpc2_astrodrizzle_any_total.json",
         "single_basic": "wfpc2/wfpc2/wfpc2_wfpc2_astrodrizzle_any_n1.json",
-        "wfpc2_wfpc_any_n2": "wfpc2/wfpc2/wfpc2_wfpc2_astrodrizzle_any_n2.json",
-        "wfpc2_wfpc_any_n4": "wfpc2/wfpc2/wfpc2_wfpc2_astrodrizzle_any_n4.json",
-        "wfpc2_wfpc_any_total": "wfpc2/wfpc2/wfpc2_wfpc2_astrodrizzle_any_total.json"
+        "wfpc2_wfpc2_any_n2": "wfpc2/wfpc2/wfpc2_wfpc2_astrodrizzle_any_n2.json",
+        "wfpc2_wfpc2_any_n4": "wfpc2/wfpc2/wfpc2_wfpc2_astrodrizzle_any_n4.json",
+        "wfpc2_wfpc2_any_total": "wfpc2/wfpc2/wfpc2_wfpc2_astrodrizzle_any_total.json"
     },
     "catalog generation": {
         "all": "wfpc2/wfpc2/wfpc2_wfpc2_catalog_generation_all.json"
