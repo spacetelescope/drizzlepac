@@ -22,7 +22,7 @@
         "skystat": "median",
         "skywidth": 0.1,
         "skylower": -100.0,
-        "sky_bits": "16",
+        "sky_bits": "8,1024",
         "skyupper": null,
         "skyclip": 5,
         "skylsigma": 4.0,
@@ -34,7 +34,7 @@
     },
     "STEP 3: DRIZZLE SEPARATE IMAGES": {
         "driz_separate": false,
-        "driz_sep_bits": "16",
+        "driz_sep_bits": "8,1024",
         "driz_sep_kernel": "square",
         "driz_sep_wt_scl": "exptime",
         "driz_sep_pixfrac": 1.0,
@@ -63,10 +63,10 @@
     },
     "STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR": {
         "driz_cr": false,
-        "driz_cr_snr": "5.0 4.0",
+        "driz_cr_snr": "4.0 3.5",
         "driz_cr_grow": 1,
         "driz_cr_ctegrow": 0,
-        "driz_cr_scale": "3.0 2.4",
+        "driz_cr_scale": "1.5 1.2",
         "driz_cr_corr": false
     },
     "STEP 7: DRIZZLE FINAL COMBINED IMAGE": {
