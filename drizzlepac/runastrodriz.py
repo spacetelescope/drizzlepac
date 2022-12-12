@@ -1804,7 +1804,6 @@ def confirm_aposteriori_hdrlets(filename, logfile=None):
     hdrlet_extensions = wcsutil.headerlet.get_extname_extver_list(hdu, sciext='HDRLET')
     hdrlet_wcsnames = wcsutil.headerlet.get_headerlet_kw_names(hdu, 'wcsname')
 
-
     invalid_extns = []
     for wname, extname in zip(hdrlet_wcsnames, hdrlet_extensions):
         # Only evaluate a posteriori headerlets -- those with '-FIT' in WCSNAME
@@ -1814,7 +1813,7 @@ def confirm_aposteriori_hdrlets(filename, logfile=None):
             valid_dist_kws = 'A_ORDER' in hdrlet[1].header
             if not valid_ctype or not valid_dist_kws:
                 key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wname)
-                invalid_extns.append({'extname':extname, 'wcsname':wname, 'key':key})
+                invalid_extns.append({'extname': extname, 'wcsname': wname, 'key': key.rstrip()})
 
     hdu.close()
     # If any invalid headerlets are found, remove them from
