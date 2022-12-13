@@ -6,9 +6,8 @@ description = """
     to remove cosmic rays, and
     generally to improve the fidelity of data in the final image.
     """
-readme = 'README.md'
+readme = { file = 'README.md', content-type = 'test/x-rst' }
 requires-python = '>=3.8'
-version = "3.5.0rc1"
 license = { file = "LICENSE.txt" }
 authors = [{ name = 'Megan Sosey' }, { name = 'Warren Hack' }, { name = 'Christopher Hanley' }, { name = 'Chris Sontag' }, { name = 'Mihai Cara' }]
 classifiers = [
@@ -49,6 +48,8 @@ dependencies = [
     'typing_extensions>4.0',
     'markupsafe<=2.0.1',
 ]
+dynamic = ['version']
+
 [project.optional-dependencies]
 docs = [
     'sphinx',
@@ -146,3 +147,34 @@ norecursedirs = [
 junit_family = 'xunit2'
 inputs_root = 'drizzlepac'
 results_root = 'drizzlepac-results'
+
+[tool.ruff]
+extend-exclude = [
+    '.git',
+    '__pycache__',
+    'build',
+    'dist',
+    '.eggs',
+    '.tox',
+]
+ignore = [
+    'E402', # Module level import not at top of file
+    'E501', # Line too long
+    'E711', # Comparison to `None` should be `cond is None`
+    'E712', # Comparison to `True` should be `cond is True`
+    'E713', # Test for membership should be `not in`
+    'E714', # Test for object identity should be `is not`
+    'E721', # Do not compare types, use `isinstance()`
+    'E722', # Do not use bare `except`
+    'E741', # Ambiguous variable name
+    'F401', # imported but unused
+    'F521', # '...'.format(...) has invalid format string: Single '}' encountered in format string
+    'F523', # '...'.format(...) has unused arguments at position(s): 0, 1
+    'F541', # f-string without any placeholders
+    'F632', # Use `==` and `!=` to compare constant literals
+    'F633', # Use of `>>` is invalid with `print` function
+    'F811', # Redefinition of unused
+    'F821', # Undefined name
+    'F822', # Undefined name `getHelpAsString` in `__all__`
+    'F841', # Local variable is assigned to but never used
+]
