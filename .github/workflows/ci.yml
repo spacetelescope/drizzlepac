@@ -52,9 +52,6 @@ jobs:
           - toxenv: test-devdeps-xdist
             os: ubuntu-latest
             python-version: '3.x'
-          - toxenv: test-pyargs-xdist
-            os: ubuntu-latest
-            python-version: '3.11'
           - toxenv: test-xdist-cov
             os: ubuntu-latest
             python-version: '3.11'
