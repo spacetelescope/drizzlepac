@@ -396,6 +396,7 @@ def wfpc2_to_flt(imgname):
     num_sci = fileutil.countExtn(imgname)
     det_name = 'WFPC2'
     in_sci[0].header['DETECTOR'] = det_name
+    in_sci[0].header['PRIMESI'] = det_name
 
     if is_dq:
         # Read in existing input DQ file
