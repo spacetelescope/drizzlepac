@@ -261,6 +261,11 @@ class HAPFigure:
         if 'legend_label' in data_dict:
             self.legend_label = data_dict.get('legend_label')
 
+        if 'view' in data_dict:
+            self.view = data_dict.get('view')
+        else:
+            self.view = None
+
         # Dictionary of supported "shape" glyphs.  These are really references to
         # the associated method names.
         # TODO: Note that there should be some internal re-write to use scatter() instead.
@@ -287,6 +292,7 @@ class HAPFigure:
                             size=self.size,
                             color=self.color,
                             legend_group=self.legend_group,
+                            view=self.view,
                             fill_alpha=self.fill_alpha,
                             line_alpha=self.line_alpha,
                             hover_color='#2F4F4F',
@@ -298,6 +304,7 @@ class HAPFigure:
                             size=self.size,
                             color=self.color,
                             legend_label=self.legend_label,
+                            view=self.view,
                             fill_alpha=self.fill_alpha,
                             line_alpha=self.line_alpha,
                             hover_color='#2F4F4F',

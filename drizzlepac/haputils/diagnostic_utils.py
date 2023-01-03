@@ -127,6 +127,9 @@ class HapDiagnostic(object):
             header_items_to_remove.append('FILTER2')
         if self.header['INSTRUME'] == 'WFC3':
             header_items_to_remove.append('FILTER')
+        if self.header['INSTRUME'] == 'WFPC2':
+            header_items_to_remove.append('FILTNAM1')
+            header_items_to_remove.append('FILTNAM2')
 
         header_patterns_to_remove = ["D\d+VER",
                                      "D\d+GEOM",
@@ -178,7 +181,10 @@ class HapDiagnostic(object):
         self.out_dict['general information']['visit'] = extract_visit_from_header(self.header)
 
         # determine filter...
-        filter_names = ';'.join([self.header[f] for f in self.header['filter*']])
+        if self.header['INSTRUME'] == 'WFPC2':
+            filter_names = ';'.join([self.header[f] for f in self.header['filtnam*']])
+        else:
+            filter_names = ';'.join([self.header[f] for f in self.header['filter*']])
         self.out_dict['general information']['filter'] = poller_utils.determine_filter_name(filter_names)
 
         rootname = self.header['rootname'].split('_')
@@ -254,6 +260,8 @@ class HapDiagnostic(object):
                 self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTER1'], self.header['FILTER2']))
             elif self.header['INSTRUME'].lower() == "wfc3":
                 self.filter = poller_utils.determine_filter_name(self.header['FILTER'])
+            elif self.header['INSTRUME'].lower() == "wfpc2":
+                self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTNAM1'], self.header['FILTNAM2']))
             else:
                 errmsg = "Invalid instrument."
                 log.error(errmsg)
@@ -314,6 +322,8 @@ class HapDiagnostic(object):
                     "{};{}".format(self.header['FILTER1'], self.header['FILTER2']))
             elif self.header['INSTRUME'].lower() == "wfc3":
                 self.filter = poller_utils.determine_filter_name(self.header['FILTER'])
+            elif self.header['INSTRUME'].lower() == "wfpc2":
+                self.filter = poller_utils.determine_filter_name("{};{}".format(self.header['FILTNAM1'], self.header['FILTNAM2']))
             else:
                 errmsg = "Invalid instrument."
                 log.error(errmsg)
