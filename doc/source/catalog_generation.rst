@@ -871,3 +871,32 @@ in the .ecsv:
     | Theta          | THETA_IMAGE      | Angle between semi-major and NAXIS1 axes    | radians       |
     +----------------+------------------+---------------------------------------------+---------------+
 
+6: Reading The Output Catalog Files
+===================================
+All of the Point and Segmentation catalogs, filter and total, are Enhanced Character-Separated Values (ECSV)
+files which are human-readable ASCII tables. As such, it is straight-foward to access the astronomical
+source data contained in the rows of the files in a programmatic way via Astropy or Pandas.
+
+An Astropy example with a Segmentation filter catalog will generate the following Astropy table (abridged view)::
+
+    >>> from astropy.table import Table
+    >>> astro_tab=Table.read("hst_15064_11_acs_wfc_f814w_jdjb11_segment-cat.ecsv", format="ascii.ecsv")
+    >>> astro_tab
+    <Table length=375>
+    X-Centroid Y-Centroid       RA           DEC         ID      CI   ...    CYY       CXY    Elongation Ellipticity  Theta  
+       pix        pix          deg           deg              mag(AB) ...  1 / pix2  1 / pix2                          rad   
+     float64    float64      float64       float64     int64  float64 ...  float64   float64   float64     float64   float64 
+    ---------- ---------- ------------- ------------- ------- ------- ... --------- --------- ---------- ----------- --------
+      3774.045     87.935   313.5799763    -0.1839533       1   2.144 ...   0.25651  -0.13623       1.30        0.23   52.349
+      3630.189    101.246   313.5819743    -0.1837685       2   1.642 ...   0.12165  -0.00195       1.03        0.03   82.412
+
+The “comment" parameter in this Pandas example is necessary so that the reader will skip over the header lines which it cannot 
+parse.  The first line which is actually read is the “line 0" (header=0) which consists of the ascii column names.  The result is a 
+Pandas dataframe for this example of the Point filter catalog::
+
+    >>> import pandas
+    >>> df=pandas.read_csv("hst_15064_11_acs_wfc_f814w_jdjb11_point-cat.ecsv", sep=" ", header=0, comment="#")
+    >>> df
+            X-Center     Y-Center          RA       DEC   ID  ...   MSkyAp2  StdevAp2      FluxAp2        CI  Flags
+    0    3774.738972    89.759486  313.579967 -0.183928    1  ...  0.165745  0.009700     4.732320  1.561092      1
+    1    3630.522602   102.347181  313.581970 -0.183753    2  ...  0.151377  0.227345   834.948972  1.189462      4
