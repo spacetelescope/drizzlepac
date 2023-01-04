@@ -494,10 +494,9 @@ def apply_bestrefs(filename=None, dirname=None,
 
     starting_dir = os.getcwd()
 
-    wfpc2_dir = dirname if dirname else os.getcwd()
+    wfpc2_dir = dirname if dirname else starting_dir
     os.chdir(wfpc2_dir)
 
-    d0m = []
     c0m = []
     if filename:
         if os.path.exists(filename):
@@ -524,32 +523,54 @@ def apply_bestrefs(filename=None, dirname=None,
     orig_crds = {'CRDS_PATH': os.environ.get('CRDS_PATH'),
                  'uref': os.environ.get('uref'),
                  'CRDS_SERVER_URL': os.environ.get('CRDS_SERVER_URL'),
-                 'CRDS_OBSERVATORY': os.environ.get('CRDS_OBSERVATORY')}
+                 'CRDS_OBSERVATORY': os.environ.get('CRDS_OBSERVATORY'),
+                 'CRDS_READONLY_CACHE': os.environ.get('CRDS_READONLY_CACHE')}
 
     # Now, define what CRDS directories will be used for this update...
     remove_local_cache = False
-    if crds_path is None:
-        if orig_crds['CRDS_PATH'] is None:
-            # User has not set up any local CRDS cache, so
-            # we need to define one under the current working directory
-            crds_cache = os.path.join(wfpc2_dir, 'crds_cache')
-            crds_hst_cache = os.path.join(crds_cache, 'references', 'hst')
-            crds_map_cache = os.path.join(crds_cache, 'mappings', 'hst')
-            crds_uref_path = uref_path if uref_path else os.path.join(crds_hst_cache, 'wfpc2', os.sep)
-            if not os.path.exists(crds_hst_cache):
-                os.makedirs(crds_hst_cache)
-            if not os.path.exists(crds_map_cache):
-                os.makedirs(crds_map_cache)
-            remove_local_cache = True
-        else:
-            # User has already defined a local CRDS cache, so use it.
-            crds_cache = orig_crds['CRDS_PATH']
-            crds_uref_path = orig_crds['uref']
-    else:
-        # User wants to explicitly use a CRDS cache they specify on input
-        crds_cache = crds_path
+    sync_refs = False if orig_crds['CRDS_READONLY_CACHE'] == '1' else True
+    if not orig_crds['CRDS_PATH']:
+        # User has not set up any local CRDS cache, so
+        # we need to define one under the current working directory
+        crds_cache = os.path.join(wfpc2_dir, 'crds_cache')
         crds_hst_cache = os.path.join(crds_cache, 'references', 'hst')
+        crds_map_cache = os.path.join(crds_cache, 'mappings', 'hst')
         crds_uref_path = uref_path if uref_path else os.path.join(crds_hst_cache, 'wfpc2', os.sep)
+        if not os.path.exists(crds_hst_cache):
+            os.makedirs(crds_hst_cache)
+            print(f"Creating temporary CRDS cache directory: {crds_hst_cache}")
+        if not os.path.exists(crds_map_cache):
+            os.makedirs(crds_map_cache)
+            print(f"Creating temporary CRDS MAP cache directory: {crds_map_cache}")
+        remove_local_cache = True
+    else:
+        # User has already defined a local CRDS cache, *and* it already exists, so use it.
+        if crds_path:
+            crds_cache = crds_path
+        else:
+            crds_cache = orig_crds['CRDS_PATH'] if os.path.exists(orig_crds['CRDS_PATH']) else None
+
+        crds_hst_cache = os.path.join(crds_cache, 'references', 'hst')
+        if os.path.exists(orig_crds['uref']):
+            # Use the `uref` defined by the user in their `os.environ`
+            crds_uref_path = orig_crds['uref']
+        else:
+            # User wants to explicitly use a CRDS cache they specify on input
+            # and default to a path based on CRDS_PATH if `uref_path` is not
+            # actually passed in through this function
+            crds_uref_path = uref_path if uref_path else os.path.join(crds_hst_cache, 'wfpc2', os.sep)
+
+        # `orig_crds["CRDS_PATH"]` has been defined, now verify it is valid...
+        if not os.path.exists(crds_cache):
+            # If CRDS_PATH was defined, but does not exists, raise an Exception
+            # so that the user can finish setting up their CRDS cache properly.
+            os.chdir(starting_dir)
+            raise EnvironmentError(f"CRDS_PATH was defined as {crds_cache}, but does not exist!")
+        if not os.path.exists(crds_uref_path):
+            # If CRDS_PATH was defined, but does not exists, raise an Exception
+            # so that the user can finish setting up their CRDS cache properly.
+            os.chdir(starting_dir)
+            raise EnvironmentError(f"CRDS path to `uref` was defined as {crds_uref_path}, but does not exist!")
 
     # Now that we have confirmed we have images to update...
     # configure CRDS for use in updating the WFPC2 data
@@ -566,9 +587,9 @@ def apply_bestrefs(filename=None, dirname=None,
 
     print(f"Running CRDS.assign_bestrefs on: {d0m} for reftypes={reftypes}")
     # Apply bestrefs to images after downloading references to local CRDS cache
-    crds.assign_bestrefs(d0m, reftypes=reftypes, sync_references=True)
+    crds.assign_bestrefs(d0m, reftypes=reftypes, sync_references=sync_refs)
     if len(c0m) > 0:
-        crds.assign_bestrefs(c0m, reftypes=reftypes, sync_references=True)
+        crds.assign_bestrefs(c0m, reftypes=reftypes, sync_references=sync_refs)
 
     # clean up temp crds_cache dir, if created
     if remove_local_cache:
