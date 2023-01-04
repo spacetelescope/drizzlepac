@@ -46,16 +46,18 @@ from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
 import photutils  # needed to check version
-if Version(photutils.__version__) < Version('1.1.0'):
+if Version(photutils.__version__) < Version('1.5.0'):
     OLD_PHOTUTILS = True
-    from photutils.segmentation import (detect_sources,
-                                        deblend_sources, make_source_mask)
-    from photutils.segmentation import source_properties as SourceCatalog
-else:
-    OLD_PHOTUTILS = False
     from photutils.segmentation import (detect_sources, SourceCatalog,
                                         deblend_sources, make_source_mask,
                                         SegmentationImage)
+else:
+    OLD_PHOTUTILS = False
+    from photutils.segmentation import (detect_sources, SourceCatalog,
+                                        deblend_sources, detect_threshold,
+                                        SegmentationImage)
+    from photutils.utils import circular_footprint
+    from astropy.stats import SigmaClip
 
 from photutils.detection import DAOStarFinder, find_peaks
 
@@ -694,8 +696,18 @@ def compute_2d_background(imgarr, box_size, win_size,
     # the background to be used in source identification
     if bkg is None:
         log.info("Background2D failure detected. Using alternative background calculation instead....")
-        mask = make_source_mask(imgarr, nsigma=2, npixels=5, dilate_size=11)
-        sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask, maxiters=9)
+
+        if OLD_PHOTUTILS:
+            mask = make_source_mask(imgarr, nsigma=2, npixels=5, dilate_size=11)
+            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask, maxiters=9)
+        else:
+            sigma_clip = SigmaClip(sigma=3.0, maxiters=9)
+            threshold = detect_threshold(imgarr, nsigma=2.0, sigma_clip=sigma_clip)
+            segment_img = detect_sources(imgarr, threshold, npixels=5)
+            footprint = circular_footprint(radius=11)
+            mask = segment_img.make_source_mask(footprint=footprint)
+            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask)
+
         bkg_median = max(0.0, sigcl_median)
         bkg_rms_median = sigcl_std
         # create background frame shaped like imgarr populated with sigma-clipped median value

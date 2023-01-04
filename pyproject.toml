@@ -40,7 +40,7 @@ dependencies = [
     'pandas',
     'spherical_geometry>=1.2.22',
     'astroquery>=0.4',
-    'photutils>1.2.0',
+    'photutils>1.5.0',
     'lxml',
     'PyPDF2',
     'scikit-image>=0.14.2',
