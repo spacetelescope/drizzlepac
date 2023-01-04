@@ -19,6 +19,9 @@ from stsci.tools import fileutil, readgeis
 from .imageObject import imageObject
 from . import buildmask
 
+# Define default public CRDS server URL to use in case user does not specify one in `os.environ`
+PUBLIC_CRDS_SERVER_URL = "https://hst-crds.stsci.edu"
+
 # Translation table for any image that does not use the DQ extension of the MEF
 # for the DQ array.
 DQ_EXTNS = {'c0h': 'sdq', 'c0f': 'sci', 'c0m': 'sci'}
@@ -550,7 +553,7 @@ def apply_bestrefs(filename=None, dirname=None,
 
     # Now that we have confirmed we have images to update...
     # configure CRDS for use in updating the WFPC2 data
-    os.environ['CRDS_SERVER_URL'] = "https://hst-crds.stsci.edu"
+    os.environ['CRDS_SERVER_URL'] = orig_crds['CRDS_SERVER_URL'] if orig_crds['CRDS_SERVER_URL'] else PUBLIC_CRDS_SERVER_URL
     os.environ['CRDS_OBSERVATORY'] = "hst"
     os.environ['CRDS_PATH'] = crds_cache
     os.environ['uref'] = crds_uref_path
