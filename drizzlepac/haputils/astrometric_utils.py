@@ -46,16 +46,14 @@ from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
 import photutils  # needed to check version
+from photutils.segmentation import (detect_sources, SourceCatalog,
+                                    deblend_sources, SegmentationImage)
 if Version(photutils.__version__) < Version('1.5.0'):
     OLD_PHOTUTILS = True
-    from photutils.segmentation import (detect_sources, SourceCatalog,
-                                        deblend_sources, make_source_mask,
-                                        SegmentationImage)
+    from photutils.segmentation import make_source_mask
 else:
     OLD_PHOTUTILS = False
-    from photutils.segmentation import (detect_sources, SourceCatalog,
-                                        deblend_sources, detect_threshold,
-                                        SegmentationImage)
+    from photutils.segmentation import detect_threshold
     from photutils.utils import circular_footprint
     from astropy.stats import SigmaClip
 
@@ -1045,12 +1043,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
 
         segm.remove_labels(bad_srcs)
 
-    if OLD_PHOTUTILS:
-        flux_colname = 'source_sum'
-        ferr_colname = 'source_sum_err'
-    else:
-        flux_colname = 'segment_flux'
-        ferr_colname = 'segment_fluxerr'
+    flux_colname = 'segment_flux'
+    ferr_colname = 'segment_fluxerr'
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
@@ -1115,23 +1109,15 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                 if (detection_img > detection_img.max() * 0.9).sum() > 3:
 
                     # Revert to segmentation photometry for sat. source posns
-                    if OLD_PHOTUTILS:
-                        segment_properties = SourceCatalog(detection_img, segment.data)
-                    else:
-                        segimg = SegmentationImage(segment.data)
-                        segment_properties = SourceCatalog(detection_img, segimg)
+                    segimg = SegmentationImage(segment.data)
+                    segment_properties = SourceCatalog(detection_img, segimg)
 
                     sat_table = segment_properties.to_table()
                     seg_table['flux'][max_row] = sat_table[flux_colname][0]
                     seg_table['peak'][max_row] = sat_table['max_value'][0]
-                    if OLD_PHOTUTILS:
-                        xcentroid = sat_table['xcentroid'][0].value
-                        ycentroid = sat_table['ycentroid'][0].value
-                        sky = sat_table['background_mean'][0].value
-                    else:
-                        xcentroid = sat_table['xcentroid'][0]
-                        ycentroid = sat_table['ycentroid'][0]
-                        sky = sat_table['local_background'][0]
+                    xcentroid = sat_table['xcentroid'][0]
+                    ycentroid = sat_table['ycentroid'][0]
+                    sky = sat_table['local_background'][0]
                     seg_table['xcentroid'][max_row] = xcentroid
                     seg_table['ycentroid'][max_row] = ycentroid
                     seg_table['npix'][max_row] = sat_table['area'][0].value
