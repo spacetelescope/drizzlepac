@@ -933,7 +933,7 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
         poller_dtype = POLLER_DTYPE
 
     datasets = []
-    obs_converters = {'col4': [ascii.convert_numpy(np.str)]}
+    obs_converters = {'col4': [ascii.convert_numpy(np.str_)]}
     if isinstance(input, str):
         input_table = ascii.read(input, format='no_header', converters=obs_converters)
         if len(input_table.columns) == len(poller_colnames):
@@ -943,7 +943,7 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
                 input_table.columns[i].name = colname
 
             # Convert to a string column, instead of int64
-            input_table['obset_id'] = input_table['obset_id'].astype(np.str)
+            input_table['obset_id'] = input_table['obset_id'].astype(np.str_)
             # Convert string column into a Bool column
             # The input poller file reports True if it has been reprocessed.
             # This code interprets that as False since it is NOT new, so the code
