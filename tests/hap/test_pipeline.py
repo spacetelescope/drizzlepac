@@ -119,7 +119,7 @@ class BaseWFC3Pipeline(BasePipeline):
 class TestSingleton(BaseWFC3Pipeline):
 
     @pytest.mark.parametrize(
-        'dataset_names', ['iaaua1n4q', 'iacs01t4q']
+        'dataset_names', ['iacs01n4q']
     )
 
     def test_astrometric_singleton(self, dataset_names):
