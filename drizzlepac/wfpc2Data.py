@@ -523,12 +523,11 @@ def apply_bestrefs(filename=None, dirname=None,
     orig_crds = {'CRDS_PATH': os.environ.get('CRDS_PATH'),
                  'uref': os.environ.get('uref'),
                  'CRDS_SERVER_URL': os.environ.get('CRDS_SERVER_URL'),
-                 'CRDS_OBSERVATORY': os.environ.get('CRDS_OBSERVATORY'),
-                 'CRDS_READONLY_CACHE': os.environ.get('CRDS_READONLY_CACHE')}
+                 'CRDS_OBSERVATORY': os.environ.get('CRDS_OBSERVATORY')}
 
     # Now, define what CRDS directories will be used for this update...
     remove_local_cache = False
-    sync_refs = False if orig_crds['CRDS_READONLY_CACHE'] == '1' else True
+    sync_refs = False if os.environ.get('CRDS_READONLY_CACHE') == '1' else True
     if not orig_crds['CRDS_PATH']:
         # User has not set up any local CRDS cache, so
         # we need to define one under the current working directory
