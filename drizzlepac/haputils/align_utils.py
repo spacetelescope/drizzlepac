@@ -1320,12 +1320,16 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         updatehdr.update_wcs(hdulist, sci_extn, item.wcs, wcsname=wcs_name, reusename=True)
         info = item.meta['fit_info']
         if info['catalog'] and info['catalog'] != '':
-            rms_ra_val = info['RMS_RA'].value if info['RMS_RA'] is not None else -1.0
-            rms_dec_val = info['RMS_DEC'].value if info['RMS_DEC'] is not None else -1.0
+            # Explicitly report the RMS values in units of mas.
+            rms_ra_val = info['RMS_RA'].mas if info['RMS_RA'] is not None else -1.0
+            rms_dec_val = info['RMS_DEC'].mas if info['RMS_DEC'] is not None else -1.0
             hdulist[sci_extn].header['RMS_RA'] = (rms_ra_val, RMS_RA_COMMENT)
             hdulist[sci_extn].header['RMS_DEC'] = (rms_dec_val, RMS_DEC_COMMENT)
-            hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].value/3600. if info['RMS_RA'] is not None else -1.0
-            hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].value/3600. if info['RMS_DEC'] is not None else -1.0
+            # convert RMS values from units of mas to deg in order to be consistent
+            # with CUNIT keyword value, as per FITS Paper I standard.
+            # https://www.aanda.org/articles/aa/full/2002/45/aah3859/aah3859.right.html Section 2.6
+            hdulist[sci_extn].header['CRDER1'] = info['RMS_RA'].deg if info['RMS_RA'] is not None else -1.0
+            hdulist[sci_extn].header['CRDER2'] = info['RMS_DEC'].deg if info['RMS_DEC'] is not None else -1.0
             hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else 0
             hdulist[sci_extn].header['FITGEOM'] = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
         else:
