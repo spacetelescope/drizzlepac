@@ -1063,6 +1063,13 @@ def generate_astrometric_catalog(imglist, **pars):
     imglist : list
         List of one or more calibrated fits images that will be used for catalog generation.
 
+    output : str, optional
+        If specified as part of input pars dict, it provides the name of the output catalog file
+
+    overwrite : bool, optional
+        If specified as part of the input pars dict, it specifies whether or not to overwrite any
+        catalog file already present with the same path/filename as specified in `output`.
+
     Returns
     =======
     ref_table : object
@@ -1075,12 +1082,15 @@ def generate_astrometric_catalog(imglist, **pars):
         pars['output'] = 'ref_cat.ecsv'
     else:
         pars['output'] = None
+
+    overwrite = pars.get('clobber', True)
+
     out_catalog = amutils.create_astrometric_catalog(imglist, **pars)
     pars = temp_pars.copy()
     # if the catalog has contents, write the catalog to ascii text file
     if len(out_catalog) > 0 and pars['output']:
         catalog_filename = "refcatalog.cat"
-        out_catalog.write(catalog_filename, format="ascii.fast_commented_header")
+        out_catalog.write(catalog_filename, format="ascii.fast_commented_header", overwrite=overwrite)
         log.info("Wrote reference catalog {}.".format(catalog_filename))
 
     return(out_catalog)
