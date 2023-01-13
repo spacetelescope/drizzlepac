@@ -80,7 +80,6 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
     candidate_list = []   # File names gathered from *_asn.fits file
     ipppssoot_list = []   # ipppssoot names used to avoid duplicate downloads
     total_input_list = []  # Output full filename list of data on disk
-    member_suffix = '_flc.fits'
 
     # Loop over the input_list to determine if the item in the input_list is a full association file
     # (*_asn.fits), a full individual image file (aka singleton, *_flt.fits), or a root name specification
@@ -99,24 +98,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
             # in this manner (vs just the ipppssoot of the association).
             # This "if" block just collects the wanted full file names.
             if suffix == 'asn':
-                try:
-                    asntab = Table.read(input_item, format='fits')
-                except FileNotFoundError:
-                    log.error('File {} not found.'.format(input_item))
-                    return(empty_list)
-                for row in asntab:
-                    if row['MEMTYPE'].startswith('PROD'):
-                        continue
-                    memname = row['MEMNAME'].lower().strip()
-                    # Need to check if the MEMNAME is a full filename or an ipppssoot
-                    if memname.find('_') != -1:
-                        candidate_list.append(memname)
-                    else:
-                        # Define suffix for all members based on what files are present
-                        if not os.path.exists(memname + member_suffix):
-                            member_suffix = '_flt.fits'
-
-                        candidate_list.append(memname + member_suffix)
+                candidate_list.extend(_get_asn_members(input_item))
             elif suffix in ['flc', 'flt', 'c0m']:
                 if lc_input_item not in candidate_list:
                     candidate_list.append(lc_input_item)
@@ -132,6 +114,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
         elif len(input_item) == 9:
             try:
                 if input_item not in ipppssoot_list:
+                    input_item = input_item.lower()
                     # An ipppssoot of an individual file which is part of an association cannot be
                     # retrieved from MAST
                     retrieve_list = aqutils.retrieve_observation(input_item, **pars)
@@ -144,8 +127,28 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
                         total_input_list += retrieve_list
                         ipppssoot_list.append(input_item)
                     else:
-                        log.error('File {} cannot be retrieved from MAST.'.format(input_item))
-                        return(empty_list)
+                        # log.error('File {} cannot be retrieved from MAST.'.format(input_item))
+                        # return(empty_list)
+                        log.warn('File {} cannot be retrieved from MAST.'.format(input_item))
+                        log.warn(f"    using pars: {pars}")
+                        # look for already downloaded ASN and related files instead
+                        # ASN filenames are the only ones that end in a digit
+                        if input_item[-1].isdigit():
+                            _asn_name = f"{input_item}_asn.fits"
+                            if not os.path.exists(_asn_name):
+                                _ = aqutils.retrieve_observation([f"{input_item}"],
+                                                                          suffix=['ASN'],
+                                                                          clobber=True)
+                            _local_files = _get_asn_members(_asn_name)
+                            if _local_files:
+                                log.warn(f"Using local files instead:\n    {_local_files}")
+                                total_input_list.extend(_local_files)
+                            else:
+                                _lfiles = os.listdir()
+                                log.error(f"No suitable files found for input {input_item}")
+                                log.error(f" in directory with files: \n {_lfiles}")
+                        return(total_input_list)
+
             except Exception:
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
@@ -162,7 +165,38 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
             return(empty_list)
 
     log.info("TOTAL INPUT LIST: {}".format(total_input_list))
-    return(total_input_list)
+    return total_input_list
+
+# ----------------------------------------------------------------------------------------------------------
+
+
+def _get_asn_members(asnfile):
+
+    # default ASN member type
+    member_suffix = '_flc.fits'
+
+    candidate_list = []
+    try:
+        asntab = Table.read(asnfile, format='fits')
+    except FileNotFoundError:
+        log.error('File {} not found.'.format(asnfile))
+        return ([])
+    for row in asntab:
+        if row['MEMTYPE'].startswith('PROD'):
+            continue
+        memname = row['MEMNAME'].lower().strip()
+        # Need to check if the MEMNAME is a full filename or an ipppssoot
+        if memname.find('_') != -1:
+            candidate_list.append(memname)
+        else:
+            # Define suffix for all members based on what files are present
+            if not os.path.exists(memname + member_suffix):
+                member_suffix = '_flt.fits'
+
+            candidate_list.append(memname + member_suffix)
+
+    return candidate_list
+
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -292,6 +326,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     log.info(str(starting_dt))
     imglist = check_and_get_data(input_list, archive=archive, clobber=clobber, product_type=product_type)
     log.info("SUCCESS")
+    log.info(f"Processing: {imglist}")
 
     log.info(make_label('Processing time of [STEP 1]', starting_dt))
     starting_dt = datetime.datetime.now()
