@@ -258,7 +258,7 @@ def print_pkg_versions(packages=None, git=False, svn=False, log=None):
         def output(msg):
             print(msg)
 
-    pkgs = ['numpy', 'astropy', 'stwcs']
+    pkgs = ['numpy', 'astropy', 'stwcs', 'photutils']
     if packages is not None:
         if not isinstance(packages, list):
             packages = [packages]
