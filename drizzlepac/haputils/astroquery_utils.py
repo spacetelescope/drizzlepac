@@ -107,6 +107,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
             log.info(
                 "WARNING: No FLC or FLT files found for {}.".format(obsid))
             return local_files
+
     all_images = data_products_by_id['productFilename'].tolist()
     log.info(all_images)
     if not clobber:
@@ -118,8 +119,21 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
                 rows_to_remove.append(row_idx)
         data_products_by_id.remove_rows(rows_to_remove)
 
+    # Protect against cases where all requested observations are already
+    # present on local disk and clobber was turned off, so there are no
+    # files to be downloaded.
+    if len(data_products_by_id) == 0:
+        log.warn("No new files identified to be retrieved.")
+        return local_files
+
     manifest = Observations.download_products(data_products_by_id,
                                               mrp_only=False)
+
+    # Protect against any other problems with finding files to retrieve based on the
+    # input file specification.
+    if not manifest:
+        log.warn(f"File {data_products_by_id} could not be retrieved.  No files returned.")
+        return local_files
 
     if not clobber:
         for rownum in rows_to_remove[::-1]:
