@@ -19,7 +19,7 @@ class TestWFPC2(BaseWFPC2):
                   for i in raw_inputs]
 
         output = 'wfpc2_single_waiver'
-        outfile = '{}_drz.fits'.format(output)
+        outfile = '{}_drw.fits'.format(output)
         reffile = 'reference_single_waiver.fits'
 
         # Update WCS for all inputs
@@ -66,7 +66,7 @@ class TestWFPC2(BaseWFPC2):
                   for i in raw_inputs]
 
         output = 'wfpc2_waiver'
-        outfile = '{}_drz.fits'.format(output)
+        outfile = '{}_drw.fits'.format(output)
         reffile = 'reference_wfpc2_asn_waiver.fits'
 
         # Update WCS for all inputs
@@ -100,7 +100,7 @@ class TestWFPC2(BaseWFPC2):
                   for i in raw_inputs]
 
         output = 'wfpc2_single_mef'
-        outfile = '{}_drz.fits'.format(output)
+        outfile = '{}_drw.fits'.format(output)
         reffile = 'reference_single_mef.fits'
 
         # Update WCS for all inputs
@@ -141,7 +141,7 @@ class TestWFPC2(BaseWFPC2):
                   for i in raw_inputs]
 
         output = 'wfpc2_mef'
-        outfile = '{}_drz.fits'.format(output)
+        outfile = '{}_drw.fits'.format(output)
         reffile = 'reference_wfpc2_asn_mef.fits'
 
         # Update WCS for all inputs
