@@ -617,9 +617,10 @@ def verify_guiding(filename, min_length=33):
     # Trying to ignore small sources (<= 4x4 pixels in size, or npixels < 17)
     #   which are either noise peaks or head-on CRs.
     segm = detect_sources(imgarr, 0, npixels=17)
-    log.debug(f'Detected {segm.nlabels} raw sources in {filename}')
-    if segm.nlabels < 2:
+    if segm is None or segm.nlabels < 2:
+        log.debug(f'Did NOT detect enough raw sources in {filename} for guiding verification.')
         return False
+    log.debug(f'Detected {segm.nlabels} raw sources in {filename} for guiding verification.')
 
     src_cat = SourceCatalog(imgarr, segm)
     # Remove likely cosmic-rays based on central_moments classification

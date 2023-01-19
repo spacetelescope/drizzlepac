@@ -94,6 +94,7 @@ except ImportError:
 # THIRD-PARTY
 import numpy as np
 from astropy.io import fits
+import photutils
 
 import stwcs
 from stwcs import wcsutil
@@ -165,6 +166,10 @@ valid_alignment_modes = ['apriori', 'aposteriori', 'default-pipeline']
 gsc240_date = '2017-10-01'
 apriori_priority = ['HSC', 'GSC', '']
 
+FILTER_NAMES = {'WFPC2': ['FILTNAM1', 'FILTNAM2'],
+                'ACS': ['FILTER1', 'FILTER2'],
+                'WFC3': ['FILTER']}
+
 
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + '***\n'
@@ -196,10 +201,12 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     init_time = time.time()
     trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(init_time, inFile)
     trlmsg += __trlmarker__
-    trlmsg += "    drizzlepac version {}".format(drizzlepac.__version__)
-    trlmsg += "    tweakwcs version {}".format(tweakwcs.__version__)
-    trlmsg += "    stwcs version {}".format(stwcs.__version__)
-    trlmsg += "    numpy version {}".format(np.__version__)
+    trlmsg += "    drizzlepac version {}\n".format(drizzlepac.__version__)
+    trlmsg += "    tweakwcs version {}\n".format(tweakwcs.__version__)
+    trlmsg += "    stwcs version {}\n".format(stwcs.__version__)
+    trlmsg += "    numpy version {}\n".format(np.__version__)
+    trlmsg += "    photutils version {}\n".format(photutils.__version__)
+
     pipeline_pars = PIPELINE_PARS.copy()
     _verify = True  # Switch to control whether to verify alignment or not
     manifest_list = []
@@ -256,7 +263,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             print("ERROR: Input file - %s - does not exist." % inFilename)
             return
     except TypeError:
-        print("ERROR: Inappropriate input file.")
+        print("ERROR: Appropriate input file could not be found.")
         return
 
     # If newpath was specified, move all files to that directory for processing
@@ -2047,11 +2054,20 @@ def _analyze_exposure(filename):
 
     fhdu = fits.getheader(filename)
     targname = fhdu['targname']
+    filts = fhdu['filt*']
+    instrument = fhdu['instrume']
+
+    filters = [filts[filtname].strip() for filtname in FILTER_NAMES[instrument]]
 
     if any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']):
+        print(f"ERROR: Inappropriate target with name {targname}")
+        process_exposure = False
+    if all(filter == '' for filter in filters):
+        print(f"ERROR: Inappropriate filter for exposure of {filters}")
         process_exposure = False
 
     return process_exposure
+
 
 # Functions to support execution from the shell.
 def main():
