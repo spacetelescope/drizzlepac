@@ -94,6 +94,7 @@ except ImportError:
 # THIRD-PARTY
 import numpy as np
 from astropy.io import fits
+import photutils
 
 import stwcs
 from stwcs import wcsutil
@@ -165,6 +166,10 @@ valid_alignment_modes = ['apriori', 'aposteriori', 'default-pipeline']
 gsc240_date = '2017-10-01'
 apriori_priority = ['HSC', 'GSC', '']
 
+FILTER_NAMES = {'WFPC2': ['FILTNAM1', 'FILTNAM2'],
+                'ACS': ['FILTER1', 'FILTER2'],
+                'WFC3': ['FILTER']}
+
 
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + '***\n'
@@ -196,10 +201,12 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     init_time = time.time()
     trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(init_time, inFile)
     trlmsg += __trlmarker__
-    trlmsg += "    drizzlepac version {}".format(drizzlepac.__version__)
-    trlmsg += "    tweakwcs version {}".format(tweakwcs.__version__)
-    trlmsg += "    stwcs version {}".format(stwcs.__version__)
-    trlmsg += "    numpy version {}".format(np.__version__)
+    trlmsg += "    drizzlepac version {}\n".format(drizzlepac.__version__)
+    trlmsg += "    tweakwcs version {}\n".format(tweakwcs.__version__)
+    trlmsg += "    stwcs version {}\n".format(stwcs.__version__)
+    trlmsg += "    numpy version {}\n".format(np.__version__)
+    trlmsg += "    photutils version {}\n".format(photutils.__version__)
+
     pipeline_pars = PIPELINE_PARS.copy()
     _verify = True  # Switch to control whether to verify alignment or not
     manifest_list = []
@@ -256,7 +263,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             print("ERROR: Input file - %s - does not exist." % inFilename)
             return
     except TypeError:
-        print("ERROR: Inappropriate input file.")
+        print("ERROR: Appropriate input file could not be found.")
         return
 
     # If newpath was specified, move all files to that directory for processing
@@ -288,7 +295,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # files from CRDS
             print(f"Updating distortion reference files for: {inFilename}")
             wfpc2Data.apply_bestrefs(inFilename)
-            photeq.photeq(files=inFilename, ref_phot_ext=3, readonly=False)
+            try:
+                photeq.photeq(files=inFilename, ref_phot_ext=3, readonly=False)
+            except Exception as err:
+                print(err)
+                print(f"WARNING: PHOTEQ was unable to run on {inFilename}")
 
             raw_suffix = '_d0m.fits'
             goodpix_name = 'GPIXELS'
@@ -432,51 +443,50 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     for f in _calfiles+_calfiles_flc:
         processing_utils.compute_sregion(f)
 
-    # Run updatewcs on each list of images to define pipeline default WCS
-    # based on latest distortion models
-    # Always apply latest distortion to replace pipeline-default OPUS WCS
-    # for successful creation of updated headerlets for the cases where
-    # all inputs having EXPTIME==0 (for example) or guiding is bad.
-    updatewcs.updatewcs(_calfiles, use_db=False, checkfiles=False)
-    if _calfiles_flc:
-        updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
-
-    # Check to see whether or not guide star failure affected these observations
-    # They would show up as images all sources streaked as if taken in SCAN mode or with a GRISM
-    # 
-    # Note: This functionality is intentionally turned off for pipeline processing at this time.
-    # However, a user may wish to invoke this functionality which is controlled by the
-    # parameter "do_verify_guiding".
-    if do_verify_guiding:
-        for fltimg in _calfiles:
-            flcimg = fltimg.replace('_flt.fits', '_flc.fits')
-            guide_img = flcimg if os.path.exists(flcimg) else fltimg
-            # We want to use the FLC image, if possible, to avoid any
-            # possible detection of CTE tails as false guide-star trailing lines
-            bad_guiding = analyze.verify_guiding(guide_img)
-            if bad_guiding:
-                # If the user did not specify they wanted a drizzle product no matter what...
-                if not force:
-                    # Remove the affected image(s) from further processing
-                    # except when user specifies they want to make a product no matter what (force=True)
-                    _calfiles.remove(fltimg)
-                    if os.path.exists(flcimg):
-                        _calfiles_flc.remove(flcimg)
-                    # If ANY input exposure has bad guiding, none of the data can be
-                    # trusted.  However, only allow alignment if the user forces the alignment.
-                if not force_alignment:
-                    # Turn off any alignment to GAIA
-                    # After all, if one exposure has bad guiding,
-                    # none of the WCS information can be trusted.
-                    align_to_gaia = False
-                    align_with_apriori = False
-
     # If we no longer have any valid images to process due to guiding problems,
     # set drizcorr to OMIT and finish processing gracefully.
     if len(_calfiles) == 0:
         dcorr = 'OMIT'
 
     if dcorr == 'PERFORM':
+        # Run updatewcs on each list of images to define pipeline default WCS
+        # based on latest distortion models
+        # Always apply latest distortion to replace pipeline-default OPUS WCS
+        # for successful creation of updated headerlets for the cases where
+        # all inputs having EXPTIME==0 (for example) or guiding is bad.
+        updatewcs.updatewcs(_calfiles, use_db=False, checkfiles=False)
+        if _calfiles_flc:
+            updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
+
+        # Check to see whether or not guide star failure affected these observations
+        # They would show up as images all sources streaked as if taken in SCAN mode or with a GRISM
+        #
+        # Note: This functionality is intentionally turned off for pipeline processing at this time.
+        # However, a user may wish to invoke this functionality which is controlled by the
+        # parameter "do_verify_guiding".
+        if do_verify_guiding:
+            for fltimg in _calfiles:
+                flcimg = fltimg.replace('_flt.fits', '_flc.fits')
+                guide_img = flcimg if os.path.exists(flcimg) else fltimg
+                # We want to use the FLC image, if possible, to avoid any
+                # possible detection of CTE tails as false guide-star trailing lines
+                bad_guiding = analyze.verify_guiding(guide_img)
+                if bad_guiding:
+                    # If the user did not specify they wanted a drizzle product no matter what...
+                    if not force:
+                        # Remove the affected image(s) from further processing
+                        # except when user specifies they want to make a product no matter what (force=True)
+                        _calfiles.remove(fltimg)
+                        if os.path.exists(flcimg):
+                            _calfiles_flc.remove(flcimg)
+                        # If ANY input exposure has bad guiding, none of the data can be
+                        # trusted.  However, only allow alignment if the user forces the alignment.
+                    if not force_alignment:
+                        # Turn off any alignment to GAIA
+                        # After all, if one exposure has bad guiding,
+                        # none of the WCS information can be trusted.
+                        align_to_gaia = False
+                        align_with_apriori = False
 
         """
         Start updating the data and verifying that the new alignment is valid.
@@ -2044,11 +2054,20 @@ def _analyze_exposure(filename):
 
     fhdu = fits.getheader(filename)
     targname = fhdu['targname']
+    filts = fhdu['filt*']
+    instrument = fhdu['instrume']
+
+    filters = [filts[filtname].strip() for filtname in FILTER_NAMES[instrument]]
 
     if any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']):
+        print(f"ERROR: Inappropriate target with name {targname}")
+        process_exposure = False
+    if all(filter == '' for filter in filters):
+        print(f"ERROR: Inappropriate filter for exposure of {filters}")
         process_exposure = False
 
     return process_exposure
+
 
 # Functions to support execution from the shell.
 def main():
