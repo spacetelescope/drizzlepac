@@ -295,7 +295,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # files from CRDS
             print(f"Updating distortion reference files for: {inFilename}")
             wfpc2Data.apply_bestrefs(inFilename)
-            photeq.photeq(files=inFilename, ref_phot_ext=3, readonly=False)
+            try:
+                photeq.photeq(files=inFilename, ref_phot_ext=3, readonly=False)
+            except Exception as err:
+                print(err)
+                print(f"WARNING: PHOTEQ was unable to run on {inFilename}")
 
             raw_suffix = '_d0m.fits'
             goodpix_name = 'GPIXELS'
