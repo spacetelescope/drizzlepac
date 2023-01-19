@@ -94,6 +94,7 @@ except ImportError:
 # THIRD-PARTY
 import numpy as np
 from astropy.io import fits
+import photutils
 
 import stwcs
 from stwcs import wcsutil
@@ -200,10 +201,12 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     init_time = time.time()
     trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(init_time, inFile)
     trlmsg += __trlmarker__
-    trlmsg += "    drizzlepac version {}".format(drizzlepac.__version__)
-    trlmsg += "    tweakwcs version {}".format(tweakwcs.__version__)
-    trlmsg += "    stwcs version {}".format(stwcs.__version__)
-    trlmsg += "    numpy version {}".format(np.__version__)
+    trlmsg += "    drizzlepac version {}\n".format(drizzlepac.__version__)
+    trlmsg += "    tweakwcs version {}\n".format(tweakwcs.__version__)
+    trlmsg += "    stwcs version {}\n".format(stwcs.__version__)
+    trlmsg += "    numpy version {}\n".format(np.__version__)
+    trlmsg += "    photutils version {}\n".format(photutils.__version__)
+
     pipeline_pars = PIPELINE_PARS.copy()
     _verify = True  # Switch to control whether to verify alignment or not
     manifest_list = []

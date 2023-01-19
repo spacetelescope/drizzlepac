@@ -2937,7 +2937,10 @@ def enforce_icrs_compatibility(catalog):
     # header keyword REFFRAME can be populated with anything specified by the user in the original
     # proposal.
     """
-    if catalog._wcs.wcs.radesys.upper() not in RADESYS_OPTIONS:
-        catalog._wcs.wcs.radesys = 'ICRS'
-        log.warning(f"Assuming input coordinates are ICRS, instead of {catalog._wcs.wcs.radesys}")
+    # We need to check whether or not the catalog was generated with photutils<1.6.0 or not
+    # since photutils=1.6.0 (apparently) renamed the 'catalog._wcs' to 'catalog.wcs'.
+    cat_wcs = catalog.wcs if hasattr(catalog, 'wcs') else catalog._wcs
+    if cat_wcs.wcs.radesys.upper() not in RADESYS_OPTIONS:
+        cat_wcs.wcs.radesys = 'ICRS'
+        log.warning(f"Assuming input coordinates are ICRS, instead of {cat_wcs.wcs.radesys}")
         log.warning(f"Sky coordinates of source objects may not be accurate.")
