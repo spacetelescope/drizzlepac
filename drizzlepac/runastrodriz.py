@@ -925,7 +925,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
                 reset_mdriztab_nocr(pipeline_pars, good_bits, pipeline_pars['skysub'])
 
                 drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
-                                                    **pipeline_pars)
+                                                     **pipeline_pars)
 
             instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
             focus_sigma = focus_pars[instr_det]['sigma']
@@ -1245,6 +1245,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             os.chdir(parent_dir)
 
     return focus_dicts, full_table
+
 
 def apply_headerlet(filename, headerlet_file, flcfile=None):
 
@@ -1823,7 +1824,9 @@ def confirm_aposteriori_hdrlets(filename, logfile=None):
             valid_dist_kws = 'A_ORDER' in hdrlet[1].header
             if not valid_ctype or not valid_dist_kws:
                 key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wname)
-                invalid_extns.append({'extname': extname, 'wcsname': wname, 'key': key.rstrip()})
+                # Guard against the case where the headerlet WCS is not an alternate WCS.
+                keyname = key.rstrip() if key is not None else key
+                invalid_extns.append({'extname': extname, 'wcsname': wname, 'key': keyname})
 
     hdu.close()
     # If any invalid headerlets are found, remove them from
