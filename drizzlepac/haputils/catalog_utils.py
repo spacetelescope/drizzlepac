@@ -1111,7 +1111,9 @@ class HAPPointCatalog(HAPCatalogBase):
 
             log.info("Measured {} sources in {}".format(len(sources), self.image.imgname))
             log.info("   colnames: {}".format(sources.colnames))
-
+            # insure centroid columns are not masked
+            sources['xcentroid'] = Column(sources['xcentroid'])
+            sources['ycentroid'] = Column(sources['ycentroid'])
             # calculate and add RA and DEC columns to table
             ra, dec = self.transform_list_xy_to_ra_dec(sources["xcentroid"], sources["ycentroid"], self.imgname)
             ra_col = Column(name="RA", data=ra, dtype=np.float64)
