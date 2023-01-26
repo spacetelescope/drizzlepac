@@ -765,7 +765,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 try:
                     wcsname = fits.getval(fname, 'wcsname', ext=1)
                     wcstype = updatehdr.interpret_wcsname_type(wcsname)
-                    hdrname = "{}_{}-hlet.fits".format(fname.replace('.fits', ''), wcsname)
+                    hdrname = "{}_{}_hlet.fits".format(fname.replace('.fits', ''), wcsname)
                     headerlet.write_headerlet(fname, hdrname, output='flt',
                                               wcskey='PRIMARY',
                                               author="OPUS",
@@ -778,10 +778,26 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 except ValueError:
                     hlet_msg += _timestamp("SKIPPED: Headerlet not created for %s \n" % fname)
                     # update trailer file to log creation of headerlet files
+
         hlet_msg += _timestamp("Writing Headerlets completed")
         ftrl = open(_trlfile, 'a')
         ftrl.write(hlet_msg)
         ftrl.close()
+
+    # Keep track of headerlet files written out to disk.
+    # Those headerlets would have been written out by 'updatewcs.updatewcs()'
+    # using a SHA256 hash for the WCSNAME portion of the headerlet filename.
+    # The headerlets written out with that naming convention are the only ones
+    # which need to be added to the manifest, since they represent the only WCS
+    # solutions which are new for the exposure and, thus, the ones which need to
+    # be saved in the astrometry database during pipeline processing.
+    for fname in _calfiles:
+        # Look for HLET files new to astrometry database written out by STWCS
+        updatewcs_hdrlets = sorted(glob.glob(f'{fname.replace(".fits", "")}_??????_hlet.fits'))
+        manifest_list.extend(updatewcs_hdrlets)
+        # Look for HLET representing the WCS used in the updated FLT/FLC file.
+        final_hdrlet = glob.glob(f'{fname.replace(".fits", "")}_hlet.fits')
+        manifest_list.extend(final_hdrlet)
 
     # add trailer file to list of output products
     manifest_list.append(_trlfile)
@@ -925,7 +941,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
                 reset_mdriztab_nocr(pipeline_pars, good_bits, pipeline_pars['skysub'])
 
                 drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
-                                                    **pipeline_pars)
+                                                     **pipeline_pars)
 
             instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
             focus_sigma = focus_pars[instr_det]['sigma']
@@ -1245,6 +1261,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             os.chdir(parent_dir)
 
     return focus_dicts, full_table
+
 
 def apply_headerlet(filename, headerlet_file, flcfile=None):
 
@@ -1823,7 +1840,9 @@ def confirm_aposteriori_hdrlets(filename, logfile=None):
             valid_dist_kws = 'A_ORDER' in hdrlet[1].header
             if not valid_ctype or not valid_dist_kws:
                 key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wname)
-                invalid_extns.append({'extname': extname, 'wcsname': wname, 'key': key.rstrip()})
+                # Guard against the case where the headerlet WCS is not an alternate WCS.
+                keyname = key.rstrip() if key is not None else key
+                invalid_extns.append({'extname': extname, 'wcsname': wname, 'key': keyname})
 
     hdu.close()
     # If any invalid headerlets are found, remove them from
