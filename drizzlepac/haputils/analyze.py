@@ -573,7 +573,7 @@ def verify_guiding(filename, min_length=33):
     gs_quality = hdu[0].header.get('quality', default="").lower()
     if 'gsfail' in gs_quality or 'tdf-down' in gs_quality:
         hdu.close()
-        log.warning(f"Image {filename}'s GUIDING detected as: BAD.")
+        log.warning(f"Image {filename}'s QUALITY keywords report GUIDING: BAD.")
         return True  # Yes, there was bad guiding...
 
     # No guide star problems indicated in header, so let's check the

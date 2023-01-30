@@ -2079,9 +2079,20 @@ def _analyze_exposure(filename):
 
     filters = [filts[filtname].strip() for filtname in FILTER_NAMES[instrument]]
 
-    if any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']):
-        print(f"ERROR: Inappropriate target with name {targname}")
+    # Let's start by checking whether the header indicates any problems with
+    # the guide stars or tracking.
+    # Using .get() insures that this check gets done even if keyword is missing.
+    gs_quality = fhdu.get('quality', default="")
+    if 'gsfail' in gs_quality.lower() or 'tdf-down' in gs_quality.lower():
+        print(f"ERROR: Image {filename}'s QUALITY keywords: '{gs_quality}'")
+        print("        GUIDING == BAD.  Skipping processing ")
+        process_exposure = False  # Yes, there was bad guiding...
+
+    badtab = analyze.analyze_data([filename])
+    if badtab['doProcess'][0] == 0:
         process_exposure = False
+
+    # Also check to see whether this observation was taken with a blank filter name.
     if all(filter == '' for filter in filters):
         print(f"ERROR: Inappropriate filter for exposure of {filters}")
         process_exposure = False
