@@ -765,7 +765,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 try:
                     wcsname = fits.getval(fname, 'wcsname', ext=1)
                     wcstype = updatehdr.interpret_wcsname_type(wcsname)
-                    hdrname = "{}_{}_hlet.fits".format(fname.replace('.fits', ''), wcsname)
+                    hdrname = "{}_hlet.fits".format(fname.replace('.fits', ''))
                     headerlet.write_headerlet(fname, hdrname, output='flt',
                                               wcskey='PRIMARY',
                                               author="OPUS",
@@ -2065,6 +2065,7 @@ def handle_remove_readonly(func, path, exc):
         func(path)
     else:
         raise
+
 
 def _analyze_exposure(filename):
     """Evaluate whether or not this exposure should be processed at all."""
