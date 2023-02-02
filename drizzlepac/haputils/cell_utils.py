@@ -159,6 +159,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
 
     return sky_cells
 
+
 def interpret_scells(sky_cells):
     """Return dict of filenames each with the skycell name they overlap
 
@@ -747,6 +748,8 @@ class GridDefs(object):
                 ra, dec = skyfootprint.get_edges_sky(member=member)
             # Find band[s] that overlap footprint
             self._find_bands(dec)
+            # Determine polygon on sky for skyfootprint
+            skyfootprint_poly = SphericalPolygon.from_wcs(skyfootprint.meta_wcs)
 
             self.projection_cells = []
             # Define numerical position in band for projection cell
@@ -755,9 +758,26 @@ class GridDefs(object):
                 # compute band_index, one for each projection cell that overlaps the footprint
                 nra = ra % 360.0
                 nband = band['NBAND']
-                band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband)
-                self.projection_cells += [ProjectionCell(index, band, self.scale) for index in band_index]
+                # Determine what point(s)[ProjectionCells] along the band overlap the exposure footprint.
+                # Typically, this will only return a single value.
+                band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband).tolist()
+                # Now, work out the indices of the neighboring cells to evaluate them as well
+                # to see if they overlap the exposure's footprint
+                full_band_index = [min(band_index)-1] + band_index + [max(band_index)+1]
+                # Now let's see whether or not there is any actual overlap
+                for index in full_band_index:
+                    # For each candidate ProjectionCell near the skyfootprint...
+                    pcell = ProjectionCell(index, band, self.scale)
+                    # ...create a polygon on the sky of the footprint...
+                    pcell_poly = SphericalPolygon.from_wcs(pcell.wcs)
+                    # ...and check whether it overlaps the polygon of the exposure
+                    if pcell_poly.overlap(skyfootprint_poly) > 0:
+                        # if it does, add that ProjectionCell to the list of cells
+                        self.projection_cells.append(pcell)
+
+                # self.projection_cells += [ProjectionCell(index, band, self.scale) for index in full_band_index]
         else:
+            # simply define the ProjectionCells requested by the user on input.
             self.projection_cells = [ProjectionCell(index=i, scale=self.scale) for i in id]
 
     def get_sky_cells(self, skyfootprint, member='total', diagnostic_mode=False):
@@ -1759,6 +1779,7 @@ def ckmeans_test():
                 sum_of_squared_distances(expected))
         assert np.array_equal(result, expected), errormsg
         print("✓ {}".format(result))
+
 
 def extract_visit(filename):
     """Extract the VISIT ID from the input filename"""
