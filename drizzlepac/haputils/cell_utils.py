@@ -760,10 +760,19 @@ class GridDefs(object):
                 nband = band['NBAND']
                 # Determine what point(s)[ProjectionCells] along the band overlap the exposure footprint.
                 # Typically, this will only return a single value.
-                band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband).tolist()
+                band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband)
                 # Now, work out the indices of the neighboring cells to evaluate them as well
                 # to see if they overlap the exposure's footprint
-                full_band_index = [min(band_index)-1] + band_index + [max(band_index)+1]
+                # Make sure `min(band_index)-1` is never less than 0
+                min_band_index = max(band_index.min()-1, 0)
+                # Make sure `max(band_index)+1` is never greater than
+                # `nband` (the number of ProjectionCells in the declination band)
+                # but wraps around to the beginning of the band
+                max_band_index = (band_index.max()+1) % nband
+                # Now, create a list of cell indices in band to check,
+                # while removing any duplicates (either min or max value)
+                full_band_index = np.unique([min_band_index] + band_index.tolist() + [max_band_index])
+
                 # Now let's see whether or not there is any actual overlap
                 for index in full_band_index:
                     # For each candidate ProjectionCell near the skyfootprint...
@@ -857,7 +866,10 @@ class ProjectionCell(object):
         Parameters
         ----------
         index : int
-            ProjectionCell index on the sky
+            ProjectionCell index on the sky.  This index is 0-based.
+            It either represents the index in a single declination band
+            of ProjectionCells or the ID number of the ProjectionCell across
+            the entire sky (from 0 to 2643, given the default GridDefs table).
 
         band : list, optional
             Definition of spacing of projection cells along a line
