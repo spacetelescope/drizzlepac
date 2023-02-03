@@ -599,7 +599,7 @@ class SkyFootprint(object):
             if member not in self.exp_masks:
                 raise ValueError("Member {} not added to footprint".format(member))
             ordered_xy = [self.exp_masks[member]['xy_corners']]
-            sky_corners = [self.meta_wcs.all_pix2world(xy_corners, 0)]
+            sky_corners = [self.meta_wcs.all_pix2world(ordered_xy, 0)]
 
         self.edge_pixels = ordered_edges
         self.xy_corners = ordered_xy
