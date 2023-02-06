@@ -60,12 +60,14 @@ DRIZKEY = 'DRIZCORR'
 WFPC2_KEYS = {'OBSKEY': 'IMAGETYP', 'MTKEY': 'MTFLAG', 'SCNKEY': '',
               'FILKEY1': 'FILTNAM1', 'FILKEY2': 'FILTNAM2', 'FILKEY': 'FILTNAM1',
               'APKEY': '', 'TARKEY': 'TARGNAME', 'EXPKEY': 'EXPTIME',
-              'FGSKEY': 'FGSLOCK', 'CHINKEY': '', 'DRIZKEY': 'DRIZCORR'}
+              'FGSKEY': 'FGSLOCK', 'CHINKEY': '', 'DRIZKEY': 'DRIZCORR',
+              'TYPEKEY': 'IMAGETYP'}
 
 DEFAULT_KEYS = {'OBSKEY': 'OBSTYPE', 'MTKEY':' MTFLAG', 'SCNKEY': 'SCAN_TYP',
                 'FILKEY1': 'FILTER1', 'FILKEY2': 'FILTER2', 'FILKEY': 'FILTER',
                 'APKEY': 'APERTURE', 'TARKEY': 'TARGNAME', 'EXPKEY': 'EXPTIME',
-                'FGSKEY': 'FGSLOCK', 'CHINKEY': 'CHINJECT', 'DRIZKEY': 'DRIZCORR'}
+                'FGSKEY': 'FGSLOCK', 'CHINKEY': 'CHINJECT', 'DRIZKEY': 'DRIZCORR',
+                'TYPEKEY': 'IMAGETYP'}
 HEADER_KEYS = {'WFPC2': WFPC2_KEYS, 'DEFAULT':DEFAULT_KEYS}
 
 
@@ -400,6 +402,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         targname = (header_data[hdr_keys['TARKEY']]).upper()
         exptime = header_data[hdr_keys['EXPKEY']]
         fgslock = (header_data[hdr_keys['FGSKEY']]).upper()
+        imagetype = (header_data[hdr_keys['TYPEKEY']]).upper()
 
         chinject = 'NONE'
         if instrume == 'WFC3' and detector == 'UVIS':
@@ -436,7 +439,14 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             no_proc_value = scan_typ
 
         # Calibration target
-        elif any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']):
+        elif any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL'])\
+                and instrume != 'WFPC2':
+            no_proc_key = hdr_keys['TARKEY']
+            no_proc_value = targname
+
+        # WFPC2 sets the imagetyp keyword correctly(?) as something other than EXT for cal observations
+        elif any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL'])\
+                and instrume == 'WFPC2' and imagetype != 'EXT':
             no_proc_key = hdr_keys['TARKEY']
             no_proc_value = targname
 
