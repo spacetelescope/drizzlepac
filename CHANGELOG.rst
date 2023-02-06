@@ -17,8 +17,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.5.1 (unreleased)
-==================
+3.5.1 (06-Feb-2023)
+===================
 
 - Turn on use of ``verify_guiding()`` to ignore exposures where guide star
   lock was lost and the stars are trailed. [#1443]
@@ -48,6 +48,28 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Implement photometric equalization for standard pipeline processing
   (runastrodriz) of WFPC2 data. [#1471]
+
+- Report the correct value with the correct units, as well as add a comment, for 
+  CRDER FITS keywords. [#1485]
+    
+- Handle empty input images more gracefully [#1490]
+    
+- Update to use the PhotUtils catalog WCS correctly [#1489]
+    
+- Added documentation which indicates how to read programmatically the
+  Point and Segmentation catalogs with Astropy or Pandas. [#1482]
+
+- Update required to ``compute_2d_background()`` in astrometric_utils.py.
+  Modified the ``compute_2d_background()`` to accommodate API changes in PhotUtils
+  while keeping this source code backwards compatible.  Modified the imports
+  used in conjunction with OLD_PHOTUTILS. In addition, simplified logic around
+  the imports as the reviewers suggestion, and removed the truly obsolete 
+  "if OLD_PHOTUTILS" discriminant in several places when it was referencing 
+  really old PhotUtils versions (1.5.0). [#1480]
+
+- Provide support for Numpy 1.26 "str" deprecation and ensure backwards
+  compatibility.  [#1483]
+
 
 3.5.0 (10-Oct-2022)
 ====================
