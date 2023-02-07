@@ -12,7 +12,7 @@ license = { file = "LICENSE.txt" }
 authors = [{ name = 'Megan Sosey' }, { name = 'Warren Hack' }, { name = 'Christopher Hanley' }, { name = 'Chris Sontag' }, { name = 'Mihai Cara' }]
 classifiers = [
     'Intended Audience :: Science/Research',
-    "Topic :: Scientific/Engineering :: Astronomy's",
+    "Topic :: Scientific/Engineering :: Astronomy",
     'License :: OSI Approved :: BSD License',
     'Operating System :: MacOS :: MacOS X',
     'Operating System :: POSIX',
