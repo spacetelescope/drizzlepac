@@ -124,7 +124,7 @@ from drizzlepac.haputils import config_utils
 from drizzlepac import wfpc2Data
 from drizzlepac import photeq
 
-from . import __version__
+from drizzlepac import __version__
 
 
 __taskname__ = "runastrodriz"
