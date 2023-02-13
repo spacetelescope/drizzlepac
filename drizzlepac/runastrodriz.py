@@ -285,6 +285,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         raw_suffix = '_raw.fits'
         goodpix_name = 'NGOODPIX'
     else:
+        # start by turning off 'verify_guiding' since loss of lock
+        # was exceedingly rare and noted in the quality keywords
+        # which get checked in '_anayze_exposure'.
+        do_verify_guiding = False
         # Convert input c0m file into compatible flt file
         if 'd0m' in inFilename:
             inFilename = inFilename.replace('d0m', 'c0m')
@@ -306,6 +310,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         else:
             print("ERROR: Inappropriate input file.")
             return
+
 
     infile_det = fits.getval(inFilename, 'detector')
     cal_ext = None
