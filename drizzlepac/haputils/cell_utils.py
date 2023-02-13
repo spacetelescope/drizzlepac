@@ -1037,9 +1037,6 @@ class SkyCell(object):
 
         Parameters
         ===========
-        name : str, optional
-            Name of the sky cell in the format 'skycell-p1234x01y01'
-
         projection_cell : object, optional
             ProjectionCell instance which this SkyCell will be based upon.
 
@@ -1055,6 +1052,19 @@ class SkyCell(object):
             Default values are specified in the dict `cell_utils.SUPPORTED_SCALES`.
             Alternatively, floating-point values can be provided to specify
             the exact pixel size in arcseconds/pixel should be used.
+
+        Examples
+        =========
+        The SkyCell object can be initialized in one of 2 ways.
+
+        1. Using an already existing SkyCell name with:
+
+        >>> skycell = SkyCell.from_name('skycell-p0197x18y16')
+
+        2. Using separate projection cell ID, along with X and Y indices with:
+
+        >>> skycell = SkyCell(projection_cell=ProjectionCell(index=197), x=18, y=16)
+
 
         """
         # Interpret scale term, if provided
