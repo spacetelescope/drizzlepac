@@ -357,13 +357,13 @@ def precompute_sharp_round(nxk, nyk, xc, yc):
     """
 
     # Create arrays for the two- and four-fold symmetry computations:
-    s4m = np.ones((nyk,nxk),dtype=np.int16)
+    s4m = np.ones((nyk, nxk), dtype=np.int16)
     s4m[yc, xc] = 0
 
-    s2m = np.ones((nyk,nxk),dtype=np.int16)
+    s2m = np.ones((nyk, nxk), dtype=np.int16)
     s2m[yc, xc] = 0
-    s2m[yc:nyk, 0:xc]     = -1;
-    s2m[0:yc+1, xc+1:nxk] = -1;
+    s2m[yc:nyk, 0:xc] = -1
+    s2m[0:yc+1, xc+1:nxk] = -1
 
     return s2m, s4m
 

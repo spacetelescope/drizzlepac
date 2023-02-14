@@ -34,7 +34,7 @@ if util.can_parallel:
 __all__ = ['drizzle', 'run', 'drizSeparate', 'drizFinal', 'mergeDQarray',
            'updateInputDQArray', 'buildDrizParamDict', 'interpret_maskval',
            'run_driz', 'run_driz_img', 'run_driz_chip', 'do_driz',
-           'get_data', 'create_output', 'help', 'getHelpAsString']
+           'get_data', 'create_output']
 
 
 __taskname__ = "adrizzle"
@@ -921,7 +921,8 @@ def run_driz_chip(img, chip, output_wcs, outwcs, template, paramDict, single,
             del pimg
             log.info('Writing out mask file: %s' % _outmaskname)
 
-    time_pre = time.time() - epoch; epoch = time.time()
+    time_pre = time.time() - epoch
+    epoch = time.time()
     # New interface to performing the drizzle operation on a single chip/image
     _vers = do_driz(_insci, chip.wcs, _inwht, outwcs, _outsci, _outwht, _outctx,
                 _expin, _in_units, chip._wtscl,
@@ -929,7 +930,8 @@ def run_driz_chip(img, chip, output_wcs, outwcs, template, paramDict, single,
                 pixfrac=paramDict['pixfrac'], kernel=paramDict['kernel'],
                 fillval=paramDict['fillval'], stepsize=paramDict['stepsize'],
                 wcsmap=wcsmap)
-    time_driz = time.time() - epoch; epoch = time.time()
+    time_driz = time.time() - epoch
+    epoch = time.time()
 
     # Set up information for generating output FITS image
     # ### Check to see what names need to be included here for use in _hdrlist
@@ -949,7 +951,8 @@ def run_driz_chip(img, chip, output_wcs, outwcs, template, paramDict, single,
     outputvals['wt_scl_val'] = chip._wtscl
 
     _hdrlist.append(outputvals)
-    time_post = time.time() - epoch; epoch = time.time()
+    time_post = time.time() - epoch
+    epoch = time.time()
 
     if doWrite:
         ###########################
@@ -1003,7 +1006,7 @@ def run_driz_chip(img, chip, output_wcs, outwcs, template, paramDict, single,
             img.saveVirtualOutputs(outimgs)
 
     # this is after the doWrite
-    time_write = time.time() - epoch; epoch = time.time()
+    time_write = time.time() - epoch
     if False and not single:  # turn off all this perf reporting for now
         time_pre_all.append(time_pre)
         time_driz_all.append(time_driz)
@@ -1132,10 +1135,12 @@ def get_data(filename):
         data = None
     return data
 
-def create_output(filename):
+
+def create_output(filename, arr):
     fileroot, extn = fileutil.parseFilename(filename)
     extname = fileutil.parseExtn(extn)
-    if extname[0] == '': extname = "PRIMARY"
+    if extname[0] == '':
+        extname = "PRIMARY"
 
     if not os.path.exists(fileroot):
         # We need to create the new file
