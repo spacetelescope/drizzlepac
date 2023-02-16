@@ -159,6 +159,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
 
     return sky_cells
 
+
 def interpret_scells(sky_cells):
     """Return dict of filenames each with the skycell name they overlap
 
@@ -598,7 +599,7 @@ class SkyFootprint(object):
             if member not in self.exp_masks:
                 raise ValueError("Member {} not added to footprint".format(member))
             ordered_xy = [self.exp_masks[member]['xy_corners']]
-            sky_corners = [self.meta_wcs.all_pix2world(xy_corners, 0)]
+            sky_corners = [self.meta_wcs.all_pix2world(ordered_xy, 0)]
 
         self.edge_pixels = ordered_edges
         self.xy_corners = ordered_xy
@@ -747,6 +748,8 @@ class GridDefs(object):
                 ra, dec = skyfootprint.get_edges_sky(member=member)
             # Find band[s] that overlap footprint
             self._find_bands(dec)
+            # Determine polygon on sky for skyfootprint
+            skyfootprint_poly = SphericalPolygon.from_wcs(skyfootprint.meta_wcs)
 
             self.projection_cells = []
             # Define numerical position in band for projection cell
@@ -755,9 +758,35 @@ class GridDefs(object):
                 # compute band_index, one for each projection cell that overlaps the footprint
                 nra = ra % 360.0
                 nband = band['NBAND']
+                # Determine what point(s)[ProjectionCells] along the band overlap the exposure footprint.
+                # Typically, this will only return a single value.
                 band_index = np.unique(np.rint(nra * nband / 360.0).astype(int) % nband)
-                self.projection_cells += [ProjectionCell(index, band, self.scale) for index in band_index]
+                # Now, work out the indices of the neighboring cells to evaluate them as well
+                # to see if they overlap the exposure's footprint
+                # Make sure `min(band_index)-1` is never less than 0
+                min_band_index = max(band_index.min()-1, 0)
+                # Make sure `max(band_index)+1` is never greater than
+                # `nband` (the number of ProjectionCells in the declination band)
+                # but wraps around to the beginning of the band
+                max_band_index = (band_index.max()+1) % nband
+                # Now, create a list of cell indices in band to check,
+                # while removing any duplicates (either min or max value)
+                full_band_index = np.unique([min_band_index] + band_index.tolist() + [max_band_index])
+
+                # Now let's see whether or not there is any actual overlap
+                for index in full_band_index:
+                    # For each candidate ProjectionCell near the skyfootprint...
+                    pcell = ProjectionCell(index, band, self.scale)
+                    # ...create a polygon on the sky of the footprint...
+                    pcell_poly = SphericalPolygon.from_wcs(pcell.wcs)
+                    # ...and check whether it overlaps the polygon of the exposure
+                    if pcell_poly.overlap(skyfootprint_poly) > 0:
+                        # if it does, add that ProjectionCell to the list of cells
+                        self.projection_cells.append(pcell)
+
+                # self.projection_cells += [ProjectionCell(index, band, self.scale) for index in full_band_index]
         else:
+            # simply define the ProjectionCells requested by the user on input.
             self.projection_cells = [ProjectionCell(index=i, scale=self.scale) for i in id]
 
     def get_sky_cells(self, skyfootprint, member='total', diagnostic_mode=False):
@@ -837,7 +866,10 @@ class ProjectionCell(object):
         Parameters
         ----------
         index : int
-            ProjectionCell index on the sky
+            ProjectionCell index on the sky.  This index is 0-based.
+            It either represents the index in a single declination band
+            of ProjectionCells or the ID number of the ProjectionCell across
+            the entire sky (from 0 to 2643, given the default GridDefs table).
 
         band : list, optional
             Definition of spacing of projection cells along a line
@@ -1759,6 +1791,7 @@ def ckmeans_test():
                 sum_of_squared_distances(expected))
         assert np.array_equal(result, expected), errormsg
         print("✓ {}".format(result))
+
 
 def extract_visit(filename):
     """Extract the VISIT ID from the input filename"""
