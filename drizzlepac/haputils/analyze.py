@@ -70,6 +70,10 @@ DEFAULT_KEYS = {'OBSKEY': 'OBSTYPE', 'MTKEY':' MTFLAG', 'SCNKEY': 'SCAN_TYP',
                 'TYPEKEY': 'IMAGETYP'}
 HEADER_KEYS = {'WFPC2': WFPC2_KEYS, 'DEFAULT':DEFAULT_KEYS}
 
+CAL_TARGETS = {'WFPC2': ['INTFLAT', 'UVFLAT', 'VISFLAT', 'KSPOTS',
+                         'DARK', 'BIAS', 'EARTH-CALIB'],
+               'DEFAULT': ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL']
+               }
 
 # These definitions are for ACS and WFC3
 BAD_DQ_FLAGS = [256,  # full-well saturated pixel
@@ -439,13 +443,13 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             no_proc_value = scan_typ
 
         # Calibration target
-        elif any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL'])\
+        elif any(x in targname for x in CAL_TARGETS['DEFAULT'])\
                 and instrume != 'WFPC2':
             no_proc_key = hdr_keys['TARKEY']
             no_proc_value = targname
 
         # WFPC2 sets the imagetyp keyword correctly(?) as something other than EXT for cal observations
-        elif any(x in targname for x in ['DARK', 'TUNG', 'BIAS', 'FLAT', 'DEUT', 'EARTH-CAL'])\
+        elif any(x in targname for x in CAL_TARGETS['WFPC2'])\
                 and instrume == 'WFPC2' and imagetype != 'EXT':
             no_proc_key = hdr_keys['TARKEY']
             no_proc_value = targname
