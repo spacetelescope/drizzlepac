@@ -38,7 +38,7 @@ environment variables:
       This environment variable will ALWAYS override any setting of the '-g' switch.
       Values (case-insensitive) can be 'on', 'off', 'yes', 'no'.
 
-    - ASTROMETRY_APPLY_APRIORI : Replaces/resets ASTROMETRY_STEP_CONTROL
+    - ASTROMETRY_APPLY_APRIORI : Replaces the obsolete ASTROMETRY_STEP_CONTROL
       variable used by `stwcs.updatewcs` to control whether or not a priori WCS
       solutions from the astrometry database should be applied to the data.
       If this is set, it will override any value set in the old variable.
@@ -69,7 +69,7 @@ W.J. Hack  24 Aug 2012: Provided interface for in-memory option
 
 W.J. Hack  26 Nov 2012: Option to write out headerlets added and debugged
 
-W.J. Hack  18 Oct 2019: Impelemented multi-stage alignment with verification
+W.J. Hack  18 Oct 2019: Implemented multi-stage alignment with verification
 
 """
 # Import standard Python modules
@@ -178,9 +178,8 @@ envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false':
 envvar_dict = {'off': 'off', 'on': 'on', 'yes': 'on', 'no': 'off', 'true': 'on', 'false': 'off'}
 
 envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
-# Replace ASTROMETRY_STEP_CONTROL with this new related name
+# ASTROMETRY_APPLY_APRIORI supersedes a previously existing environment variable
 envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
-envvar_old_apriori_name = "ASTROMETRY_STEP_CONTROL"
 envvar_qa_stats_name = "PIPELINE_QUALITY_TESTING"
 envvar_reset_idctab_name = "PIPELINE_RESET_IDCTAB"
 
@@ -220,30 +219,14 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             raise ValueError(msg)
         align_to_gaia = envvar_bool_dict[val]
 
-    if envvar_new_apriori_name in os.environ:
-        # Reset ASTROMETRY_STEP_CONTROL based on this variable
-        # This provides backward-compatibility until ASTROMETRY_STEP_CONTROL
-        # gets removed entirely.
-        val = os.environ[envvar_new_apriori_name].lower()
-        if val not in envvar_dict:
-            msg = "ERROR: invalid value for {}.".format(envvar_new_apriori_name)
-            msg += "  \n    Valid Values: on, off, yes, no, true, false"
-            raise ValueError(msg)
-
-        os.environ[envvar_old_apriori_name] = envvar_dict[val]
-    else:
-        # Insure os.environ ALWAYS contains an entry for envvar_new_apriori_name
-        # and it will default to being 'on'
-        if envvar_old_apriori_name in os.environ:
-            val = os.environ[envvar_old_apriori_name].lower()
-        else:
-            val = 'on'
-        os.environ[envvar_new_apriori_name] = val
-
-    align_with_apriori = True
+    # Insure os.environ ALWAYS contains an entry for envvar_new_apriori_name
+    # and it will default to being 'on'
     if envvar_new_apriori_name in os.environ:
         val = os.environ[envvar_new_apriori_name].lower()
         align_with_apriori = envvar_bool_dict[val]
+    else:
+        os.environ[envvar_new_apriori_name] = 'on'
+        align_with_apriori = True
 
     # Add support for environment variable switch to automatically
     # reset IDCTAB in FLT/FLC files if different from IDCTAB in RAW files.
