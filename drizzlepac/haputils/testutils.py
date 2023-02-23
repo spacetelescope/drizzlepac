@@ -18,10 +18,10 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 def compare_wcs_alignment(dataset, force=False):
     """Return results from aligning dataset using all available WCS solutions.
 
-        This code will ALWAYS make sure the ASTROMETRY_STEP_CONTROL variable
+        This code will ALWAYS make sure the ASTROMETRY_APPLY_APRIORI variable
         is set to "ON" when running and will reset to the original state when
         completed.  This insures that the code ALWAYS queries the astrometry
-        database to apply all avaialable a priori WCS solutions.
+        database to apply all available a priori WCS solutions.
 
         Parameters
         -----------
@@ -58,10 +58,10 @@ def compare_wcs_alignment(dataset, force=False):
     """
     # Setup
     # Remember what state the environment was in before this code runs
-    control = os.environ.get('ASTROMETRY_STEP_CONTROL')
+    control = os.environ.get('ASTROMETRY_APPLY_APRIORI')
 
     #   Insure that database will be queried for new WCS solutions
-    os.environ['ASTROMETRY_STEP_CONTROL'] = 'ON'
+    os.environ['ASTROMETRY_APPLY_APRIORI'] = 'ON'
 
     try:
         # Step 1:
@@ -138,9 +138,9 @@ def compare_wcs_alignment(dataset, force=False):
         # if it was modified in the first place.
         # Restore user environment to original state
         if control is None:  # Need to be explicit here since T/F are actually valid
-            del os.environ['ASTROMETRY_STEP_CONTROL']
+            del os.environ['ASTROMETRY_APPLY_APRIORI']
         else:
-            os.environ['ASTROMETRY_STEP_CONTROL'] = control
+            os.environ['ASTROMETRY_APPLY_APRIORI'] = control
 
     return alignment
 

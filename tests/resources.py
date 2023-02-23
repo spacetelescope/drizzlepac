@@ -66,7 +66,7 @@ class BaseCal:
             self.use_ftp_crds = True
 
         # Turn off Astrometry updates
-        os.environ['ASTROMETRY_STEP_CONTROL'] = 'OFF'
+        os.environ['ASTROMETRY_APPLY_APRIORI'] = 'OFF'
 
         # This controls astropy.io.fits timeout
         conf.remote_timeout = self.timeout
