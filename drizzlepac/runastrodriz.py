@@ -291,9 +291,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             raw_suffix = '_d0m.fits'
             goodpix_name = 'GPIXELS'
         else:
-            print("ERROR: Inappropriate input file.")
+            # Remove FLT file created here, since the calibration file can NOT be aligned or drizzled
+            os.remove(inFilename)
+            print("ERROR: Inappropriate input file.  Deleting converted WFPC2 FLT file.")
             return
-
 
     infile_det = fits.getval(inFilename, 'detector')
     cal_ext = None
@@ -966,6 +967,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
             [os.remove(file) for file in glob.glob(ftype)]
 
     return drz_products, focus_dicts, diff_dicts
+
 
 def reset_mdriztab_nocr(pipeline_pars, good_bits, skysub):
     # Need to turn off MDRIZTAB if any other parameters are to be set
