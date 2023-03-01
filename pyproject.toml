@@ -144,7 +144,7 @@ norecursedirs = [
     'doc/build',
     'doc/exts'
 ]
-junit_family = 'xunit2'
+junit_family = 'legacy'
 inputs_root = 'drizzlepac'
 results_root = 'drizzlepac-results'
 

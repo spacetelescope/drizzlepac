@@ -26,7 +26,7 @@ bc1.conda_packages = ['python=3.8']
 bc1.build_cmds = ["pip install numpy astropy codecov pytest-cov",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --bigdata",
+bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
                 "codecov"]
 bc1.test_configs = [data_config]
 
