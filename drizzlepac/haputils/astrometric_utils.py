@@ -835,10 +835,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         log.warning("Using a Gaussian 2D Kernel for source detection.")
         # Generate a default kernel using a simple 2D Gaussian
         kernel_fwhm = fwhm
-        sigma = fwhm * gaussian_fwhm_to_sigma
-        k = Gaussian2DKernel(sigma, x_size=source_box, y_size=source_box)
-        k.normalize()
-        kernel = k.array
+        kernel = build_gaussian_kernel(fwhm, npixels=source_box)
 
     return (kernel, kernel_psf), kernel_fwhm
 
@@ -931,11 +928,37 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
     return srcs
 
 
+def build_gaussian_kernel(fwhm, npixels):
+    """Create a normalized 2D Gaussian PSF kernel
+
+    Parameters
+    ----------
+    fwhm : float
+        FWHM of kernel in pixels
+
+    npixels : int
+        size of kernel in pixels (same for X and Y)
+
+    Returns
+    -------
+    kernel : ndarray
+        Numpy array of the normalized PSF kernel.
+    """
+    # Generate a default kernel using a simple 2D Gaussian
+    sigma = fwhm * gaussian_fwhm_to_sigma
+    k = Gaussian2DKernel(sigma, x_size=npixels, y_size=npixels)
+    k.normalize()
+    kernel = k.array
+
+    return kernel
+
+
 def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     segment_threshold=None, dao_threshold=None,
                     dao_nsigma=3.0, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
-                    outroot=None, plot=False, vmax=None, deblend=False, log_level=logutil.logging.NOTSET):
+                    outroot=None, plot=False, vmax=None, deblend=False,
+                    log_level=logutil.logging.NOTSET):
     """Use photutils to find sources in image based on segmentation.
 
     Parameters
@@ -948,12 +971,30 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         input array prior to source identification.
     fwhm : float
         Full-width half-maximum (fwhm) of the PSF in pixels.
-    threshold : float or None
+    kernel : ndarray
+        A numpy array representing the PSF to be used for identifying sources.
+        Image will be convolved with this kernel to highlight sources with shapes
+        similar to the kernel.
+        [Starting in v3.6.0] If None is given, a default 2D Gaussian kernel
+        will be generated with `build_gaussian_kernel` and used based on `fwhm`
+        and `source_box` for the size.
+    photmode : str
+        Specification of the observation filter configuration used for the exposure
+        as reported by the 'PHOTMODE' keyword from the PRIMARY header.
+    segment_threshold : ndarray or None
         Value from the image which serves as the limit for determining sources.
         If None, compute a default value of (background+5*rms(background)).
-        If threshold < 0.0, use absolute value as scaling factor for default value.
+    dao_threshold : float, optional
+        [Deprecated] This parameter is not used.  In fact, it now gets computed
+        internally using the `sigma_clipped_bkg()` function which uses the
+        `dao_nsigma` parameter.
+    dao_nsigma : float
+        This number gets used to determine the threshold for detection of point
+        sources.  The threshold gets computed using a simple `mean + dao_nsigma * rms`,
+        where the `mean` and `rms` are computed from the background levels using
+        `astropy.stats.sigma_clipped_stats`.
     source_box : int
-        Size of box (in pixels) which defines the minimum size of a valid source.
+        Size of each side of a box (in pixels) which defines the minimum size of a valid source.
     classify : bool
         Specify whether or not to apply classification based on invarient moments
         of each source to determine whether or not a source is likely to be a
@@ -978,6 +1019,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     deblend : bool, optional
         Specify whether or not to apply photutils deblending algorithm when
         evaluating each of the identified segments (sources) from the chip.
+    log_level : int, optional
+        The desired level of verboseness in the log statements displayed on
+        the screen and written to the .log file. Default value is 20, or ‘info’.
     """
     # Initialize logging for this user-callable function
     log.setLevel(log_level)
@@ -987,6 +1031,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     if dqmask is not None:
         imgarr[dqmask] = 0
 
+    if kernel is None:
+        kernel = build_gaussian_kernel(fwhm, source_box)
     if segment_threshold is None:
         dao_threshold, bkg = sigma_clipped_bkg(imgarr, sigma=4.0, nsigma=dao_nsigma)
         segment_threshold = np.ones(imgarr.shape, imgarr.dtype) * dao_threshold
