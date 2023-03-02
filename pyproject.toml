@@ -55,6 +55,7 @@ docs = [
     'sphinx',
     'stsci_rtd_theme',
     'packaging',
+    'tomli',
 ]
 test = [
     'ci_watson',
