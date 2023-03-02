@@ -994,7 +994,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         where the `mean` and `rms` are computed from the background levels using
         `astropy.stats.sigma_clipped_stats`.
     source_box : int
-        Size of box (in pixels) which defines the minimum size of a valid source.
+        Size of each side of a box (in pixels) which defines the minimum size of a valid source.
     classify : bool
         Specify whether or not to apply classification based on invarient moments
         of each source to determine whether or not a source is likely to be a
