@@ -40,6 +40,7 @@ dependencies = [
     'pandas',
     'spherical_geometry>=1.2.22',
     'astroquery>=0.4',
+    'astrocut',
     'photutils>1.5.0',
     'lxml',
     'PyPDF2',
@@ -59,6 +60,7 @@ docs = [
     'numpydoc',
     'sphinx_automodapi',
     'graphviz',
+    'astrocut',
 ]
 test = [
     'ci_watson',
