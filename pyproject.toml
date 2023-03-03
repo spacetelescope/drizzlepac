@@ -56,6 +56,7 @@ docs = [
     'stsci_rtd_theme',
     'packaging',
     'tomli',
+    'numpydoc',
 ]
 test = [
     'ci_watson',
