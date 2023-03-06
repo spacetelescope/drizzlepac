@@ -64,6 +64,10 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
         If `None`, default value from grid definition file will be
         used.
 
+    diagnostic_mode : bool, optional
+        Parameter which specifies whether or not to generate
+        additional output useful for debugging internal computations.
+
     Returns
     --------
     sky_cells : list of objects
@@ -878,7 +882,7 @@ class ProjectionCell(object):
 
         scale : float, optional
             Plate scale to use for defining the projection cell WCS.
-           If not specified here,
+            If not specified here,
             will use values from the projection cell FITS table *'PC_SCALE'* header keyword.
 
         nxy : int, optional

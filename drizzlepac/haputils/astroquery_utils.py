@@ -51,6 +51,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
         Specify what type of product you want from the archive, either 'pipeline'
         or 'HAP' or 'both' (default).  By default, all versions of the products
         processed for the requested datasets will be returned.  This would include:
+
           - pipeline : files processed by `runastrodriz` to include the latest
                        distortion calibrations and the best possible alignment to GAIA
                        with `ipppssoot_fl[tc].fits` filenames for FLT/FLC files.
