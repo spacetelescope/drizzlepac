@@ -668,7 +668,7 @@ gets used to define the value of this keyword, and can be called directly for an
 .. note::
     The list of positions for the footprint can contain more corner positions than expected
     due to the sensitivity of the
-    `Harris corner detection algorithm<https://scikit-image.org/docs/0.7.0/auto_examples/plot_harris.html>`_
+    `Harris corner detection algorithm <https://scikit-image.org/docs/0.7.0/auto_examples/plot_harris.html>`_
     used to identify the corners.
 
 

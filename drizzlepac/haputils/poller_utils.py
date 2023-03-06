@@ -234,6 +234,10 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0,
         The value of 'kmeans' relies on using 'kmeans' analysis for defining sub-layers
         based on exposure time.
 
+    user_table : dict, optional
+        User-supplied table generated using `build_poller_table`.  This table may have
+        been edited to meet the unique needs of the user for this custom processing run.
+
     include_small : bool, optional
         Specify whether or not to create products from ACS/HRC and ACS/SBC data.
 
@@ -245,10 +249,12 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0,
     Interpret the contents of the MVM poller file for the values to use in generating
     the names of all the expected output products.
 
-    Input will have format of:
+    Input will have format of::
+
         ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,skycell-p2381x05y09,NEW,/ifs/archive/ops/hst/public/ib46/ib4606c5q/ib4606c5q_flc.fits
 
-        which are
+    which are::
+
         filename, proposal_id, program_id, obset_id, exptime, filters, detector, skycell-p<PPPP>x<XX>y<YY>, [OLD|NEW], pathname
 
     The SkyCell ID will be included in this input information to allow for
@@ -257,29 +263,21 @@ def interpret_mvm_input(results, log_level, layer_method='all', exp_limit=2.0,
     Output dict will have only have definitions for each defined sky cell layer to
     be either created or updated based on the input exposures being processed.
     There will be a layer defined for each unique combination of filter/exp class/year.
-    An example would be:
+    An example would be::
 
         obs_info_dict["layer 00": {"info": '11665 06 wfc3 uvis f555w short 2011 drc',
                                    "files": ['ib4606c5q_flc.fits', 'ib4606cgq_flc.fits']}
-        .
-        .
-        .
 
         obs_info_dict["layer 01": {"info": '11665 06 wfc3 uvis f555w med 2011 drc',
                                    "files": ['ib4606c6q_flc.fits', 'ib4606cdq_flc.fits']}
-        .
-        .
-        .
+
         obs_info_dict["layer 02": {"info": '11665 06 wfc3 uvis f555w long 2011 drc',
                                    "files": ['ib4606c9q_flc.fits', 'ib4606ceq_flc.fits']}
-        .
-        .
-        .
 
-
-    Caution: The input ("results") parameter was originally designed to be able to accept a Python
-    list of pipeline product dataset names (e.g., ib4606cdq_flc.fits) for MVM proessing.  However,
-    this was later modified.  MVM processing needs the SVM FLT/FLC files as input.
+    .. caution::
+        The input ("results") parameter was originally designed to be able to accept a Python
+        list of pipeline product dataset names (e.g., ib4606cdq_flc.fits) for MVM proessing.  However,
+        this was later modified.  MVM processing needs the SVM FLT/FLC files as input.
 
     """
     # set logging level to user-specified level

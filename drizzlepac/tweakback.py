@@ -97,7 +97,7 @@ def apply_tweak(drz_file, orig_wcs_name, output_wcs_name=None, input_files=None,
     and with the "original" primary WCS. It is also assumed that drizzled image
     was aligned using ``tweakreg`` either to another image or to an external
     reference catalog. We will refer to the primary WCS in the drizzled image
-    _before_ ``tweakreg`` was run as the "original" WCS and the WCS _after_
+    **before** ``tweakreg`` was run as the "original" WCS and the WCS **after**
     ``tweakreg`` was run as "tweaked" WCS.
 
     By comparing both "original" and "tweaked" WCS, ``apply_wcs`` computes
@@ -118,6 +118,7 @@ def apply_tweak(drz_file, orig_wcs_name, output_wcs_name=None, input_files=None,
         ``apply_tweak`` looks for the first image-like HDU in the drizzled
         image. To specify a particular extension from which to load WCS,
         append extension specification after the file name, for example:
+
             - ``'image_drz.fits[sci,1]'`` for first "sci" extension
             - ``'image_drz.fits[1]'`` for the first extension
             - ``'image_drz.fits[0]'`` for the primary HDU
@@ -125,11 +126,11 @@ def apply_tweak(drz_file, orig_wcs_name, output_wcs_name=None, input_files=None,
     orig_wcs_name : str
         Name (provided by the ``WCSNAME?`` header keyword where ``?``
         respesents a letter A-Z) of the "original" WCS. This is the WCS of
-        the resampled image (obtained by drizzling all input images)  _before_
+        the resampled image (obtained by drizzling all input images)  **before**
         this resampled image was aligned ("tweaked") to another image/catalog.
 
-        If ``orig_wcs_name`` is `None`, the the original WCS _must be
-        specified_ using ``orig_wcs_key``. When ``orig_wcs_key`` is provided,
+        If ``orig_wcs_name`` is `None`, the the original WCS **must be
+        specified** using ``orig_wcs_key``. When ``orig_wcs_key`` is provided,
         ``orig_wcs_name`` is ignored altogether.
 
     output_wcs_name : str, None
