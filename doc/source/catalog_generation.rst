@@ -380,7 +380,7 @@ these values. Specific flag values are defined below in table 2:
     scientifically dubious are filtered out and not written to the final source catalogs. For all detectors, sources
     with a flag value greater than 5 are filtered out. Users can adjust this value using a custom input parameter file
     and changing the "flag_trim_value" parameter. For more details on how to create a custom parameter file, please
-    refer to the `~drizzlepac.haputils.generate_custom_svm_param_file` documentation page.
+    refer to the `~drizzlepac.haputils.generate_custom_svm_mvm_param_file` documentation page.
 
 2.4.2.1: Assignment of Flag Values 0 (Point Source), 1 (Extended Source), and 16 (Hot Pixels)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

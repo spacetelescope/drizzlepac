@@ -74,6 +74,9 @@ intersphinx_mapping = {
     'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
     'matplotlib': ('http://matplotlib.org/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
+    'tweakwcs': ('https://tweakwcs.readthedocs.io/en/latest/', None),
+    'stsci.skypac': ('https://stsci-skypac.readthedocs.io/en/latest/', None),
+    'stwcs': ('https://stwcs.readthedocs.io/en/latest/', None),
 }
 
 if sys.version_info[0] == 2:
@@ -180,9 +183,6 @@ exclude_patterns = ['_build']
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
 default_role = 'obj'
-
-
-
 
 # Don't show summaries of the members in each class along with the
 # class' docstring

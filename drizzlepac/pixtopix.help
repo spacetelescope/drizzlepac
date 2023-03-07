@@ -18,7 +18,7 @@ Parameters
     should be provided if output is a multi-extension ``FITS`` file.
     If no image gets specified, the input image will be used to
     generate a default output WCS
-    using :py:func:`~stwcs.distortion.util.output_wcs`.
+    using ``stwcs.distortion.util.output_wcs()``.
 
   direction : str
     Direction of transform (forward or backward). The 'forward' transform

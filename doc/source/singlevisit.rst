@@ -395,7 +395,7 @@ would result in the definition of these output products:
   * a point-source catalog for the total product
   * a segmentation-based catalog for the total product
 
-The function ``haputils.poller_utils.interpret_obset_input`` serves as the sole
+The function :py:func:`drizzlepac.haputils.poller_utils.interpret_obset_input` serves as the sole
 interface for interpreting either the input **poller** file which contains exposure
 information for a visit or a file which contains dataset names, one per line.
 A basic tree is created (as a dictionary of dictionaries) by this function where the
@@ -539,9 +539,9 @@ simply requires defining a common WCS which can be used to define the output for
 all the **filter products** from the visit.
 
 The common WCS, or **metawcs**, gets defined by reading in all the WCS definitions
-as :py:class:`stwcs.wcsutil.HSTWCS` objects
+as `stwcs.wcsutil.HSTWCS <https://stwcs.readthedocs.io/en/latest/hstwcs.html#stwcs.wcsutil.hstwcs.HSTWCS>`_ objects
 for all the input exposures taken with the same **instrument** in the visit.  This
-list of **HSTWCS** objects then gets fed to :py:func:`stwcs.distortion.utils.output_wcs`,
+list of **HSTWCS** objects then gets fed to ``stwcs.distortion.utils.output_wcs``,
 the same function used by ``AstroDrizzle`` to define the default output WCS when
 the user does not specify one before-hand.  This results in the definition of a
 WCS which spans the entire field-of-view for all the input exposures with the same
