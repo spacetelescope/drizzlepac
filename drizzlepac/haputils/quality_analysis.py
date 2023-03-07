@@ -90,10 +90,10 @@ def determine_alignment_residuals(input, files,
 
     catalogs : list, optional
         List of dictionaries containing the source catalogs for each input chip.
-        The list NEEDS to be in the same order as the filenames given in `files`.
+        The list NEEDS to be in the same order as the filenames given in ``files``.
         Each dictionary for each file will need to have numerical (integer) keys
-        for each 'sci' extension.  If left as `None`, this function will create
-        it's own set of catalogs using `astrometric_utils.extract_point_sources`.
+        for each 'sci' extension.  If left as ``None``, this function will create
+        it's own set of catalogs using ``astrometric_utils.extract_point_sources``.
 
     json_timestamp: str, optional
         Universal .json file generation date and time (local timezone) that will be used in the instantiation

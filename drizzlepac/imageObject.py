@@ -468,8 +468,8 @@ class baseImageObject:
         outnames['outContext'] = output_wcs.outputNames['outContext']
 
     def updateContextImage(self, contextpar):
-        """ Reset the name of the context image to `None` if parameter
-        ``context`` is `False`.
+        """ Reset the name of the context image to ``None`` if parameter
+        ``context`` is ``False``.
 
         """
         self.createContext = contextpar

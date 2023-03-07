@@ -1,17 +1,17 @@
-:py:func:`~drizzlepac.MapReg` provides an automated interface for converting
+:py:func:`~drizzlepac.mapreg.MapReg` provides an automated interface for converting
 a region file to the image coordinate system (CS) of multiple images (and
 their extensions) using WCS information from the image(s) header(s).
 This conversion does not take into account pointing errors and, therefore,
 an examination and adjustment (if required) of output region files is highly
 recommended. This task is designed to simplify the creation of the exclusions
-and/or inclusions region files used with :py:func:`~drizzlepac.TweakReg`
+and/or inclusions region files used with :py:func:`~drizzlepac.tweakreg.TweakReg`
 task for sources finding.
 
 Parameters
 ----------
 input_reg : string or list of strings (Default = '')
     Input region files that need to be mapped to image CS using WCS information
-    from `images` (see below). Only region files saved in sky CS are allowed
+    from ``images`` (see below). Only region files saved in sky CS are allowed
     in this release. Regions specified in image-like coordinates (e.g., image,
     physical) will be ignored.
 
@@ -26,9 +26,9 @@ input_reg : string or list of strings (Default = '')
     filename on each line of the file.
 
 images : string or list of strings (Default = ``*.fits``)
-    FITS images onto which the region files `input_reg` will be mapped. These
+    FITS images onto which the region files ``input_reg`` will be mapped. These
     image files must contain WCS information in their headers in order to
-    convert `input_reg` from sky coordinates to correct image coordinates.
+    convert ``input_reg`` from sky coordinates to correct image coordinates.
     This paramater can be provided in any of several forms:
 
      - filename of a single image
@@ -39,14 +39,14 @@ images : string or list of strings (Default = ``*.fits``)
        (and optional inverse variance map filenames)
 
     The ``@-file`` filelist needs to be provided as an ASCII text file
-    containing a list of filenames for all input images (to which `input_reg`
+    containing a list of filenames for all input images (to which ``input_reg``
     regions should be mapped) with one filename on each line of the file.
 
 img_wcs_ext : string or list of strings (Default = ``SCI``)
     Extension name, extension name and version, or extension number of FITS
-    extensions in the `images` to which the input regions `input_reg` should be
+    extensions in the ``images`` to which the input regions ``input_reg`` should be
     mapped. The header of each extension must contain WCS information that will
-    be used to convert `input_reg` from sky CS to image-like CS. Multiple
+    be used to convert ``input_reg`` from sky CS to image-like CS. Multiple
     extensions must be separated by semicolon while extension name and version
     (if present) must be separated by comma, e.g., ``'SCI;DQ,1;0'``.
     When specifying the extension name only, internally it will be expanded
@@ -68,9 +68,9 @@ ref_wcs_ext : string (Default = ``SCI``)
     **Reserved for future use.**
     Extension name and/or version of FITS extensions
     in the ``refimg`` that contain WCS information that will be used to convert
-    `input_reg` from image-like CS to sky CS. NOTE: Only extension name is
-    allowed when `input_reg` is a list of region files that contain regions
-    in image-like CS. In this case, the number of regions in `input_reg` must
+    ``input_reg`` from image-like CS to sky CS. NOTE: Only extension name is
+    allowed when ``input_reg`` is a list of region files that contain regions
+    in image-like CS. In this case, the number of regions in ``input_reg`` must
     agree with the number of extensions with name specified by ``ref_wcs_ext``
     present in the ``refimg`` FITS image.
 
@@ -81,7 +81,7 @@ ref_wcs_ext : string (Default = ``SCI``)
 chip_reg : string or list of strings (Default = '')
     Input region files in image CS associated with each extension specified by
     the ``img_wcs_ext`` parameter above. These regions will be added directly
-    (without any transformation) to the `input_reg` regions mapped to each
+    (without any transformation) to the ``input_reg`` regions mapped to each
     extension of the input ``images``. These regions must be specified in
     image-like coordinates. Typically, these regions should contain "exclude"
     regions to exclude parts of the image specific to the detector **chip**
@@ -92,7 +92,7 @@ chip_reg : string or list of strings (Default = '')
      - filename of a single image (if ``img_wcs_ext`` specifies a single FITS
        extension);
      - comma-separated list of filenames (if ``img_wcs_ext`` specifies more than
-       one extension) or `None` for extensions that do not need any
+       one extension) or ``None`` for extensions that do not need any
        chip-specific regions to be excluded/included;
      - '' (empty string) or None if no chip-specific region files are provided.
 
@@ -161,16 +161,16 @@ one by one into DS9 and then load onto those images the previously created
 include/exclude region file ``input_reg.reg``. Now we can save the regions using
 *image* coordinates. To do conversion from the sky coordinates to image
 coordinates, DS9 will use the WCS info from the image onto which the region file
-was loaded. The :py:func:`~drizzlepac.MapReg` task tries to automate this process.
+was loaded. The :py:func:`~drizzlepac.mapreg.MapReg` task tries to automate this process.
 
-**NOTE 2:** :py:func:`~drizzlepac.MapReg` relies on the :py:class:`pyregion` package for region file
+**NOTE 2:** :py:func:`~drizzlepac.mapreg.MapReg` relies on the :py:class:`~stregion` package for region file
 parsing and coordinate transformation. Unfortunately, as of writing,
-**pyregion** does not consider distortion corrections when performing coordinate
+**stregion** does not consider distortion corrections when performing coordinate
 transformations. Therefore, there might be a slight discrepancy between the
-regions produced by :py:func:`~drizzlepac.MapReg` and the DS9 regions obtained as described in
+regions produced by :py:func:`~drizzlepac.mapreg.MapReg` and the DS9 regions obtained as described in
 the NOTE 1 above.
 
-**NOTE 3:** :py:func:`~drizzlepac.MapReg` does not take into account pointing errors and thus the
+**NOTE 3:** :py:func:`~drizzlepac.mapreg.MapReg` does not take into account pointing errors and thus the
 produced region files can be somewhat misaligned compared to their intended
 position around the sources identified in the "reference" image. Threfore, it is
 highly recommended that the produced region files be loaded into DS9 and their
@@ -183,7 +183,7 @@ Examples
 --------
 Let's say that based on some image ``refimg.fits`` we have produced a "master"
 reference image (``master.reg``) that includes regions around sources that we want
-to use for image alignment in task :py:func:`~drizzlepac.TweakReg` and excludes regions that we
+to use for image alignment in task :py:func:`~drizzlepac.tweakreg.TweakReg` and excludes regions that we
 want to avoid being used for image alignment (e.g, diffraction spikes, saturated
 quasars, stars, etc.). We save the file ``master.reg`` in sky CS (e.g., ``fk5``).
 

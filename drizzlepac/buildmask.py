@@ -210,7 +210,7 @@ def buildShadowMaskImage(dqfile, detnum, extnum, maskname, bitvalue=None, binned
         This function uses the region defined by the calibration functions above to
         identify the functional shadow mask pixels from the mask created using the DQ array with all values
         except DQ=2.  This shadow mask then applied to the DQ-based mask and then expanded by a few pixels,
-        as defined by `SHADOW_BUFFER`, before being used to expand shadow mask region in the user-defined
+        as defined by ``SHADOW_BUFFER``, before being used to expand shadow mask region in the user-defined
         DQ-based mask.  This logic insures that the pixels defined as GOOD by the user in the imaging
         portion of the chip outside the shadowed region gets used while reducing the number of pixels
         in the shaowed region to increase the amount of unmasked pixels overlapping from chip to chip.

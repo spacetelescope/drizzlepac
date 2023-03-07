@@ -107,7 +107,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
     PARAMETERS
     -----------
-    total_obj_list : `drizzlepac.haputils.product.TotalProduct`
+    total_obj_list : `~drizzlepac.haputils.product.TotalProduct`
                     total drizzle product that will be processed by catalog_utils.
                     catalog_utils will also create photometric
                     sourcelists for the child filter products of this total product.
@@ -1393,7 +1393,7 @@ def _verify_sci_hdrname(filename):
     """Insures that HDRNAME keyword is populated in SCI extensions.
 
     This function checks to make sure the HDRNAME keyword in the SCI
-    extension of the science image `filename` is populated with a valid
+    extension of the science image ``filename`` is populated with a valid
     non-empty string.
     """
     fhdu, closefits = proc_utils._process_input(filename)

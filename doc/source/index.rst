@@ -16,7 +16,8 @@ custom code if desired. These pages document what functions and classes are
 available for use under Python while providing the syntax for calling those
 functions from Python tasks.
 
-Full documentation of how to run the primary ``AstroDrizzle`` and ``TweakReg``
+Full documentation of how to run the primary task ``AstroDrizzle`` from `~drizzlepac.astrodrizzle`
+and ``TweakReg`` from `~drizzlepac.tweakreg`
 tasks, along with fully worked examples, can be found in the
 `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_.
 
@@ -27,7 +28,7 @@ of the input images.
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    astrodrizzle
    imageobject
@@ -57,54 +58,23 @@ provide some details on what has been revised for each version.
 
 Image Registration Tasks
 ------------------------
-Documentation for the replacement task for IRAF's ``tweakshifts``,
-currently named ``TweakReg``, has been added to this package.
-These new modules describe how to run the new ``TEAL``-enabled task,
-as well as use the classes in the task to generate catalogs interactively
-for any chip and work with that catalog. The current implementation of this
-code relies on a very basic source finding algorithm loosely patterned
-after the DAOFIND algorithm and does not provide all the same features
-or outputs found in DAOFIND. The fitting algorithm also reproduces the
-fitting performed by IRAF's ``geomap`` in a limited fashion; primarily,
-it only performs fits equivalent to ``geomap``'s 'shift' and 'rscale'
-solutions. These algorithms will be upgraded as soon as replacements
-are available.
+A number of tasks have been developed to support the registration
+of images.  This includes documentation for the replacement task
+for IRAF's ``tweakshifts``, currently named ``TweakReg``, along
+with tasks for updating the WCS in HST images and performing
+photometry equalization for WFPC2 data.
 
-.. toctree::
-   :maxdepth: 2
+In addition, several tasks have been developed to perform
+coordinate transformations that take into account the full
+distortion model specified in HST image headers.
 
-   tweakreg
-   refimagefindpars
-   imagefindpars
-   image
-   wcscorr
-   tweakutils
-   updatehdr
-   mapreg
-   photeq
-   pixreplace
-
-Coordinate Transformation Tasks
--------------------------------
-These tasks support transformations of source positions to and from
-distorted and drizzled images.
+The full description of all of these tasks have been added
+to the :ref:`imagereg` page.
 
 .. toctree::
    :maxdepth: 1
 
-   pixtopix
-   pixtosky
-   skytopix
-
-
-ACS Header Update Task
-----------------------
-A task, 'updatenpol', has been written to automate the updating of ACS image headers with the filename of the appropriate NPOLFILE based on the DGEOFILE specified in the image header.  This task should be used to update all ACS images prior to processing them with 'astrodrizzle'.
-
-.. toctree::
-   :maxdepth: 2
-
-   updatenpol
+   image_registration
 
 
 Reproducing Pipeline Processing
@@ -112,7 +82,7 @@ Reproducing Pipeline Processing
 The task 'runastrodriz' can be used to reproduce the same Drizzle processing that gets performed on HST data when retrieving data from the HST archive.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    Running Astrodriz <runastrodriz.rst>
    API for Astrometry Code <astrometry_api.rst>
@@ -135,7 +105,7 @@ Three levels of products are available as part of this release:
 The **HAP Single Visit Mosaics (SVMs)** differ from the standard HST drizzled data products, which are aligned filter-by-filter to Gaia.  SVM data products, on the other hand, are all drizzled onto the same north-up pixel grid and may have improved relative alignment across filters within a given visit, enabling easy comparison of the images through multiple filters or for images to be combined to create color mosaics. When possible, sources in the images have been aligned directly to the Gaia source catalog to improve the WCS of the images. SVM data products with both relative alignment (by filter) and absolute alignment to Gaia will contain the string 'FIT_SVM_GAIA' in the 'WCSNAME' keyword in the science extension of the image header. More discussion on HAP alignment, may be found on the webpage `Improvements in HST Astrometry <https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=HAdP&title=Improvements+in+HST+Astrometry>`_.
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
 
   Astrometry and Headerlets <astrometry.rst>
 
@@ -150,7 +120,7 @@ Combining data across visits to create mosaics for every observed location on th
 **HAP Multi-Visit Mosaic (MVM)** processing.
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
 
   Multi-Visit Mosaic Processing <multivisit.rst>
   Multi-Visit Mosaic Products <multivisit_products.rst>

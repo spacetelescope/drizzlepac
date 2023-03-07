@@ -10,7 +10,7 @@ twice during processing:
   the final output WCS as separate images
 
 * final drizzle step: this step produces the final combined image
-  based on the cosmic-ray masks determined by ``AstroDrizzle``
+  based on the cosmic-ray masks determined by `~drizzlepac.astrodrizzle.AstroDrizzle`
 
 .. automodule:: drizzlepac.adrizzle
    :members:

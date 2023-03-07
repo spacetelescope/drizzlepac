@@ -24,17 +24,18 @@ input : str or list of str (Default = ``'*flt.fits'``)
 
 editpars : bool (Default = False)
     A parameter that allows user to edit input parameters by hand in the GUI.
-    `True` to use the GUI to edit parameters.
+    ``True`` to use the GUI to edit parameters.
 
 configobj : ConfigObjPars, ConfigObj, dict (Default = None)
-    An instance of `stsci.tools.cfgpars.ConfigObjPars` or
-    `stsci.tools.configobj.ConfigObj` which overrides default parameter
-    settings. When ``configobj`` is `defaults`, default parameter values are
+    An instance of ``stsci.tools.cfgpars.ConfigObjPars`` or
+    ``stsci.tools.configobj.ConfigObj`` which overrides default parameter
+    settings. When ``configobj`` is ``defaults``, default parameter values are
     loaded from the user local configuration file usually located in
     ``~/.teal/astrodrizzle.cfg`` or a matching configuration file in the
     current directory. This configuration file stores most recent
     settings that an user used when running ``AstroDrizzle`` through the
-    ``TEAL`` interface. When ``configobj`` is `None`, ``AstroDrizzle``
+    `TEAL <https://stscitools.readthedocs.io/en/latest/teal_guide.html>`_
+    interface. When ``configobj`` is ``None``, ``AstroDrizzle``
     parameters not provided explicitly will be initialized with their
     default values as described in the "Other Parameters" section.
 
@@ -169,7 +170,7 @@ in_memory : bool (Default = False)
     more memory than usual to process the data while reducing the overall
     processing time by eliminating most of the disk activity.
     *Only* the products of the final drizzle step will get written out when
-    this parameter gets specified as `True`.
+    this parameter gets specified as ``True``.
 
 rules_file : str (Default = "")
     Rules for how to blend the header keyword values for all the input
@@ -235,7 +236,7 @@ skysub : bool (Default = Yes)
     to ``no``, then ``skyuser`` field will be enabled and if user specifies a
     header keyword showing the sky value in the image, then that value will
     be used for CR-rejection but it will not be subtracted from the (drizzled)
-    image data. If user sets ``skysub`` to `yes` then `skyuser` field will be
+    image data. If user sets ``skysub`` to ``yes`` then ``skyuser`` field will be
     disabled (and if it is not empty - it will be ignored) and user can use
     one of the methods available through the ``skymethod`` parameter to
     compute the sky or provide a file (see ``skyfile`` parameter) with values
@@ -341,7 +342,7 @@ sky_bits : int, str, None (Default = 0)
       be considered "bad" pixels, and the corresponding image pixels will
       not be used for sky computations.
 
-    | Set ``sky_bits`` to `None` to turn off the use of image's DQ array for
+    | Set ``sky_bits`` to ``None`` to turn off the use of image's DQ array for
       sky computations.
 
     | In order to reverse the meaning of the ``sky_bits``
@@ -351,7 +352,7 @@ sky_bits : int, str, None (Default = 0)
       DQ flags 4 and 8 for sky computations and to consider
       as "good" all other pixels (regardless of their DQ flag),
       set ``sky_bits`` to ``~4+8``, or ``~4,8``. To obtain the
-      same effect with an `int` input value (except for 0),
+      same effect with an ``int`` input value (except for 0),
       enter -(4+8+1)=-13. Following this convention,
       a ``sky_bits`` string value of ``'~0'`` would be equivalent to
       setting ``sky_bits=None``.
@@ -475,7 +476,7 @@ driz_sep_fillval : int (Default = None)
     Value to be assigned to output pixels that have zero weight, or that
     receive flux from any input pixels during drizzling. This parameter
     corresponds to the ``fillval`` parameter of the 'drizzle' task. If
-    the default of `None` is used, and if the weight in both the input
+    the default of ``None`` is used, and if the weight in both the input
     and output images for a given pixel are zero, then the output pixel
     will be set to the value it would have had if the input had a
     non-zero weight. Otherwise, if a numerical value is provided (e.g. 0),
@@ -500,7 +501,7 @@ driz_sep_refimage : str (Default = '')
 
 driz_sep_rot : float (Default = None)
     Position Angle of output image's Y-axis relative to North. A value of 0.0
-    would orient the final output image to be North up. The default of `None`
+    would orient the final output image to be North up. The default of ``None``
     specifies that the images will not be rotated, but will instead be drizzled
     in the default orientation for the camera with the x and y axes of the
     drizzled image corresponding approximately to the detector axes.
@@ -609,14 +610,14 @@ combine_nhigh : int (Default = 0)
 combine_lthresh : float (Default = None)
     Sets the lower threshold for clipping input pixel values during image
     combination. This value gets passed directly to ``imcombine`` for use in
-    creating the median image. If the parameter is set to `None`,
+    creating the median image. If the parameter is set to ``None``,
     no thresholds will be imposed.
 
 combine_hthresh : float (Default = None)
     This parameter sets the upper threshold for clipping input pixel values
     during image combination. The value for this parameter is passed directly
     to ``imcombine`` for use in creating the median image. If the parameter
-    is set to `None`, no thresholds will be imposed.
+    is set to ``None``, no thresholds will be imposed.
 
 combine_grow : int (Default = 1)
     Width, in pixels, beyond the limit set by the rejection algorithm being
@@ -833,7 +834,7 @@ final_fillval : float (Default = None)
     The value for this parameter is to be assigned to the output pixels that
     have zero weight or which do not receive flux from any input pixels during
     drizzling. This parameter corresponds to the ``fillval`` parameter of the
-    ``drizzle`` task. If the default of `None` is used, and if the weight in
+    ``drizzle`` task. If the default of ``None`` is used, and if the weight in
     both the input and output images for a given pixel are zero, then
     the output pixel will be set to the value it would have had if the input
     had a non-zero weight. Otherwise, if a numerical value is provided
@@ -868,7 +869,7 @@ final_refimage : str (Default = '')
 
 final_rot : float (Default = None)
     Position Angle of output image's Y-axis relative to North. A value of 0.0
-    would orient the final output image to be North up. The default of `None`
+    would orient the final output image to be North up. The default of ``None``
     specifies that the images will not be rotated, but will instead be drizzled
     in the default orientation for the camera with the x and y axes of
     the drizzled image corresponding approximately to the detector axes.
@@ -963,7 +964,7 @@ updatewcs : bool  (Default = No)
 
 
 See Also
---------
+----------
 
 drizzlepac.adrizzle : Apply the 'drizzle' algorithm to the images
 
@@ -973,11 +974,9 @@ drizzlepac.sky : Perform sky subtraction
 
 stsci.skypac.skymatch : Sky computation and equalization
 
-drizzlepac.createMedian : Create a median combined image from a set of
-  drizzled images
+drizzlepac.createMedian : Create a median combined image from a set of drizzled images
 
-drizzlepac.drizCR : Identify cosmic-rays by comparing blotted, median images
-  to the original input images.
+drizzlepac.drizCR : Identify cosmic-rays by comparing blotted, median images to the original input images.
 
 
 Notes
@@ -990,13 +989,13 @@ make backup copies of your original files and place them in the
 All calibrated input images must have been updated using
 ``updatewcs`` from the ``STWCS`` package, to include the full
 distortion model in the header. Alternatively, one can set
-``updatewcs`` parameter to `True` when running either ``TweakReg``
+``updatewcs`` parameter to ``True`` when running either ``TweakReg``
 or ``AstroDrizzle`` from command line (Python interpreter)
 **the first time** on such images.
 
 
-EXAMPLES
---------
+Examples
+---------
 
 The ``AstroDrizzle`` task can be run from either the ``TEAL`` GUI or from the
 command-line using ``PyRAF`` or Python. These examples illustrate the various

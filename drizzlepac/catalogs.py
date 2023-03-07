@@ -55,7 +55,7 @@ def generateCatalog(wcs, mode='automatic', catalog=None,
 
     kwargs : dict
         Parameters needed to interpret source catalog from input catalog
-        with `findmode` being required.
+        with ``findmode`` being required.
 
     Returns
     -------
@@ -350,11 +350,11 @@ class Catalog:
         Method which displays the original image and overlays the positions
         of the detected sources from this image's catalog.
 
-        Plotting `kwargs` that can be provided are:
+        Plotting ``kwargs`` that can be provided are:
 
             vmin, vmax, cmap, marker
 
-        Default colormap is `summer`.
+        Default colormap is ``summer``.
 
         """
         try:
@@ -418,7 +418,7 @@ class ImageCatalog(Catalog):
     """ Class which generates a source catalog from an image using
         Python-based, daofind-like algorithms
 
-        Required input `kwargs` parameters::
+        Required input ``kwargs`` parameters::
 
             computesig, skysigma, threshold, peakmin, peakmax,
             hmin, conv_width, [roundlim, sharplim]
@@ -643,7 +643,7 @@ class ImageCatalog(Catalog):
 class UserCatalog(Catalog):
     """ Class to manage user-supplied catalogs as inputs.
 
-        Required input `kwargs` parameters::
+        Required input ``kwargs`` parameters::
 
             xyunits, xcol, ycol[, fluxcol, [idcol]]
 
@@ -729,10 +729,10 @@ class UserCatalog(Catalog):
 
     def plotXYCatalog(self, **kwargs):
         """
-        Plots the source catalog positions using matplotlib's `pyplot.plot()`
+        Plots the source catalog positions using matplotlib's ``pyplot.plot()``
 
-        Plotting `kwargs` that can also be passed include any keywords understood
-        by matplotlib's `pyplot.plot()` function such as::
+        Plotting ``kwargs`` that can also be passed include any keywords understood
+        by matplotlib's ``pyplot.plot()`` function such as::
 
             vmin, vmax, cmap, marker
 

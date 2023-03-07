@@ -65,11 +65,11 @@ class AlignmentTable:
           identifies sources suitable for alignment.
         * **perform_fit** : cross-matches sources using user-specified method
           and performs fit to user-specified catalog.  Cross-matching options
-          include: `relative`, '2dhist' or 'default' as reported by the ``get_fit_methods``
+          include: ``relative``, ``2dhist`` or ``default`` as reported by the ``get_fit_methods``
           method.  It then populates the table with the results for this fit.
         * **select_fit** : extracts the 'best' fit to be applied to the data with the
           'best' fit determined externally by the user based on the set of fit results
-          stored in the `fit_dict` table.
+          stored in the ``fit_dict`` table.
         * **apply_fit** : Updates all input image WCSs with the result of the selected 'best' fit
 
     """
@@ -79,13 +79,13 @@ class AlignmentTable:
         Parameters
         ----------
         input_list : list
-            List of input file names to be provided to `~analyze.analyze_data` function.
+            List of input file names to be provided to ``analyze.analyze_data`` function.
 
         clobber : bool, optional
             Specifies whether or not to overwrite data on disk with updated versions of the data.
 
         dqname : str, optional
-            Allows the user to customize the name of the extension (`extname`) containing the
+            Allows the user to customize the name of the extension (``extname``) containing the
             data quality flags to be applied to the data during source identification.
 
         process_type : str, optional
@@ -303,7 +303,7 @@ class AlignmentTable:
                     fitgeom='rscale'):
         """Perform fit using specified method, then determine fit quality
 
-        This method populates the `fit_dict` table with the results of the
+        This method populates the ``fit_dict`` table with the results of the
         specified fit keyed by (<method_name>, <catalog_name>).
 
         Parameters
@@ -315,15 +315,15 @@ class AlignmentTable:
         catalog_name : str
             Name of reference catalog to use for the fit.  These are defined
             by the user.  Examples include: 'GAIADR1', 'GAIADR2', and 'GAIAedr3'.
-            This acts as the label for indexing this fit in the `fit_dict` table.
+            This acts as the label for indexing this fit in the ``fit_dict`` table.
 
-        reference_catalog : `astropy.table.Table`
+        reference_catalog : ``astropy.table.Table``
             Table containing the reference sources to be used for the fit.
 
         fitgeom : str, optional
             Type of polynomial fit to perform to determine the correction
             to the WCS.  Options include (from more complex to simplest):
-            `general`, `rscale`, `rshift`, `shift`.
+            ``general``, ``rscale``, ``rshift``, ``shift``.
 
         """
         # Updated fits_pars with value for fitgeom
@@ -347,8 +347,8 @@ class AlignmentTable:
     def select_fit(self, catalog_name, method_name):
         """Select the fit that has been identified as 'best'
 
-        Populates the `filtered_table` with a row for each input exposure
-        that contains the results of the fit selected from the `fit_dict` table
+        Populates the ``filtered_table`` with a row for each input exposure
+        that contains the results of the fit selected from the ``fit_dict`` table
         populated by ``perform_dict()``.
 
         Parameters
@@ -825,30 +825,35 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     """Perform cross-matching and final fit using relative matching algorithm
 
     The fitting performed by this algorithm first aligns all input images specified
-    in the `imglist` to the FIRST image in that list.  When this fit is successful,
+    in the ``imglist`` to the FIRST image in that list.  When this fit is successful,
     it insures that the images are aligned RELATIVE to each other.  This set of co-aligned
-    WCSs are then fit to the specified `reference_catalog` to improve the absolute
+    WCSs are then fit to the specified ``reference_catalog`` to improve the absolute
     astrometry for all input images (when successful).
 
     Parameters
     ----------
     imglist : list
-        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
+        List of input image
+        `tweakwcs.correctors.FITSWCSCorrector
+        <https://tweakwcs.readthedocs.io/en/latest/source/correctors.html#tweakwcs.correctors.FITSWCSCorrector>`_
+        objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
 
     fit_pars : dict
         Set of parameters and values to be used for the fit.  This should include
-        `fitgeom` as well as any `tweakwcs.XYXYMatch
+        ``fitgeom`` as well as any `tweakwcs.XYXYMatch
         <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.XYXYMatch>`_
         parameter which the user feels needs to be adjusted to work best with the input data.
 
     Returns
     --------
     imglist : list
-        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects
-        with metadata and source catalogs
+        List of input image
+        `tweakwcs.correctors.FITSWCSCorrector
+        <https://tweakwcs.readthedocs.io/en/latest/source/correctors.html#tweakwcs.correctors.FITSWCSCorrector>`_
+        objects swith metadata and source catalogs
 
     """
     log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
@@ -944,21 +949,27 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     Parameters
     ----------
     imglist : list
-        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
+        List of input image
+        `tweakwcs.correctors.FITSWCSCorrector
+        <https://tweakwcs.readthedocs.io/en/latest/source/correctors.html#tweakwcs.correctors.FITSWCSCorrector>`_
+        objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
 
     fit_pars : dict
         Set of parameters and values to be used for the fit.  This should include
-        `fitgeom` as well as any `tweakwcs.XYXYMatch
+        ``fitgeom`` as well as any `tweakwcs.XYXYMatch
         <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.XYXYMatch>`_
         parameter which the user feels needs to be adjusted to work best with the input data.
 
     Returns
     --------
     imglist : list
-        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
+        List of input image
+        `tweakwcs.correctors.FITSWCSCorrector
+        <https://tweakwcs.readthedocs.io/en/latest/source/correctors.html#tweakwcs.correctors.FITSWCSCorrector>`_
+        objects with metadata and source catalogs
 
     """
     if 'fitgeom' in fit_pars:
@@ -1005,21 +1016,27 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     Parameters
     ----------
     imglist : list
-        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
+        List of input image
+        `tweakwcs.correctors.FITSWCSCorrector
+        <https://tweakwcs.readthedocs.io/en/latest/source/correctors.html#tweakwcs.correctors.FITSWCSCorrector>`_
+        objects with metadata and source catalogs
 
     reference_catalog : Table
         Astropy Table of reference sources for this field
 
     fit_pars : dict
         Set of parameters and values to be used for the fit.  This should include
-        `fitgeom` as well as any `tweakwcs.XYXYMatch
+        ``fitgeom`` as well as any `tweakwcs.XYXYMatch
         <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.XYXYMatch>`_
         parameter which the user feels needs to be adjusted to work best with the input data.
 
     Returns
     --------
     imglist : list
-        List of input image `~tweakwcs.correctors.FITSWCSCorrector` objects with metadata and source catalogs
+        List of input image
+        `tweakwcs.correctors.FITSWCSCorrector
+        <https://tweakwcs.readthedocs.io/en/latest/source/correctors.html#tweakwcs.correctors.FITSWCSCorrector>`_
+        objects with metadata and source catalogs
 
     """
     if 'fitgeom' in fit_pars:

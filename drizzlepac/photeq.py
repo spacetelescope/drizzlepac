@@ -113,11 +113,11 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
         (set by 'phot_kwd') to which the data should be adjusted.
 
     ref_phot_ext : int, str, tuple, None (Default = None)
-        Extension from which the `photeq` should get the reference photometric
-        value specified by the `phot_kwd` parameter. This parameter is ignored
-        if `ref_phot` **is not** `None`. When `ref_phot_ext` is `None`, then
+        Extension from which the ``photeq`` should get the reference photometric
+        value specified by the ``phot_kwd`` parameter. This parameter is ignored
+        if ``ref_phot`` **is not** ``None``. When ``ref_phot_ext`` is ``None``, then
         the reference inverse sensitivity value will be picked from the
-        first `sciext` of the first input image containing `phot_kwd`.
+        first ``sciext`` of the first input image containing ``phot_kwd``.
 
     phot_kwd : str (Default = 'PHOTFLAM')
         Specifies the primary keyword which contains inverse sensitivity
@@ -125,7 +125,7 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
         which data should be rescaled.
 
     aux_phot_kwd : str, None, list of str (Default = 'PHOTFNU')
-        Same as `phot_kwd` but describes *other* photometric keyword(s)
+        Same as ``phot_kwd`` but describes *other* photometric keyword(s)
         that should be corrected by inverse of the scale factor used to correct
         data. These keywords are *not* used to compute conversion factors.
         Multiple keywords can be specified as a Python list of strings:
@@ -138,17 +138,17 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
 
     search_primary : bool (Default = True)
         Specifies whether to first search the primary header for the
-        presence of `phot_kwd` keyword and compute conversion factor based on
-        that value. This is (partially) ignored when `ref_phot` is not `None` in
-        the sense that the value specified by `ref_phot` will be used as the
-        reference *but* in all images primary will be searched for `phot_kwd`
-        and `aux_phot_kwd` and those values will be corrected
+        presence of ``phot_kwd`` keyword and compute conversion factor based on
+        that value. This is (partially) ignored when ``ref_phot`` is not ``None`` in
+        the sense that the value specified by ``ref_phot`` will be used as the
+        reference *but* in all images primary will be searched for ``phot_kwd``
+        and ``aux_phot_kwd`` and those values will be corrected
         (if ``search_primary=True``).
 
     readonly : bool (Default = True)
-        If `True`, `photeq` will not modify input files (nevertheless, it will
+        If ``True``, ``photeq`` will not modify input files (nevertheless, it will
         convert input GEIS or WAVERED FITS files to MEF and could overwrite
-        existing MEF files if `clobber` is set to `True`).
+        existing MEF files if ``clobber`` is set to ``True``).
         The (console or log file) output however will be identical to the case
         when ``readonly=False`` and it can be examined before applying these
         changes to input files.
@@ -163,14 +163,14 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
     Notes
     -----
 
-    By default, `photeq` will search for the first inverse sensitivity
-    value (given by the header keyword specified by the `phot_kwd` parameter,
+    By default, ``photeq`` will search for the first inverse sensitivity
+    value (given by the header keyword specified by the ``phot_kwd`` parameter,
     e.g., PHOTFLAM or PHOTFNU) found in the input images and it will equalize
     all other images to this reference value.
 
-    It is possible to tell `photeq` to look for the reference inverse
+    It is possible to tell ``photeq`` to look for the reference inverse
     sensitivity value only in a specific extension of input images, e.g.: 3,
-    ('sci',3), etc. This can be done by setting `ref_phot_ext` to a specific
+    ('sci',3), etc. This can be done by setting ``ref_phot_ext`` to a specific
     extension. This may be useful, for example, for WFPC2 images: WF3 chip was
     one of the better calibrated chips, and so, if one prefers to have
     inverse sensitivities equalized to the inverse sensitivity of the WF3 chip,
@@ -178,18 +178,18 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
 
     Alternatively, one can provide their own reference inverse sensitivity
     value to which all other images should be "equalized" through the
-    parameter `ref_phot`.
+    parameter ``ref_phot``.
 
     .. note::
 
-       Default parameter values (except for `files`, `readonly`, and `clobber`)
+       Default parameter values (except for ``files``, ``readonly``, and ``clobber``)
        should be acceptable for most HST images.
 
     .. warning::
 
        If images are intended to be used with ``AstroDrizzle``, it is
        recommended that sky background measurement be performed on "equalized"
-       images as the `photeq` is not aware of sky user keyword in the image
+       images as the ``photeq`` is not aware of sky user keyword in the image
        headers and thus it cannot correct sky values already recorded in the
        headers.
 

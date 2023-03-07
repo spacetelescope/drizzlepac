@@ -2,7 +2,7 @@
 This module provides functions and classes that manage the creation
 of the global static masks.
 
-For `staticMask`, the user interface function is :py:func:`createMask`.
+For ``staticMask``, the user interface function is :py:func:`createMask`.
 
 :Authors: Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
 

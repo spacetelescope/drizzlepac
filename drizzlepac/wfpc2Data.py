@@ -1,5 +1,5 @@
 """
-`wfpc2Data` module provides classes used to import WFPC2 specific instrument data.
+``wfpc2Data`` module provides classes used to import WFPC2 specific instrument data.
 
 :Authors: Warren Hack, Ivo Busko, Christopher Hanley
 
@@ -19,7 +19,7 @@ from stsci.tools import fileutil, readgeis
 from .imageObject import imageObject
 from . import buildmask
 
-# Define default public CRDS server URL to use in case user does not specify one in `os.environ`
+# Define default public CRDS server URL to use in case user does not specify one in ``os.environ``
 PUBLIC_CRDS_SERVER_URL = "https://hst-crds.stsci.edu"
 
 # Translation table for any image that does not use the DQ extension of the MEF

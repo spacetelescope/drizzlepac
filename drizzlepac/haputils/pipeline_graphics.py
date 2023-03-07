@@ -111,7 +111,7 @@ def build_vector_plot(sourceCDS, **plot_dict):
         Title of the plot
 
     color : string, optional
-        Single color to use for data points in the plot if `colormap` is not used
+        Single color to use for data points in the plot if ``colormap`` is not used
 
     """
     # Check for optional elements

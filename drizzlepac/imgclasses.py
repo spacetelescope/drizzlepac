@@ -1033,7 +1033,7 @@ class RefImage:
 
     .. warning::
         When ``wcs_list`` is a Python list of ``WCS`` objects,
-        each element must be an instance of `stwcs.wcsutil.HSTWCS`.
+        each element must be an instance of ``stwcs.wcsutil.HSTWCS``.
 
     """
     def __init__(self, wcs_list, catalog, xycatalog=None, cat_origin=None, **kwargs):
@@ -1625,7 +1625,7 @@ def _estimate_2dhist_shift(imgxy, refxy, searchrad=3.0):
 def _find_peak(data, peak_fit_box=5, mask=None):
     """
     Find location of the peak in an array. This is done by fitting a second
-    degree 2D polynomial to the data within a `peak_fit_box` and computing the
+    degree 2D polynomial to the data within a ``peak_fit_box`` and computing the
     location of its maximum. An initial
     estimate of the position of the maximum will be performed by searching
     for the location of the pixel/array element with the maximum value.
@@ -1644,7 +1644,7 @@ def _find_peak(data, peak_fit_box=5, mask=None):
     mask : numpy.ndarray, optional
         A boolean type `~numpy.ndarray` indicating "good" pixels in image data
         (`True`) and "bad" pixels (`False`). If not provided all pixels
-        in `image_data` will be used for fitting.
+        in ``image_data`` will be used for fitting.
 
     Returns
     -------

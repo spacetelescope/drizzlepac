@@ -46,7 +46,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
         Input specifying the exposures from a single visit; either
         a poller output file or a simple list of exposure filenames.
         Exposures in an input list are assumed to be in the current
-        working directory when running the code, unless `input_path`
+        working directory when running the code, unless ``input_path``
         has been provided which points to the location of the exposures
         to be processed.
 
@@ -56,12 +56,12 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
 
     scale : float, optional
         User-defined value for the pixel scale, in arcseconds/pixel,
-        of the sky cells and projection cells. If `None`, default
+        of the sky cells and projection cells. If ``None``, default
         value from grid definition file will be used.
 
     cell_size : float, optional
         User-specified size, in degrees, for each projection cell.
-        If `None`, default value from grid definition file will be
+        If ``None``, default value from grid definition file will be
         used.
 
     diagnostic_mode : bool, optional
@@ -71,8 +71,8 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
     Returns
     --------
     sky_cells : list of objects
-        List of `SkyCell` objects for all sky cells which overlap the
-        exposures provided in `visit_input`.
+        List of `~SkyCell` objects for all sky cells which overlap the
+        exposures provided in ``visit_input``.
     """
     # Interpret input
     if isinstance(visit_input, list):
@@ -170,7 +170,7 @@ def interpret_scells(sky_cells):
     Parameters
     ----------
     sky_cells : dict
-        Dictionary of sky-cell objects from `get_sky_cells`
+        Dictionary of sky-cell objects from `~get_sky_cells`
 
     Returns
     -------
@@ -202,24 +202,24 @@ class SkyFootprint(object):
 
     Attributes
     -----------
-    meta_wcs : `stwcs.wcsutil.HSTWCS`
+    meta_wcs : `stwcs.wcsutil.HSTWCS <https://stwcs.readthedocs.io/en/latest/hstwcs.html>`_
         WCS of entire mosaic
-    members : `list`
+    members : list
         List of filenames for all input exposures that make up the mosaic
-    total_mask : `numpy.ndarray`
+    total_mask : ndarray
         Mask of combined footprint of all input exposures scaled by number of exposures at each pixel
-    scaled_mask : `numpy.ndarray`
+    scaled_mask : ndarray
         Mask of combined footprint scaled by each input's exposure value (e.g., EXPTIME)
-    footprint : `numpy.ndarray`
+    footprint : ndarray
         Binary (numpy.int16) mask of combined footprint of all input exposures
-    corners : `numpy.ndarray`
+    corners : ndarray
         List of vertices of the footprint in sky coordinates
-    xy_corners : `numpy.ndarray`
+    xy_corners : ndarray
         List of vertices of the footprint in X,Y coordinates
-    edge_pixels : `numpy.ndarray`
+    edge_pixels : ndarray
         List of all pixels along the outside edge of the footprint, in
         counter-clockwise order
-    exp_masks : `dict`
+    exp_masks : dict
         Separate entries for each exposure containing:
 
         ``"mask"``
@@ -228,8 +228,8 @@ class SkyFootprint(object):
             positions of the corners of the exposure in mosaic X,Y coordinates
         ``"sky_corners"``
             positions of the corners of the exposure in sky coordinates
-            derived using the input exposure's `wcs.calc_footprint()` method
-    edges : `numpy.ndarray`
+            derived using the input exposure's ``wcs.calc_footprint()`` method
+    edges : ndarray
         Binary (numpy.int16) mask containing only the pixels along the outside edge
          of the total footprint
 
@@ -288,10 +288,10 @@ class SkyFootprint(object):
             List of filenames for all input exposures that overlap the SkyFootprint WCS
 
         scale : bool, optional
-            If specified, scale each chip by the value of the `scale_kw` keyword from the input exposure.
+            If specified, scale each chip by the value of the ``scale_kw`` keyword from the input exposure.
 
         scale_kw : str, optional
-            If `scale` is `True`, get the scaling value from this keyword.  This keyword is assumed to be
+            If ``scale`` is ``True``, get the scaling value from this keyword.  This keyword is assumed to be
             in the PRIMARY header.
 
         """
@@ -463,7 +463,7 @@ class SkyFootprint(object):
 
         Parameters
         ==========
-        member : `str`, optional
+        member : ``str``, optional
             Specify what member to compute the footprint for.
 
         """
@@ -499,7 +499,6 @@ class SkyFootprint(object):
         edges = ndimage.binary_erosion(self.footprint).astype(np.int16)
         self.edges = self.footprint - edges
 
-
     def find_corners(self, member='total'):
         """Extract corners/vertices from footprint
 
@@ -508,26 +507,26 @@ class SkyFootprint(object):
         the corner nearest (within 45deg) of vertical as measured from
         the center of the footprint, then proceeds counter-clockwise
         (North to East).  The corners are initially identified using
-        the `skimage.corner_harris` function on the footprint mask to
+        the ``skimage.corner_harris`` function on the footprint mask to
         identify the starting corner which is closest to veritical.  The
         edge pixels are then ordered counter-clockwise, and corners are
         finally confirmed in order where the slope along each edge changes
         sign.
 
         This results in a list of corner positions
-        which can be used to populate the `S_REGION` keyword and traces
+        which can be used to populate the ``S_REGION`` keyword and traces
         out the outline of the footprint.
 
         The results are saved as the attributes:
 
           * ``edge_pixels`` : the complete list of all pixels, as a list
-            of `numpy.ndarray` instances, that make up the edge of the
+            of ``numpy.ndarray`` instances, that make up the edge of the
             footprint in counter-clockwise order.  For
             multiple chips in the footprint, there will be a separate
             array of the ordered pixel positions per chip.
-          * ``xy_corners`` : `numpy.ndarray` of (X,Y) positions for all
+          * ``xy_corners`` : ``numpy.ndarray`` of (X,Y) positions for all
             identified corners from the footprint.
-          * ``corners`` : `numpy.ndarray` of (RA, Dec) positions for
+          * ``corners`` : ``numpy.ndarray`` of (RA, Dec) positions for
             all identified corners from the footprint.
 
         """
@@ -633,7 +632,7 @@ class SkyFootprint(object):
         """Convert the edges into a SphericalPolygon object.
 
         This method converts the sky coordinates of the footprint edges
-        into a `spherical_geometry.SphericalPolygon` instance.
+        into a ``spherical_geometry.SphericalPolygon`` instance.
 
         The results are saved as the ``polygon`` attribute.
 
@@ -659,18 +658,18 @@ class SkyFootprint(object):
 
         Parameters
         ----------
-        filename : `str`, optional
+        filename : str, optional
             If specified, write out the object to the specified FITS file.
 
-        overwrite : `bool`, optional
+        overwrite : bool, optional
             Specify whether or not to overwrite a previously written footprint FITS file.
 
-        member : `str`, optional
+        member : str, optional
             Name of member, or 'total', footprint to write out as FITS HDUList object.
 
         Returns
         --------
-        hdu : `fits.PrimaryHDU`
+        hdu : ``fits.PrimaryHDU``
             FITS HDU containing the footprint
         """
         self.find_footprint(member=member)
@@ -681,18 +680,18 @@ class SkyFootprint(object):
 
         Parameters
         ----------
-        filename : `str`, optional
+        filename : str, optional
             If specified, write out the object to the specified FITS file.
 
-        overwrite : `bool`, optional
+        overwrite : bool, optional
             Specify whether or not to overwrite a previously written mask FITS file.
 
-        member : `str`, optional
+        member : str, optional
             Name of member, or 'total', footprint to write out as FITS HDUList object.
 
         Returns
         --------
-        hdu : `fits.PrimaryHDU`
+        hdu : ``fits.PrimaryHDU``
             FITS HDU containing the edge pixels mask
         """
         self.find_edges(member=member)
@@ -701,24 +700,24 @@ class SkyFootprint(object):
     def get_mask_hdu(self, filename=None, overwrite=True):
         """Convert the total mask into a FITS HDUList object
 
-        The `total mask` attribute represents the number of exposures per pixel for the mosaic,
+        The ``total mask`` attribute represents the number of exposures per pixel for the mosaic,
         optionally scaled by the exposure time.  This gets written out as a FITS
         PrimaryHDU object by this method.
 
         Parameters
         ----------
-        filename : `str`, optional
+        filename : str, optional
             If specified, write out the object to the specified FITS file.
 
-        overwrite : `bool`, optional
+        overwrite : bool, optional
             Specify whether or not to overwrite a previously written mask FITS file.
 
-        member : `str`, optional
+        member : str, optional
             Name of member, or 'total', footprint to write out as FITS HDUList object.
 
         Returns
         --------
-        hdu : `fits.PrimaryHDU`
+        hdu : ``fits.PrimaryHDU``
             FITS HDU containing the total mask
         """
         return self._get_fits_hdu(self.total_mask, filename=filename, overwrite=overwrite)
@@ -862,10 +861,10 @@ class ProjectionCell(object):
 
     def __init__(self, index=None, band=None, scale=None,
                         nxy=None, overlap=None):
-        """Build projection cell for cell with name `skycell_NNNNN`
+        """Build projection cell for cell with name ``skycell_NNNNN``
 
-        If `band` is not specified, it will open the grid definitions file to
-        obtain the band definition for the cell with the specified `index`.
+        If ``band`` is not specified, it will open the grid definitions file to
+        obtain the band definition for the cell with the specified ``index``.
 
         Parameters
         ----------
@@ -1085,7 +1084,7 @@ class SkyCell(object):
         scale : str or float, optional
             Plate scale to be used to define the SkyCell WCS.  The strings
             'fine' or 'coarse' can be used to refer to default plate scales.
-            Default values are specified in the dict `cell_utils.SUPPORTED_SCALES`.
+            Default values are specified in the dict ``cell_utils.SUPPORTED_SCALES``.
             Alternatively, floating-point values can be provided to specify
             the exact pixel size in arcseconds/pixel should be used.
 
@@ -1531,12 +1530,12 @@ def update_grid_defs(pc_size=5.0, output=None, grid_file=None):
     -----------
     pc_size : float
         Size of each side of the projection cell or width of each band on
-        the sky in degrees.  If `None`, the default value will be read in
-        from the `PC_SIZE` keyword from the PRIMARY header of the default
+        the sky in degrees.  If ``None``, the default value will be read in
+        from the ``PC_SIZE`` keyword from the PRIMARY header of the default
         grid definitions file.
 
     output : str, optional
-        Name of output grid definition file.  If `None`, it will write out
+        Name of output grid definition file.  If ``None``, it will write out
         the updated table with the original filename in the current directory
         overwriting any previous file.
 

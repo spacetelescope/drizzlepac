@@ -39,7 +39,7 @@ environment variables:
       Values (case-insensitive) can be 'on', 'off', 'yes', 'no'.
 
     - ASTROMETRY_APPLY_APRIORI : Replaces the obsolete ASTROMETRY_STEP_CONTROL
-      variable used by `stwcs.updatewcs` to control whether or not a priori WCS
+      variable used by ``stwcs.updatewcs`` to control whether or not a priori WCS
       solutions from the astrometry database should be applied to the data.
       If this is set, it will override any value set in the old variable.
       Values (case-insensitive) can be 'on','off','yes','no'.

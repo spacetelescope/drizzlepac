@@ -72,32 +72,32 @@ by ``DAOFIND`` (without actually using any ``DAOFIND`` code).
         finding. For example, if pixels in the DQ array can be combinations
         of 1, 2, 4, and 8 flags and one wants to consider DQ "defects"
         having flags 2 and 4 as being acceptable for source finding,
-        then `dqbits` should be set to 2+4=6. Then a DQ pixel having values
+        then ``dqbits`` should be set to 2+4=6. Then a DQ pixel having values
         2,4, or 6 will be considered a good pixel, while a DQ pixel with
         a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a "bad" pixel.
 
         Alternatively, one can enter a comma- or '+'-separated list of
         integer bit flags that should be added to obtain the final "good"
         bits. For example, both ``4,8`` and ``4+8`` are equivalent to
-        setting `dqbits` to 12.
+        setting ``dqbits`` to 12.
 
-        | Setting `dqbits` to 0 will make *all* non-zero pixels in the DQ
+        | Setting ``dqbits`` to 0 will make *all* non-zero pixels in the DQ
           mask to be considered "bad" pixels, and the corresponding image
           pixels will not be used for source finding.
 
-        | The default value of `None` will turn off the use of image's DQ
+        | The default value of ``None`` will turn off the use of image's DQ
           array for source finding.
 
-        | In order to reverse the meaning of the `dqbits`
+        | In order to reverse the meaning of the ``dqbits``
           parameter from indicating values of the "good" DQ flags
           to indicating the "bad" DQ flags, prepend '~' to the string
           value. For example, in order not to use pixels with
           DQ flags 4 and 8 for source finding and to consider
           as "good" all other pixels (regardless of their DQ flag),
-          set `dqbits` to ``~4+8``, or ``~4,8``. To obtain the
-          same effect with an `int` input value (except for 0),
+          set ``dqbits`` to ``~4+8``, or ``~4,8``. To obtain the
+          same effect with an ``int`` input value (except for 0),
           enter -(4+8+1)=-13. Following this convention,
-          a `dqbits` string value of ``'~0'`` would be equivalent to
+          a ``dqbits`` string value of ``'~0'`` would be equivalent to
           setting ``dqbits=None``.
 
     **use_sharp_round**: bool (Default = False)

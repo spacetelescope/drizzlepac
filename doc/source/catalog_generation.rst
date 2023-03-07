@@ -132,7 +132,9 @@ with the associated updates, are ultimately chosen as the images to use.
 
 .. attention::
 
-    It cannot be emphasized enough that a well-determined background measurement, leading to a good threshold definition, is very crucial for proper and successful source identification.
+    It cannot be emphasized enough that a well-determined background measurement,
+    leading to a good threshold definition, is very crucial for proper and
+    successful source identification.
 
 1.3.1: Configurable Variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -143,16 +145,18 @@ the general situation, but users can tune these values to optimize for their own
 To this end, users can adjust
 parameter values in the <instrument>_<detector>_catalog_generation_all.json files in the following path:
 /drizzlepac/pars/hap_pars/svm_parameters/<instrument>/<detector>/. Alternatively, a safer way for users to tune
-configuration settings is to first utilize `drizzlepac/haputils/generate_custom_svm_mvm_param_file.py` to generate a
+configuration settings is to first utilize `~drizzlepac.haputils.generate_custom_svm_mvm_param_file` to generate a
 custom parameter .json file. This parameter file, which is written to the user's current working directory by default,
 contains all default pipeline parameters and allows users to adjust any/or all of these parameters as they wish without
 overwriting the hard-coded default values stored in /drizzlepac/pars/hap_pars/svm_parameters/. To run the single visit
 mosaic pipeline using the custom parameter file, users simply need to specify the name of the file with the '-c'
-optional command-line argument when using `drizzlepac/runsinglehap.py` or the 'input_custom_pars_file' optional input
-argument when executing `hapsequencer.run_hap_processing()` from Python or from another python script.
+optional command-line argument when using `~drizzlepac.runsinglehap` or the 'input_custom_pars_file' optional input
+argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` from Python or from another python script.
 
 .. warning::
-    Modification of values in the parameter files stored in /drizzlepac/pars/hap_pars/svm_parameters/ is *strongly* discouraged as there is no way to revert these values back to their defaults once they have been changed.
+    Modification of values in the parameter files stored in /drizzlepac/pars/hap_pars/svm_parameters/ is
+    *strongly* discouraged as there is no way to revert these values back to their defaults once
+    they have been changed.
 
 1.4: Image Kernel
 -----------------
@@ -168,8 +172,8 @@ Astropy tool.
 2: Point (Aperture) Photometric Catalog Generation
 ==================================================
 
-Source Identification Options
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.1: Source Identification Options
+------------------------------------
 A number of options have been implemented within the catalog generation code in order
 to best match the contents of the exposure, including presence of saturated sources and
 cosmic-rays.  The available options include:
@@ -178,11 +182,12 @@ cosmic-rays.  The available options include:
   * iraf : The `photutils IRAFStarFinder class <https://photutils.readthedocs.io/en/stable/api/photutils.detection.IRAFStarFinder.html#photutils.detection.IRAFStarFinder>`_ that implements IRAF's *starfind* algorithm.
   * psf [DEFAULT] : This option is a modification of DAOStarFinder which relies on a library of TinyTim (model) PSFs to locate each source then uses DAOStarFinder to measure the final position and photometry of each identified source.
 
-These options are selected through the "starfinder_algorithm" parameter in the JSON configuration files in the `pars/hap_pars` directory as used by `runsinglehap`.
+These options are selected through the "starfinder_algorithm" parameter in the JSON configuration files in the
+``pars/hap_pars`` directory as used by `~drizzlepac.runsinglehap`.
 
 
-Source Identification using DAOStarFinder
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.1.1: Source Identification using DAOStarFinder
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
 multi-filter detection image. Here, the background computed using one of the algorithms discussed in Section 1.3 is
 applied to the science data to initialize point-source detection processing. This algorithm works by identifying local
@@ -209,13 +214,15 @@ fed into DAOStarFinder is detector-dependent. The parameters can be found in the
     | WFC3/UVIS           | 5.0          |
     +---------------------+--------------+
 
-Source Identification using PSFs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.1.2: Source Identification using PSFs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This option, introduced in Drizzlepac v3.3.0, drizzles model PSFs created using TinyTim to match the orientation and plate
 scale of the observation to look for sources in the image.  Where DAOFind convolves the image with a perfect Gaussian whose
 FWHM has been specified by the user, this option convolves the image with the model PSF to identify all sources which most
-closely matches the PSF used.  Those positions are then turned into a list that is fed to `photutils DAOStarFinder` code to
-measure them using the Gaussian models with a FWHM measured from the model PSF.
+closely matches the PSF used.  Those positions are then turned into a list that is fed to
+`photutils DAOStarFinder
+<https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html#photutils.detection.DAOStarFinder>`_
+code to measure them using the Gaussian models with a FWHM measured from the model PSF.
 
 One benefit of this method is that features in
 the core of saturated or high S/N sources in the image that would normally be erroneously identified as a separate point-source
@@ -223,20 +230,20 @@ by DAOFind will be recognized as part of the full PSF as far out as the model PS
 
 For exposures which are comprised of images taken in different filters, the model PSF used is the drizzle combination of the
 model PSFs for each filter that comprised the image.  This allows the code to best match the PSF found in the image of the
-`total detection` image.   The model PSFs definitely do not exactly match the PSFs from the images due to focus changes and
+``total detection`` image.   The model PSFs definitely do not exactly match the PSFs from the images due to focus changes and
 other telescope effects.  However, they are close enough to allow for reasonably complete identification of actual
 point-sources in the images.  Should the images suffer from extreme variations in the PSF, though, this algorithm will end up
 not identifying valid sources from the image.  The user can provide their own library of PSFs to use in place of the model PSFs
 included with this package in order to more reliably match and measure the sources from their data.  The user-provided PSFs
 can be used to directly replace the PSFs installed with this package as long as they maintain the same naming convention.
-All model PSFs installed with the code can be found in the `pars/psfs` directory, with all PSFs organized by instrument
-and detector.  Each PSF file has a filename of `<instrument>_<detector>_<filter_name>.fits`.  The model PSFs all extend
+All model PSFs installed with the code can be found in the ``pars/psfs`` directory, with all PSFs organized by instrument
+and detector.  Each PSF file has a filename of ``<instrument>_<detector>_<filter_name>.fits``.  The model PSFs all extend
 at least 3.0" in radius in order to recognize the features of the diffraction spikes out as far as possible to avoid as
 many false detections as possible for saturated sources.
 
 
-Aperture Photometry Measurement - Flux Determination
------------------------------------------------------
+2.2: Aperture Photometry Measurement - Flux Determination
+-----------------------------------------------------------
 Aperture photometry is then preformed on the previously identified sources using a pair of concentric
 photometric apertures. The sizes of these apertures depend on the specific detector being used, and are
 listed below in table 1:
@@ -258,7 +265,8 @@ listed below in table 1:
     +---------------------+----------------+----------------+
 
 Raw (non-background-subtracted) flux values are computed by summing up the enclosed flux within the two specified
-apertures using the `photutils.aperture.aperture_photometry <https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
+apertures using the `photutils.aperture.aperture_photometry
+<https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
 tool. Input values are detector-dependent, and can be found in the \*_catalog_generation_all.json files described above
 in section 1.3.
 
@@ -284,9 +292,10 @@ more details).
 --------------------------------------
 2.3.1: Calculation of Flux Uncertainties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-For every identified source, the `photutils.aperture_photometry() <https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
+For every identified source, the `photutils.aperture_photometry()
+<https://photutils.readthedocs.io/en/stable/api/photutils.aperture.aperture_photometry.html>`_
 tool calculates standard deviation values for each aperture based on a 2-dimensional RMS array computed using the
-`photutils.background.Background2d()  <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_
+`photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_
 tool that we previously utilized to compute the 2-dimensional background array in order to background-subtract the
 detection image for source identification. We then compute the final flux errors as seen in the output .ecsv catalog
 file using the following formula:
@@ -371,7 +380,7 @@ these values. Specific flag values are defined below in table 2:
     scientifically dubious are filtered out and not written to the final source catalogs. For all detectors, sources
     with a flag value greater than 5 are filtered out. Users can adjust this value using a custom input parameter file
     and changing the "flag_trim_value" parameter. For more details on how to create a custom parameter file, please
-    refer to the :ref:`generate_custom_svm_param_file` documentation page.
+    refer to the `~drizzlepac.haputils.generate_custom_svm_param_file` documentation page.
 
 2.4.2.1: Assignment of Flag Values 0 (Point Source), 1 (Extended Source), and 16 (Hot Pixels)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -593,7 +602,7 @@ and:
         texptime : Total exposure time of the combined drizzle product
         n1_residual : Remaining fraction of cosmic-rays after applying single-image CR removal
 
-The value of `crfactor` should be adjusted for sub-arrays to account for the smaller area being read out, but
+The value of ``crfactor`` should be adjusted for sub-arrays to account for the smaller area being read out, but
 that logic has not yet been implemented.  The values used in the processing of single-visit mosaics are:
 
     segment-catalog crfactor : 300
@@ -603,7 +612,7 @@ These numbers are deliberately set high to be conservative about which catalogs 
 with position in the orbit, and these are set high enough that it is rare for approved catalogs to be dominated
 by CRs (even though they can obviously have some CRs included.)
 
-Finally, the `n1_residual` term gets set as a configuration parameter with a default value of 5% (0.05).  This
+Finally, the ``n1_residual`` term gets set as a configuration parameter with a default value of 5% (0.05).  This
 indicates that the single-image cosmic-ray identification process was expected to leave 5% of the cosmic-rays
 unflagged. This process can be affected by numerous factors, and having this as a user settable parameter allows
 the user to account for these effects when reprocessing the data manually.  Pipeline processing, though, may

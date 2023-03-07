@@ -58,7 +58,7 @@ def fft_deconv_img(img, psf, freq_limit=0.95, block_size=(1024, 1024)):
 
     This function performs a simple 1-step FFT-based deconvolution of the
     input image using the specified PSF.  The input image get transformed
-    by FFT section-by-section in blocks defined by the `block_size` parameter
+    by FFT section-by-section in blocks defined by the ``block_size`` parameter
     in order to minimize the memory use for what can be extremely large images.
 
     PARAMETERS
@@ -190,17 +190,17 @@ def pad_arr(arr, block=(1024, 1024)):
 
     Parameters
     ----------
-    arr : `numpy.ndarray`
+    arr : numpy.ndarray
         Original input array to be padded to the new size
 
-    block : `tuple` or `int`
+    block : tuple or int
         Size of blocks which should be used to define the output size so that the
         output image is an integer number of blocks with this size.  If only an
         integer is specified, then a block size of (block, block) will be used.
 
     Returns
     -------
-    new_arr : `numpy.ndarray`
+    new_arr : ndarray
         Resized output array of size (n*block[0], m*block[1]).
 
     """
@@ -217,24 +217,24 @@ def create_blocks(arr, block_size=(1024, 1024)):
     """Split input array into uniformly-sized blocks
 
     This function will split the input array into uniformly-sized blocks
-    with the size of each block specified as `block_size`.  The input array
+    with the size of each block specified as ``block_size``.  The input array
     will be zero-padded in either or both axes in order to expand the array
     to an integer number of blocks in both dimensions.
 
     Parameters
     ----------
-    arr : `numpy.ndarray`
+    arr : ndarray
         2-D Input image of size N x M
 
-    block_size : `tuple`, optional
+    block_size : tuple, optional
         Tuple specifying the block size n x m
 
     Returns
     --------
-    block_dict : `dict`
+    block_dict : dict
         This dictionary contains all the information describing all the blocks
         created from the input array consisting of
-        {'slices':[], 'new_shape': (N`, M`), `blocks`: []} where:
+        {'slices':[], 'new_shape': (N`, M`), 'blocks': []} where:
 
         ``"slices"``:
             List of indices [y, x, n, m] describing each block, where,
@@ -243,7 +243,8 @@ def create_blocks(arr, block_size=(1024, 1024)):
         ``"new_shape"``:
             Full size of the padded array that was cut into blocks
         ``"blocks"``:
-            Actual blocks as returned by `skimage.util.view_as_blocks`.
+            Actual blocks as returned by `skimage.util.view_as_blocks
+            <https://scikit-image.org/docs/stable/api/skimage.util.html#view-as-blocks>`_.
 
     """
     if arr.shape[0] % block_size[0] != 0 or arr.shape[1] % block_size[1] != 0:
@@ -272,23 +273,23 @@ def rebuild_arr(block_arr, slices, new_shape, output_shape):
 
     Parameters
     -----------
-    block_arr : `numpy.ndarray`
+    block_arr : ndarray
         List of image blocks which need to be pieced back together into a single
         array.
 
-    slices : `list`
-        List of `slices` from `create_blocks` specifying the location ajd size of each
+    slices : list
+        List of ``slices`` from ``create_blocks`` specifying the location ajd size of each
         block from the original input array.
 
-    new_shape : `tuple`
+    new_shape : tuple
         Full size of the padded image used to create the uniformly sized blocks.
 
-    output_shape : `tuple`
+    output_shape : tuple
         The original shape of the array before padding and creating the blocks.
 
     Returns
     --------
-    out_arr : `numpy.ndarray`
+    out_arr : ndarray
         Single array of same size as original input array before padding and splitting into blocks.
 
     """
@@ -638,27 +639,27 @@ class UserStarFinder(StarFinderBase):
         replicate the results from `DAOFIND`_.
 
     exclude_border : bool, optional
-        Set to `True` to exclude sources found within half the size of
+        Set to ``True`` to exclude sources found within half the size of
         the convolution kernel from the image borders.  The default is
-        `False`, which is the mode used by `DAOFIND`_.
+        ``False``, which is the mode used by `DAOFIND`_.
 
     brightest : int, None, optional
         Number of brightest objects to keep after sorting the full object list.
-        If ``brightest`` is set to `None`, all objects will be selected.
+        If ``brightest`` is set to ``None``, all objects will be selected.
 
     peakmax : float, None, optional
         Maximum peak pixel value in an object. Only objects whose peak pixel
         values are *strictly smaller* than ``peakmax`` will be selected.
         This may be used to exclude saturated sources. By default, when
-        ``peakmax`` is set to `None`, all objects will be selected.
+        ``peakmax`` is set to ``None``, all objects will be selected.
 
         .. warning::
-            `DAOStarFinder` automatically excludes objects whose peak
+            ``DAOStarFinder`` automatically excludes objects whose peak
             pixel values are negative. Therefore, setting ``peakmax`` to a
             non-positive value would result in exclusion of all objects.
 
-    coords : `~astropy.table.Table` or `None`
-        A table, such as returned by `find_peaks`, with approximate X,Y positions
+    coords : `astropy.table.Table <https://docs.astropy.org/en/stable/api/astropy.table.Table.html>`_ or None
+        A table, such as returned by ``find_peaks``, with approximate X,Y positions
         of identified sources.
         If not provided, the DAOFind algorithm will be used to find sources.
 
@@ -735,14 +736,14 @@ class UserStarFinder(StarFinderBase):
 
         mask : 2D bool array, optional
             A boolean mask with the same shape as ``data``, where a
-            `True` value indicates the corresponding element of ``data``
+            ``True`` value indicates the corresponding element of ``data``
             is masked.  Masked pixels are ignored when searching for
             stars.
 
 
         Returns
         -------
-        table : `~astropy.table.Table` or `None`
+        table : `astropy.table.Table <https://docs.astropy.org/en/stable/api/astropy.table.Table.html>`_ or None
             A table of found stars with the following parameters:
 
             * ``id``: unique object identification number.
@@ -762,7 +763,7 @@ class UserStarFinder(StarFinderBase):
               ``-2.5 * log10(flux)``.  The derivation matches that of
               `DAOFIND`_ if ``sky`` is 0.0.
 
-            `None` is returned if no stars are found.
+            ``None`` is returned if no stars are found.
 
         """
         if self.coords:
@@ -850,41 +851,41 @@ def find_point_sources(drzname, data=None, mask=None,
 
     Parameters
     -----------
-    drzname : `str`
+    drzname : str
         Filename of the drizzled image which should be used to find
         point sources.  This will provide the information on the filters
         used on the all the input exposures.
 
-    data : `numpy.ndarray`, optional
+    data : ndarray, optional
         If provided, will be used as the image to be evaluated instead
-        of opening the file specified in `drzname`.
+        of opening the file specified in ``drzname``.
 
-    mask : `numpy.ndarray`, optional
+    mask : ndarray, optional
         If provided, this mask will be used to eliminate regions in the
         input array from being searched for point sources.  Pixels with
         a value of 0 in the mask indicate what pixels should be ignored.
 
-    def_fwhm : `float`, optional
+    def_fwhm : float, optional
         Default FWHM to use in case the model PSF can not be accurately
-        measured by `photutils`.
+        measured by ``photutils``.
 
-    box_size : `int`, optional
+    box_size : int, optional
         Size of the box used to recognize each point source.
 
-    block_size : `tuple`, optional
+    block_size : tuple, optional
         (Y, X) size of the block used by the FFT to process the drizzled image.
 
-    diagnostic_mode : `bool`, optional
+    diagnostic_mode : bool, optional
         Specify whether or not to provide additional diagnostic messages
         and output while processing.
 
     Returns
     -------
-    peaks : `astropy.table.Table`
-        Output from `photutils.detection.find_peaks` for all identified sources
-        with columns `x_peak`, `y_peak` and `peak_value`.
+    peaks : `astropy.table.Table <https://docs.astropy.org/en/stable/api/astropy.table.Table.html>`_
+        Output from ``photutils.detection.find_peaks`` for all identified sources
+        with columns ``x_peak``, ``y_peak`` and ``peak_value``.
 
-    psf_fwhm : `float`
+    psf_fwhm : float
         FWHM (in pixels) of PSF used to identify the sources.
 
     """

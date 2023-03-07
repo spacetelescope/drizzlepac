@@ -960,7 +960,7 @@ class SkyCellExposure(HAPProduct):
         clean : bool
             Specify whether or not to remove file from disk.  If False,
             leave file behind, usually for debugging purposes when
-            `diagnostic_mode` is True.
+            ``diagnostic_mode`` is True.
 
         Returns
         --------
@@ -1153,14 +1153,14 @@ class SkyCellProduct(HAPProduct):
         clean : bool
             Specify whether or not to remove file from disk.  If False,
             leave file behind, usually for debugging purposes when
-            `diagnostic_mode` is True.
+            ``diagnostic_mode`` is True.
 
         Returns
         --------
         del_files : list
             List of input exposure full_filename values for all exposures
             which were NOT modified during processing based on the
-            `input_updated` attribute of the `ExposureProduct`.  This will be empty
+            ``input_updated`` attribute of the ``ExposureProduct``.  This will be empty
             if all exposures had their WCS updated, for example.
 
         """

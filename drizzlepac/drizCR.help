@@ -31,12 +31,12 @@ Other Parameters
 ----------------
 
 driz_cr : bool (Default = False)
-    Perform cosmic-ray detection? If set to `True`, cosmic-rays will be
+    Perform cosmic-ray detection? If set to ``True``, cosmic-rays will be
     detected and used to create cosmic-ray masks based on the algorithms
     from ``deriv`` and ``driz_cr``.
 
 driz_cr_corr : bool (Default = False)
-    Create a cosmic-ray cleaned input image? I set to `True`, a cosmic-ray
+    Create a cosmic-ray cleaned input image? I set to ``True``, a cosmic-ray
     cleaned ``_cor`` image will be generated directly from the input image,
     and a corresponding ``_crmask`` file will be written to document detected
     pixels affected by cosmic-rays.

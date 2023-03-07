@@ -920,7 +920,7 @@ def count_extensions(img, extname='SCI'):
         img.close()
     elif not isinstance(img, fits.HDUList):
         raise TypeError("Argument 'img' must be either a file name (string) " \
-                        "or a `astropy.io.fits.HDUList` object.")
+                        "or a ``astropy.io.fits.HDUList`` object.")
 
     if extname is None:
         return len(img)

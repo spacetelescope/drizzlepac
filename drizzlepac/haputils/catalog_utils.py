@@ -1542,7 +1542,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         Defines
         -------
-        self.segm_img : `photutils.segmentation.SegmentationImage`
+        self.segm_img : ``photutils.segmentation.SegmentationImage``
             Two-dimensional segmentation image where found source regions are labeled with
             unique, non-zero positive integers.
         """

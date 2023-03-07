@@ -375,7 +375,7 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
 
     weight_masks : list of numpy.ndarray, None
         List of imput data weight masks to use for pixel rejection.
-        (Default: `None`)
+        (Default: ``None``)
 
     combine_grow : int
         Radius (pixels) for neighbor rejection. (Default: 1)
@@ -387,7 +387,7 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
         Significance for accepting minimum instead of median. (Default: 3)
 
     fillval : bool
-        Turn on use of imedian/imean. (Default: `False`)
+        Turn on use of imedian/imean. (Default: ``False``)
 
     Returns
     -------

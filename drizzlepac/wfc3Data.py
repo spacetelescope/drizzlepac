@@ -1,5 +1,5 @@
 """
-`wfc3Data` module provides classes used to import WFC3 specific instrument data.
+``wfc3Data`` module provides classes used to import WFC3 specific instrument data.
 
 :Authors: Megan Sosey, Christopher Hanley
 

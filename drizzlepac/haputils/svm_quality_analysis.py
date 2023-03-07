@@ -2115,7 +2115,7 @@ def build_crossmatch_plots(xmatchCDS, data_cols, output_basename='svm_qa'):
         This object contains all the columns relevant to the cross-match plots.
 
     data_cols : list
-        The list of column names for the columns read in to the `xmatchCDS` object.
+        The list of column names for the columns read in to the ``xmatchCDS`` object.
 
     output_basename : str
         String to use as the start of the filename for the output plot pages.
@@ -2205,7 +2205,7 @@ def get_pandas_data(data_source, data_columns):
 
     data_columns : list
         List of column names which should be extracted from the master file
-        `data_source` for use in a plot.
+        ``data_source`` for use in a plot.
 
     Returns
     =======

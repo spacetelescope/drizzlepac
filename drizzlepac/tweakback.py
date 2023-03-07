@@ -1,5 +1,5 @@
 """
-`tweakback` - propagate the "tweaked" solutions back to the original
+``tweakback`` - propagate the "tweaked" solutions back to the original
 input files.
 
 Version 0.4.0 - replaced previous algorithm that used fitting of WCS
@@ -129,7 +129,7 @@ def apply_tweak(drz_file, orig_wcs_name, output_wcs_name=None, input_files=None,
         the resampled image (obtained by drizzling all input images)  **before**
         this resampled image was aligned ("tweaked") to another image/catalog.
 
-        If ``orig_wcs_name`` is `None`, the the original WCS **must be
+        If ``orig_wcs_name`` is ``None``, the the original WCS **must be
         specified** using ``orig_wcs_key``. When ``orig_wcs_key`` is provided,
         ``orig_wcs_name`` is ignored altogether.
 
@@ -143,7 +143,7 @@ def apply_tweak(drz_file, orig_wcs_name, output_wcs_name=None, input_files=None,
     input_files : str, None
         Filenames of distorted images whose primary WCS is to be updated
         with the same transformation as used in the "tweaked" drizzled image.
-        Default value of `None` indicates that input image filenames will be
+        Default value of ``None`` indicates that input image filenames will be
         derived from the ``D*DATA`` keywords written out by the ``AstroDrizzle``.
         If they can not be found, the task will quit.
 
@@ -259,7 +259,7 @@ def apply_tweak(drz_file, orig_wcs_name, output_wcs_name=None, input_files=None,
 
     See Also
     --------
-    stwcs.wcsutil.altwcs: Alternate WCS implementation
+    stwcs.wcsutil.altwcs
 
     """
     print(f"\n*** 'apply_tweak' version {__version__:s} started "
@@ -582,16 +582,16 @@ def tweakback(drzfile, input=None,  origwcs = None,
 
     wcsname : str (Default = None)
         Value of WCSNAME for updated solution written out by ``TweakReg`` as
-        specified by the `wcsname` parameter from ``TweakReg``.  If this is
-        left blank or `None`, it will default to the current ``WCSNAME``
+        specified by the ``wcsname`` parameter from ``TweakReg``.  If this is
+        left blank or ``None``, it will default to the current ``WCSNAME``
         value from the input drzfile.
 
     extname : str (Default = 'SCI')
-        Name of extension in `input` files to be updated with new WCS
+        Name of extension in ``input`` files to be updated with new WCS
 
     force : bool  (Default = False)
         This parameters specified whether or not to force an update of the WCS
-        even though WCS already exists with this solution or `wcsname`?
+        even though WCS already exists with this solution or ``wcsname``?
 
     verbose : bool (Default = False)
         This parameter specifies whether or not to print out additional
@@ -629,7 +629,7 @@ def tweakback(drzfile, input=None,  origwcs = None,
 
     See Also
     --------
-    stwcs.wcsutil.altwcs: Alternate WCS implementation
+    stwcs.wcsutil.altwcs
 
     """
     print("TweakBack Version {:s} started at: {:s}\n"

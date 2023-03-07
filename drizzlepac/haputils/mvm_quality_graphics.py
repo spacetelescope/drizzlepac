@@ -761,7 +761,7 @@ def compute_overlap_stats(footprint, layer_name, log_level=logutil.logging.NOTSE
 
     Parameters
     ----------
-    footprint : `numpy.ndarray`
+    footprint : `~numpy.ndarray`
         Mask of the footprint of a single skycell layer or all the skycell layers combined where
         the pixels in the footprint are bitwise_OR of the input footprints
 

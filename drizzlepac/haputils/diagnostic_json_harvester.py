@@ -62,10 +62,10 @@ def get_json_files(search_path=os.getcwd(),
     """use glob to create a list of json files to harvest
     
     This function looks for all the json files containing qa test results generated
-    by `runastrodriz` and `runsinglehap`.  The search starts in the directory 
-    specified in the `search_path` parameter, but will look in immediate
+    by ``runastrodriz`` and ``runsinglehap``.  The search starts in the directory
+    specified in the ``search_path`` parameter, but will look in immediate
     sub-directories as well if no json files are located in the directory 
-    specified by `search_path`.
+    specified by ``search_path``.
 
     Parameters
     ----------

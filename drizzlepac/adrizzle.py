@@ -77,10 +77,10 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
 # ###  User level interface to run drizzle tasks from TEAL
 #
 def run(configObj, wcsmap=None):
-    """ Interface for running `wdrizzle` from TEAL or Python command-line.
+    """ Interface for running ``wdrizzle`` from TEAL or Python command-line.
 
     This code performs all file ``I/O`` to set up the use of the drizzle code for
-    a single exposure to replicate the functionality of the original `wdrizzle`.
+    a single exposure to replicate the functionality of the original ``wdrizzle``.
     """
 
     # Insure all output filenames specified have .fits extensions
@@ -537,10 +537,10 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
     """ Perform drizzle operation on input to create output.
     The input parameters originally was a list
     of dictionaries, one for each input, that matches the
-    primary parameters for an ``IRAF`` `drizzle` task.
+    primary parameters for an ``IRAF`` ``drizzle`` task.
 
     This method would then loop over all the entries in the
-    list and run `drizzle` for each entry.
+    list and run ``drizzle`` for each entry.
 
     Parameters required for input in paramDict:
         build,single,units,wt_scl,pixfrac,kernel,fillval,
@@ -767,9 +767,9 @@ def run_driz_chip(img, chip, output_wcs, outwcs, template, paramDict, single,
                   doWrite, build, _versions, _numctx, _nplanes, _numchips,
                   _outsci, _outwht, _outctx, _hdrlist, wcsmap):
     """ Perform the drizzle operation on a single chip.
-    This is separated out from `run_driz_img` so as to keep together
+    This is separated out from ``run_driz_img`` so as to keep together
     the entirety of the code which is inside the loop over
-    chips.  See the `run_driz` code for more documentation.
+    chips.  See the ``run_driz`` code for more documentation.
     """
     global time_pre_all, time_driz_all, time_post_all, time_write_all
 

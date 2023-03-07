@@ -1,6 +1,6 @@
 Function for computing and subtracting (or equalizing/matching) the backgroud
 in input images. The algorithm for sky subtraction can be selected through
-the `skymethod` parameter. This function will update the ``MDRIZSKY`` keyword
+the ``skymethod`` parameter. This function will update the ``MDRIZSKY`` keyword
 in the headers of the input files.
 
 Sky subtraction is generally recommended for optimal flagging and removal of
@@ -41,7 +41,7 @@ outExt : str (Default = None)
     then the input image is overwritten.
 
 configObj : configObject (Default = None)
-    An instance of `configObject`
+    An instance of ``configObject``
 
 group : int (Default = None)
     The group of the input image.
@@ -53,37 +53,37 @@ inputDict : dict, optional
     An optional list of parameters specified by the user.
 
     .. note::
-      These are parameters that `configObj` should contain by default. These
-      parameters can be altered on the fly using the `inputDict`. If `configObj`
-      is set to None and there is no `inputDict` information, then the values
+      These are parameters that ``configObj`` should contain by default. These
+      parameters can be altered on the fly using the ``inputDict``. If ``configObj``
+      is set to None and there is no ``inputDict`` information, then the values
       for the parameters will be pulled from the default configuration files
       for the task. These are the same configuration files that are
       referenced in the TEAL parameter interface GUI. If you wish to edit
       these parameters by hand in the GUI, simply set editpars=True.
 
-    Table of optional parameters that should be in `configobj` and can also be
-    specified in `inputDict`.
+    Table of optional parameters that should be in ``configobj`` and can also be
+    specified in ``inputDict``.
 
-    ==============  ===================================================================
-    Name            Definition
-    ==============  ===================================================================
-    `skyuser`       'KEYWORD in header which indicates a sky subtraction value to use'.
-    `skymethod`     'Sky computation method'
-    `skysub`        'Perform sky subtraction?'
-    `skywidth`      'Bin width of histogram for sampling sky statistics (in sigma)'
-    `skystat`       'Sky correction statistics parameter'
-    `skylower`      'Lower limit of usable data for sky (always in electrons)'
-    `skyupper`      'Upper limit of usable data for sky (always in electrons)'
-    `skyclip`       'Number of clipping iterations'
-    `skylsigma`     'Lower side clipping factor (in sigma)'
-    `skyusigma`     'Upper side clipping factor (in sigma)'
-    `skymask_cat`   'Catalog file listing image masks'
-    `use_static`    'Use static mask for skymatch computations?'
-    `sky_bits`      'Bit flags for identifying bad pixels in DQ array'
-    `skyuser`       'KEYWORD indicating a sky subtraction value if done by user'
-    `skyfile`       'Name of file with user-computed sky values'
-    `in_memory`     'Optimize for speed or for memory use'
-    ==============  ===================================================================
+    ===============   ===================================================================
+    Name              Definition
+    ===============   ===================================================================
+    ``skyuser``         'KEYWORD in header which indicates a sky subtraction value to use'.
+    ``skymethod``       'Sky computation method'
+    ``skysub``          'Perform sky subtraction?'
+    ``skywidth``        'Bin width of histogram for sampling sky statistics (in sigma)'
+    ``skystat``         'Sky correction statistics parameter'
+    ``skylower``        'Lower limit of usable data for sky (always in electrons)'
+    ``skyupper``        'Upper limit of usable data for sky (always in electrons)'
+    ``skyclip``         'Number of clipping iterations'
+    ``skylsigma``       'Lower side clipping factor (in sigma)'
+    ``skyusigma``       'Upper side clipping factor (in sigma)'
+    ``skymask_cat``     'Catalog file listing image masks'
+    ``use_static``      'Use static mask for skymatch computations?'
+    ``sky_bits``        'Bit flags for identifying bad pixels in DQ array'
+    ``skyuser``         'KEYWORD indicating a sky subtraction value if done by user'
+    ``skyfile``         'Name of file with user-computed sky values'
+    ``in_memory``       'Optimize for speed or for memory use'
+    ===============   ===================================================================
 
     These optional parameters are described in more detail below in the
     "Other Parameters" section.
@@ -91,14 +91,14 @@ inputDict : dict, optional
 Other Parameters
 ----------------
 skysub : bool (Default = Yes)
-    Turn on or off sky subtraction on the input data. When `skysub` is set
-    to `no`, then `skyuser` field will be enabled and if user specifies a header
+    Turn on or off sky subtraction on the input data. When ``skysub`` is set
+    to ``no``, then ``skyuser`` field will be enabled and if user specifies a header
     keyword showing the sky value in the image, then that value will be used for
     CR-rejection but it will not be subtracted from the (drizzled) image data.
-    If user sets `skysub` to `yes` then `skyuser` field will be disabled
+    If user sets ``skysub`` to ``yes`` then ``skyuser`` field will be disabled
     (and if it is not empty - it will be ignored) and user can use one of the
-    methods available through the `skymethod` parameter to compute the sky
-    or provide a file (see `skyfile` parameter) with values that should be
+    methods available through the ``skymethod`` parameter to compute the sky
+    or provide a file (see ``skyfile`` parameter) with values that should be
     subtracted from (single) drizzled images.
 
 skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'}, optional (Default = 'localmin')
@@ -125,7 +125,7 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'}, optional (Def
     * **'globalmin'**\ : compute a common sky value for all members of
       *all exposures* (see NOTES below). It will compute
       sky values for each chip/image extension (marked for sky
-      subtraction in the :py:attr:`input` parameter) in **all** input
+      subtraction in the ``input`` parameter) in **all** input
       images, find the minimum sky value, and then it will
       subtract the **same** minimum sky value from **all** chips
       (marked for sky subtraction) in **all** images. This method *may*
@@ -187,11 +187,11 @@ use_static : bool, optional (Default Value = True)
 
 
 sky_bits : int, None, optional (Default = 0)
-    Integer sum of all the DQ bit values from the input image's DQ array that should be considered "good" when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ "defects" having flags 2 and 4 as being acceptable for sky computations, then `sky_bits` should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a "bad" pixel.
+    Integer sum of all the DQ bit values from the input image's DQ array that should be considered "good" when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ "defects" having flags 2 and 4 as being acceptable for sky computations, then ``sky_bits`` should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a "bad" pixel.
 
     | Default value (0) will make *all* non-zero pixels in the DQ mask to be considered "bad" pixels, and the corresponding image pixels will not be used for sky computations.
 
-    | Set `sky_bits` to `None` to turn off the use of image's DQ array for sky computations.
+    | Set ``sky_bits`` to ``None`` to turn off the use of image's DQ array for sky computations.
 
     .. note::
         DQ masks (if used), *will* *be* combined with user masks specified in the input @-file.
@@ -207,11 +207,11 @@ skyfile : str, optional (Default Value = '')
 
 skyuser : str (Default = '')
     Name of header keyword which records the sky value already subtracted
-    from the image by the user. The `skyuser` parameter is ignored when
-    `skysub` is set to `yes`.
+    from the image by the user. The ``skyuser`` parameter is ignored when
+    ``skysub`` is set to ``yes``.
 
     .. note::
-      When `skysub`=`no` and `skyuser` field is empty, then ``AstroDrizzle``
+      When ``skysub``=``no`` and ``skyuser`` field is empty, then ``AstroDrizzle``
       will assume that sky background is 0.0 for the purpose of cosmic-ray
       rejection.
 
@@ -235,7 +235,7 @@ and enhances previously available algorithms used by, e.g.,
 `Astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_\ .
 
 First, the standard sky computation algorithm
-(see `skymethod` = ``'localmin'``\ ) was upgraded to be able to use
+(see ``skymethod`` = ``'localmin'``\ ) was upgraded to be able to use
 DQ flags and user supplied masks to remove "bad" pixels from being
 used for sky statistics computations.
 
@@ -247,7 +247,7 @@ Second, two new methods have been introduced: ``'globalmin'`` and
   the background in all input images.
 
 - The ``'match'`` algorithm is somewhat
-  similar to the traditional sky subtraction method (`skymethod`\ =\
+  similar to the traditional sky subtraction method (``skymethod``\ =\
   ``'localmin'``\ ) in the sense that it measures the sky indipendently
   in input images (or detector chips). The major differences are that,
   unlike the traditional method,
@@ -264,7 +264,7 @@ Second, two new methods have been introduced: ``'globalmin'`` and
   only (at least) pair-wise intersection of images without having
   a common intersection region (on the sky) in all images.
 
-  The `'match'` method works in the following way: for each pair
+  The ``'match'`` method works in the following way: for each pair
   of intersecting images, an equation is written that
   requires that average surface brightness in the overlapping part of
   the sky be equal in both images. The final system of equations is then
@@ -316,9 +316,9 @@ Second, two new methods have been introduced: ``'globalmin'`` and
   that correspond to different chips in the detector used to acquire
   the image. The subset of image extensions that form an exposure
   is defined by specifying extensions to be used with input images
-  (see parameter `input`\ ).
+  (see parameter ``input``\ ).
 
-  See help for :py:func:`skypac.parseat.parse_at_line` for details
+  See help for :py:func:`~skypac.parseat.parse_at_line` for details
   on how to specify image extensions.
 
   **Footprint** -- the outline (edge) of the projection of a chip or
@@ -371,13 +371,13 @@ Second, two new methods have been introduced: ``'globalmin'`` and
     and not flux. This distinction is important for images that have
     not been distortion corrected. As a consequence, it is advisable that
     point-like sources be masked through the user-supplied mask files.
-    Alternatively, one can use `upper` parameter to limit the use of
+    Alternatively, one can use ``upper`` parameter to limit the use of
     bright objects in sky computations.
 
   * Normally, distorted flat-fielded images contain cosmic rays. This
     algorithm does not perform CR cleaning. A possible way of minimizing
     the effect of the cosmic rays on sky computations is to use
-    clipping (\ `nclip` > 0) and/or set `upper` parameter to a value
+    clipping (\ ``nclip`` > 0) and/or set ``upper`` parameter to a value
     larger than most of the sky background (or extended source) but
     lower than the values of most CR pixels.
 

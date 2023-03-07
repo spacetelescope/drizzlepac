@@ -80,7 +80,7 @@ starting at 0 at δ = −90° (South Pole) and ending at 2643 at δ = +90° (Nor
   (ordered by increasing RA) starting at 0 at the south pole, 1–9 at δ = −86°, etc.
 
 All these definitions, including how finely each ProjectionCell should be divided to define the SkyCells, are encoded in a
-FITS table installed as part of the `drizzlepac` package:
+FITS table installed as part of the ``drizzlepac`` package:
 
     drizzlepac/pars/allsky_cells.fits
 
@@ -141,7 +141,7 @@ and the WCS solutions defined in them will, by default, **be used as-is** to cre
 generated in the HST pipeline and stored in the HST archive will be generated using FLT/FLC files that have been aligned
 to an astrometric catalog like GAIAeDR3 during SVM processing, if alignment was possible at all for the exposure.  The full
 set of parameters that can be used to control the sky cell definitions and IDs can be found in the
-:ref:`MVM Processing Code API page<multivisit_api>`.
+:ref:`MVM Processing Code API page <multivisit_api>`.
 
 Exposures in an input list are assumed to be in the current working directory when running the code,
 unless **input_path** has been provided which points to the location of the exposures to be processed.
@@ -159,8 +159,8 @@ can be seen here:
   Footprints of HST/ACS and HST/WFC3 observations of the the quasar PG1202+281 and surrounding area.
 
 There were 25 FLT and FLC exposures taken as part of this proposal making up these footprints.  The list of these
-files defined what was provided as **visit_input** to the `cell_utils.get_sky_cells()` function to get these SkyCell
-definitions:
+files defined what was provided as **visit_input** to the :py:func:`~drizzlepac.haputils.cell_utils.get_sky_cells`
+function to get these SkyCell definitions:
 
 .. code:: python
 
@@ -177,7 +177,7 @@ This indicates that these exposures overlap 5 SkyCells in 2 ProjectionCells **p1
 defined SkyCell object for each SkyCell entry in this dictionary.  Each SkyCell object includes a list of all the
 exposures that overlap just that SkyCell, which can be used to generate those mosaics.  Full details of the contents
 of the SkyCell object can be found in the
-:ref:`Multi-visit Processing API documentation<multivisit_api>`.
+:ref:`Multi-visit Processing API documentation <multivisit_api>`.
 
 We can see that one SkyCell includes all exposures using:
 
@@ -199,8 +199,8 @@ Input Poller File
 ------------------
 The MVM processing could simply combine whatever input files are present in the current working directory.  However,
 that may result in working with more than 1 SkyCell at a time which can, for some steps, end up requiring more memory
-or disk space than is available on the system.  Therefore, the code relies on an input `poller file` which specifies exactly
-what files should be processed at one time.  This ASCII CSV-formatted input `poller file` will only contain
+or disk space than is available on the system.  Therefore, the code relies on an input ``poller file`` which specifies exactly
+what files should be processed at one time.  This ASCII CSV-formatted input ``poller file`` will only contain
 the names of exposures which
 overlap only a single SkyCell regardless of instrument, detector or any other observational configuration.
 
@@ -221,7 +221,7 @@ the same SkyCell dictionary defined earlier with the commands:
 
 
 The full description of the function used to create this poller file can be found in the
-:ref:`Multi-visit Processing Code API documentation<multivisit_api>`.
+:ref:`Multi-visit Processing Code API documentation <multivisit_api>`.
 
 This input file *skycell-p1889x07y19_mvm_input.txt* can then be used as input to the top-level MVM processing code using:
 
@@ -230,7 +230,7 @@ This input file *skycell-p1889x07y19_mvm_input.txt* can then be used as input to
     from drizzlepac import hapmultisequencer
     rv = hapmultisequencer.run_mvm_processing("skycell-p1889x07y19_mvm_poller.txt")
 
-The `poller file` contains 1 line for each input exposure for a given SkyCell.  The form of the file, though,
+The ``poller file`` contains 1 line for each input exposure for a given SkyCell.  The form of the file, though,
 is a comma-separated (CSV) formatted file with all the same information as the SVM input files plus a couple of
 extra columns; namely,
 
@@ -335,7 +335,7 @@ You can verify this interactively by directly calling the code that interprets t
 
 These objects define the WCS, inputs and filenames for each layer for use in creating these products.  Full details
 of the contents of the **SkyCellProduct** can be found in
-:ref:`Multi-visit Processing Code API documentation<multivisit_api>`.
+:ref:`Multi-visit Processing Code API documentation <multivisit_api>`.
 
 
 MVM Processing Steps
@@ -370,7 +370,7 @@ SkyCell Membership
 ------------------
 Data from HST gets organized based on a filename derived from the proposal used to define the observations and how
 HST should take them.  MVM processing, on the other hand, focuses on how the observations relate to each other on the
-sky based on the WCS information.  The `drizzlepac/haputils/cell_utils.py` module includes the code used to interpret
+sky based on the WCS information.  The `~drizzlepac.haputils.cell_utils` module includes the code used to interpret
 the WCS information for exposures and determine what ProjectionCells and SkyCells each exposure overlaps as shown in the
 section on the `Code for Defining SkyCell ID`_.
 
@@ -398,7 +398,7 @@ steps, these files are renamed based on the SkyCell to be generated in the curre
 
 For reference, the original pipeline-assigned name has the format of:
 
-  `IPPPSSOOT_flc.fits`
+  ``IPPPSSOOT_flc.fits``
 
 such as
   * jcz906dvq_flc.fits
@@ -406,7 +406,7 @@ such as
 
 The MVM filename defined for the **input exposures** follows the convention.
 
-  `hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits`
+  ``hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits``
 
 where:
   ==========  =========================================================================
@@ -444,7 +444,7 @@ MVM processing gets controlled through a single function:
     rv = runmultihap.process(input_filename)
 
 This function takes as either form of the input file generated for the input exposures in the current directory
-as the input parameter `input_filename`.  This function then performs all the processing steps automatically to
+as the input parameter ``input_filename``.  This function then performs all the processing steps automatically to
 generate the image mosaics from the exposures listed in the input file.
 
 There are times, though, when the default processing needs to be revised to account for the science goals of the
@@ -461,13 +461,14 @@ MVM_ONLY_CTE
   this is actually turned off ('false') so that all data gets used.
 
 These variables can be set to values of 'on', 'off', 'true', 'false', 'yes' or 'no' in the operating system environment
-or even in the python environment using `os.environ`.
+or even in the python environment using ``os.environ``.
 
-Additionally, the function `hapmultisequencer.run_mvm_processing()`, which gets called by `runmultihap.process()`,
+Additionally, the function :py:func:`~drizzlepac.hapmultisequencer.run_mvm_processing`, which gets called by
+:py:func:`~drizzlepac.runmultihap.perform`,
 has the ability to enable an additional attempt to align all the
 input exposures to the latest astrometric catalog, as well as limit the size of the output mosaics.
 Full details of these parameters are available in the discussion of the
-:ref:`Multi-visit Processing Code API documentation<multivisit_api>`.
+:ref:`Multi-visit Processing Code API documentation <multivisit_api>`.
 
 
 Define SkyCell Layers
@@ -496,7 +497,7 @@ Determine Layers to Process
 ----------------------------
 Specifying what input exposures need to be used to create a SkyCell layer mosaic serves as a critical feature of the
 input file.  Input files simply listing filenames indicate that ALL exposures specified should be used to create MVM
-products.  However, the more descriptive `poller file` CSV format input file provides the ability to limit the processing
+products.  However, the more descriptive ``poller file`` CSV format input file provides the ability to limit the processing
 to only new exposures, while treating already archived versions of the MVM products for all the other SkyCell layers as
 fully updated and not in need of any further processing.  This control comes from the entry that specifies 'NEW' or 'OLD',
 with only those layers with at least 1 'NEW' entry getting defined for processing.
@@ -542,7 +543,7 @@ entire SkyCell which has HST data in any layer.
 Finally, the output drizzle product will have a filename that follows the basic convention used to rename the input
 exposures without the final 'ipppssoo' designation; namely,
 
-  `hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>_<layer>_dr[cz].fits`
+  ``hst_skycell-p<PPPP>x<XX>y<YY>_<instr>_<detector>_<filter>_<layer>_dr[cz].fits``
 
 where:
   ==========  =========================================================================
