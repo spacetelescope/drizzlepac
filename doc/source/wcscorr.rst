@@ -16,7 +16,7 @@ the archive of updates made to the WCS information in the image headers.
 Functions to Manage Legacy OPUS WCS Keywords in the WCS Table
 *************************************************************
 The previously released versions of ``makewcs`` provided
-with `MultiDrizzle` *archives* the original OPUS generated WCS
+with ``MultiDrizzle`` *archives* the original OPUS generated WCS
 keywords using header keywords which have a prefix of "O",
 such as "OCRPIX1".  In order to avoid overwriting or ignoring
 these original values, these functions can be used to convert
@@ -27,7 +27,7 @@ Strictly to provide complete support for these OPUS keywords,
 the code will also create, if the user desires, prefix "O" WCS
 keywords from the alternate WCS FITS conventions OPUS keywords.
 This would allow images processed using the new code only can
-then be used with older versions of `MultiDrizzle`, if the user
+then be used with older versions of ``MultiDrizzle``, if the user
 needs such compatibility.
 
 .. moduleauthor:: Warren Hack <help@stsci.edu>

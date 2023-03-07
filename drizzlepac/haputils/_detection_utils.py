@@ -25,14 +25,14 @@ def _filter_data(data, kernel, mode='constant', fill_value=0.0,
     Convolve a 2D image with a 2D kernel.
 
     The kernel may either be a 2D `~numpy.ndarray` or a
-    `~astropy.convolution.Kernel2D` object.
+    `astropy.convolution.Kernel2D <https://docs.astropy.org/en/stable/api/astropy.convolution.Kernel2D.html#kernel2d>`_ object.
 
     Parameters
     ----------
     data : array_like
         The 2D array of the image.
 
-    kernel : array-like (2D) or `~astropy.convolution.Kernel2D`
+    kernel : array-like (2D) or `astropy.convolution.Kernel2D <https://docs.astropy.org/en/stable/api/astropy.convolution.Kernel2D.html#kernel2d>`_
         The 2D kernel used to filter the input ``data``. Filtering the
         ``data`` will smooth the noise and maximize detectability of
         objects with a shape similar to the kernel.
@@ -47,7 +47,7 @@ def _filter_data(data, kernel, mode='constant', fill_value=0.0,
         is ``'constant'``.  The default is ``0.0``.
 
     check_normalization : bool, optional
-        If `True` then a warning will be issued if the kernel is not
+        If ``True`` then a warning will be issued if the kernel is not
         normalized to 1.
     """
     from scipy import ndimage
@@ -91,7 +91,7 @@ class _StarFinderKernel:
     Class to calculate a 2D Gaussian density enhancement kernel.
 
     The kernel has negative wings and sums to zero.  It is used by both
-    `DAOStarFinder` and `IRAFStarFinder`.
+    ``DAOStarFinder`` and ``IRAFStarFinder``.
 
     Parameters
     ----------
@@ -117,7 +117,7 @@ class _StarFinderKernel:
 
     normalize_zerosum : bool, optional
         Whether to normalize the Gaussian kernel to have zero sum, The
-        default is `True`, which generates a density-enhancement kernel.
+        default is ``True``, which generates a density-enhancement kernel.
 
     Notes
     -----
@@ -290,14 +290,14 @@ def _find_stars(data, kernel, threshold_eff, min_separation=None,
         The minimum separation for detected objects in pixels.
 
     mask : 2D bool array, optional
-        A boolean mask with the same shape as ``data``, where a `True`
+        A boolean mask with the same shape as ``data``, where a ``True``
         value indicates the corresponding element of ``data`` is masked.
         Masked pixels are ignored when searching for stars.
 
     exclude_border : bool, optional
-        Set to `True` to exclude sources found within half the size of
+        Set to ``True`` to exclude sources found within half the size of
         the convolution kernel from the image borders.  The default is
-        `False`, which is the mode used by IRAF's `DAOFIND`_ and
+        ``False``, which is the mode used by IRAF's `DAOFIND`_ and
         `starfind`_ tasks.
 
     Returns

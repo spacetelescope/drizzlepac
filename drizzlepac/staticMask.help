@@ -1,8 +1,8 @@
-createMask(input=None, static_sig=4.0, group=None, editpars=False, \
-configObj=None, **inputDict)
+``createMask(input=None, static_sig=4.0, group=None, editpars=False, \
+configObj=None, **inputDict)``
 
 Create a static mask for all input images. The mask contains pixels that fall
-more than `static_sig` RMS below the mode for a given chip or extension.
+more than ``static_sig`` RMS below the mode for a given chip or extension.
 Those severely negative, or low pixels, might result from oversubtraction
 of bad pixels in the dark image, or high sky levels during calibration.
 For example, each ACS WFC image contains a separate image for each of 2 CCDs,
@@ -43,7 +43,7 @@ input : str, None (Default = None)
 
 static : bool (Default = True)
     Create a static bad-pixel mask from the data?  This mask flags all pixels
-    that deviate by more than a value of `static_sig` sigma below the image
+    that deviate by more than a value of ``static_sig`` sigma below the image
     median, since these pixels are typically the result of bad pixel
     oversubtraction in the dark image during calibration.
 

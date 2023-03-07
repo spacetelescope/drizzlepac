@@ -19,7 +19,7 @@
     coords : str, deprecated
         [DEPRECATED] full filename with path of file with x,y coordinates
         Filename given here will be *ignored* if a file has been specified
-        in `coordfile` parameter.
+        in ``coordfile`` parameter.
     coordfile : str, optional
         full filename with path of file with x,y coordinates
     colnames : str, optional
@@ -107,7 +107,7 @@ def xy2rd(input,x=None,y=None,coords=None, coordfile=None,colnames=None,separato
     if coords is not None and coordfile is None:
         coordfile = coords
         warnings.simplefilter('always',DeprecationWarning)
-        warnings.warn("Please update calling code to pass in `coordfile` instead of `coords`.",
+        warnings.warn("Please update calling code to pass in ``coordfile`` instead of ``coords``.",
             category=DeprecationWarning)
         warnings.simplefilter('default',DeprecationWarning)
 

@@ -17,10 +17,10 @@ No mixture of association tables, @files and regular fits files is allowed.
 Files can be in GEIS or MEF format (but not waiver fits).
 
 Runs some sanity checks on the input files.
-If necessary converts files to MEF format (this should not be left to `makewcs`
-because `updatewcs` may be `False`\ ).
+If necessary converts files to MEF format (this should not be left to ``makewcs``
+because ``updatewcs`` may be ``False``\ ).
 Runs makewcs.
-The function `process_input` returns an association table, ivmlist, output name
+The function ``process_input`` returns an association table, ivmlist, output name
 
 The common interface interpreter for MultiDrizzle tasks, 'processCommonInput()',
 not only runs 'process_input()' but 'createImageObject()' and 'defineOutput()'
@@ -366,8 +366,8 @@ def createImageObjectList(files, instrpars, output=None, group=None,
     return imageObjList
 
 def applyContextPar(imageObjectList,contextpar):
-    """ Apply the value of the parameter `context` to the input list, setting
-        the name of the output context image to None if `context` is False
+    """ Apply the value of the parameter ``context`` to the input list, setting
+        the name of the output context image to None if ``context`` is False
     """
     for img in imageObjectList:
         img.updateContextImage(contextpar)

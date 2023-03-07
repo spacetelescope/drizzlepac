@@ -11,7 +11,7 @@ rejection of bad pixels.
 
 The final median image serves as the only output from this step.
 
-For more information on the science applications of the `createMedian` task,
+For more information on the science applications of the ``createMedian`` task,
 see the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_\ .
 
 
@@ -22,7 +22,7 @@ input : str or list of str (Default = None)
     A python list of drizzled image filenames, or just a single filename.
 
 configObj : configObject (Default = None)
-    An instance of `configObject` which overrides default parameter settings.
+    An instance of ``configObject`` which overrides default parameter settings.
 
 editpars : bool (Default = False)
     A parameter that allows user to edit input parameters by hand in the GUI.
@@ -116,7 +116,7 @@ combine_bufsize : float (Default = None)
 
 Examples
 --------
-For `createMedian`, the user interface function is `median`:
+For ``createMedian``, the user interface function is ``median``:
 
 >>> from drizzlepac import createMedian
 >>> createMedian.median('*flt.fits')

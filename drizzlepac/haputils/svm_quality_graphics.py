@@ -427,7 +427,7 @@ def build_crossmatch_plots(xmatchDF, data_cols,
         This object contains all the columns relevant to the cross-match plots.
 
     data_cols : list
-        The list of column names for the columns read in to the `xmatchCDS` object.
+        The list of column names for the columns read in to the ``xmatchCDS`` object.
 
     output_basename : str
         String to use as the start of the filename for the output plot pages.

@@ -37,15 +37,19 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
 
     Parameters
     ----------
-    sky_coord : str or `~astropy.coordinates.SkyCoord` object
+    sky_coord : str or `astropy.coordinates.SkyCoord <https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html>`_ object
         The position around which to cutout. It may be specified as a string ("ra dec" in degrees)
-        or as the appropriate `~astropy.coordinates.SkyCoord` object.
+        or as the appropriate
+        `astropy.coordinates.SkyCoord <https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html>`_
+        object.
 
-    cutout_size : int, array-like, `~astropy.units.Quantity`
+    cutout_size : int, array-like, `astropy.units.Quantity <https://docs.astropy.org/en/stable/api/astropy.units.quantity.Quantity.html>`_
         The size of the cutout array. If ``cutout_size`` is a scalar number or a scalar
-        `~astropy.units.Quantity`, then a square cutout of ``cutout_size`` will be created.
+        `astropy.units.Quantity <https://docs.astropy.org/en/stable/api/astropy.units.quantity.Quantity.html>`_,
+        then a square cutout of ``cutout_size`` will be created.
         If ``cutout_size`` has two elements, they should be in ``(ny, nx)`` order.  Scalar numbers
-        in ``cutout_size`` are assumed to be in units of arcseconds. `~astropy.units.Quantity` objects
+        in ``cutout_size`` are assumed to be in units of arcseconds.
+        `astropy.units.Quantity <https://docs.astropy.org/en/stable/api/astropy.units.quantity.Quantity.html>`_ objects
         must be in angular units.
 
     log_level : int, optional
@@ -54,7 +58,7 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
 
     Returns
     -------
-    final_table : `~astropy.table.Table` object
+    final_table : `astropy.table.Table <https://docs.astropy.org/en/stable/api/astropy.table.Table.html>`_ object
 
     This utility also writes an output ECSV file version of the in-memory filtered data product table,
     final_table.  The output filename is in the form: 
@@ -214,7 +218,7 @@ def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil
 
     Parameters
     ----------
-    products : `~astropy.table.Table` object
+    products : `astropy.table.Table <https://docs.astropy.org/en/stable/api/astropy.table.Table.html>`_ object
         A Table of products as returned by the mvm_id_filenames function. 
 
     archive : Boolean, optional
@@ -297,22 +301,26 @@ def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil
 def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=logutil.logging.INFO, verbose=False):
     """
     This function makes the actual cut in the input MVM drizzled filter- and exposure-level FITS
-    files. As such it is a high-level interface for the `˜astrocut.cutouts.fits_cut` functionality.
+    files. As such it is a high-level interface for the
+    `astrocut.cutouts.fits_cut <https://astrocut.readthedocs.io/en/latest/astrocut/index.html>`_ functionality.
 
     Parameters
     ----------
     input_files : list
         List of fits image filenames from which to create cutouts.
 
-    sky_coord : str or `~astropy.coordinates.SkyCoord` object
+    sky_coord : str or `astropy.coordinates.SkyCoord <https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html>`_ object
         The position around which to cutout. It may be specified as a string ("ra dec" in degrees)
-        or as the appropriate `~astropy.coordinates.SkyCoord` object.
+        or as the appropriate `astropy.coordinates.SkyCoord
+        <https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html>`_ object.
 
-    cutout_size : int, array-like, `~astropy.units.Quantity`
+    cutout_size : int, array-like, `astropy.units.Quantity <https://docs.astropy.org/en/stable/api/astropy.units.quantity.Quantity.html>`_
         The size of the cutout array. If ``cutout_size`` is a scalar number or a scalar
-        `~astropy.units.Quantity`, then a square cutout of ``cutout_size`` will be created.
+        `astropy.units.Quantity <https://docs.astropy.org/en/stable/api/astropy.units.quantity.Quantity.html>`_,
+        then a square cutout of ``cutout_size`` will be created.
         If ``cutout_size`` has two elements, they should be in ``(ny, nx)`` order.  Scalar numbers
-        in ``cutout_size`` are assumed to be in units of arcseconds. `~astropy.units.Quantity` objects
+        in ``cutout_size`` are assumed to be in units of arcseconds.
+        `astropy.units.Quantity <https://docs.astropy.org/en/stable/api/astropy.units.quantity.Quantity.html>`_ objects
         must be in angular units.
 
     output_dir : str
@@ -324,7 +332,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
 
     verbose : bool
         Default False. If True, additional intermediate information is printed for the underlying 
-        `˜spacetelescope.astrocut` utilities.
+        `spacetelescope.astrocut <https://astrocut.readthedocs.io/en/latest/>`_ utilities.
 
     Returns
     -------
@@ -504,13 +512,14 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
     return filename_list
 
 
-#def mvm_combine(cutout_files, img_combiner=None, output_dir=".", log_level=logutil.logging.INFO):
 def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
     """
     This function combines multiple MVM skycell cutout images from the same detector/filter combination
     to create a single view of the requested data.  All of the functions in this module are designed to
     work in conjunction with one another, so the cutout images should be on the user's local disk.  This
-    task is a high-level wrapper for the `˜astrocut.cutout_processing.combine` functionality.
+    task is a high-level wrapper for the
+    `astrocut.cutout_processing.combine
+    <https://astrocut.readthedocs.io/en/latest/astrocut/index.html#combining-cutouts>`_ functionality.
 
     Specifically, this routine will combine filter-level cutouts from multiple skycells, all sharing 
     the same detector and filter.  This routine will also combine exposure-level cutouts from
@@ -522,7 +531,7 @@ def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
     ----------
     cutout_files : list
         List of fits image cutout filenames where the cutouts are presumed to have been created
-        with `drizzlepac.haputils.hapcut_utils.make_the_cut`.
+        with `~drizzlepac.haputils.hapcut_utils.make_the_cut`.
 
     output_dir : str
         Default value '.' - The directory where the output combined files will be saved.
@@ -532,7 +541,7 @@ def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
         .log file. Default value is 20, or 'info'.
 
     """
-
+    # def mvm_combine(cutout_files, img_combiner=None, output_dir=".", log_level=logutil.logging.INFO):
     img_combiner = None
 
     # set logging level to user-specified level

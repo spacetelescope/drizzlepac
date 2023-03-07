@@ -34,7 +34,7 @@ def get_rules_file(product, rules_type="", rules_root=None):
 
     where <instrument name> is the lower-case value of the INSTRUME keyword
           for the exposure, and, optionally, <rules type> is the lower-case
-          value of the `rules_type` parameter.
+          value of the ``rules_type`` parameter.
 
     The default rules file will be found in the package's installation directory,
     renamed for the input exposure and copied into the local working directory.
@@ -342,7 +342,7 @@ def find_footprint(hdu, extname='SCI', extnum=1):
 
     Parameters
     ===========
-    hdu : str or `fits.HDUList`
+    hdu : str or `~fits.HDUList`
         Filename or HDUList for a drizzled image
 
     extname : str, optional
@@ -439,7 +439,7 @@ def append_trl_file(trlfile, drizfile, clean=True):
     Parameters
     -----------
     clean : bool
-        Remove the `drizfile` or not when finished appending it to `trlfile`
+        Remove the ``drizfile`` or not when finished appending it to ``trlfile``
     """
     if not os.path.exists(drizfile):
         return

@@ -362,7 +362,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         wcsmap
             Custom mapping class to use to provide transformation from
             drizzled to blotted WCS.  Default will be to use
-            `drizzlepac.wcs_functions.WCSMap`.
+            `~drizzlepac.wcs_functions.WCSMap`.
 
     """
     _outsci = np.zeros(blot_wcs.array_shape, dtype=np.float32)

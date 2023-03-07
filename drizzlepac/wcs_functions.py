@@ -1012,7 +1012,7 @@ def readAltWCS(fobj, ext, wcskey=' ', verbose=False):
 
     Parameters
     ----------
-    fobj : str, `astropy.io.fits.HDUList`
+    fobj : str, ``astropy.io.fits.HDUList``
         fits filename or fits file object
         containing alternate/primary WCS(s) to be converted
     wcskey : str
@@ -1165,7 +1165,7 @@ def verify_sci_hdrname(filename):
     """Insures that HDRNAME keyword is populated in SCI extensions.
 
     This function checks to make sure the HDRNAME keyword in the SCI
-    extension of the science image `filename` is populated with a valid
+    extension of the science image ``filename`` is populated with a valid
     non-empty string.
     """
     fhdu, closefits = proc_utils._process_input(filename)

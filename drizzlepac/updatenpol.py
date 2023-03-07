@@ -3,64 +3,15 @@
 # $Id: updatenpol.py 8609 2010-01-19 16:22:48Z hack $
 
 """
-`updatenpol`: Update the header of ACS file(s) with the names of new
-``NPOLFILE`` and ``D2IMFILE`` reference files for use with the
-C version of MultiDrizzle (astrodrizzle).
+``updatenpol``::
+
+    Update the header of ACS file(s) with the names of new
+    ``NPOLFILE`` and ``D2IMFILE`` reference files for use with the
+    AstroDrizzle.
 
 :Authors: Warren Hack
 
 :License: :doc:`LICENSE`
-
-
-:Usage:
-    This task can be run from the operating system command line with::
-
-        updatenpol [options] input [refdir]
-
-:Command-line Options:
-    `input`
-        The specification of the files to be updated, either as a single filename,
-        an ASN table name, or wild-card specification
-        of a list of files.
-    `refdir`
-        The name of the directory containing all the new reference files
-        (``*_npl.fits`` and ``*_d2i.fits`` files).
-        If no directory is given, it will look in `jref$` by default.
-
-    ``-h``
-        Print the help (this text).
-
-    ``-l``
-        If specified, copy NPOLFILEs and D2IMFILEs to local directory
-        for use with the input files.
-
-    ``-i``
-        If specified, the program will interactively request the exact
-        names of the ``NPOLFILE`` and ``D2IMFILE`` reference files to be used
-        for updating the header of each file. The value of 'refdir'
-        will be ignored in interactive mode.
-
-
-.. warning:: It will ask for the names of the ``NPOLFILE`` and ``D2IMFILE`` for
-             EACH separate INPUT file when the option `-i` has been specified.
-
-:Example:
-    1. This command will update all the FLT files in the current directory
-    with the new ``NPOLFILE`` and ``D2IMFILE`` reference files found in the 'myjref'
-    directory as defined in the environment::
-
-        updatenpol *flt.fits myjref$
-
-
-:Compatability with MultiDrizzle:
-    The new version of ``MultiDrizzle`` (``AstroDrizzle``) and `updatewcs`
-    only work with the new ``NPOLFILE`` reference file for the ``DGEO`` correction
-    (to replace the use of DGEOFILE).
-    In fact, ``AstroDrizzle`` has been extensively modified to
-    prompt the user with a very lengthy explanation on whether it should
-    stop and allow the user to update the header or continue without
-    applying the ``DGEO`` correction under circumstances when the ``NPOLFILE``
-    keyword can not be found for ACS.
 
 """
 __docformat__ = 'restructuredtext'
@@ -79,7 +30,7 @@ from . import util
 from . import __version__
 
 
-def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
+def update(input, refdir="jref$",local=None, interactive=False, wcsupdate=True):
     """
     Updates headers of files given as input to point to the new reference files
     NPOLFILE and D2IMFILE required with the new C version of MultiDrizzle.
@@ -107,7 +58,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
                 exact names of the new reference files instead of automatically
                 searching a directory for them.
 
-    updatewcs : boolean
+    wcsupdate : boolean
                 Specifies whether or not to update the WCS information in this
                 file to use the new reference files.
 
@@ -115,7 +66,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     --------
     1. A set of associated images specified by an ASN file can be updated to use
        the NPOLFILEs and D2IMFILE found in the local directory defined using
-       the `myjref$` environment variable under PyRAF using::
+       the ``myjref$`` environment variable under PyRAF using::
 
             >>> import updatenpol
             >>> updatenpol.update('j8bt06010_asn.fits', 'myref$')
@@ -132,7 +83,7 @@ def update(input,refdir="jref$",local=None,interactive=False,wcsupdate=True):
     Notes
     -----
     .. warning::
-        This program requires access to the `jref$` directory in order
+        This program requires access to the ``jref$`` directory in order
         to evaluate the DGEOFILE specified in the input image header.
         This evaluation allows the program to get the information it
         needs to identify the correct NPOLFILE.
@@ -293,7 +244,62 @@ def run(configobj=None,editpars=False):
 
 
 def main():
+    """
+    This task can be run from the operating system command line with::
 
+        updatenpol [options] input [refdir]
+
+    Parameters
+    -----------
+    input : str
+        The specification of the files to be updated, either as a single filename,
+        an ASN table name, or wild-card specification
+        of a list of files.
+
+    refdir : str
+        The name of the directory containing all the new reference files
+        (``*_npl.fits`` and ``*_d2i.fits`` files).
+        If no directory is given, it will look in ``jref$`` by default.
+
+    ``-h``
+        Print the help (this text).
+
+    ``-l``
+        If specified, copy NPOLFILEs and D2IMFILEs to local directory
+        for use with the input files.
+
+    ``-i``
+        If specified, the program will interactively request the exact
+        names of the ``NPOLFILE`` and ``D2IMFILE`` reference files to be used
+        for updating the header of each file. The value of 'refdir'
+        will be ignored in interactive mode.
+
+    .. warning::
+        It will ask for the names of the ``NPOLFILE`` and ``D2IMFILE`` for
+        EACH separate INPUT file when the option ``-i`` has been specified.
+
+
+    Examples
+    ---------
+    1. This command will update all the FLT files in the current directory
+    with the new ``NPOLFILE`` and ``D2IMFILE`` reference files found in the 'myjref'
+    directory as defined in the environment::
+
+        updatenpol *flt.fits myjref$
+
+
+    Notes
+    ------
+    The new version of ``MultiDrizzle`` (``AstroDrizzle``) and ``updatewcs``
+    only work with the new ``NPOLFILE`` reference file for the ``DGEO`` correction
+    (to replace the use of DGEOFILE).
+    In fact, ``AstroDrizzle`` has been extensively modified to
+    prompt the user with a very lengthy explanation on whether it should
+    stop and allow the user to update the header or continue without
+    applying the ``DGEO`` correction under circumstances when the ``NPOLFILE``
+    keyword can not be found for ACS.
+
+    """
     import getopt
 
     try:

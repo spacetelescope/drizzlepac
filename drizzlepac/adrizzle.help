@@ -74,10 +74,10 @@ driz_sep_kernel : {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'}
 
 driz_sep_wt_scl : float (Default = exptime)
     This parameter specifies the weighting factor for input image.
-    If `driz_sep_wt_scl`\ =\ ``exptime``, then the scaling value will be set
+    If ``driz_sep_wt_scl``\ =\ ``exptime``, then the scaling value will be set
     equal to the exposure time found in the image header. The use of the
     default value is recommended for producing optimal behavior for most
-    scenarious. It is possible to set `wt_scl`\ =\ 'expsq' for weighting by
+    scenarious. It is possible to set ``wt_scl``\ =\ 'expsq' for weighting by
     the square of the exposure time, which is optimal for read-noise
     dominated images.
 
@@ -91,12 +91,12 @@ driz_sep_pixfrac : float (Default = 1.0)
     input image onto a separate output image, the default value of 1.0
     is best in order to ensure that each output drizzled image is fully
     populated with pixels from the input image. For more information,
-    see the help for the `drizzle` task.
+    see the help for the ``drizzle`` task.
 
 driz_sep_fillval : int or INDEF (Default = INDEF)
     Value to be assigned to output pixels that have zero weight,
     or that receive flux from any input pixels during drizzling.
-    This parameter corresponds to the `fillval` parameter of the `drizzle`
+    This parameter corresponds to the ``fillval`` parameter of the ``drizzle``
     task. If the default of ``INDEF`` is used, and if the weight in
     both the input and output images for a given pixel are zero,
     then the output pixel will be set to the value it would have had if
@@ -109,7 +109,7 @@ driz_sep_bits : int (Default = 0)
     This can also be used to reset pixels to good if they had been
     flagged as cosmic rays during a previous run of ``AstroDrizzle``,
     by adding the value 4096 for ACS and WFPC2 data. Please see the section
-    on Selecting the `Bits` Parameter for a more detailed discussion.
+    on Selecting the ``Bits`` Parameter for a more detailed discussion.
 
 driz_sep_wcs : bool (Default = No)
     Define custom WCS for seperate output images?

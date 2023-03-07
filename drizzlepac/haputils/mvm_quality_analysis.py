@@ -926,7 +926,7 @@ def locate_overlap_regions(ctx_map_ra, layer_dict, log_level=logutil.logging.NOT
 def locate_svm_catalogs(overlap_dict, sourcelist_type, log_level=logutil.logging.NOTSET):
     """ locate SVM-generated sourcelists of overlapping observations for crossmatch. Catalogs are assumed to
     be in the current working directory; additional search paths may be added by appending new paths to
-    the list `search_path_list`.
+    the list ``search_path_list``.
 
     Parameters
     ----------

@@ -32,7 +32,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
     obsid : string or list of strings
         ID or list of IDs for observations to be retrieved from the MAST archive.
         Only the IPPSSOOT (rootname) of exposure or ASN needs to be provided; eg.,
-        ib6v06060.  Additionally, a wild-carded `obsid` can be provided to
+        ib6v06060.  Additionally, a wild-carded ``obsid`` can be provided to
         retrieve all products for a visit; e.g., "ib6v06*".  Data from multiple
         ASNs, exposures or visits can be retrieved by simply providing them as a list.
 
@@ -52,11 +52,11 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
         or 'HAP' or 'both' (default).  By default, all versions of the products
         processed for the requested datasets will be returned.  This would include:
 
-          - pipeline : files processed by `runastrodriz` to include the latest
+          - pipeline : files processed by ``runastrodriz`` to include the latest
                        distortion calibrations and the best possible alignment to GAIA
-                       with `ipppssoot_fl[tc].fits` filenames for FLT/FLC files.
+                       with ``ipppssoot_fl[tc].fits`` filenames for FLT/FLC files.
           - HAP : files processed as a single visit and aligned (as possible) to GAIA
-                  with `hst_<propid>_<visit>_<instr>_<det>_<filter>_<ipppssoo>_fl[tc].fits`
+                  with ``hst_<propid>_<visit>_<instr>_<det>_<filter>_<ipppssoo>_fl[tc].fits``
                   filenames.
 
     Returns

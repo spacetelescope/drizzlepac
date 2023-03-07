@@ -181,10 +181,10 @@ New features added in this version include:
 
 - Support for creating MVMs as generated
   by the 'drizzlepac/hapmultisequencer.py' module or using the
-  new command-line task `runmultihap`.
+  new command-line task ``runmultihap``.
 
 - Tools for generating cutouts of MVM products found in the
-  `drizzlepac/haputils/hapcut_utils.py` module.
+  ``drizzlepac/haputils/hapcut_utils.py`` module.
 
 The most significant revisions and bug fixes that affect
 output products of this version of the code include:
@@ -764,7 +764,7 @@ aligned and combined images with correctly specified WCS keywords:
   unnecessarily small chunk sizes that slowed down ``createMedian`` step.
 
 - Due to the above mentioned redesign in the logic for splitting large images
-  into smaller chunks, now `overlap` can be set to 0 if so desired in the
+  into smaller chunks, now ``overlap`` can be set to 0 if so desired in the
   ``minmed`` combine type. Also, it is automatically ignored (set to 0) for all
   non-``minmed`` combine types. This will result in additional speed-up in the
   Create Median step.
@@ -786,7 +786,7 @@ aligned and combined images with correctly specified WCS keywords:
   single drizzled ("single_sci") images. See
   https://github.com/spacetelescope/drizzlepac/issues/93 for more details.
 
-- Fixed a bug in `drizzlepac` due to which user provided ``combine_lthresh`` or
+- Fixed a bug in ``drizzlepac`` due to which user provided ``combine_lthresh`` or
   ``combine_hthresh`` in the ``CREATE MEDIAN IMAGE`` step were not converted
   correctly to electrons (processing unit). This bug affected processing of
   WFPC2, STIS, NICMOS, and WFC3 data. See
@@ -1103,7 +1103,7 @@ docstrings. The complete list of changes includes:
 - Code was revised to rely entirely on ``astropy.io.fits`` instead of
   stand-alone pyfits.
 
-- Added `photeq` task to account for inverse sensitivity variations across
+- Added ``photeq`` task to account for inverse sensitivity variations across
   detector chips and/or epochs.
 
 - WFPC2 data from the archive with ``DGEOFILE`` reference files will now need

@@ -126,7 +126,7 @@ If the first type of solution is not available, the next solution in the list is
 
 a posteriori solutions
 ^^^^^^^^^^^^^^^^^^^^^^^
-The *a posteriori* solutions, on the other hand, get determined from measuring sources in each image, finding overlapping sources from an astrometric catalog, identifying and cross-matching image sources with sources from the astrometric catalog and performing a fit to correct the WCS.  These type of solutions can not be determined for all datasets due to a number of reasons, such as lack of sources in the image and/or lack of overlapping sources from an astrometric catalog.  When these solutions can be determined for an observation, they are given a value for the `WCSNAME` keyword which follows the convention:
+The *a posteriori* solutions, on the other hand, get determined from measuring sources in each image, finding overlapping sources from an astrometric catalog, identifying and cross-matching image sources with sources from the astrometric catalog and performing a fit to correct the WCS.  These type of solutions can not be determined for all datasets due to a number of reasons, such as lack of sources in the image and/or lack of overlapping sources from an astrometric catalog.  When these solutions can be determined for an observation, they are given a value for the ``WCSNAME`` keyword which follows the convention:
 
   **<Starting WCS>-FIT_<REL|IMG|EVM|SVM>_<Astrometric Catalog>**
 
@@ -139,7 +139,7 @@ The terms are defined as:
   * **<Starting WCS>**
 
     - Value of WCSNAME for the exposure prior to applying any astrometric Solutions
-    - IDC_<rootname> (like `IDC_041802ej`) refers to a distortion-corrected model based on the IDCTAB reference file `0461802ej_idc.fits`.
+    - IDC_<rootname> (like ``IDC_041802ej``) refers to a distortion-corrected model based on the IDCTAB reference file ``0461802ej_idc.fits``.
 
   * **`FIT`**
 
@@ -147,10 +147,10 @@ The terms are defined as:
         
   * **`<REL|IMG|EVM|SVM>`**
 
-    - `REL` : This term denotes the fact that all images were aligned relative (REL) to each other and then aligned to an astrometric catalog.  This attempts to maintain the original relative alignment between the images in a given visit.
-    - `IMG` : This term denotes the fact the the images were fit individually to the astrometric catalog.  These solutions are applied only when relative alignment does not yield a viable fit to the astrometric catalog.
-    - `EVM` : The cross-match and fit to an astrometric catalog was performed on a single exposure by itself as part of processing the exposures of an entire visit. This will typically only apply to those rare visits which do not have enough valid exposures in the visit for alignment.
-    - `SVM` : This term refers to alignment of all the exposures in a single-visit to an astrometric catalog.  The exposures of a visit are aligned to each other (relative alignment), then, as a group, all the exposures are cross-matched and fit to the astrometric catalog specified in the next term in the WCSNAME.
+    - ``REL`` : This term denotes the fact that all images were aligned relative (REL) to each other and then aligned to an astrometric catalog.  This attempts to maintain the original relative alignment between the images in a given visit.
+    - ``IMG`` : This term denotes the fact the the images were fit individually to the astrometric catalog.  These solutions are applied only when relative alignment does not yield a viable fit to the astrometric catalog.
+    - ``EVM`` : The cross-match and fit to an astrometric catalog was performed on a single exposure by itself as part of processing the exposures of an entire visit. This will typically only apply to those rare visits which do not have enough valid exposures in the visit for alignment.
+    - ``SVM`` : This term refers to alignment of all the exposures in a single-visit to an astrometric catalog.  The exposures of a visit are aligned to each other (relative alignment), then, as a group, all the exposures are cross-matched and fit to the astrometric catalog specified in the next term in the WCSNAME.
 
 
   * **<Astrometric Catalog>**
@@ -272,7 +272,7 @@ Headerlet File Structure
 This new object complete with the NPOLFILE and the D2IMFILE extensions
 derived from the full FITS file fully describes the WCS of each chip
 and serves without further modification as the definition of the
-`headerlet`. The listing of the FITS extensions for a `headerlet` for
+``headerlet``. The listing of the FITS extensions for a ``headerlet`` for
 the sample ACS/WFC exposure after writing it out to a file would then be::
 
     EXT#  FITSNAME      FILENAME              EXTVE DIMENS       BITPI OBJECT

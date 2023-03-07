@@ -208,9 +208,9 @@ class HAPFigure:
 
             glyph_color : str, optional
                 The glyph_color of the "shape" glyphs can be specified via an input string
-                (e.g. 'red', 'blue', 'colormap').  The term `colormap` specifies the
+                (e.g. 'red', 'blue', 'colormap').  The term ``colormap`` specifies the
                 use of a pre-defined set of colors for the points defined by the
-                `colormap` column in the input data `source`.  The default value for
+                ``colormap`` column in the input data ``source``.  The default value for
                 this value is "colormap".  *** In particular, 'colormap' should be used when
                 wanting emphasize the data values which correspond to each instrument as this
                 will ensure consistency in all of the grahics.  Note: When 'colormap' is used,
