@@ -31,6 +31,8 @@ Module for defining ProjectionCells and SkyCells for a set of exposures.
 .. autoclass:: drizzlepac.haputils.cell_utils.SkyCell
 
 
+.. _make_poller_files:
+
 haputils.make_poller_files
 ---------------------------
 Module for creating CSV-formatted input 'poller' files for MVM processing.
@@ -38,24 +40,29 @@ Module for creating CSV-formatted input 'poller' files for MVM processing.
 .. automodule:: drizzlepac.haputils.make_poller_files
 .. autofunction:: drizzlepac.haputils.make_poller_files.generate_poller_file
 
+
 haputils.poller_utils
 ---------------------
 Module for interpreting input 'poller' files for MVM processing.
 
-.. automodule:: drizzlepac.haputils.poller_utils
 .. autofunction:: drizzlepac.haputils.poller_utils.interpret_mvm_input
-.. autofunction:: drizzlepac.haputils.poller_utils.build_poller_table
 
 
 haputils.product
 -----------------
 Module for defining classes for MVM processing.
 
-.. automodule:: drizzlepac.haputils.product
-.. autofunction:: drizzlepac.haputils.product.HAPProduct
-.. autofunction:: drizzlepac.haputils.product.FilterProduct
 .. autofunction:: drizzlepac.haputils.product.SkyCellExposure
 .. autofunction:: drizzlepac.haputils.product.SkyCellProduct
 
+
+.. _generate_custom_svm_mvm_param_file:
+
+haputils.generate_custom_svm_mvm_param_file
+---------------------------------------------
+Module for defining custom sets of parameters for SVM and MVM processing.
+
+.. automodule:: drizzlepac.haputils.generate_custom_svm_mvm_param_file
+.. autofunction:: drizzlepac.haputils.generate_custom_svm_mvm_param_file.make_svm_input_file
 
 

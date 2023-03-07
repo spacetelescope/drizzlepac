@@ -163,7 +163,8 @@ include/exclude region file ``input_reg.reg``. Now we can save the regions using
 coordinates, DS9 will use the WCS info from the image onto which the region file
 was loaded. The :py:func:`~drizzlepac.mapreg.MapReg` task tries to automate this process.
 
-**NOTE 2:** :py:func:`~drizzlepac.mapreg.MapReg` relies on the :py:class:`~stregion` package for region file
+**NOTE 2:** :py:func:`~drizzlepac.mapreg.MapReg` relies on the
+`stregion <https://github.com/spacetelescope/stregion>`_ package for region file
 parsing and coordinate transformation. Unfortunately, as of writing,
 **stregion** does not consider distortion corrections when performing coordinate
 transformations. Therefore, there might be a slight discrepancy between the

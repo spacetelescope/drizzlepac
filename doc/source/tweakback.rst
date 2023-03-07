@@ -9,8 +9,9 @@ Tweakback
 .. automodule:: drizzlepac.tweakback
    :members:
    :undoc-members:
-   :exclude-members: getHelpAsString
+   :exclude-members: getHelpAsString, tweakback
+   :noindex:
 
-.. autofunction:: help
-.. autofunction:: tweakback
+.. autofunction:: drizzlepac.tweakback.help
+.. autofunction:: drizzlepac.tweakback.apply_tweak
 

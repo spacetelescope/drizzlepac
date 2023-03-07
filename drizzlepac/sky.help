@@ -318,7 +318,7 @@ Second, two new methods have been introduced: ``'globalmin'`` and
   is defined by specifying extensions to be used with input images
   (see parameter ``input``\ ).
 
-  See help for :py:func:`~skypac.parseat.parse_at_line` for details
+  See help for :py:func:`~stsci.skypac.parseat.parse_at_line` for details
   on how to specify image extensions.
 
   **Footprint** -- the outline (edge) of the projection of a chip or
@@ -327,14 +327,16 @@ Second, two new methods have been introduced: ``'globalmin'`` and
   .. note::
 
     * Footprints are managed by the
-      :py:class:`~spherical_geometry.polygon.SphericalPolygon` class.
+      `spherical_geometry.polygon.SphericalPolygon
+      <https://spacetelescope.github.io/spherical_geometry/api/spherical_geometry.polygon.SphericalPolygon.html>`_
+      class.
 
     * Both footprints *and* associated exposures (image data, WCS
       information, and other header information) are managed by the
-      :py:class:`~skypac.skyline.SkyLine` class.
+      :py:class:`~stsci.skypac.skyline.SkyLine` class.
 
-    * Each :py:class:`~skypac.skyline.SkyLine` object contains one or more
-      :py:class:`~skypac.skyline.SkyLineMember` objects that manage
+    * Each :py:class:`~stsci.skypac.skyline.SkyLine` object contains one or more
+      :py:class:`~stsci.skypac.skyline.SkyLineMember` objects that manage
       both footprints *and* associated *chip* data that form an exposure.
 
 **Remarks:**

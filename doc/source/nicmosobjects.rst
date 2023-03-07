@@ -29,3 +29,7 @@ NICMOS ImageObjects
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. autoclass:: darkobject
+   :members:
+   :undoc-members:

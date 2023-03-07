@@ -78,7 +78,7 @@ the input exposures taking into account the best available distortion model
 for the input exposures.  Being able to compare the combined image to other exposures
 taken of the same field at other times, or even with other telescopes, requires
 that the WCS be defined to come as close to the GAIA frame as possible.  The
-processing done by `~drizzlepac.runastrodriz` attempts to not only apply the most current
+processing done by ``drizzlepac.runastrodriz`` attempts to not only apply the most current
 distortion model, but also the best available pre-computed GAIA-based WCS
 solutions while proceeding to determine it's own solution to the available GAIA
 reference stars for the field-of-view.  It also performs numerous checks to see
@@ -94,7 +94,7 @@ drizzle products for the set of exposures being processed.
 
 Overview
 --------
-The overall logic implemented by `~drizzlepac.runastrodriz` to generate the final set of
+The overall logic implemented by ``drizzlepac.runastrodriz`` to generate the final set of
 drizzle products involves creating multiple sets of drizzle products and ultimately
 selecting one as the 'best'.  The basic steps are outlined here, with following
 sections providing additional detail on each step.
@@ -167,7 +167,7 @@ By default, all the processing steps are turned **on** during pipeline processin
 
 Input Data
 ^^^^^^^^^^^
-The processing code needs to be told what data to process, and for `~drizzlepac.runastrodriz`, a single input filename is all that **can** be provided.  This single input will be either:
+The processing code needs to be told what data to process, and for ``drizzlepac.runastrodriz``, a single input filename is all that **can** be provided.  This single input will be either:
 
   * the name of an association table for a whole set of input exposures with a filename that looks like **'<rootname>_asn.fits'**, where <rootname> is the designation for the association, such as *'ie6d07030_asn.fits'*.
   * the name of a single (uncalibrated) exposure with a filename that looks like **'<rootname>_raw.fits'**.
@@ -219,7 +219,9 @@ for the distortion model to the WCS.  This operation gets performed using the
 
 where ``calfiles_flc`` is the list of CTE-corrected FLC files or in the case there are
 no CTE-corrected files, the list of calibrated FLT files.  Crucially, the use
-of ``use_db=False`` forces ``updatewcs()`` from `~stwcs.updatewcs` to only apply the distortion model to the
+of ``use_db=False`` forces ``updatewcs()`` from
+`stwcs.updatewcs <https://stwcs.readthedocs.io/en/latest/updatewcs.html>`_
+to only apply the distortion model to the
 default WCS to create what is referred to as the **pipeline-default WCS**.  This
 WCS has a ``WCSNAME`` associated with it that has the format ``IDC_<rootname>`` where
 ``<rootname>`` is the rootname of the ``IDCTAB`` reference files applied to the WCS.
@@ -433,7 +435,13 @@ based on the ``IDCTAB`` reference file in use when the database was first establ
 If the ``IDCTAB`` specified in
 the image is not found in any of the WCSs in the database, the *a priori* WCS based on that ``IDCTAB`` get
 determined by the ``stwcs.updatewcs.updatewcs()``. It starts by querying the guide-star web
-interface to retrieve the corrections from the original guide star coordinates using the `stwcs.updatewcs.astrometry_utils.find_gsc_offset function <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html>`_.  These offsets can also evolve as new GAIA catalogs are released to provide more accurate coordinates for the guide stars.  These offsets are then used to correct the reference point of the pipeline-default WCS based on the new ``IDCTAB`` using the ``apply_new_apriori`` method in the `AstrometryDB class <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html#stwcs.updatewcs.astrometry_utils.AstrometryDB.apply_new_apriori>`_.
+interface to retrieve the corrections from the original guide star coordinates using the
+`stwcs.updatewcs.astrometry_utils.find_gsc_offset function <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html>`_.
+These offsets can also evolve as new GAIA catalogs are released to provide more accurate coordinates for the guide
+stars.  These offsets are then used to correct the reference point of the pipeline-default WCS based on the new
+``IDCTAB`` using the ``apply_new_apriori`` method in the
+`AstrometryDB class
+<https://stwcs.readthedocs.io/en/latest/astrometry_utils.html#stwcs.updatewcs.astrometry_utils.AstrometryDB.apply_new_apriori>`_.
 This method uses the same lines of code used to populate the astrometry database with the original set
 of *a priori* WCS solutions. This not only insures that there is
 always a GAIA-based WCS available for all exposures, but it does it using the best available information.
@@ -619,8 +627,11 @@ an attempt to perform an *a posteriori* fit to GAIA:
     * Compute a 2D background for all the observations using ``photutils``
     * Determine a PSF kernel from the detectable sources in the image, if possible.
     * Segments the image after applying the 2D background to identify as many
-      sources as possible above a threshold using `~photutils.segmentation`
-    * Performs source centering using `~photutils.detection.DAOStarFinder`
+      sources as possible above a threshold using
+      `photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_
+    * Performs source centering using
+      `photutils.detection.DAOStarFinder
+      <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_
     * Keeps the position of the single brightest source nearest the center of
       the segment as the catalog position for each segment's object.
     * Checks whether there are enough sources to potentially get a viable linear
@@ -656,7 +667,8 @@ an attempt to perform an *a posteriori* fit to GAIA:
 
     * Evaluate the success/failure state of the fit and the quality of any
       successful fit.
-    * Repeat the fit with :py:func:`~drizzlepac.tweakwcs.imalign.align_wcs` with other GAIA catalogs;
+    * Repeat the fit with `~tweakwcs.imalign.align_wcs`
+      with other GAIA catalogs;
       including GAIA DR1 or any others specified for use in ``runastrodriz`` itself.
     * Select the fit to the GAIA catalog which results in the lowest RMS.
 

@@ -15,17 +15,14 @@ from a single-visit into a uniform set of images.
 
 .. automodule:: drizzlepac.hapsequencer
 .. autofunction:: drizzlepac.hapsequencer.run_hap_processing
+.. autofunction:: drizzlepac.hapsequencer.create_catalog_products
+.. autofunction:: drizzlepac.hapsequencer.create_drizzle_products
 
 
 Supporting code
 ===============
 These modules and functions provide the core functionality for the single-visit
 processing.
-
-.. automodule:: drizzlepac.hapsequencer
-.. autofunction:: drizzlepac.hapsequencer.create_catalog_products
-.. autofunction:: drizzlepac.hapsequencer.create_drizzle_products
-
 
 .. _product_api:
 
@@ -73,6 +70,10 @@ drizzlepac.haputils.photometry_tools
 .. autofunction:: drizzlepac.haputils.photometry_tools.convert_flux_to_abmag
 
 
+Associated Helper Code
+======================
+These modules and functions assist with some of the logistics associated with single-visit processing.
+
 
 .. _processing_utils_api:
 
@@ -83,20 +84,5 @@ drizzlepac.haputils.processing_utils
 .. autofunction:: drizzlepac.haputils.processing_utils.compute_sregion
 
 
-Associated Helper Code
-======================
-These modules and functions assist with some of the logistics associated with single-visit processing.
 
-.. _generate_custom_svm_mvm_param_file:
 
-drizzlepac.haputils.generate_custom_svm_mvm_param_file
--------------------------------------------------------
-.. automodule:: drizzlepac.haputils.generate_custom_svm_mvm_param_file
-.. autofunction:: drizzlepac.haputils.generate_custom_svm_mvm_param_file.make_svm_input_file
-
-.. _make_poller_files:
-
-drizzlepac.haputils.make_poller_files
--------------------------------------
-.. automodule:: drizzlepac.haputils.make_poller_files
-.. autofunction:: drizzlepac.haputils.make_poller_files.generate_poller_file
