@@ -12,64 +12,26 @@ on:
     # Weekly Monday 9AM build
     - cron: "2 20 * * 3"
 
-env:
-  CRDS_SERVER_URL: https://hst-crds.stsci.edu
-  CRDS_PATH: $HOME/crds_cache
-  CRDS_CLIENT_RETRY_COUNT: 3
-  CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-
 jobs:
   check:
-    name: ${{ matrix.toxenv }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [ check-style, check-build ]
-        python-version: [ '3.11' ]
-        os: [ ubuntu-latest ]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
-      - run: pip install "tox>=4.0"
-      - run: tox -e ${{ matrix.toxenv }}
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    with:
+      envs: |
+        - linux: check-style
+        - linux: check-build
   test:
-    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [ test-xdist ]
-        python-version: [ '3.8', '3.9', '3.10' ]
-        os: [ ubuntu-latest, macos-latest ]
-        include:
-          - toxenv: test-devdeps-xdist
-            os: ubuntu-latest
-            python-version: '3.9'
-          - toxenv: test-xdist-cov
-            os: ubuntu-latest
-            python-version: '3.10'
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
-      - run: pip install "tox>=4.0"
-      - run: tox -e ${{ matrix.toxenv }}
-      - if: ${{ contains(matrix.toxenv,'-cov') }}
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: unit
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    with:
+      envs: |
+        - linux: test-xdist
+          python-version: 3.8
+        - linux: test-xdist
+          python-version: 3.9
+        - linux: test-xdist
+          python-version: 3.10
+        - linux: test-xdist
+          python-version: 3.11
+        - macos: test-xdist
+          python-version: 3.11
+        - linux: test-xdist-cov
+          coverage: codecov

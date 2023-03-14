@@ -1,0 +1,20 @@
+name: Weekly cron
+
+on:
+  schedule:
+    # Weekly Monday 6AM build
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    with:
+      envs: |
+        - macos: test-xdist
+          python-version: 3.8
+        - macos: test-xdist
+          python-version: 3.9
+        - macos: test-xdist
+          python-version: 3.10
+        - linux: test-devdeps-xdist
