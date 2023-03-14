@@ -1442,7 +1442,7 @@ def comparesourcelists(slNames=None, imgNames=None, good_flag_sum = 255, plotGen
         for catalog_colname in regressionTestResults.keys():
             data_table_dict = collections.OrderedDict()
             parse_result_line = regressionTestResults[catalog_colname].split()
-            if catalog_colname is "Source Flagging":
+            if catalog_colname == "Source Flagging":
                 key_list = ['Comparison Test Status', 'Percentage of all matched sources with flag value differences']
 
 
