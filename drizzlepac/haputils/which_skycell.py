@@ -58,7 +58,7 @@ if __name__ == '__main__':
                              '"_flt.fits" or "_flc.fits") to process. If not explicitly specified, all '
                              'flc/flt fits files in the current working directory will be processed.')
     in_args = parser.parse_args()
-    if in_args.input_list is "NONE":
+    if in_args.input_list == "NONE":
         img_list = glob.glob("*_fl?.fits")
         if len(img_list) > 0:
             report_skycells(img_list)

@@ -129,8 +129,8 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
                     else:
                         # log.error('File {} cannot be retrieved from MAST.'.format(input_item))
                         # return(empty_list)
-                        log.warn('File {} cannot be retrieved from MAST.'.format(input_item))
-                        log.warn(f"    using pars: {pars}")
+                        log.warning('File {} cannot be retrieved from MAST.'.format(input_item))
+                        log.warning(f"    using pars: {pars}")
                         # look for already downloaded ASN and related files instead
                         # ASN filenames are the only ones that end in a digit
                         if input_item[-1].isdigit():
@@ -141,7 +141,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
                                                                           clobber=True)
                             _local_files = _get_asn_members(_asn_name)
                             if _local_files:
-                                log.warn(f"Using local files instead:\n    {_local_files}")
+                                log.warning(f"Using local files instead:\n    {_local_files}")
                                 total_input_list.extend(_local_files)
                             else:
                                 _lfiles = os.listdir()
