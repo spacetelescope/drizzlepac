@@ -248,7 +248,7 @@ class HAPFigure:
         # from "sourceCDS" are used for the corresponding glyph to set the color
         # and legend text.
         self.glyph_color = data_dict.get('glyph_color', self.glyph_color)
-        if self.glyph_color is 'colormap':
+        if self.glyph_color == 'colormap':
             try:
                 self.legend_group = data_dict.get('legend_group', self.legend_group)
             except Exception:
@@ -285,7 +285,7 @@ class HAPFigure:
     # TODO: Fix the hacky
     def __build_circle_glyph(self):
 
-        if self.glyph_color is 'colormap':
+        if self.glyph_color == 'colormap':
             self.fig.circle(x=self.x,
                             y=self.y,
                             source=self.sourceCDS,
@@ -312,7 +312,7 @@ class HAPFigure:
 
     def __build_square_glyph(self):
 
-        if self.glyph_color is 'colormap':
+        if self.glyph_color == 'colormap':
             self.fig.square(x=self.x,
                             y=self.y,
                             source=self.sourceCDS,

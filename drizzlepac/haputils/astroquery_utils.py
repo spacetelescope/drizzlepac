@@ -124,7 +124,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
     # present on local disk and clobber was turned off, so there are no
     # files to be downloaded.
     if len(data_products_by_id) == 0:
-        log.warn("No new files identified to be retrieved.")
+        log.warning("No new files identified to be retrieved.")
         return local_files
 
     manifest = Observations.download_products(data_products_by_id,
@@ -133,7 +133,7 @@ def retrieve_observation(obsid, suffix=['FLC'], archive=False, clobber=False,
     # Protect against any other problems with finding files to retrieve based on the
     # input file specification.
     if not manifest:
-        log.warn(f"File {data_products_by_id} could not be retrieved.  No files returned.")
+        log.warning(f"File {data_products_by_id} could not be retrieved.  No files returned.")
         return local_files
 
     if not clobber:
