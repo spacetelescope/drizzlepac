@@ -131,11 +131,11 @@ def make_search_string(arg_dict):
     """
     search_string = ""
     for item in arg_dict:
-        if not arg_dict[item] or item is "date_range":
+        if not arg_dict[item] or item == "date_range":
             continue
-        if item is "skycell":
+        if item == "skycell":
             substring = "{} == '{}'".format(item, arg_dict[item])
-        elif item is "spec":
+        elif item == "spec":
             parse_spec = arg_dict[item].split("-")
             substring = "{}.str.contains('{}')".format(item, parse_spec[0])
             if len(parse_spec) == 2:  # Search for two-filter observations (ACS)
