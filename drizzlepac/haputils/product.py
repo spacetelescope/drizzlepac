@@ -30,6 +30,7 @@ from .. import wcs_functions
 from . import align_utils
 from . import astrometric_utils as amutils
 from . import cell_utils
+from . import processing_utils
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
@@ -802,6 +803,11 @@ class ExposureProduct(HAPProduct):
             edp_hdu[0].header['IPPPSSOO'] = edp_hdu[0].header['ROOTNAME']
             edp_hdu[0].header['FILENAME'] = edp_filename
 
+            # Ensure the S_REGION keyword is present in the SCI extension(s) and each
+            # polygon (POLYGON ICRS) in the S_REGION string is closed.  As an example,
+            # S_REGION can be missing for images on the "do not reprocess" list.  
+            processing_utils.compute_sregion(edp_hdu)
+
         return edp_filename
 
 
@@ -874,6 +880,11 @@ class GrismExposureProduct(HAPProduct):
             edp_hdu[0].header['HAPLEVEL'] = (1, 'Classification level of this product')
             edp_hdu[0].header['IPPPSSOO'] = edp_hdu[0].header['ROOTNAME']
             edp_hdu[0].header['FILENAME'] = edp_filename
+
+            # Ensure the S_REGION keyword is present in the SCI extension(s) and each
+            # polygon (POLYGON ICRS) in the S_REGION string is closed.  As an example,
+            # S_REGION can be missing for images on the "do not reprocess" list.  
+            processing_utils.compute_sregion(edp_hdu)
 
         return edp_filename
 
