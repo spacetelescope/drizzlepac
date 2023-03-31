@@ -264,7 +264,7 @@ class OutputImage:
 
         # Start by updating PRIMARY header keywords...
         prihdu.header.set('EXTEND', value=True, after='NAXIS')
-        prihdu.header.set('DATE', time.strftime("%Y-%m-%d"), "date this file was written (yyyy-mm-dd)", before='NEXTEND')
+        prihdu.header.set('DATE', time.strftime("%Y-%m-%d"), "date this file was written (yyyy-mm-dd)", after='NAXIS')
         prihdu.header['NEXTEND'] = nextend
         prihdu.header['FILENAME'] = self.output
         prihdu.header['PROD_VER'] = 'DrizzlePac {}'.format(__version__)
