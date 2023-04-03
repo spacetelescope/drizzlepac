@@ -6,6 +6,7 @@ This module manages the creation of the output image FITS file.
 :License: :doc:`LICENSE`
 
 """
+import time
 from astropy.io import fits
 from stsci.tools import fileutil, logutil
 
@@ -263,6 +264,8 @@ class OutputImage:
 
         # Start by updating PRIMARY header keywords...
         prihdu.header.set('EXTEND', value=True, after='NAXIS')
+        naxis = prihdu.header['NAXIS']
+        prihdu.header.set('DATE', time.strftime("%Y-%m-%d"), "date this file was written (yyyy-mm-dd)", after='NAXIS' if naxis == 0 else f'NAXIS{naxis:d}')
         prihdu.header['NEXTEND'] = nextend
         prihdu.header['FILENAME'] = self.output
         prihdu.header['PROD_VER'] = 'DrizzlePac {}'.format(__version__)
