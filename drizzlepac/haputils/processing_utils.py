@@ -161,8 +161,8 @@ def refine_product_headers(product, total_obj_list):
     phdu['numexp'] = len(input_exposures)
 
     # Convert dates to ISO format
-    phdu['date-beg'] = (Time(phdu['expstart'], format='mjd').iso.replace(' ', 'T'), "Starting Date and Time")
-    phdu['date-end'] = (Time(phdu['expend'], format='mjd').iso.replace(' ', 'T'), "Ending Date and Time")
+    phdu['date-beg'] = (Time(phdu['expstart'], format='mjd').isot, "Starting Date and Time")
+    phdu['date-end'] = (Time(phdu['expend'], format='mjd').isot, "Ending Date and Time")
 
     phdu['equinox'] = hdu[('sci', 1)].header['equinox'] if 'equinox' in hdu[('sci', 1)].header else 2000.0
 
