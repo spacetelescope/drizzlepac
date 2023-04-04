@@ -314,7 +314,6 @@ def compute_sregion(image, extname='SCI'):
                 sregion_str += '{} {} '.format(corner[0], corner[1])
             # Close the polygon
             sregion_str += '{} {} '.format(footprint[0][0], footprint[0][1])
-            print(f"sregion {sregion_str}")
         else:
             if hdu[(extname, extnum)].data.min() == 0 and hdu[(extname, extnum)].data.max() == 0:
                 continue
