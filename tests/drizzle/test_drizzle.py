@@ -76,7 +76,6 @@ def point_function():
     return Get_Grid()
 
 
-
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
 def test_point_kernel(kernel, point_function, new_truth=False):
     """Function tests different c code point kernels (inputs already created on instantiation).
@@ -107,7 +106,7 @@ def test_point_kernel(kernel, point_function, new_truth=False):
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
 def test_zero_input_weight(kernel, point_function):
-    """Tests that do_driz ignores bad pixels, or those that have an input weight (inwht) of 0. 
+    """Tests that do_driz ignores bad pixels, or those that have an input weight (inwht) of 0.
 
     Parameters
     ----------
