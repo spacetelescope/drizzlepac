@@ -1,4 +1,4 @@
-name: drizzlepac
+name: rtd311
 channels:
     - defaults
 dependencies:
@@ -9,25 +9,3 @@ dependencies:
     - scipy
     - astropy
     - graphviz
-    - pip:
-      - -e ..
-      - sphinx
-      - sphinx_rtd_theme
-      - sphinx_automodapi
-      - matplotlib
-      - "spherical_geometry>=1.2.22"
-      - fitsblender
-      - nictools
-      - pyregion
-      - stwcs
-      - stsci.tools
-      - "stsci.image>=2.3.0"
-      - stsci.imagestats
-      - stsci.skypac
-      - stsci.stimage
-      - "tweakwcs>=0.8.0"
-      - stregion
-      - astroquery
-      - photutils
-      - lxml
-      - tables
