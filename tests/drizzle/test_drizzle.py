@@ -70,14 +70,36 @@ def save_array(_data, _name):
     )
 
 
-# ########### TESTS
+def generate_png(_set_point_function, _name):
+    """Added function for displaying the test results as an image map.
+    This should show the expected point kernel response.
+
+    Parameters
+    ----------
+    _set_point_function : Class instance
+        an instance of the point_function class.
+    _name : str
+        The name of the output png file.
+    """
+    # for generating truth files
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure(figsize=(4, 2))
+    ax1 = fig.add_subplot(111, projection=_set_point_function.w1)
+    ax1.imshow(_set_point_function.outsci, origin="lower", cmap="Greys")
+    ax1.set_ylabel(" ")
+    ax1.set_xlabel(" ")
+    fig.savefig(_name)
+
+
+# ############ TESTS
 @pytest.fixture
 def point_function():
     return Get_Grid()
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
-def test_point_kernel(kernel, point_function, new_truth=False):
+def test_point_kernel(kernel, point_function, new_truth=False, return_png=False):
     """Function tests different c code point kernels (inputs already created on instantiation).
 
     Parameters
@@ -88,7 +110,11 @@ def test_point_kernel(kernel, point_function, new_truth=False):
         The Class inintialized in Get_Class which includes all of the inputs need to run cdriz.tdriz.
     new_truth : bool, optional
         Flag, whether to save a new csv truth file from the output data, by default False
+    return_png: bool, optional
+        Flag, whether to create an output image map (png).
     """
+    #truth filename
+    truth_filename =  f"./tests/drizzle/{kernel}_truth"
 
     # add missing/flagged pixels in inwht
     point_function.insci[20:22, 21:22] = 100
@@ -98,9 +124,67 @@ def test_point_kernel(kernel, point_function, new_truth=False):
 
     if new_truth:
         # save new truth file
-        save_array(point_function.outsci, f"./tests/drizzle/{kernel}_truth.csv")
+        save_array(point_function.outsci, f"{truth_filename}.csv")
 
-    truth_array = np.genfromtxt(f"./tests/drizzle/{kernel}_truth.csv", delimiter=",")
+    if return_png:
+        # save truth file as figure
+        generate_png(point_function, f"{truth_filename}.png")
+
+    truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    assert np.allclose(point_function.outsci, truth_array, atol=1e-4)
+
+
+def test_cdriz_edge(
+    point_function, kernel="gaussian", new_truth=True, return_png=True
+):
+    """Similar to test_point_kernel but looking at bright pixels at edge of field. 
+    """
+
+    truth_filename =  f"./tests/drizzle/edge_{kernel}_truth"
+    point_function.insci[0:1, 21:22] = 10
+    cdriz_call(point_function, kernel)
+    if new_truth:
+        save_array(point_function.outsci, f"{truth_filename}.csv")
+    if return_png:
+        generate_png(point_function, f"{truth_filename}.png")
+
+    truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    assert np.allclose(point_function.outsci, truth_array, atol=1e-4)
+
+
+def test_cdriz_large(
+    point_function, kernel="gaussian", new_truth=True, return_png=True
+):
+    """Similar to test_point_kernel but looking at large pixel. 
+    """
+
+    truth_filename =  f"./tests/drizzle/large_sqaure_{kernel}_truth"
+    point_function.insci[21:25, 22:26] = 10
+    cdriz_call(point_function, kernel)
+    if new_truth:
+        save_array(point_function.outsci, f"{truth_filename}.csv")
+    if return_png:
+        generate_png(point_function, f"{truth_filename}.png")
+
+    truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    assert np.allclose(point_function.outsci, truth_array, atol=1e-4)
+
+
+def test_cdriz_non_symmetrical(
+    point_function, kernel="gaussian", new_truth=True, return_png=True
+):
+    """Similar to test_point_kernel but looking at large pixel. 
+    """
+
+    truth_filename =  f"./tests/drizzle/nonsymmetrical_{kernel}_truth"
+    point_function.insci[21:25, 22:23] = 10
+    cdriz_call(point_function, kernel)
+    if new_truth:
+        save_array(point_function.outsci, f"{truth_filename}.csv")
+    if return_png:
+        generate_png(point_function, f"{truth_filename}.png")
+
+    truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
     assert np.allclose(point_function.outsci, truth_array, atol=1e-4)
 
 
