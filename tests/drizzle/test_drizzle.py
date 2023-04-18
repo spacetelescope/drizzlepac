@@ -205,7 +205,7 @@ def test_zero_input_weight(kernel, point_function):
     # resample
     cdriz_call(point_function, kernel)
 
-    # check that no pixel with 0 weight has any counts:
+    # check that any pixel with 0 weight has any counts:
     assert np.allclose(
         np.sum(np.abs(point_function.outsci[(point_function.outwht == 0)])), 0
     )
