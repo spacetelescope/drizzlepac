@@ -3,7 +3,6 @@ import numpy as np
 from astropy import wcs
 from drizzlepac import cdriz
 
-
 def get_wcs(_grid):
     w = wcs.WCS()
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
@@ -14,8 +13,14 @@ def get_wcs(_grid):
     return w
 
 
-# testing set up
 class Get_Grid:
+    """Sets up inputs to call the python wrapper of the c code: cdriz.tdriz.
+    The size of the input and ouput grids can be specified in the arguments for the init().
+    For an input grid of 4 x 4 and output grid of 5 x 5 you would use the following call of the class.
+        
+        Get_Grid(inx=4,iny=4, outx=5, outy=5)
+    
+    """
     def __init__(self, inx=50, iny=60, outx=51, outy=66):
         np.random.seed(0)  # keep same random across each instance
         self.in_grid = (inx, iny)
@@ -70,7 +75,7 @@ def cdriz_call(_set_kernel_pars, kernel):
 
 
 def save_array(_data, _name):
-        np.savetxt(
+    np.savetxt(
         _name,
         X=_data,
         fmt="%1.8f",

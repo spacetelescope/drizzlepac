@@ -1,35 +1,41 @@
 import pytest
 import numpy as np
-from astropy import wcs
-from drizzlepac import cdriz
 import test_setup
+
 
 @pytest.fixture
 def kernel_pars():
-    return test_setup.Get_Grid(inx=4,iny=4, outx=5, outy=5)
+    # get cdriz.triz inputs from test_setup.py
+    _params = test_setup.Get_Grid(inx=3, iny=3, outx=4, outy=4)
+    _params.zero_background()
+    return _params
 
 
 # "square", "point", "turbo", "gaussian", "lanczos3"
-
-def test_square_kernel(kernel_pars):
+@pytest.mark.parametrize("kernel", ["square", "point", 'turbo'])
+def test_square_kernel(kernel_pars, kernel):
     """Function tests different c code point kernels (inputs already created on instantiation).
 
     Parameters
     ----------
-    kernel : str
-        String associated with one of the c code point kernel options.
     kernel_pars : Class
         The Class inintialized in Get_Grid which includes all of the inputs need to run cdriz.tdriz.
     """
-
-    kernel='square'
-
-    # add missing/flagged pixels in inwht
-    kernel_pars.insci[2:3, 2:3] = 10
+    # add bright pixel at center
+    kernel_pars.insci[1:2, 1:2] = 1E4
 
     # resample:
     test_setup.cdriz_call(kernel_pars, kernel)
+    assert np.allclose(np.sum(kernel_pars.outsci), 5000, 1E-7)
 
-    assert np.allclose(kernel_pars.outsci, truth_array, atol=1e-4)
+def test_gaussian_kernel(kernel_pars):
+    """Same as above test but with gaussian kernel."""
+    kernel_pars.insci[1:2, 1:2] = 1E4
+    test_setup.cdriz_call(kernel_pars, "gaussian")
+    assert np.allclose(np.sum(kernel_pars.outsci), 5314.6846, 1E-3)
 
-
+def test_lanczos3_kernel(kernel_pars):
+    """Same as above test but with lanczos3 kernel."""
+    kernel_pars.insci[1:2, 1:2] = 1E4
+    test_setup.cdriz_call(kernel_pars, "lanczos3")
+    assert np.allclose(np.sum(kernel_pars.outsci), 4960.454, 1E-3)
