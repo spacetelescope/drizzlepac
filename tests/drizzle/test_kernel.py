@@ -4,10 +4,9 @@ from astropy import wcs
 from drizzlepac import cdriz
 import test_setup
 
-# ############ TESTS
 @pytest.fixture
 def kernel_pars():
-    return test_setup.Get_Grid()
+    return test_setup.Get_Grid(inx=50, iny=60, outx=51, outy=66)
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
@@ -50,7 +49,7 @@ def test_cdriz_edge(kernel_pars, kernel="gaussian",  new_truth=True, return_png=
     """Similar to test_point_kernel but looking at bright pixels at edge of field."""
 
     truth_filename = f"./tests/drizzle/truth_files/edge_{kernel}_truth"
-    kernel_pars.insci[0:1, 21:22] = 100
+    kernel_pars.insci[0, 21] = 100
     test_setup.cdriz_call(kernel_pars, kernel)
     if new_truth:
         test_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
@@ -106,13 +105,20 @@ def test_zero_input_weight(kernel, kernel_pars):
     kernel_pars : Class
         The Class inintialized in Get_Class which includes all of the inputs need to run cdriz.tdriz.
     """
-    # add missing/flagged pixels in inwht
-    kernel_pars.inwht[20:21, 22:23] = 0
+
+    # zero for all insci
+    kernel_pars.zero_background()
+
+    # add bad bright pixels in insci
+    kernel_pars.insci[0:4, 0:4]=1E8
+    kernel_pars.inwht[0:4, 0:4]=0
+
+    #adding two additinoal bright "sources"
+    kernel_pars.insci[6, 7]=1000
+    kernel_pars.insci[9, 6]=1000
 
     # resample
     test_setup.cdriz_call(kernel_pars, kernel)
 
     # check that any pixel with 0 weight has any counts:
-    assert np.allclose(
-        np.sum(np.abs(kernel_pars.outsci[(kernel_pars.outwht == 0)])), 0
-    )
+    assert np.sum(kernel_pars.outsci) < 1E5

@@ -21,7 +21,7 @@ class Get_Grid:
         Get_Grid(inx=4,iny=4, outx=5, outy=5)
     
     """
-    def __init__(self, inx=50, iny=60, outx=51, outy=66):
+    def __init__(self, inx, iny, outx, outy):
         np.random.seed(0)  # keep same random across each instance
         self.in_grid = (inx, iny)
         self.out_grid = (outx, outy)
