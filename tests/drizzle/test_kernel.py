@@ -43,7 +43,9 @@ def test_point_kernel(kernel, kernel_pars, new_truth=False, return_png=False):
         test_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
     truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
-    assert np.allclose(kernel_pars.outsci, truth_array, atol=1e-4)
+    assert np.allclose(
+        kernel_pars.outsci, truth_array, atol=1e-4
+    ), test_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
 def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
@@ -58,7 +60,9 @@ def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=
         test_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
     truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
-    assert np.allclose(kernel_pars.outsci, truth_array, atol=1e-4)
+    assert np.allclose(
+        kernel_pars.outsci, truth_array, atol=1e-4
+    ), test_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
 def test_cdriz_large(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
@@ -73,7 +77,9 @@ def test_cdriz_large(kernel_pars, kernel="gaussian", new_truth=False, return_png
         test_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
     truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
-    assert np.allclose(kernel_pars.outsci, truth_array, atol=1e-4)
+    assert np.allclose(
+        kernel_pars.outsci, truth_array, atol=1e-4
+    ), test_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
 def test_cdriz_non_symmetrical(

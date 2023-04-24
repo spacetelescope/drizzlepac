@@ -3,6 +3,7 @@ import numpy as np
 from astropy import wcs
 from drizzlepac import cdriz
 
+
 def get_wcs(_grid):
     w = wcs.WCS()
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
@@ -17,10 +18,11 @@ class Get_Grid:
     """Sets up inputs to call the python wrapper of the c code: cdriz.tdriz.
     The size of the input and ouput grids can be specified in the arguments for the init().
     For an input grid of 4 x 4 and output grid of 5 x 5 you would use the following call of the class.
-        
+
         Get_Grid(inx=4,iny=4, outx=5, outy=5)
-    
+
     """
+
     def __init__(self, inx, iny, outx, outy):
         np.random.seed(0)  # keep same random across each instance
         self.in_grid = (inx, iny)
@@ -104,15 +106,16 @@ def generate_png(_set_kernel_pars, _name):
     ax1.set_xlabel(" ")
     fig.savefig(_name)
 
+
 def error_message(_data, _name):
-    """Saves new truth csv file on failure of test. 
+    """Saves new truth csv file on failure of test.
 
     Parameters
     ----------
     _data : np.array
         data to save to new truth file
     _name : str
-        new name of truth file, should be slightly 
+        new name of truth file, should be slightly
         different than current truth file
-    """    
+    """
     save_array(_data, _name)
