@@ -4,13 +4,14 @@ from astropy import wcs
 from drizzlepac import cdriz
 import test_setup
 
+
 @pytest.fixture
 def kernel_pars():
     return test_setup.Get_Grid(inx=50, iny=60, outx=51, outy=66)
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
-def test_point_kernel(kernel, kernel_pars,  new_truth=True, return_png=True):
+def test_point_kernel(kernel, kernel_pars, new_truth=False, return_png=False):
     """Function tests different c code point kernels (inputs already created on instantiation).
 
     Parameters
@@ -45,7 +46,7 @@ def test_point_kernel(kernel, kernel_pars,  new_truth=True, return_png=True):
     assert np.allclose(kernel_pars.outsci, truth_array, atol=1e-4)
 
 
-def test_cdriz_edge(kernel_pars, kernel="gaussian",  new_truth=True, return_png=True):
+def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
     """Similar to test_point_kernel but looking at bright pixels at edge of field."""
 
     truth_filename = f"./tests/drizzle/truth_files/edge_{kernel}_truth"
@@ -60,9 +61,7 @@ def test_cdriz_edge(kernel_pars, kernel="gaussian",  new_truth=True, return_png=
     assert np.allclose(kernel_pars.outsci, truth_array, atol=1e-4)
 
 
-def test_cdriz_large(
-    kernel_pars, kernel="gaussian", new_truth=True,  return_png=True
-):
+def test_cdriz_large(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
     """Similar to test_point_kernel but looking at large pixel."""
 
     truth_filename = f"./tests/drizzle/truth_files/large_sqaure_{kernel}_truth"
@@ -78,7 +77,7 @@ def test_cdriz_large(
 
 
 def test_cdriz_non_symmetrical(
-    kernel_pars, kernel="gaussian", new_truth=True,  return_png=True
+    kernel_pars, kernel="gaussian", new_truth=False, return_png=False
 ):
     """Similar to test_point_kernel but looking at non-symmetrical pixel."""
 
@@ -91,7 +90,9 @@ def test_cdriz_non_symmetrical(
         test_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
     truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
-    assert np.allclose(kernel_pars.outsci, truth_array, atol=1e-4)
+    assert np.allclose(
+        kernel_pars.outsci, truth_array, atol=1e-4
+    ), test_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
@@ -110,15 +111,15 @@ def test_zero_input_weight(kernel, kernel_pars):
     kernel_pars.zero_background()
 
     # add bad bright pixels in insci
-    kernel_pars.insci[0:4, 0:4]=1E8
-    kernel_pars.inwht[0:4, 0:4]=0
+    kernel_pars.insci[0:4, 0:4] = 1e8
+    kernel_pars.inwht[0:4, 0:4] = 0
 
-    #adding two additinoal bright "sources"
-    kernel_pars.insci[6, 7]=1000
-    kernel_pars.insci[9, 6]=1000
+    # adding two additinoal bright "sources"
+    kernel_pars.insci[6, 7] = 1000
+    kernel_pars.insci[9, 6] = 1000
 
     # resample
     test_setup.cdriz_call(kernel_pars, kernel)
 
     # check that any pixel with 0 weight has any counts:
-    assert np.sum(kernel_pars.outsci) < 1E5
+    assert np.sum(kernel_pars.outsci) < 1e5

@@ -103,3 +103,16 @@ def generate_png(_set_kernel_pars, _name):
     ax1.set_ylabel(" ")
     ax1.set_xlabel(" ")
     fig.savefig(_name)
+
+def error_message(_data, _name):
+    """Saves new truth csv file on failure of test. 
+
+    Parameters
+    ----------
+    _data : np.array
+        data to save to new truth file
+    _name : str
+        new name of truth file, should be slightly 
+        different than current truth file
+    """    
+    save_array(_data, _name)
