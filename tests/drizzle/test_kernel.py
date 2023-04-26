@@ -2,12 +2,12 @@ import pytest
 import numpy as np
 from astropy import wcs
 from drizzlepac import cdriz
-import test_setup
+import cdriz_setup
 
 
 @pytest.fixture
 def kernel_pars():
-    return test_setup.Get_Grid(inx=50, iny=60, outx=51, outy=66)
+    return cdriz_setup.Get_Grid(inx=50, iny=60, outx=51, outy=66)
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
@@ -32,20 +32,20 @@ def test_point_kernel(kernel, kernel_pars, new_truth=False, return_png=False):
     kernel_pars.insci[20:22, 21:22] = 100
 
     # resample:
-    test_setup.cdriz_call(kernel_pars, kernel)
+    cdriz_setup.cdriz_call(kernel_pars, kernel)
 
     if new_truth:
         # save new truth file
-        test_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
 
     if return_png:
         # save truth file as figure
-        test_setup.generate_png(kernel_pars, f"{truth_filename}.png")
+        cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
     truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
-    ), test_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
 def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
@@ -53,16 +53,16 @@ def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=
 
     truth_filename = f"./tests/drizzle/truth_files/edge_{kernel}_truth"
     kernel_pars.insci[0, 21] = 100
-    test_setup.cdriz_call(kernel_pars, kernel)
+    cdriz_setup.cdriz_call(kernel_pars, kernel)
     if new_truth:
-        test_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
     if return_png:
-        test_setup.generate_png(kernel_pars, f"{truth_filename}.png")
+        cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
     truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
-    ), test_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
 def test_cdriz_large(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
@@ -70,16 +70,16 @@ def test_cdriz_large(kernel_pars, kernel="gaussian", new_truth=False, return_png
 
     truth_filename = f"./tests/drizzle/truth_files/large_sqaure_{kernel}_truth"
     kernel_pars.insci[21:25, 22:26] = 100
-    test_setup.cdriz_call(kernel_pars, kernel)
+    cdriz_setup.cdriz_call(kernel_pars, kernel)
     if new_truth:
-        test_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
     if return_png:
-        test_setup.generate_png(kernel_pars, f"{truth_filename}.png")
+        cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
     truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
-    ), test_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
 def test_cdriz_non_symmetrical(
@@ -89,16 +89,16 @@ def test_cdriz_non_symmetrical(
 
     truth_filename = f"./tests/drizzle/truth_files/nonsymmetrical_{kernel}_truth"
     kernel_pars.insci[21:25, 22:23] = 100
-    test_setup.cdriz_call(kernel_pars, kernel)
+    cdriz_setup.cdriz_call(kernel_pars, kernel)
     if new_truth:
-        test_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
     if return_png:
-        test_setup.generate_png(kernel_pars, f"{truth_filename}.png")
+        cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
     truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
-    ), test_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
@@ -125,7 +125,7 @@ def test_zero_input_weight(kernel, kernel_pars):
     kernel_pars.insci[9, 6] = 1000
 
     # resample
-    test_setup.cdriz_call(kernel_pars, kernel)
+    cdriz_setup.cdriz_call(kernel_pars, kernel)
 
     # check that any pixel with 0 weight has any counts:
     assert np.sum(kernel_pars.outsci) < 1e5
