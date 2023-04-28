@@ -17,8 +17,47 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.5.1 (unreleased)
-==================
+3.6.0 (28-Apr-2023)
+===================
+
+- Turn off use of ``verify_guiding()`` for WFPC2 images only as its use 
+  incorrectly recognizes diffraction spikes from saturated stars as evidence 
+  of loss of lock and flags those exposures as 'bad'. [#1511]
+ 
+- Ensure processing of all IMAGETYP=EXT WFPC2 targets. [#1505]
+
+- Properly identify neighbor Projection Cells which overlap input
+  exposures. [#1503]
+
+- Updates identify and remove any WFPC2 calibration exposures that 
+  cannot be processed during standard pipeline alignment and drizzling. 
+  The list of recognized calibration target names was updated to 
+  accommodate WFPC2 and to identify exposures to be skipped and deleted 
+  after converting the D0M images into FLT images. [#1514]
+
+- Compute a default kernel for use with astrometric_utils.extract_sources() 
+  function when the kernel parameter is None.  The default kernel is based on 
+  the fwhm parameter of the same function. [#1519]
+
+- Address many ReadTheDocs issues. [#1521 - #1529]
+
+- Write the EXPNAME keyword to the ACS SVM and MVM headers to avoid errors 
+  and enforce consistency with WFC3. [#1530]
+ 
+- Properly populate the S_REGION keyword with a closed polygon for the 
+  pipeline FLT/FLC images. [#1533]
+
+- Compute the S_REGION values for pipeline drizzled products. [#1535]
+
+- Ensure the DATE keyword is written to the primary header of all output
+  drizzled products. The DATE represents the date the file was written. 
+  [#1537]
+
+- Update to ensure the SVM FLT/FLC files all contain the S_REGION keyword
+  and the value of the keyword is a closed polygon. [#1536]
+
+3.5.1 (08-Feb-2023)
+===================
 
 - Turn on use of ``verify_guiding()`` to ignore exposures where guide star
   lock was lost and the stars are trailed. [#1443]
@@ -48,6 +87,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Implement photometric equalization for standard pipeline processing
   (runastrodriz) of WFPC2 data. [#1471]
+
+- Update required to the compute_2d_background() function of the astrometric_utils
+  module to accommodate changes in the PhotUtils API. [#1480]
 
 3.5.0 (10-Oct-2022)
 ====================
