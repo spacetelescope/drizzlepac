@@ -28,6 +28,7 @@ from pathlib import Path
 WCS_SUB_NAME = "FIT_SVM_GAIA"
 POLLER_FILE = "acs_e28_1u_input.out"
 
+
 @pytest.fixture(scope="module")
 def read_csv_for_filenames():
     # Read the CSV poller file residing in the tests directory to extract the individual visit FLT/FLC filenames
@@ -43,7 +44,7 @@ def read_csv_for_filenames():
 @pytest.fixture(scope="module")
 def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     # Create working directory specified for the test
-    curdir = tmp_path_factory.mktemp(os.path.basename(__file__)) 
+    curdir = tmp_path_factory.mktemp(os.path.basename(__file__))
     os.chdir(curdir)
 
     # Establish FLC/FLT lists and obtain the requested data
@@ -57,7 +58,7 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
             flc_flag = fn[0:6] + "*"
         elif fn.lower().endswith("flt.fits") and flt_flag == "":
             flt_flag = fn[0:6] + "*"
-     
+
         # If both flags have been set, then break out the loop early.  It may be
         # that all files have to be checked which means the for loop continues
         # until its natural completion.
@@ -70,20 +71,24 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     flcfiles = []
     fltfiles = []
     if flc_flag:
-        flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
+        flcfiles = aqutils.retrieve_observation(
+            flc_flag, suffix=["FLC"], product_type="pipeline"
+        )
     if flt_flag:
-        fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
+        fltfiles = aqutils.retrieve_observation(
+            flt_flag, suffix=["FLT"], product_type="pipeline"
+        )
 
     flcfiles.extend(fltfiles)
 
     # Keep only the files which exist in BOTH lists for processing
-    files_to_process= set(read_csv_for_filenames).intersection(set(flcfiles))
+    files_to_process = set(read_csv_for_filenames).intersection(set(flcfiles))
 
     # Identify unwanted files from the download list and remove from disk
     files_to_remove = set(read_csv_for_filenames).symmetric_difference(set(flcfiles))
     try:
         for ftr in files_to_remove:
-           os.remove(ftr)
+            os.remove(ftr)
     except Exception as x_cept:
         print("")
         print("Exception encountered: {}.".format(x_cept))
@@ -113,7 +118,9 @@ def construct_manifest_filename(read_csv_for_filenames):
     root = fits.getval(read_csv_for_filenames[0], "ROOTNAME", ext=0).lower()
     tokens_tuple = (inst, root[1:4], root[4:6], "manifest.txt")
     manifest_filename = "_".join(tokens_tuple)
-    print("\nconstruct_manifest_filename. Manifest filename: {}".format(manifest_filename))
+    print(
+        "\nconstruct_manifest_filename. Manifest filename: {}".format(manifest_filename)
+    )
 
     return manifest_filename
 
@@ -146,38 +153,53 @@ def svm_setup(gather_data_for_processing):
 
 # TESTS - Avoid doing an assert in a loop as the test could exit before all the data has processed
 
+
 def test_svm_manifest_name(construct_manifest_filename):
     # Construct the manifest filename from the header of an input file in the list and check it exists.
     path = Path(construct_manifest_filename)
     print("\ntest_svm_manifest. Filename: {}".format(path))
 
     # Ensure the manifest file uses the proper naming convention
-    assert(path.is_file())
+    assert path.is_file()
 
 
 def test_svm_wcs(gather_output_data):
     # Check the output primary WCSNAME includes FIT_SVM_GAIA as part of the string value
-    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith(".fits")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("total") > -1 and files.lower().endswith(".fits")
+    ]
 
     # This check is for all total data products which have the same "type" of WCSNAME -
     # in this case a name akin to *-FIT_SVM_GAIA*.
-    wcsnames = [fits.getval(tdp, "WCSNAME", ext=1).upper().split('-')[1] for tdp in tdp_files]
+    wcsnames = [
+        fits.getval(tdp, "WCSNAME", ext=1).upper().split("-")[1] for tdp in tdp_files
+    ]
     assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same: {wcsnames}"
 
 
 # Due to the way the catalogs are filtered, check the size of the total catalog and one of the filter
-# catalogs separately.  The total catalog has the row removed for each source where the constituent 
+# catalogs separately.  The total catalog has the row removed for each source where the constituent
 # filter catalogs *ALL* have flag>5.
 def test_svm_point_total_cat(gather_output_data):
     # Check the output catalogs should contain the correct number of sources
-    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")
+    ]
 
     valid_tables = {}
     for cat in tdp_files:
         table_length = len(ascii.read(cat, format="ecsv"))
-        print("\ntest_svm_point_total_cat. Number of sources in catalog {} is {}.".format(cat, table_length))
+        print(
+            "\ntest_svm_point_total_cat. Number of sources in catalog {} is {}.".format(
+                cat, table_length
+            )
+        )
         valid_tables[cat] = table_length > 0
     bad_tables = [cat for cat in cat_files if not valid_tables[cat]]
-    assert len(bad_tables) == 0, f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
-
-
+    assert (
+        len(bad_tables) == 0
+    ), f"Catalog file(s) {bad_tables} is/are unexpectedly empty"

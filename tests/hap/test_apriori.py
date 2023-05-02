@@ -37,38 +37,45 @@ def compare_apriori(dataset):
     # reported by pipeline-defined WCS (IDC_* solution)
     wcsnames = list(results_dict.keys())
     for idc_name in wcsnames:
-        if 'IDC' in idc_name and '-' not in idc_name:
+        if "IDC" in idc_name and "-" not in idc_name:
             wcsnames.remove(idc_name)
             break
     else:
         raise ValueError
     # Define pipeline-default fit
     pipeline_results = results_dict[idc_name]
-    pipeline_offset = np.sqrt(pipeline_results['offset_x']**2 +
-                              pipeline_results['offset_y']**2)
+    pipeline_offset = np.sqrt(
+        pipeline_results["offset_x"] ** 2 + pipeline_results["offset_y"] ** 2
+    )
 
     success = False
     # compare each WCS fit results with pipeline-default fit
     for wcs in wcsnames:
-        print("Comparing fit for WCS='{}'...".format(wcs), end=' ')
+        print("Comparing fit for WCS='{}'...".format(wcs), end=" ")
         results = results_dict[wcs]
 
         # Check that fit for this WCS was successful
-        status = (results['status'] == 0).all()
+        status = (results["status"] == 0).all()
         # check that fit was not compromised or otherwise invalid
-        fit_qual = (results['fit_qual'] < 5).all()
+        fit_qual = (results["fit_qual"] < 5).all()
 
         # Check radial offset for this WCS compared to radial offset for
         # IDC* WCS
-        offset = np.sqrt(results['offset_x']**2 + results['offset_y']**2)
-        delta = ((offset < pipeline_offset).all() or
-                 np.allclose(offset, pipeline_offset, rtol=0, atol=1))
+        offset = np.sqrt(results["offset_x"] ** 2 + results["offset_y"] ** 2)
+        delta = (offset < pipeline_offset).all() or np.allclose(
+            offset, pipeline_offset, rtol=0, atol=1
+        )
 
         # Check that rotation and scale are within
-        rot = np.allclose(results['rotation'], pipeline_results['rotation'],
-                          rtol=limit, atol=abs_limit)
-        scale = np.allclose(results['scale'], pipeline_results['scale'],
-                            rtol=limit, atol=abs_limit)
+        rot = np.allclose(
+            results["rotation"],
+            pipeline_results["rotation"],
+            rtol=limit,
+            atol=abs_limit,
+        )
+        scale = np.allclose(
+            results["scale"], pipeline_results["scale"], rtol=limit, atol=abs_limit
+        )
 
         # Determine success/failure of this dataset's fit
         if all([status, fit_qual, delta, rot, scale]):
@@ -80,10 +87,10 @@ def compare_apriori(dataset):
             print("FAILED  due to:")
             if not status:
                 print("\t* invalid STATUS")
-                print(results['status'])
+                print(results["status"])
             if not fit_qual:
                 print("\t* invalid fit quality")
-                print(results['fit_qual'])
+                print(results["fit_qual"])
             if not delta:
                 print("\t* increased offset from GAIA.")
                 print(offset)
@@ -91,50 +98,48 @@ def compare_apriori(dataset):
                 print(delta)
             if not rot:
                 print("\t* larger rotation from fit.")
-                print(results['rotation'])
-                print(pipeline_results['rotation'])
+                print(results["rotation"])
+                print(pipeline_results["rotation"])
                 print(rot)
             if not scale:
                 print("\t* larger scale from fit.")
-                print(results['scale'])
-                print(pipeline_results['scale'])
+                print(results["scale"])
+                print(pipeline_results["scale"])
                 print(scale)
 
     assert success
 
 
 class TestAcsApriori(BaseACS):
-    """ Tests which validate whether mosaics can be aligned to an astrometric standard,
-        evaluate the quality of the fit, and generate a new WCS.
+    """Tests which validate whether mosaics can be aligned to an astrometric standard,
+    evaluate the quality of the fit, and generate a new WCS.
 
-        * These can only be run using the pytest option:
+    * These can only be run using the pytest option:
 
-            pytest --bigdata
+        pytest --bigdata
 
-        * This test is also compatible with pytest-xdist.
+    * This test is also compatible with pytest-xdist.
     """
 
     @pytest.mark.bigdata
-    @pytest.mark.parametrize('dataset', ['jb1601020', 'J9I408010'])
+    @pytest.mark.parametrize("dataset", ["jb1601020", "J9I408010"])
     def test_apriori(self, dataset):
         compare_apriori(dataset)
 
 
 class TestWFC3Apriori(BaseWFC3):
-    """ Tests which validate whether mosaics can be aligned to an astrometric
-        standard, evaluate the quality of the fit, and generate a new WCS.
+    """Tests which validate whether mosaics can be aligned to an astrometric
+    standard, evaluate the quality of the fit, and generate a new WCS.
 
-        * These can only be run using the pytest option:
+    * These can only be run using the pytest option:
 
-            pytest --bigdata
+        pytest --bigdata
 
-        * This test is also compatible with pytest-xdist.
+    * This test is also compatible with pytest-xdist.
 
     """
 
     @pytest.mark.bigdata
-    @pytest.mark.parametrize(
-        'dataset', ['ic0g0l010', 'icnw34040']
-    )
+    @pytest.mark.parametrize("dataset", ["ic0g0l010", "icnw34040"])
     def test_apriori(self, dataset):
         compare_apriori(dataset)

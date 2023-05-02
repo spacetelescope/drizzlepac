@@ -28,11 +28,11 @@ WCS_SUB_NAME = "FIT_SVM_GAIA"
 POLLER_FILE = "acs_hrc_sbc_input.out"
 
 # Gather expected values for pass/fail criteria here
-expected_total_point_sources = {'hrc': 268, 'sbc': 65}
-expected_total_segment_sources = {'hrc': 642, 'sbc': 283}
-expected_filter_point_sources = {'hrc': 269, 'sbc': 208}
-expected_filter_segment_sources = {'hrc': 642, 'sbc': 399}
-tolerance = 0.25 
+expected_total_point_sources = {"hrc": 268, "sbc": 65}
+expected_total_segment_sources = {"hrc": 642, "sbc": 283}
+expected_filter_point_sources = {"hrc": 269, "sbc": 208}
+expected_filter_segment_sources = {"hrc": 642, "sbc": 399}
+tolerance = 0.25
 
 
 @pytest.fixture(scope="module")
@@ -77,9 +77,13 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     flcfiles = []
     fltfiles = []
     if flc_flag:
-        flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
+        flcfiles = aqutils.retrieve_observation(
+            flc_flag, suffix=["FLC"], product_type="pipeline"
+        )
     if flt_flag:
-        fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
+        fltfiles = aqutils.retrieve_observation(
+            flt_flag, suffix=["FLT"], product_type="pipeline"
+        )
 
     flcfiles.extend(fltfiles)
 
@@ -107,9 +111,9 @@ def gather_output_data(construct_manifest_filename):
     # Determine the filenames of all the output files from the manifest
     print(f"\nManifest Filename: {construct_manifest_filename}")
     files = []
-    with open(construct_manifest_filename, 'r') as fout:
+    with open(construct_manifest_filename, "r") as fout:
         for line in fout.readlines():
-            files.append(line.rstrip('\n'))
+            files.append(line.rstrip("\n"))
     print("\ngather_output_data. Output data files: {}".format(files))
 
     return files
@@ -122,7 +126,9 @@ def construct_manifest_filename(read_csv_for_filenames):
     root = fits.getval(read_csv_for_filenames[0], "ROOTNAME", ext=0).lower()
     tokens_tuple = (inst, root[1:4], root[4:6], "manifest.txt")
     manifest_filename = "_".join(tokens_tuple)
-    print("\nconstruct_manifest_filename. Manifest filename: {}".format(manifest_filename))
+    print(
+        "\nconstruct_manifest_filename. Manifest filename: {}".format(manifest_filename)
+    )
 
     return manifest_filename
 
@@ -155,19 +161,23 @@ def svm_setup(gather_data_for_processing):
 
 # TESTS
 
+
 def test_svm_manifest_name(construct_manifest_filename):
     # Construct the manifest filename from the header of an input file in the list and check it exists.
     path = Path(construct_manifest_filename)
     print("\ntest_svm_manifest. Filename: {}".format(path))
 
     # Ensure the manifest file uses the proper naming convention
-    assert (path.is_file())
+    assert path.is_file()
 
 
 def test_svm_wcs(gather_output_data):
     # Check the output primary WCSNAME includes FIT_SVM_GAIA as part of the string value
-    tdp_files = [files for files in gather_output_data if
-                 files.lower().find("total") > -1 and files.lower().endswith(".fits")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("total") > -1 and files.lower().endswith(".fits")
+    ]
 
     for tdp in tdp_files:
         wcsname = fits.getval(tdp, "WCSNAME", ext=1).upper()
@@ -179,61 +189,101 @@ def test_svm_samewcs(gather_output_data):
     # Check that products for both detectors are aligned to the same catalog
     # The assumption is that if they are all aligned to the same catalog, they are
     # correctly aligned to each other.
-    tdp_files = [files for files in gather_output_data if
-                 files.lower().find("total") > -1 and files.lower().endswith(".fits")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("total") > -1 and files.lower().endswith(".fits")
+    ]
 
-    print(f'TDP_FILES: \n{tdp_files}')
+    print(f"TDP_FILES: \n{tdp_files}")
 
-    wcsnames = [fits.getval(tdp, "WCSNAME", ext=1).upper().split('-')[1] for tdp in tdp_files]
+    wcsnames = [
+        fits.getval(tdp, "WCSNAME", ext=1).upper().split("-")[1] for tdp in tdp_files
+    ]
     assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same: {wcsnames}"
 
 
 def test_svm_empty_cats(gather_output_data):
     # Check the output catalogs should contain > 0 measured sources
-    cat_files = [files for files in gather_output_data if files.lower().endswith("-cat.ecsv")]
+    cat_files = [
+        files for files in gather_output_data if files.lower().endswith("-cat.ecsv")
+    ]
 
     valid_tables = {}
     for cat in cat_files:
         table_length = len(ascii.read(cat, format="ecsv"))
-        print("\ntest_svm_cat_sources. Number of sources in catalog {} is {}.".format(cat, table_length))
+        print(
+            "\ntest_svm_cat_sources. Number of sources in catalog {} is {}.".format(
+                cat, table_length
+            )
+        )
         valid_tables[cat] = table_length > 0
     bad_tables = [cat for cat in cat_files if not valid_tables[cat]]
-    assert len(bad_tables) == 0, f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
+    assert (
+        len(bad_tables) == 0
+    ), f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
 
 
 # Due to the way the catalogs are filtered, check the size of the total catalog and one of the filter
-# catalogs separately.  The total catalog has the row removed for each source where the constituent 
+# catalogs separately.  The total catalog has the row removed for each source where the constituent
 # filter catalogs *ALL* have flag>5 for the source.  Rows are NOT removed from the filter table based on
 # flag values.
 def test_svm_point_total_cat(gather_output_data):
     # Check the output catalogs should contain the correct number of sources -- allows for a broad tolerance
     print("\ntest_svm_point_total_cat.")
-    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")
+    ]
 
-    num_sources = {tdp:len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
+    num_sources = {tdp: len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
     valid_cats = {}
     for tdp in expected_total_point_sources.keys():
         for file in tdp_files:
             if tdp in file:
                 tol_limit = tolerance * expected_total_point_sources[tdp]
-                valid_cats[tdp] = (file, np.isclose(expected_total_point_sources[tdp], num_sources[file], atol=tol_limit))
+                valid_cats[tdp] = (
+                    file,
+                    np.isclose(
+                        expected_total_point_sources[tdp],
+                        num_sources[file],
+                        atol=tol_limit,
+                    ),
+                )
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
-    assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_point_sources}"
+    assert (
+        len(bad_cats) == 0
+    ), f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_point_sources}"
 
 
 def test_svm_segment_total_cat(gather_output_data):
     # Check the output catalogs should contain the correct number of sources -- allows for a broad tolerance
     print("\ntest_svm_segment_total_cat.")
-    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("segment-cat.ecsv")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("total") > -1
+        and files.lower().endswith("segment-cat.ecsv")
+    ]
 
-    num_sources = {tdp:len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
+    num_sources = {tdp: len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
     valid_cats = {}
     for tdp in expected_total_segment_sources.keys():
         for file in tdp_files:
             if tdp in file:
                 tol_limit = tolerance * expected_total_segment_sources[tdp]
-                valid_cats[tdp] = (file, np.isclose(expected_total_segment_sources[tdp], num_sources[file], atol=tol_limit))
+                valid_cats[tdp] = (
+                    file,
+                    np.isclose(
+                        expected_total_segment_sources[tdp],
+                        num_sources[file],
+                        atol=tol_limit,
+                    ),
+                )
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
-    assert len(bad_cats) == 0,  f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_segment_sources}"
+    assert (
+        len(bad_cats) == 0
+    ), f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_segment_sources}"

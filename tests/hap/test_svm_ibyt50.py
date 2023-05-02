@@ -32,11 +32,13 @@ POLLER_FILE = "wfc3_byt_50_input.out"
 WCS_UVIS_SUB_NAME = "FIT_SVM_GAIA"
 WCS_IR_SUB_NAME = "FIT_SVM_GSC242"
 expected_total_point_sources = {
-"hst_13023_50_wfc3_ir_total_ibyt50_point-cat.ecsv": 122,
-"hst_13023_50_wfc3_uvis_total_ibyt50_point-cat.ecsv": 105}
+    "hst_13023_50_wfc3_ir_total_ibyt50_point-cat.ecsv": 122,
+    "hst_13023_50_wfc3_uvis_total_ibyt50_point-cat.ecsv": 105,
+}
 expected_total_segment_sources = {
-"hst_13023_50_wfc3_ir_total_ibyt50_segment-cat.ecsv": 107,
-"hst_13023_50_wfc3_uvis_total_ibyt50_segment-cat.ecsv": 415}
+    "hst_13023_50_wfc3_ir_total_ibyt50_segment-cat.ecsv": 107,
+    "hst_13023_50_wfc3_uvis_total_ibyt50_segment-cat.ecsv": 415,
+}
 tolerance = 0.25
 
 
@@ -82,20 +84,24 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     flcfiles = []
     fltfiles = []
     if flc_flag:
-        flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
+        flcfiles = aqutils.retrieve_observation(
+            flc_flag, suffix=["FLC"], product_type="pipeline"
+        )
     if flt_flag:
-        fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
+        fltfiles = aqutils.retrieve_observation(
+            flt_flag, suffix=["FLT"], product_type="pipeline"
+        )
 
     flcfiles.extend(fltfiles)
 
     # Keep only the files which exist in BOTH lists for processing
-    files_to_process= set(read_csv_for_filenames).intersection(set(flcfiles))
+    files_to_process = set(read_csv_for_filenames).intersection(set(flcfiles))
 
     # Identify unwanted files from the download list and remove from disk
     files_to_remove = set(read_csv_for_filenames).symmetric_difference(set(flcfiles))
     try:
         for ftr in files_to_remove:
-           os.remove(ftr)
+            os.remove(ftr)
     except Exception as x_cept:
         print("")
         print("Exception encountered: {}.".format(x_cept))
@@ -111,7 +117,7 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
 def gather_output_data(construct_manifest_filename):
     # Determine the filenames of all the output files from the manifest
     files = []
-    with open(construct_manifest_filename, 'r') as fout:
+    with open(construct_manifest_filename, "r") as fout:
         for line in fout.readlines():
             files.append(line.rstrip("\n"))
     print("\ngather_output_data. Output data files: {}".format(files))
@@ -126,7 +132,9 @@ def construct_manifest_filename(read_csv_for_filenames):
     root = fits.getval(read_csv_for_filenames[0], "ROOTNAME", ext=0).lower()
     tokens_tuple = (inst, root[1:4], root[4:6], "manifest.txt")
     manifest_filename = "_".join(tokens_tuple)
-    print("\nconstruct_manifest_filename. Manifest filename: {}".format(manifest_filename))
+    print(
+        "\nconstruct_manifest_filename. Manifest filename: {}".format(manifest_filename)
+    )
 
     return manifest_filename
 
@@ -159,6 +167,7 @@ def svm_setup(gather_data_for_processing):
 
 # TESTS
 
+
 def test_svm_manifest_name(construct_manifest_filename):
     print("\ntest_svm_manifest.")
     # Construct the manifest filename from the header of an input file in the list and check it exists.
@@ -166,46 +175,77 @@ def test_svm_manifest_name(construct_manifest_filename):
     print("\ntest_svm_manifest. Filename: {}".format(path))
 
     # Ensure the manifest file uses the proper naming convention
-    assert(path.is_file())
+    assert path.is_file()
+
 
 def test_svm_wcs_ir(gather_output_data):
     print("\ntest_svm_wcs_ir.")
     # Get the TDP for this detector
-    tdp_files = [files for files in gather_output_data if files.lower().find("ir_total") > -1 and files.lower().endswith("drz.fits")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("ir_total") > -1 and files.lower().endswith("drz.fits")
+    ]
 
     # Check the WCS solution is as expected
     wcsname = fits.getval(tdp_files[0], "WCSNAME", ext=1).upper()
-    print("\ntest_svm_wcs_ir.  WCSNAME: {} Output file: {}".format(wcsname, tdp_files[0]))
-    assert WCS_IR_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp_files[0]}."
+    print(
+        "\ntest_svm_wcs_ir.  WCSNAME: {} Output file: {}".format(wcsname, tdp_files[0])
+    )
+    assert (
+        WCS_IR_SUB_NAME in wcsname
+    ), f"WCSNAME is not as expected for file {tdp_files[0]}."
 
 
 def test_svm_wcs_ir_all(gather_output_data):
     print("\ntest_svm_wcs_ir_all.")
     # Check the output primary WCSNAME
-    ir_files = [files for files in gather_output_data if files.lower().find("_ir_") > -1 and files.lower().endswith("drz.fits")]
+    ir_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("_ir_") > -1 and files.lower().endswith("drz.fits")
+    ]
 
     wcsnames = [fits.getval(ir, "WCSNAME", ext=1).upper() for ir in ir_files]
-    assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same for the IR detector: {wcsnames}"
+    assert (
+        len(set(wcsnames)) == 1
+    ), f"WCSNAMES are not all the same for the IR detector: {wcsnames}"
 
 
 def test_svm_wcs_uvis(gather_output_data):
     print("\ntest_svm_wcs_uvis.")
     # Get the TDP for this detector
-    tdp_files = [files for files in gather_output_data if files.lower().find("uvis_total") > -1 and files.lower().endswith("drc.fits")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("uvis_total") > -1 and files.lower().endswith("drc.fits")
+    ]
 
     # Check the WCS solution is as expected
     wcsname = fits.getval(tdp_files[0], "WCSNAME", ext=1).upper()
-    print("\ntest_svm_wcs_uvis.  WCSNAME: {} Output file: {}".format(wcsname, tdp_files[0]))
-    assert WCS_UVIS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp_files[0]}."
+    print(
+        "\ntest_svm_wcs_uvis.  WCSNAME: {} Output file: {}".format(
+            wcsname, tdp_files[0]
+        )
+    )
+    assert (
+        WCS_UVIS_SUB_NAME in wcsname
+    ), f"WCSNAME is not as expected for file {tdp_files[0]}."
 
 
 def test_svm_wcs_uvis_all(gather_output_data):
     # Check the output primary WCSNAME
     print("\ntest_svm_wcs_uvis_all.")
-    uvis_files = [files for files in gather_output_data if files.lower().find("_uvis_") > -1 and files.lower().endswith("drc.fits")]
+    uvis_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("_uvis_") > -1 and files.lower().endswith("drc.fits")
+    ]
 
     wcsnames = [fits.getval(uvis, "WCSNAME", ext=1).upper() for uvis in uvis_files]
-    assert len(set(wcsnames)) == 1, f"WCSNAMES are not all the same for the UVIS detector: {wcsnames}"
+    assert (
+        len(set(wcsnames)) == 1
+    ), f"WCSNAMES are not all the same for the UVIS detector: {wcsnames}"
 
 
 # Due to the way the catalogs are filtered, check the size of the total catalog and one of the filter
@@ -215,32 +255,59 @@ def test_svm_wcs_uvis_all(gather_output_data):
 def test_svm_point_total_cat(gather_output_data):
     # Check the output catalogs should contain the correct number of sources -- allows for a broad tolerance
     print("\ntest_svm_point_total_cat.")
-    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")
+    ]
 
-    num_sources = {tdp:len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
+    num_sources = {tdp: len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
     valid_cats = {}
     for tdp in expected_total_point_sources.keys():
         for file in tdp_files:
             if tdp in file:
                 tol_limit = tolerance * expected_total_point_sources[tdp]
-                valid_cats[tdp] = (file, np.isclose(expected_total_point_sources[tdp], num_sources[file], atol=tol_limit))
+                valid_cats[tdp] = (
+                    file,
+                    np.isclose(
+                        expected_total_point_sources[tdp],
+                        num_sources[file],
+                        atol=tol_limit,
+                    ),
+                )
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
-    assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_point_sources}"
+    assert (
+        len(bad_cats) == 0
+    ), f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_point_sources}"
 
 
 def test_svm_segment_total_cat(gather_output_data):
     # Check the output catalogs should contain the correct number of sources -- allows for a broad tolerance
     print("\ntest_svm_segment_total_cat.")
-    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("segment-cat.ecsv")]
+    tdp_files = [
+        files
+        for files in gather_output_data
+        if files.lower().find("total") > -1
+        and files.lower().endswith("segment-cat.ecsv")
+    ]
 
-    num_sources = {tdp:len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
+    num_sources = {tdp: len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
     valid_cats = {}
     for tdp in expected_total_segment_sources.keys():
         for file in tdp_files:
             if tdp in file:
                 tol_limit = tolerance * expected_total_segment_sources[tdp]
-                valid_cats[tdp] = (file, np.isclose(expected_total_segment_sources[tdp], num_sources[file], atol=tol_limit))
+                valid_cats[tdp] = (
+                    file,
+                    np.isclose(
+                        expected_total_segment_sources[tdp],
+                        num_sources[file],
+                        atol=tol_limit,
+                    ),
+                )
                 break
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
-    assert len(bad_cats) == 0,  f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_segment_sources}"
+    assert (
+        len(bad_cats) == 0
+    ), f"Total Segment Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_segment_sources}"

@@ -5,9 +5,8 @@ from astropy import wcs
 
 from drizzlepac import cdriz
 
-@pytest.mark.parametrize(
-    'kernel', ['square', 'point', 'turbo', 'gaussian', 'lanczos3']
-)
+
+@pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
 def test_zero_input_weight(kernel):
     """
     Test do_driz square kernel with grid
@@ -24,14 +23,14 @@ def test_zero_input_weight(kernel):
 
     # define coordinate mapping:
     w1 = wcs.WCS()
-    w1.wcs.ctype = ['RA---CAR', 'DEC--CAR']
+    w1.wcs.ctype = ["RA---CAR", "DEC--CAR"]
     w1.wcs.crpix = [201, 101]
     w1.wcs.crval = [10, 10]
     w1.wcs.cdelt = [1e-3, 1e-3]
     w1.wcs.set()
 
     w2 = wcs.WCS()
-    w2.wcs.ctype = ['RA---CAR', 'DEC--CAR']
+    w2.wcs.ctype = ["RA---CAR", "DEC--CAR"]
     w2.wcs.crpix = [206, 106]
     w2.wcs.crval = [10, 10]
     w2.wcs.cdelt = [1e-3, 1e-3]
@@ -41,11 +40,30 @@ def test_zero_input_weight(kernel):
 
     # resample:
     cdriz.tdriz(
-        insci, inwht, outsci, outwht,
-        outctx, 1, 0, 1, 1, 200,
-        1.0, 1.0, 1.0, 'center', 1.0,
-        kernel, 'cps', 1.0, 1.0,
-        'INDEF', 0, 0, 1, mapping
+        insci,
+        inwht,
+        outsci,
+        outwht,
+        outctx,
+        1,
+        0,
+        1,
+        1,
+        200,
+        1.0,
+        1.0,
+        1.0,
+        "center",
+        1.0,
+        kernel,
+        "cps",
+        1.0,
+        1.0,
+        "INDEF",
+        0,
+        0,
+        1,
+        mapping,
     )
 
     # check that no pixel with 0 weight has any counts:

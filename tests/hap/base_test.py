@@ -12,6 +12,7 @@ from stsci.tools import fileutil
 
 from ci_watson.artifactory_helpers import get_bigdata_root
 from ci_watson.hst_helpers import raw_from_asn, ref_from_image, download_crds
+
 try:
     from ci_watson.artifactory_helpers import check_url
 except ImportError:
@@ -19,27 +20,39 @@ except ImportError:
 
 from .base_classes import BaseTest
 
-__all__ = ['BaseHLATest', 'BaseHLAParTest', 'centroid_compare', 'BaseUnit']
+__all__ = ["BaseHLATest", "BaseHLAParTest", "centroid_compare", "BaseUnit"]
 
-@pytest.mark.usefixtures('_jail')
+
+@pytest.mark.usefixtures("_jail")
 class BaseHLATest(BaseTest):
     ignore_hdus = []
-    input_repo = 'hst-hla-pipeline'
-    results_root = 'hst-hla-pipeline-results'
+    input_repo = "hst-hla-pipeline"
+    results_root = "hst-hla-pipeline-results"
     output_shift_file = None
-    fit_limit = 0.010 # 10 milli-arcseconds
-    
+    fit_limit = 0.010  # 10 milli-arcseconds
+
     docopy = False  # Do not make additional copy by default
     rtol = 1e-6
 
-    refstr = 'jref'
+    refstr = "jref"
     prevref = os.environ.get(refstr)
 
-    ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
-                       'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history', 'prod_ver', 'rulefile']
+    ignore_keywords = [
+        "origin",
+        "filename",
+        "date",
+        "iraf-tlm",
+        "fitsdate",
+        "upwtim",
+        "wcscdate",
+        "upwcsver",
+        "pywcsver",
+        "history",
+        "prod_ver",
+        "rulefile",
+    ]
 
-    reffile_lookup = ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE', 'DGEOFILE']
+    reffile_lookup = ["IDCTAB", "OFFTAB", "NPOLFILE", "D2IMFILE", "DGEOFILE"]
 
     def set_environ(self):
         # Enforce copies of data when TEST_BIGDATA is URL
@@ -53,25 +66,24 @@ class BaseHLATest(BaseTest):
         #       Refine this logic if using pytest fixture.
         # HSTCAL cannot open remote CRDS on FTP but central storage is okay.
         # So use central storage if available to avoid FTP.
-        if self.prevref is None or self.prevref.startswith(('ftp', 'http')):
+        if self.prevref is None or self.prevref.startswith(("ftp", "http")):
             os.environ[self.refstr] = self.curdir + os.sep
             self.use_ftp_crds = True
 
         # Turn off Astrometry updates
-        os.environ['ASTROMETRY_STEP_CONTROL'] = 'OFF'
+        os.environ["ASTROMETRY_STEP_CONTROL"] = "OFF"
 
-    def raw_from_asn(self, asn_file, suffix='_flt.fits'):
-        return raw_from_asn(asn_file, suffix='_flt.fits')
+    def raw_from_asn(self, asn_file, suffix="_flt.fits"):
+        return raw_from_asn(asn_file, suffix="_flt.fits")
 
-    def get_input_file(self, *args, refsep='$', **kwargs):
-
+    def get_input_file(self, *args, refsep="$", **kwargs):
         # If user has specified action for docopy, apply it with
         # default behavior being whatever was defined in the base class.
-        docopy = kwargs.get('docopy', self.docopy)
+        docopy = kwargs.get("docopy", self.docopy)
 
-#        Download or copy input file (e.g., RAW) into the working directory.
-#        The associated CRDS reference files in ``refstr`` are also
-#        downloaded, if necessary.
+        #        Download or copy input file (e.g., RAW) into the working directory.
+        #        The associated CRDS reference files in ``refstr`` are also
+        #        downloaded, if necessary.
         curdir = os.getcwd()
         filenames = self.get_data(*args, docopy=docopy)
         for filename in filenames:
@@ -79,10 +91,10 @@ class BaseHLATest(BaseTest):
             print("Looking for {} REF_FILES: {}".format(filename, ref_files))
 
             for ref_file in ref_files:
-                if ref_file.strip() == '':
+                if ref_file.strip() == "":
                     continue
                 if refsep not in ref_file:  # Local file
-                    self.get_data('customRef', ref_file, docopy=docopy)
+                    self.get_data("customRef", ref_file, docopy=docopy)
                 else:
                     # Start by checking to see whether IRAF variable *ref/*tab
                     # has been added to os.environ
@@ -101,31 +113,39 @@ class BaseHLATest(BaseTest):
                         download_crds(ref_file, timeout=self.timeout)
         return filenames
 
+
 # Pytest function to support the parameterization of these classes
 def pytest_generate_tests(metafunc):
     # called once per each test function
     funcarglist = metafunc.cls.params[metafunc.function.__name__]
     argnames = sorted(funcarglist[0])
-    idlist = [funcargs['id'] for funcargs in funcarglist]
-    del argnames[argnames.index('id')]
-    metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
-            for funcargs in funcarglist], ids=idlist)
+    idlist = [funcargs["id"] for funcargs in funcarglist]
+    del argnames[argnames.index("id")]
+    metafunc.parametrize(
+        argnames,
+        [[funcargs[name] for name in argnames] for funcargs in funcarglist],
+        ids=idlist,
+    )
 
 
-@pytest.mark.usefixtures('_jail')
+@pytest.mark.usefixtures("_jail")
 class BaseHLAParTest(BaseHLATest):
+    params = {
+        "test_modes": [
+            dict(
+                input="",
+                test_dir=None,
+                step_class=None,
+                step_pars=dict(),
+                output_truth="",
+                output_hdus=[],
+            )
+        ]
+    }
 
-    params = {'test_modes':[dict(input="",
-                                 test_dir=None,
-                                 step_class=None,
-                                 step_pars=dict(),
-                                 output_truth="",
-                                 output_hdus=[])
-                            ]
-             }
-
-    def test_modes(self, input, test_dir, step_class, step_pars,
-                   output_truth, output_hdus):
+    def test_modes(
+        self, input, test_dir, step_class, step_pars, output_truth, output_hdus
+    ):
         """
         Template method for parameterizing some tests based on JWST code.
         """
@@ -133,10 +153,10 @@ class BaseHLAParTest(BaseHLATest):
             return
 
         self.test_dir = test_dir
-        self.ref_loc = [self.test_dir, 'truth']
+        self.ref_loc = [self.test_dir, "truth"]
 
         # can be removed once all truth files have been updated
-        self.ignore_keywords += ['FILENAME']
+        self.ignore_keywords += ["FILENAME"]
 
         input_file = self.get_data(self.test_dir, input)
 
@@ -157,8 +177,7 @@ class BaseHLAParTest(BaseHLATest):
             else:
                 output_spec = (output_file, output_truth)
         else:
-            output_spec = {'files':(output_file, output_truth),
-                           'pars':output_pars}
+            output_spec = {"files": (output_file, output_truth), "pars": output_pars}
         outputs = [output_spec]
         self.compare_outputs(outputs)
 
@@ -166,15 +185,27 @@ class BaseHLAParTest(BaseHLATest):
 def centroid_compare(centroid):
     return centroid[1]
 
+
 class BaseUnit(BaseHLATest):
     buff = 0
-    refstr = 'jref'
+    refstr = "jref"
     prevref = os.environ.get(refstr)
-    input_loc = 'acs'
-    ref_loc = 'acs'
-    ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
-                       'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history', 'prod_ver', 'rulefile']
+    input_loc = "acs"
+    ref_loc = "acs"
+    ignore_keywords = [
+        "origin",
+        "filename",
+        "date",
+        "iraf-tlm",
+        "fitsdate",
+        "upwtim",
+        "wcscdate",
+        "upwcsver",
+        "pywcsver",
+        "history",
+        "prod_ver",
+        "rulefile",
+    ]
     atol = 1.0e-5
 
     def bound_image(self, image):
@@ -200,11 +231,12 @@ class BaseUnit(BaseHLATest):
         center = [0.0, 0.0, 0.0]
         for y in range(ylo, yhi):
             for x in range(xlo, xhi):
-                center[0] += y * image[y,x]
-                center[1] += x * image[y,x]
-                center[2] += image[y,x]
+                center[0] += y * image[y, x]
+                center[1] += x * image[y, x]
+                center[2] += image[y, x]
 
-        if center[2] == 0.0: return None
+        if center[2] == 0.0:
+            return None
 
         center[0] /= center[2]
         center[1] /= center[2]
@@ -214,9 +246,11 @@ class BaseUnit(BaseHLATest):
         """
         Find if any centroid is close to a point
         """
-        for i in range(len(list_of_centroids)-1, -1, -1):
-            if (abs(list_of_centroids[i][0] - point[0]) < size / 2 and
-                abs(list_of_centroids[i][1] - point[1]) < size / 2):
+        for i in range(len(list_of_centroids) - 1, -1, -1):
+            if (
+                abs(list_of_centroids[i][0] - point[0]) < size / 2
+                and abs(list_of_centroids[i][1] - point[1]) < size / 2
+            ):
                 return 1
 
         return 0
@@ -230,7 +264,8 @@ class BaseUnit(BaseHLATest):
 
         for center2, pt in zip(list_of_centroids, lst_pts):
             center1 = self.centroid(image1, size, pt)
-            if center1 is None: continue
+            if center1 is None:
+                continue
 
             disty = center2[0] - center1[0]
             distx = center2[1] - center1[1]
@@ -267,8 +302,8 @@ class BaseUnit(BaseHLATest):
 
         diff = []
         distances = self.centroid_distances(image1, image2, amp, size)
-        indexes = (0, len(distances)//2, len(distances)-1)
-        fd = open(fname, 'w')
+        indexes = (0, len(distances) // 2, len(distances) - 1)
+        fd = open(fname, "w")
         fd.write("*** %s ***\n" % title)
 
         if len(distances) == 0:
@@ -279,34 +314,55 @@ class BaseUnit(BaseHLATest):
             diff = [distances[0][0], distances[0][0], distances[0][0]]
 
             fd.write("1 match\n")
-            fd.write("distance = %f flux difference = %f\n" % (distances[0][0], distances[0][1]))
+            fd.write(
+                "distance = %f flux difference = %f\n"
+                % (distances[0][0], distances[0][1])
+            )
 
             for j in range(2, 4):
-                ylo = int(distances[0][j][0]) - (1+self.buff)
-                yhi = int(distances[0][j][0]) + (2+self.buff)
-                xlo = int(distances[0][j][1]) - (1+self.buff)
-                xhi = int(distances[0][j][1]) + (2+self.buff)
-                subimage = images[j][ylo:yhi,xlo:xhi]
-                fd.write("\n%s image centroid = (%f,%f) image flux = %f\n" %
-                         (im_type[j], distances[0][j][0], distances[0][j][1], distances[0][j][2]))
+                ylo = int(distances[0][j][0]) - (1 + self.buff)
+                yhi = int(distances[0][j][0]) + (2 + self.buff)
+                xlo = int(distances[0][j][1]) - (1 + self.buff)
+                xhi = int(distances[0][j][1]) + (2 + self.buff)
+                subimage = images[j][ylo:yhi, xlo:xhi]
+                fd.write(
+                    "\n%s image centroid = (%f,%f) image flux = %f\n"
+                    % (
+                        im_type[j],
+                        distances[0][j][0],
+                        distances[0][j][1],
+                        distances[0][j][2],
+                    )
+                )
                 fd.write(str(subimage) + "\n")
 
         else:
             fd.write("%d matches\n" % len(distances))
 
-            for k in range(0,3):
+            for k in range(0, 3):
                 i = indexes[k]
                 diff.append(distances[i][0])
-                fd.write("\n%s distance = %f flux difference = %f\n" % (stats[k], distances[i][0], distances[i][1]))
+                fd.write(
+                    "\n%s distance = %f flux difference = %f\n"
+                    % (stats[k], distances[i][0], distances[i][1])
+                )
 
                 for j in range(2, 4):
-                    ylo = int(distances[i][j][0]) - (1+self.buff)
-                    yhi = int(distances[i][j][0]) + (2+self.buff)
-                    xlo = int(distances[i][j][1]) - (1+self.buff)
-                    xhi = int(distances[i][j][1]) + (2+self.buff)
-                    subimage = images[j][ylo:yhi,xlo:xhi]
-                    fd.write("\n%s %s image centroid = (%f,%f) image flux = %f\n" %
-                             (stats[k], im_type[j], distances[i][j][0], distances[i][j][1], distances[i][j][2]))
+                    ylo = int(distances[i][j][0]) - (1 + self.buff)
+                    yhi = int(distances[i][j][0]) + (2 + self.buff)
+                    xlo = int(distances[i][j][1]) - (1 + self.buff)
+                    xhi = int(distances[i][j][1]) + (2 + self.buff)
+                    subimage = images[j][ylo:yhi, xlo:xhi]
+                    fd.write(
+                        "\n%s %s image centroid = (%f,%f) image flux = %f\n"
+                        % (
+                            stats[k],
+                            im_type[j],
+                            distances[i][j][0],
+                            distances[i][j][1],
+                            distances[i][j][2],
+                        )
+                    )
                     fd.write(str(subimage) + "\n")
 
         fd.close()
@@ -327,9 +383,9 @@ class BaseUnit(BaseHLATest):
         output_image = np.zeros(input_image.shape, dtype=input_image.dtype)
 
         shape = output_image.shape
-        for y in range(spacing//2, shape[0], spacing):
-            for x in range(spacing//2, shape[1], spacing):
-                output_image[y,x] = value
+        for y in range(spacing // 2, shape[0], spacing):
+            for x in range(spacing // 2, shape[1], spacing):
+                output_image[y, x] = value
 
         return output_image
 
@@ -339,7 +395,6 @@ class BaseUnit(BaseHLATest):
         """
         print("=== %s ===" % title)
         print(wcs.to_header_string())
-
 
     def read_image(self, filename):
         """
@@ -365,29 +420,29 @@ class BaseUnit(BaseHLATest):
         """
         Update header with WCS keywords
         """
-        hdu.header['ORIENTAT'] = image_wcs.orientat
-        hdu.header['CD1_1'] = image_wcs.wcs.cd[0][0]
-        hdu.header['CD1_2'] = image_wcs.wcs.cd[0][1]
-        hdu.header['CD2_1'] = image_wcs.wcs.cd[1][0]
-        hdu.header['CD2_2'] = image_wcs.wcs.cd[1][1]
-        hdu.header['CRVAL1'] = image_wcs.wcs.crval[0]
-        hdu.header['CRVAL2'] = image_wcs.wcs.crval[1]
-        hdu.header['CRPIX1'] = image_wcs.wcs.crpix[0]
-        hdu.header['CRPIX2'] = image_wcs.wcs.crpix[1]
-        hdu.header['CTYPE1'] = image_wcs.wcs.ctype[0]
-        hdu.header['CTYPE2'] = image_wcs.wcs.ctype[1]
-        hdu.header['VAFACTOR'] = 1.0
+        hdu.header["ORIENTAT"] = image_wcs.orientat
+        hdu.header["CD1_1"] = image_wcs.wcs.cd[0][0]
+        hdu.header["CD1_2"] = image_wcs.wcs.cd[0][1]
+        hdu.header["CD2_1"] = image_wcs.wcs.cd[1][0]
+        hdu.header["CD2_2"] = image_wcs.wcs.cd[1][1]
+        hdu.header["CRVAL1"] = image_wcs.wcs.crval[0]
+        hdu.header["CRVAL2"] = image_wcs.wcs.crval[1]
+        hdu.header["CRPIX1"] = image_wcs.wcs.crpix[0]
+        hdu.header["CRPIX2"] = image_wcs.wcs.crpix[1]
+        hdu.header["CTYPE1"] = image_wcs.wcs.ctype[0]
+        hdu.header["CTYPE2"] = image_wcs.wcs.ctype[1]
+        hdu.header["VAFACTOR"] = 1.0
 
     def write_image(self, filename, wcs, *args):
         """
         Read the image from a fits file
         """
-        extarray = ['SCI', 'WHT', 'CTX']
+        extarray = ["SCI", "WHT", "CTX"]
 
         pimg = fits.HDUList()
         phdu = fits.PrimaryHDU()
-        phdu.header['NDRIZIM'] = 1
-        phdu.header['ROOTNAME'] = filename
+        phdu.header["NDRIZIM"] = 1
+        phdu.header["ROOTNAME"] = filename
         pimg.append(phdu)
 
         for img in args:
@@ -396,8 +451,8 @@ class BaseUnit(BaseHLATest):
             extname = fileutil.parseExtn(extn)
 
             ehdu = fits.ImageHDU(data=img)
-            ehdu.header['EXTNAME'] = extname[0]
-            ehdu.header['EXTVER'] = extname[1]
+            ehdu.header["EXTNAME"] = extname[0]
+            ehdu.header["EXTVER"] = extname[1]
             self.write_wcs(ehdu, wcs)
             pimg.append(ehdu)
 

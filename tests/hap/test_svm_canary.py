@@ -27,6 +27,7 @@ from pathlib import Path
 WCS_SUB_NAME = "FIT_SVM_GAIA"
 POLLER_FILE = "acs_hrc_sbc_input.out"
 
+
 def read_csv_for_filenames():
     # Read the CSV poller file residing in the tests directory to extract the individual visit FLT/FLC filenames
     path = os.path.join(os.path.dirname(__file__), POLLER_FILE)
@@ -69,9 +70,13 @@ def gather_data_for_processing(tmp_path_factory):
     flcfiles = []
     fltfiles = []
     if flc_flag:
-        flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
+        flcfiles = aqutils.retrieve_observation(
+            flc_flag, suffix=["FLC"], product_type="pipeline"
+        )
     if flt_flag:
-        fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
+        fltfiles = aqutils.retrieve_observation(
+            flt_flag, suffix=["FLT"], product_type="pipeline"
+        )
 
     flcfiles.extend(fltfiles)
 
@@ -98,9 +103,9 @@ def gather_output_data(manifest_filename):
     # Determine the filenames of all the output files from the manifest
     print(f"\nManifest Filename: {manifest_filename}")
     files = []
-    with open(manifest_filename, 'r') as fout:
+    with open(manifest_filename, "r") as fout:
         for line in fout.readlines():
-            files.append(line.rstrip('\n'))
+            files.append(line.rstrip("\n"))
     print("\ngather_output_data. Output data files: {}".format(files))
 
     return files
@@ -112,7 +117,9 @@ def construct_manifest_filename(filenames):
     root = fits.getval(filenames[0], "ROOTNAME", ext=0).lower()
     tokens_tuple = (inst, root[1:4], root[4:6], "manifest.txt")
     manifest_filename = "_".join(tokens_tuple)
-    print("\nconstruct_manifest_filename. Manifest filename: {}".format(manifest_filename))
+    print(
+        "\nconstruct_manifest_filename. Manifest filename: {}".format(manifest_filename)
+    )
 
     return manifest_filename
 
@@ -137,13 +144,18 @@ def test_driver(tmp_path_factory):
         output_files = gather_output_data(manifest_filename)
 
         # Check the output primary WCSNAME includes FIT_SVM_GAIA as part of the string value
-        tdp_files = [files for files in output_files if
-                     files.lower().find("total") > -1 and files.lower().endswith(".fits")]
+        tdp_files = [
+            files
+            for files in output_files
+            if files.lower().find("total") > -1 and files.lower().endswith(".fits")
+        ]
 
         for tdp in tdp_files:
             wcsname = fits.getval(tdp, "WCSNAME", ext=1).upper()
             print("\ntest_svm_wcs.  WCSNAME: {} Output file: {}".format(wcsname, tdp))
-            assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp}."
+            assert (
+                WCS_SUB_NAME in wcsname
+            ), f"WCSNAME is not as expected for file {tdp}."
 
     # Catch anything that happens and report it.  This is meant to catch unexpected errors and
     # generate sufficient output exception information so algorithmic problems can be addressed.

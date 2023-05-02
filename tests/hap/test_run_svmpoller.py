@@ -39,36 +39,36 @@ def pytest_generate_tests(metafunc):
 
     print("Input file: {}".format(svm_list))
     print("List of poller files: {}".format(poller_file_list))
-    metafunc.parametrize('dataset', poller_file_list)
+    metafunc.parametrize("dataset", poller_file_list)
 
 
 @pytest.mark.bigdata
 @pytest.mark.slow
 @pytest.mark.unit
 def test_run_svmpoller(tmpdir, dataset):
-    """ Tests to read a series of poller files and process the contents of each as Single Visit Mosaic
+    """Tests to read a series of poller files and process the contents of each as Single Visit Mosaic
 
-        Characteristics of these tests:
+    Characteristics of these tests:
 
-        Success Criteria:
-            The SVM processing returns a value of 0: Success or 1: Failure
+    Success Criteria:
+        The SVM processing returns a value of 0: Success or 1: Failure
 
-        The input svm_list file is a list of poller filenames, one filename per line.
-        Each poller file must be obtained from a specified directory and read to obtain the
-        names of the data files which need to be processed.
+    The input svm_list file is a list of poller filenames, one filename per line.
+    Each poller file must be obtained from a specified directory and read to obtain the
+    names of the data files which need to be processed.
 
-        This test file can be executed in the following manner:
-            $ pytest -n # -s --basetemp=/internal/hladata/yourUniqueDirectoryHere --bigdata --slow
-              --svm_list svm_input.lst test_run_svmpoller.py >& test_svmpoller_output.txt &
-            $ tail -f test_svmpoller_output.txt
-          * The `-n #` option can be used to run tests in parallel if `pytest-xdist` has
-            been installed where `#` is the number of cpus to use. THIS IS NOT ADVISED FOR USE.
-          * Note: When running this test, the `--basetemp` directory should be set to a unique
-            existing directory to avoid deleting previous test output.
-          * A default master list, svm_input.lst, exists in the tests/hla directory and contains 3 datasets.
-            This specific list may NOT the list you want to use, but it allows you to see what this file
-            should contain.  Please note the PyTests should be kept to runtimes which are not
-            excessive.
+    This test file can be executed in the following manner:
+        $ pytest -n # -s --basetemp=/internal/hladata/yourUniqueDirectoryHere --bigdata --slow
+          --svm_list svm_input.lst test_run_svmpoller.py >& test_svmpoller_output.txt &
+        $ tail -f test_svmpoller_output.txt
+      * The `-n #` option can be used to run tests in parallel if `pytest-xdist` has
+        been installed where `#` is the number of cpus to use. THIS IS NOT ADVISED FOR USE.
+      * Note: When running this test, the `--basetemp` directory should be set to a unique
+        existing directory to avoid deleting previous test output.
+      * A default master list, svm_input.lst, exists in the tests/hla directory and contains 3 datasets.
+        This specific list may NOT the list you want to use, but it allows you to see what this file
+        should contain.  Please note the PyTests should be kept to runtimes which are not
+        excessive.
 
     """
     print("TEST_RUN_SVMPOLLER. Dataset: ", dataset)
@@ -89,7 +89,6 @@ def test_run_svmpoller(tmpdir, dataset):
     return_value = 1
 
     try:
-
         # Read the CSV poller file residing in the tests directory to extract the individual visit FLT/FLC filenames
         path = os.path.join(os.path.dirname(__file__), dataset)
         table = ascii.read(path, format="no_header")
@@ -108,7 +107,7 @@ def test_run_svmpoller(tmpdir, dataset):
                 flc_flag = fn[0:6] + "*"
             elif fn.lower().endswith("flt.fits") and flt_flag == "":
                 flt_flag = fn[0:6] + "*"
-     
+
             # If both flags have been set, then break out the loop early.  It may be
             # that all files have to be checked which means the for loop continues
             # until its natural completion.
@@ -121,21 +120,25 @@ def test_run_svmpoller(tmpdir, dataset):
         flcfiles = []
         fltfiles = []
         if flc_flag:
-            flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
+            flcfiles = aqutils.retrieve_observation(
+                flc_flag, suffix=["FLC"], product_type="pipeline"
+            )
         if flt_flag:
-            fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
+            fltfiles = aqutils.retrieve_observation(
+                flt_flag, suffix=["FLT"], product_type="pipeline"
+            )
 
         flcfiles.extend(fltfiles)
 
         # Keep only the files which exist in BOTH lists for processing
-        files_to_process= set(filenames).intersection(set(flcfiles))
+        files_to_process = set(filenames).intersection(set(flcfiles))
 
         # Identify unwanted files from the download list and remove from disk
         files_to_remove = set(filenames).symmetric_difference(set(flcfiles))
 
         try:
             for ftr in files_to_remove:
-               os.remove(ftr)
+                os.remove(ftr)
         except Exception as x_cept:
             print("")
             print("Exception encountered: {}.".format(x_cept))

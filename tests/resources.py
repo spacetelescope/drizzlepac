@@ -28,21 +28,21 @@ class BaseCal:
     prevdir = os.getcwd()
     use_ftp_crds = True
     timeout = 30  # seconds
-    tree = 'dev'
+    tree = "dev"
 
     # Numpy default for allclose comparison
     rtol = 1e-6
     atol = 1e-5
 
     # To be defined by instrument
-    refstr = ''
-    prevref = ''
-    input_loc = ''
-    ref_loc = ''
+    refstr = ""
+    prevref = ""
+    input_loc = ""
+    ref_loc = ""
     ignore_keywords = []
 
     # To be defined by individual test
-    subdir = ''
+    subdir = ""
 
     @pytest.fixture(autouse=True)
     def setup_class(self, tmpdir, envopt, pytestconfig):
@@ -61,12 +61,12 @@ class BaseCal:
         #       Refine this logic if using pytest fixture.
         # HSTCAL cannot open remote CRDS on FTP but central storage is okay.
         # So use central storage if available to avoid FTP.
-        if self.prevref is None or self.prevref.startswith(('ftp', 'http')):
+        if self.prevref is None or self.prevref.startswith(("ftp", "http")):
             os.environ[self.refstr] = p + os.sep
             self.use_ftp_crds = True
 
         # Turn off Astrometry updates
-        os.environ['ASTROMETRY_APPLY_APRIORI'] = 'OFF'
+        os.environ["ASTROMETRY_APPLY_APRIORI"] = "OFF"
 
         # This controls astropy.io.fits timeout
         conf.remote_timeout = self.timeout
@@ -75,12 +75,12 @@ class BaseCal:
         self.tree = envopt
 
         # Collect pytest configuration values specified in setup.cfg or pytest.ini
-        self.inputs_root = pytestconfig.getini('inputs_root')[0]
-        self.results_root = pytestconfig.getini('results_root')[0]
+        self.inputs_root = pytestconfig.getini("inputs_root")[0]
+        self.results_root = pytestconfig.getini("results_root")[0]
 
     def teardown_class(self):
         """Reset path and variables."""
-        conf.reset('remote_timeout')
+        conf.reset("remote_timeout")
         os.chdir(self.prevdir)
         if self.use_ftp_crds and self.prevref is not None:
             os.environ[self.refstr] = self.prevref
@@ -95,21 +95,23 @@ class BaseCal:
 
         return local_file
 
-    def get_input_file(self, *args, refsep='$'):
+    def get_input_file(self, *args, refsep="$"):
         """
         Download or copy input file (e.g., RAW) into the working directory.
         The associated CRDS reference files in ``refstr`` are also
         downloaded, if necessary.
         """
         filename = self.get_data(*args)
-        ref_files = ref_from_image(filename, ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE', 'DGEOFILE'])
+        ref_files = ref_from_image(
+            filename, ["IDCTAB", "OFFTAB", "NPOLFILE", "D2IMFILE", "DGEOFILE"]
+        )
         print("Looking for REF_FILES: {}".format(ref_files))
 
         for ref_file in ref_files:
-            if ref_file.strip() == '':
+            if ref_file.strip() == "":
                 continue
             if refsep not in ref_file:  # Local file
-                refname = self.get_data('customRef', ref_file)
+                refname = self.get_data("customRef", ref_file)
             else:  # Download from FTP, if applicable
                 refname = os.path.join(ref_file)
                 if self.use_ftp_crds:
@@ -140,32 +142,36 @@ class BaseCal:
 
         """
         all_okay = True
-        creature_report = ''
+        creature_report = ""
         # Create instructions for uploading results to artifactory for use
         # as new comparison/truth files
         testpath, testname = os.path.split(os.path.abspath(os.curdir))
         # organize results by day test was run...could replace with git-hash
-        whoami = getpass.getuser() or 'nobody'
+        whoami = getpass.getuser() or "nobody"
         dt = datetime.datetime.now().strftime("%d%b%YT")
         ttime = datetime.datetime.now().strftime("%H_%M_%S")
-        user_tag = 'NOT_CI_{}_{}'.format(whoami, ttime)
-        build_tag = os.environ.get('BUILD_TAG',  user_tag)
-        build_suffix = os.environ.get('BUILD_MATRIX_SUFFIX', 'standalone')
+        user_tag = "NOT_CI_{}_{}".format(whoami, ttime)
+        build_tag = os.environ.get("BUILD_TAG", user_tag)
+        build_suffix = os.environ.get("BUILD_MATRIX_SUFFIX", "standalone")
         testdir = "{}_{}_{}".format(testname, build_tag, build_suffix)
-        tree = os.path.join(self.results_root, self.input_loc,
-                            dt, testdir) + os.sep
+        tree = os.path.join(self.results_root, self.input_loc, dt, testdir) + os.sep
 
         updated_outputs = []
         for actual, desired in outputs:
             # Get "truth" image
-            s = self.get_data('truth', desired)
+            s = self.get_data("truth", desired)
             if s is not None:
                 desired = s
 
-            if actual.endswith('fits'):
+            if actual.endswith("fits"):
                 # Working with FITS files...
-                fdiff = FITSDiff(actual, desired, rtol=self.rtol, atol=self.atol,
-                                 ignore_keywords=self.ignore_keywords)
+                fdiff = FITSDiff(
+                    actual,
+                    desired,
+                    rtol=self.rtol,
+                    atol=self.atol,
+                    ignore_keywords=self.ignore_keywords,
+                )
                 creature_report += fdiff.report()
                 if not fdiff.identical:
                     # Only keep track of failed results which need to
@@ -179,8 +185,9 @@ class BaseCal:
                     actual_lines = afile.readlines()
                 with open(desired) as dfile:
                     desired_lines = dfile.readlines()
-                udiff = unified_diff(actual_lines, desired_lines,
-                                     fromfile=actual, tofile=desired)
+                udiff = unified_diff(
+                    actual_lines, desired_lines, fromfile=actual, tofile=desired
+                )
 
                 old_stdout = sys.stdout
                 udiffIO = StringIO()
@@ -200,82 +207,139 @@ class BaseCal:
             # Write out JSON file to enable retention of different results
             new_truths = [os.path.abspath(i[1]) for i in updated_outputs]
             for files in updated_outputs:
-                print("Renaming {} as new 'truth' file: {}".format(
-                      files[0], files[1]))
+                print("Renaming {} as new 'truth' file: {}".format(files[0], files[1]))
                 shutil.move(files[0], files[1])
-            log_pattern = [os.path.join(os.path.dirname(x), '*.log') for x in new_truths]
-            generate_upload_schema(pattern=new_truths + log_pattern,
-                           testname=testname,
-                           target= tree)
+            log_pattern = [
+                os.path.join(os.path.dirname(x), "*.log") for x in new_truths
+            ]
+            generate_upload_schema(
+                pattern=new_truths + log_pattern, testname=testname, target=tree
+            )
 
         if not all_okay and raise_error:
             raise AssertionError(os.linesep + creature_report)
-
 
         return creature_report
 
 
 class BaseACS(BaseCal):
-    refstr = 'jref'
+    refstr = "jref"
     prevref = os.environ.get(refstr)
-    input_loc = 'acs'
-    ref_loc = 'acs'
-    ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
-                       'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history', 'prod_ver', 'rulefile']
+    input_loc = "acs"
+    ref_loc = "acs"
+    ignore_keywords = [
+        "origin",
+        "filename",
+        "date",
+        "iraf-tlm",
+        "fitsdate",
+        "upwtim",
+        "wcscdate",
+        "upwcsver",
+        "pywcsver",
+        "history",
+        "prod_ver",
+        "rulefile",
+    ]
 
 
 class BaseACSHRC(BaseACS):
-    input_loc = 'acs/hrc'
-    ref_loc = 'acs/hrc/ref'
+    input_loc = "acs/hrc"
+    ref_loc = "acs/hrc/ref"
 
 
 class BaseACSWFC(BaseACS):
-    input_loc = 'acs/wfc'
-    ref_loc = 'acs/wfc/ref'
+    input_loc = "acs/wfc"
+    ref_loc = "acs/wfc/ref"
 
 
 class BaseWFC3(BaseCal):
-    refstr = 'iref'
-    input_loc = 'wfc3'
-    ref_loc = 'wfc3/ref'
+    refstr = "iref"
+    input_loc = "wfc3"
+    ref_loc = "wfc3/ref"
     prevref = os.environ.get(refstr)
-    ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
-                       'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history', 'prod_ver', 'rulefile']
+    ignore_keywords = [
+        "origin",
+        "filename",
+        "date",
+        "iraf-tlm",
+        "fitsdate",
+        "upwtim",
+        "wcscdate",
+        "upwcsver",
+        "pywcsver",
+        "history",
+        "prod_ver",
+        "rulefile",
+    ]
 
 
 class BaseSTIS(BaseCal):
-    refstr = 'oref'
+    refstr = "oref"
     prevref = os.environ.get(refstr)
-    input_loc = 'stis'
-    ref_loc = 'stis/ref'
-    ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
-                       'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history', 'prod_ver', 'rulefile']
+    input_loc = "stis"
+    ref_loc = "stis/ref"
+    ignore_keywords = [
+        "origin",
+        "filename",
+        "date",
+        "iraf-tlm",
+        "fitsdate",
+        "upwtim",
+        "wcscdate",
+        "upwcsver",
+        "pywcsver",
+        "history",
+        "prod_ver",
+        "rulefile",
+    ]
 
 
 class BaseWFPC2(BaseCal):
-    refstr = 'uref'
+    refstr = "uref"
     prevref = os.environ.get(refstr)
-    input_loc = 'wfpc2'
-    ref_loc = 'wfpc2/ref'
-    ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
-                       'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history', 'prod_ver', 'rulefile']
+    input_loc = "wfpc2"
+    ref_loc = "wfpc2/ref"
+    ignore_keywords = [
+        "origin",
+        "filename",
+        "date",
+        "iraf-tlm",
+        "fitsdate",
+        "upwtim",
+        "wcscdate",
+        "upwcsver",
+        "pywcsver",
+        "history",
+        "prod_ver",
+        "rulefile",
+    ]
+
 
 def centroid_compare(centroid):
     return centroid[1]
 
+
 class BaseUnit(BaseCal):
     buff = 0
-    refstr = 'jref'
+    refstr = "jref"
     prevref = os.environ.get(refstr)
-    input_loc = 'acs'
-    ref_loc = 'acs'
-    ignore_keywords = ['origin', 'filename', 'date', 'iraf-tlm', 'fitsdate',
-                       'upwtim', 'wcscdate', 'upwcsver', 'pywcsver',
-                       'history', 'prod_ver', 'rulefile']
+    input_loc = "acs"
+    ref_loc = "acs"
+    ignore_keywords = [
+        "origin",
+        "filename",
+        "date",
+        "iraf-tlm",
+        "fitsdate",
+        "upwtim",
+        "wcscdate",
+        "upwcsver",
+        "pywcsver",
+        "history",
+        "prod_ver",
+        "rulefile",
+    ]
     atol = 1.0e-5
 
     def bound_image(self, image):
@@ -301,11 +365,12 @@ class BaseUnit(BaseCal):
         center = [0.0, 0.0, 0.0]
         for y in range(ylo, yhi):
             for x in range(xlo, xhi):
-                center[0] += y * image[y,x]
-                center[1] += x * image[y,x]
-                center[2] += image[y,x]
+                center[0] += y * image[y, x]
+                center[1] += x * image[y, x]
+                center[2] += image[y, x]
 
-        if center[2] == 0.0: return None
+        if center[2] == 0.0:
+            return None
 
         center[0] /= center[2]
         center[1] /= center[2]
@@ -315,9 +380,11 @@ class BaseUnit(BaseCal):
         """
         Find if any centroid is close to a point
         """
-        for i in range(len(list_of_centroids)-1, -1, -1):
-            if (abs(list_of_centroids[i][0] - point[0]) < size / 2 and
-                abs(list_of_centroids[i][1] - point[1]) < size / 2):
+        for i in range(len(list_of_centroids) - 1, -1, -1):
+            if (
+                abs(list_of_centroids[i][0] - point[0]) < size / 2
+                and abs(list_of_centroids[i][1] - point[1]) < size / 2
+            ):
                 return 1
 
         return 0
@@ -331,7 +398,8 @@ class BaseUnit(BaseCal):
 
         for center2, pt in zip(list_of_centroids, lst_pts):
             center1 = self.centroid(image1, size, pt)
-            if center1 is None: continue
+            if center1 is None:
+                continue
 
             disty = center2[0] - center1[0]
             distx = center2[1] - center1[1]
@@ -368,8 +436,8 @@ class BaseUnit(BaseCal):
 
         diff = []
         distances = self.centroid_distances(image1, image2, amp, size)
-        indexes = (0, len(distances)//2, len(distances)-1)
-        fd = open(fname, 'w')
+        indexes = (0, len(distances) // 2, len(distances) - 1)
+        fd = open(fname, "w")
         fd.write("*** %s ***\n" % title)
 
         if len(distances) == 0:
@@ -380,34 +448,55 @@ class BaseUnit(BaseCal):
             diff = [distances[0][0], distances[0][0], distances[0][0]]
 
             fd.write("1 match\n")
-            fd.write("distance = %f flux difference = %f\n" % (distances[0][0], distances[0][1]))
+            fd.write(
+                "distance = %f flux difference = %f\n"
+                % (distances[0][0], distances[0][1])
+            )
 
             for j in range(2, 4):
-                ylo = int(distances[0][j][0]) - (1+self.buff)
-                yhi = int(distances[0][j][0]) + (2+self.buff)
-                xlo = int(distances[0][j][1]) - (1+self.buff)
-                xhi = int(distances[0][j][1]) + (2+self.buff)
-                subimage = images[j][ylo:yhi,xlo:xhi]
-                fd.write("\n%s image centroid = (%f,%f) image flux = %f\n" %
-                         (im_type[j], distances[0][j][0], distances[0][j][1], distances[0][j][2]))
+                ylo = int(distances[0][j][0]) - (1 + self.buff)
+                yhi = int(distances[0][j][0]) + (2 + self.buff)
+                xlo = int(distances[0][j][1]) - (1 + self.buff)
+                xhi = int(distances[0][j][1]) + (2 + self.buff)
+                subimage = images[j][ylo:yhi, xlo:xhi]
+                fd.write(
+                    "\n%s image centroid = (%f,%f) image flux = %f\n"
+                    % (
+                        im_type[j],
+                        distances[0][j][0],
+                        distances[0][j][1],
+                        distances[0][j][2],
+                    )
+                )
                 fd.write(str(subimage) + "\n")
 
         else:
             fd.write("%d matches\n" % len(distances))
 
-            for k in range(0,3):
+            for k in range(0, 3):
                 i = indexes[k]
                 diff.append(distances[i][0])
-                fd.write("\n%s distance = %f flux difference = %f\n" % (stats[k], distances[i][0], distances[i][1]))
+                fd.write(
+                    "\n%s distance = %f flux difference = %f\n"
+                    % (stats[k], distances[i][0], distances[i][1])
+                )
 
                 for j in range(2, 4):
-                    ylo = int(distances[i][j][0]) - (1+self.buff)
-                    yhi = int(distances[i][j][0]) + (2+self.buff)
-                    xlo = int(distances[i][j][1]) - (1+self.buff)
-                    xhi = int(distances[i][j][1]) + (2+self.buff)
-                    subimage = images[j][ylo:yhi,xlo:xhi]
-                    fd.write("\n%s %s image centroid = (%f,%f) image flux = %f\n" %
-                             (stats[k], im_type[j], distances[i][j][0], distances[i][j][1], distances[i][j][2]))
+                    ylo = int(distances[i][j][0]) - (1 + self.buff)
+                    yhi = int(distances[i][j][0]) + (2 + self.buff)
+                    xlo = int(distances[i][j][1]) - (1 + self.buff)
+                    xhi = int(distances[i][j][1]) + (2 + self.buff)
+                    subimage = images[j][ylo:yhi, xlo:xhi]
+                    fd.write(
+                        "\n%s %s image centroid = (%f,%f) image flux = %f\n"
+                        % (
+                            stats[k],
+                            im_type[j],
+                            distances[i][j][0],
+                            distances[i][j][1],
+                            distances[i][j][2],
+                        )
+                    )
                     fd.write(str(subimage) + "\n")
 
         fd.close()
@@ -428,9 +517,9 @@ class BaseUnit(BaseCal):
         output_image = np.zeros(input_image.shape, dtype=input_image.dtype)
 
         shape = output_image.shape
-        for y in range(spacing//2, shape[0], spacing):
-            for x in range(spacing//2, shape[1], spacing):
-                output_image[y,x] = value
+        for y in range(spacing // 2, shape[0], spacing):
+            for x in range(spacing // 2, shape[1], spacing):
+                output_image[y, x] = value
 
         return output_image
 
@@ -440,7 +529,6 @@ class BaseUnit(BaseCal):
         """
         print("=== %s ===" % title)
         print(wcs.to_header_string())
-
 
     def read_image(self, filename):
         """
@@ -466,29 +554,29 @@ class BaseUnit(BaseCal):
         """
         Update header with WCS keywords
         """
-        hdu.header['ORIENTAT'] = image_wcs.orientat
-        hdu.header['CD1_1'] = image_wcs.wcs.cd[0][0]
-        hdu.header['CD1_2'] = image_wcs.wcs.cd[0][1]
-        hdu.header['CD2_1'] = image_wcs.wcs.cd[1][0]
-        hdu.header['CD2_2'] = image_wcs.wcs.cd[1][1]
-        hdu.header['CRVAL1'] = image_wcs.wcs.crval[0]
-        hdu.header['CRVAL2'] = image_wcs.wcs.crval[1]
-        hdu.header['CRPIX1'] = image_wcs.wcs.crpix[0]
-        hdu.header['CRPIX2'] = image_wcs.wcs.crpix[1]
-        hdu.header['CTYPE1'] = image_wcs.wcs.ctype[0]
-        hdu.header['CTYPE2'] = image_wcs.wcs.ctype[1]
-        hdu.header['VAFACTOR'] = 1.0
+        hdu.header["ORIENTAT"] = image_wcs.orientat
+        hdu.header["CD1_1"] = image_wcs.wcs.cd[0][0]
+        hdu.header["CD1_2"] = image_wcs.wcs.cd[0][1]
+        hdu.header["CD2_1"] = image_wcs.wcs.cd[1][0]
+        hdu.header["CD2_2"] = image_wcs.wcs.cd[1][1]
+        hdu.header["CRVAL1"] = image_wcs.wcs.crval[0]
+        hdu.header["CRVAL2"] = image_wcs.wcs.crval[1]
+        hdu.header["CRPIX1"] = image_wcs.wcs.crpix[0]
+        hdu.header["CRPIX2"] = image_wcs.wcs.crpix[1]
+        hdu.header["CTYPE1"] = image_wcs.wcs.ctype[0]
+        hdu.header["CTYPE2"] = image_wcs.wcs.ctype[1]
+        hdu.header["VAFACTOR"] = 1.0
 
     def write_image(self, filename, wcs, *args):
         """
         Read the image from a fits file
         """
-        extarray = ['SCI', 'WHT', 'CTX']
+        extarray = ["SCI", "WHT", "CTX"]
 
         pimg = fits.HDUList()
         phdu = fits.PrimaryHDU()
-        phdu.header['NDRIZIM'] = 1
-        phdu.header['ROOTNAME'] = filename
+        phdu.header["NDRIZIM"] = 1
+        phdu.header["ROOTNAME"] = filename
         pimg.append(phdu)
 
         for img in args:
@@ -497,8 +585,8 @@ class BaseUnit(BaseCal):
             extname = fileutil.parseExtn(extn)
 
             ehdu = fits.ImageHDU(data=img)
-            ehdu.header['EXTNAME'] = extname[0]
-            ehdu.header['EXTVER'] = extname[1]
+            ehdu.header["EXTNAME"] = extname[0]
+            ehdu.header["EXTVER"] = extname[1]
             self.write_wcs(ehdu, wcs)
             pimg.append(ehdu)
 
@@ -530,22 +618,12 @@ def add_suffix(fname, suffix, range=None):
     """
     fname_root, fname_ext = splitext(fname)
     if range is None:
-        with_suffix = ''.join([
-            fname_root,
-            '_',
-            suffix,
-            fname_ext
-        ])
+        with_suffix = "".join([fname_root, "_", suffix, fname_ext])
     else:
         with_suffix = []
         for idx in range:
-            with_suffix.append(''.join([
-                fname_root,
-                '_',
-                str(idx),
-                '_',
-                suffix,
-                fname_ext
-            ]))
+            with_suffix.append(
+                "".join([fname_root, "_", str(idx), "_", suffix, fname_ext])
+            )
 
     return fname, with_suffix
