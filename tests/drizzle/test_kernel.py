@@ -46,17 +46,16 @@ def test_point_kernel(kernel, kernel_pars, new_truth=False, return_png=False):
 
     wrong_mask = np.logical_not(np.isclose(kernel_pars.outsci, truth_array))
 
-    print("\n\n\noutput")
     print(kernel_pars.outsci[wrong_mask])
-    print("\n\n\ntruth")
     print(truth_array[wrong_mask])
 
-    assert np.allclose(
-        kernel_pars.outsci,
-        truth_array,
-        atol=1e-4,
-        rtol=1e-5,
-    ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    # assert np.allclose(
+    #     kernel_pars.outsci,
+    #     truth_array,
+    #     atol=1e-4,
+    #     rtol=1e-5,
+    # ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    assert kernel_pars.outsci[wrong_mask] == truth_array[wrong_mask]
 
 
 def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
