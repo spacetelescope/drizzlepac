@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Python package
+name: Steve's extra pytests
 
 on:
   pull_request:
@@ -32,7 +32,7 @@ jobs:
           pip3 install flake8 pytest
           pip3 install numpy
           pip3 install setuptools==49.6.0
-          pip3 install --no-cache-dir -r requirements.txt
+          pip3 install --no-cache-dir -r requirements-dev.txt
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
