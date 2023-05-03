@@ -17,40 +17,46 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
+3.6.1 (Unreleased)
+==================
+
+- Fix a bug in ``processinput.buildFileListOrig`` due to which astrodrizzle
+  might crash when ``updatewcs`` is set to ``True``. [#1549]
+
 3.6.0 (28-Apr-2023)
 ===================
 
-- Turn off use of ``verify_guiding()`` for WFPC2 images only as its use 
-  incorrectly recognizes diffraction spikes from saturated stars as evidence 
+- Turn off use of ``verify_guiding()`` for WFPC2 images only as its use
+  incorrectly recognizes diffraction spikes from saturated stars as evidence
   of loss of lock and flags those exposures as 'bad'. [#1511]
- 
+
 - Ensure processing of all IMAGETYP=EXT WFPC2 targets. [#1505]
 
 - Properly identify neighbor Projection Cells which overlap input
   exposures. [#1503]
 
-- Updates identify and remove any WFPC2 calibration exposures that 
-  cannot be processed during standard pipeline alignment and drizzling. 
-  The list of recognized calibration target names was updated to 
-  accommodate WFPC2 and to identify exposures to be skipped and deleted 
+- Updates identify and remove any WFPC2 calibration exposures that
+  cannot be processed during standard pipeline alignment and drizzling.
+  The list of recognized calibration target names was updated to
+  accommodate WFPC2 and to identify exposures to be skipped and deleted
   after converting the D0M images into FLT images. [#1514]
 
-- Compute a default kernel for use with astrometric_utils.extract_sources() 
-  function when the kernel parameter is None.  The default kernel is based on 
+- Compute a default kernel for use with astrometric_utils.extract_sources()
+  function when the kernel parameter is None.  The default kernel is based on
   the fwhm parameter of the same function. [#1519]
 
 - Address many ReadTheDocs issues. [#1521 - #1529]
 
-- Write the EXPNAME keyword to the ACS SVM and MVM headers to avoid errors 
+- Write the EXPNAME keyword to the ACS SVM and MVM headers to avoid errors
   and enforce consistency with WFC3. [#1530]
- 
-- Properly populate the S_REGION keyword with a closed polygon for the 
+
+- Properly populate the S_REGION keyword with a closed polygon for the
   pipeline FLT/FLC images. [#1533]
 
 - Compute the S_REGION values for pipeline drizzled products. [#1535]
 
 - Ensure the DATE keyword is written to the primary header of all output
-  drizzled products. The DATE represents the date the file was written. 
+  drizzled products. The DATE represents the date the file was written.
   [#1537]
 
 - Update to ensure the SVM FLT/FLC files all contain the S_REGION keyword
@@ -62,7 +68,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Turn on use of ``verify_guiding()`` to ignore exposures where guide star
   lock was lost and the stars are trailed. [#1443]
 
-- Ensure when no sources are found and the variable thresh is zero, the 
+- Ensure when no sources are found and the variable thresh is zero, the
   ``verify_crthesh()`` properly indicates the catalog failed the CR threshold.
   [#1450]
 
