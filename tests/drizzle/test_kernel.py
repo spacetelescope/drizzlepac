@@ -7,9 +7,9 @@ import cdriz_setup
 
 @pytest.fixture
 def kernel_pars():
-    _out = cdriz_setup.Get_Grid(inx=50, iny=60, outx=51, outy=66)
-    _out.zero_background()
-    return _out
+    _params = cdriz_setup.Get_Grid(inx=50, iny=60, outx=51, outy=66)
+    _params.zero_background()
+    return _params
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
