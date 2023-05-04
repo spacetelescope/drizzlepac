@@ -52,7 +52,7 @@ def test_point_kernel(kernel, kernel_pars, new_truth=False, return_png=False):
     #     atol=1e-4,
     #     rtol=1e-5,
     # ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
-    np.testing.assert_array_equal(kernel_pars.outsci[wrong_mask], truth_array[wrong_mask])
+    np.testing.assert_array_equal(kernel_pars.outsci, truth_array)
 
 
 def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
