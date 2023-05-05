@@ -91,9 +91,9 @@ def cdriz_call(_set_kernel_pars, kernel):
 
 
 def save_array(_data, _name):
-    local_path = os.path.dirname('__file__')
+    local_path = os.path.dirname("__file__")
     np.savetxt(
-        local_path+_name,
+        local_path + _name,
         X=_data,
         fmt="%1.8f",
         delimiter=",",
@@ -113,14 +113,16 @@ def generate_png(_set_kernel_pars, _name):
     """
     # for generating truth files
     import matplotlib.pyplot as plt
-    local_path = os.path.dirname('__file__')
+
+    local_path = os.path.dirname("__file__")
     fig = plt.figure(figsize=(4, 2))
     ax1 = fig.add_subplot(111, projection=_set_kernel_pars.w1)
     ax1.imshow(_set_kernel_pars.outsci, origin="lower", cmap="Greys")
     ax1.set_ylabel(" ")
     ax1.set_xlabel(" ")
-    local_path = os.path.dirname('__file__')
-    fig.savefig(local_path+_name)
+    local_path = os.path.dirname("__file__")
+    fig.savefig(local_path + _name)
+
 
 def error_message(_data, _name):
     """Saves new truth csv file on failure of test.
@@ -133,5 +135,4 @@ def error_message(_data, _name):
         new name of truth file, should be slightly
         different than current truth file
     """
-    local_path = os.path.dirname('__file__')
-    save_array(_data, local_path+_name)
+    save_array(_data, _name)

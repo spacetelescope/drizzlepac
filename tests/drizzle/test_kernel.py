@@ -50,7 +50,7 @@ def test_point_kernel(kernel, kernel_pars, return_png=False):
     ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
-def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
+def test_cdriz_edge(kernel_pars, kernel="gaussian", return_png=False):
     """Similar to test_point_kernel but looking at bright pixels at edge of field."""
 
     truth_filename = f"./tests/drizzle/truth_files/edge_{kernel}_truth"
@@ -69,42 +69,40 @@ def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=
     ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
-def test_cdriz_large(kernel_pars, kernel="gaussian", new_truth=False, return_png=False):
+def test_cdriz_large(kernel_pars, kernel="gaussian", return_png=False):
     """Similar to test_point_kernel but looking at large pixel."""
 
     truth_filename = f"./tests/drizzle/truth_files/large_sqaure_{kernel}_truth"
     kernel_pars.insci[21:25, 22:26] = 100
     cdriz_setup.cdriz_call(kernel_pars, kernel)
-    
+
     if return_png:
         cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
-    try: 
+    try:
         truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
-    except: 
+    except:
         cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
     ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
 
 
-def test_cdriz_non_symmetrical(
-    kernel_pars, kernel="gaussian", new_truth=False, return_png=False
-):
+def test_cdriz_non_symmetrical(kernel_pars, kernel="gaussian", return_png=False):
     """Similar to test_point_kernel but looking at non-symmetrical pixel."""
 
     truth_filename = f"./tests/drizzle/truth_files/nonsymmetrical_{kernel}_truth"
     kernel_pars.insci[21:25, 22:23] = 100
     cdriz_setup.cdriz_call(kernel_pars, kernel)
-   
+
     if return_png:
         cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
-    try: 
+    try:
         truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
     except:
         cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
-    
+
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
     ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
