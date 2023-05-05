@@ -119,7 +119,7 @@ def generate_png(_set_kernel_pars, _name):
     ax1 = fig.add_subplot(111, projection=_set_kernel_pars.w1)
     ax1.imshow(_set_kernel_pars.outsci, origin="lower", cmap="Greys")
     ax1.set_ylabel(" ")
-    local_path = os.path.dirname("__file__")
+    ax1.set_xlabel(" ")
     fig.savefig(local_path + _name)
 
 
