@@ -117,7 +117,7 @@ def test_zero_input_weight(kernel, kernel_pars):
     kernel : str
         String associated with one of the c code point kernel options.
     kernel_pars : Class
-        The Class inintialized in Get_Class which includes all of the inputs need to run cdriz.tdriz.
+        The Class initialized in Get_Class which includes all of the inputs need to run cdriz.tdriz.
     """
 
     # zero for all insci

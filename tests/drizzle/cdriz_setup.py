@@ -74,7 +74,7 @@ def cdriz_call(_set_kernel_pars, kernel):
         1,  # ymin pixel to start reading; fits so starts at 1
         _set_kernel_pars.dny,  # _dny
         1.0,  # pix_ratio
-        1.0,  # xscale; plate scale variatitons
+        1.0,  # xscale; plate scale variations
         1.0,  # yscale; plate scale variations
         "corner",  # center of pixel is what 0 corresponds to
         1.0,  # pixfrac
