@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
 from astropy import wcs
-from drizzlepac import cdriz
 import cdriz_setup
 
 
@@ -13,7 +12,7 @@ def kernel_pars():
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
-def test_point_kernel(kernel, kernel_pars, new_truth=False, return_png=False):
+def test_point_kernel(kernel, kernel_pars, return_png=False):
     """Function tests different c code point kernels (inputs already created on instantiation).
 
     Parameters
@@ -22,8 +21,6 @@ def test_point_kernel(kernel, kernel_pars, new_truth=False, return_png=False):
         String associated with one of the c code point kernel options.
     kernel_pars : Class
         The Class inintialized in Get_Grid which includes all of the inputs need to run cdriz.tdriz.
-    new_truth : bool, optional
-        Flag, whether to save a new csv truth file from the output data, by default False
     return_png: bool, optional
         Flag, whether to create an output image map (png).
     """
@@ -36,15 +33,14 @@ def test_point_kernel(kernel, kernel_pars, new_truth=False, return_png=False):
     # resample:
     cdriz_setup.cdriz_call(kernel_pars, kernel)
 
-    if new_truth:
-        # save new truth file
-        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
-
     if return_png:
         # save truth file as figure
         cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
-    truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    try:
+        truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    except:
+        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
 
     assert np.allclose(
         kernel_pars.outsci,
@@ -60,12 +56,14 @@ def test_cdriz_edge(kernel_pars, kernel="gaussian", new_truth=False, return_png=
     truth_filename = f"./tests/drizzle/truth_files/edge_{kernel}_truth"
     kernel_pars.insci[0, 21] = 100
     cdriz_setup.cdriz_call(kernel_pars, kernel)
-    if new_truth:
-        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+
     if return_png:
         cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
-    truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    try:
+        truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    except:
+        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
     ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
@@ -77,12 +75,14 @@ def test_cdriz_large(kernel_pars, kernel="gaussian", new_truth=False, return_png
     truth_filename = f"./tests/drizzle/truth_files/large_sqaure_{kernel}_truth"
     kernel_pars.insci[21:25, 22:26] = 100
     cdriz_setup.cdriz_call(kernel_pars, kernel)
-    if new_truth:
-        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+    
     if return_png:
         cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
-    truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    try: 
+        truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    except: 
+        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
     ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
@@ -96,12 +96,15 @@ def test_cdriz_non_symmetrical(
     truth_filename = f"./tests/drizzle/truth_files/nonsymmetrical_{kernel}_truth"
     kernel_pars.insci[21:25, 22:23] = 100
     cdriz_setup.cdriz_call(kernel_pars, kernel)
-    if new_truth:
-        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+   
     if return_png:
         cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
 
-    truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    try: 
+        truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+    except:
+        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+    
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
     ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
