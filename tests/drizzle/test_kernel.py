@@ -72,7 +72,7 @@ def test_cdriz_edge(kernel_pars, kernel="gaussian", return_png=False):
 def test_cdriz_large(kernel_pars, kernel="gaussian", return_png=False):
     """Similar to test_point_kernel but looking at large pixel."""
 
-    truth_filename = f"./tests/drizzle/truth_files/large_sqaure_{kernel}_truth"
+    truth_filename = f"./tests/drizzle/truth_files/large_square_{kernel}_truth"
     kernel_pars.insci[21:25, 22:26] = 100
     cdriz_setup.cdriz_call(kernel_pars, kernel)
 
