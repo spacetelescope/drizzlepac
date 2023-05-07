@@ -34,7 +34,7 @@ def test_square_kernel(kernel_pars, kernel, return_png=False):
     if return_png:
         # save truth file as figure
         cdriz_setup.generate_png(
-            kernel_pars, "./tests/drizzle/truth_files/cdriz_square.png"
+            kernel_pars, f"cdriz_{kernel}.png"
         )
 
     assert np.allclose(np.sum(kernel_pars.outsci), 10000, 1e-7)
@@ -46,7 +46,7 @@ def test_gaussian_kernel(kernel_pars, return_png=False):
     cdriz_setup.cdriz_call(kernel_pars, "gaussian")
     if return_png:
         cdriz_setup.generate_png(
-            kernel_pars, "./tests/drizzle/truth_files/cdriz_gaussian.png"
+            kernel_pars, "cdriz_gaussian.png"
         )
     assert np.allclose(np.sum(kernel_pars.outsci), 10000, 1e-3)
 
@@ -57,6 +57,6 @@ def test_lanczos3_kernel(kernel_pars, return_png=False):
     cdriz_setup.cdriz_call(kernel_pars, "lanczos3")
     if return_png:
         cdriz_setup.generate_png(
-            kernel_pars, "./tests/drizzle/truth_files/cdriz_lanczos3.png"
+            kernel_pars, "cdriz_lanczos3.png"
         )
     assert np.allclose(np.sum(kernel_pars.outsci), 9882.103, 1e-3)
