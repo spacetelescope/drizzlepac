@@ -2161,7 +2161,7 @@ def main():
 
         except Exception as errorobj:
             print(str(errorobj))
-            print("ERROR: Cannot run astrodrizzle on %s." % sys.argv[1])
+            print("ERROR: Cannot run astrodrizzle on %s." % " ".join(sys.argv))
             raise Exception(str(errorobj))
 
     sys.exit()
