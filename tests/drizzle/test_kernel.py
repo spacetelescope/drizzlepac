@@ -1,3 +1,4 @@
+import os
 import pytest
 import numpy as np
 from astropy import wcs
@@ -12,7 +13,7 @@ def kernel_pars():
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])
-def test_point_kernel(kernel, kernel_pars, return_png=False):
+def test_point_kernel(kernel, kernel_pars, return_png=True):
     """Function tests different c code point kernels (inputs already created on instantiation).
 
     Parameters
@@ -24,8 +25,11 @@ def test_point_kernel(kernel, kernel_pars, return_png=False):
     return_png: bool, optional
         Flag, whether to create an output image map (png).
     """
+
     # truth filename
-    truth_filename = f"./tests/drizzle/truth_files/{kernel}_truth"
+    output_name = f"{kernel}_truth"
+    relative_path = "truth_files"
+    output_fullpath = cdriz_setup.get_output_fullpath(relative_path, output_name)
 
     # add missing/flagged pixels in inwht
     kernel_pars.insci[20:22, 21:22] = 100
@@ -35,77 +39,86 @@ def test_point_kernel(kernel, kernel_pars, return_png=False):
 
     if return_png:
         # save truth file as figure
-        cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
+        cdriz_setup.generate_png(kernel_pars, f"{output_fullpath}.png")
 
     try:
-        truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+        truth_array = np.genfromtxt(f"{output_fullpath}.csv", delimiter=",")
     except:
-        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+        cdriz_setup.save_array(kernel_pars.outsci, f"{output_fullpath}.csv")
 
     assert np.allclose(
         kernel_pars.outsci,
         truth_array,
         atol=1e-4,
         rtol=1e-5,
-    ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    ), cdriz_setup.error_message(kernel_pars.outsci, f"{output_fullpath}_new.csv")
 
 
-def test_cdriz_edge(kernel_pars, kernel="gaussian", return_png=False):
+def test_cdriz_edge(kernel_pars, kernel="gaussian", return_png=True):
     """Similar to test_point_kernel but looking at bright pixels at edge of field."""
 
-    truth_filename = f"./tests/drizzle/truth_files/edge_{kernel}_truth"
+    output_name = f"edge_{kernel}_truth"
+    relative_path = "truth_files"
+    output_fullpath = cdriz_setup.get_output_fullpath(relative_path, output_name)
+
     kernel_pars.insci[0, 21] = 100
     cdriz_setup.cdriz_call(kernel_pars, kernel)
 
     if return_png:
-        cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
+        cdriz_setup.generate_png(kernel_pars, f"{output_fullpath}.png")
 
     try:
-        truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+        truth_array = np.genfromtxt(f"{output_fullpath}.csv", delimiter=",")
     except:
-        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+        cdriz_setup.save_array(kernel_pars.outsci, f"{output_fullpath}.csv")
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
-    ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    ), cdriz_setup.error_message(kernel_pars.outsci, f"{output_fullpath}_new.csv")
 
 
-def test_cdriz_large(kernel_pars, kernel="gaussian", return_png=False):
+def test_cdriz_large(kernel_pars, kernel="gaussian", return_png=True):
     """Similar to test_point_kernel but looking at large pixel."""
 
-    truth_filename = f"./tests/drizzle/truth_files/large_square_{kernel}_truth"
+    output_name = f"large_square_{kernel}_truth"
+    relative_path = "truth_files"
+    output_fullpath = cdriz_setup.get_output_fullpath(relative_path, output_name)
+
     kernel_pars.insci[21:25, 22:26] = 100
     cdriz_setup.cdriz_call(kernel_pars, kernel)
 
     if return_png:
-        cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
+        cdriz_setup.generate_png(kernel_pars, f"{output_fullpath}.png")
 
     try:
-        truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+        truth_array = np.genfromtxt(f"{output_fullpath}.csv", delimiter=",")
     except:
-        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+        cdriz_setup.save_array(kernel_pars.outsci, f"{output_fullpath}.csv")
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
-    ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    ), cdriz_setup.error_message(kernel_pars.outsci, f"{output_fullpath}_new.csv")
 
 
-def test_cdriz_non_symmetrical(kernel_pars, kernel="gaussian", return_png=False):
+def test_cdriz_non_symmetrical(kernel_pars, kernel="gaussian", return_png=True):
     """Similar to test_point_kernel but looking at non-symmetrical pixel."""
 
-    truth_filename = f"./tests/drizzle/truth_files/nonsymmetrical_{kernel}_truth"
+    output_name = f"nonsymmetrical_{kernel}_truth"
+    relative_path = "truth_files"
+    output_fullpath = cdriz_setup.get_output_fullpath(relative_path, output_name)
+
     kernel_pars.insci[21:25, 22:23] = 100
     cdriz_setup.cdriz_call(kernel_pars, kernel)
 
     if return_png:
-        cdriz_setup.generate_png(kernel_pars, f"{truth_filename}.png")
+        cdriz_setup.generate_png(kernel_pars, f"{output_fullpath}.png")
 
     try:
-        truth_array = np.genfromtxt(f"{truth_filename}.csv", delimiter=",")
+        truth_array = np.genfromtxt(f"{output_fullpath}.csv", delimiter=",")
     except:
-        cdriz_setup.save_array(kernel_pars.outsci, f"{truth_filename}.csv")
+        cdriz_setup.save_array(kernel_pars.outsci, f"{output_fullpath}.csv")
 
     assert np.allclose(
         kernel_pars.outsci, truth_array, atol=1e-4
-    ), cdriz_setup.error_message(kernel_pars.outsci, f"{truth_filename}_new.csv")
+    ), cdriz_setup.error_message(kernel_pars.outsci, f"{output_fullpath}_new.csv")
 
 
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo", "gaussian", "lanczos3"])

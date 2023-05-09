@@ -90,10 +90,17 @@ def cdriz_call(_set_kernel_pars, kernel):
     )
 
 
+def get_output_fullpath(relative_path, output_filename):
+    local_path = os.path.dirname(__file__)
+    output_name = os.path.join(relative_path, output_filename)
+    output_fullpath = os.path.join(local_path, output_name)
+    print(f"Output Path: {output_fullpath}")
+    return output_fullpath
+
+
 def save_array(_data, _name):
-    local_path = os.path.dirname("__file__")
     np.savetxt(
-        local_path + _name,
+        _name,
         X=_data,
         fmt="%1.8f",
         delimiter=",",
@@ -114,13 +121,12 @@ def generate_png(_set_kernel_pars, _name):
     # for generating truth files
     import matplotlib.pyplot as plt
 
-    local_path = os.path.dirname("__file__")
     fig = plt.figure(figsize=(4, 2))
     ax1 = fig.add_subplot(111, projection=_set_kernel_pars.w1)
     ax1.imshow(_set_kernel_pars.outsci, origin="lower", cmap="Greys")
     ax1.set_ylabel(" ")
     ax1.set_xlabel(" ")
-    fig.savefig(local_path + _name)
+    fig.savefig(_name)
 
 
 def error_message(_data, _name):
