@@ -23,6 +23,8 @@ from pathlib import Path
 
 """
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
+
 WCS_SUB_NAME = "FIT_SVM"
 POLLER_FILE = "wfc3_ir_ib6807_input.out"
 

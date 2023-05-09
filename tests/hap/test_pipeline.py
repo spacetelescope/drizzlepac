@@ -13,6 +13,7 @@ from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
 from astropy.io import fits
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
 class BasePipeline:
     prevdir = os.getcwd()

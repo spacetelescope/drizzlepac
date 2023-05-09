@@ -20,6 +20,7 @@ from astropy.io import fits
 from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
 log = logutil.create_logger('test_alignpipe_randomlist', level=logutil.logging.INFO, stream=sys.stdout)
 

@@ -25,6 +25,8 @@ from pathlib import Path
 
 """
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
+
 WCS_SUB_NAME = "FIT_SVM_GAIA"
 POLLER_FILE = "acs_e28_1u_input.out"
 

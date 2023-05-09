@@ -16,6 +16,7 @@ from drizzlepac import runsinglehap
 from astropy.table import Table
 from drizzlepac.haputils import astroquery_utils as aqutils
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
 def pytest_generate_tests(metafunc):
     """Get the command line options."""

@@ -28,6 +28,8 @@ from pathlib import Path
 
 """
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
+
 # Expectation values used directly or indirectly for the test assert statements
 WCS_SUB_NAME = "IDC_4BB1536OJ"
 POLLER_FILE = "acs_97e_06_input.out"

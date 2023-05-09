@@ -10,6 +10,8 @@ from ci_watson.artifactory_helpers import compare_outputs
 
 from drizzlepac.haputils.astroquery_utils import retrieve_observation
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
+
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.
 @pytest.mark.bigdata

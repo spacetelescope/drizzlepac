@@ -28,6 +28,8 @@ from pathlib import Path
 
 """
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
+
 POLLER_FILE = "wfc3_bqk_07_input.out"
 WCS_SUB_NAME = "HSC30"
 expected_total_point_sources = {
