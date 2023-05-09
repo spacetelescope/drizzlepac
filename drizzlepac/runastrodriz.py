@@ -698,8 +698,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 drz_output = drz_product
             # keep track of output files
             manifest_list.append(drz_output)
-            # update s_region header keyword
-            processing_utils.compute_sregion(drz_product)
+            # update s_region header keyword only if the drz_output
+            # contains actual data, not just header information.
+            if asn_dicts is not None:
+                processing_utils.compute_sregion(drz_output)
 
     else:
         # Create default trailer file messages when astrodrizzle is not
