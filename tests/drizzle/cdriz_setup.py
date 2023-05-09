@@ -91,6 +91,20 @@ def cdriz_call(_set_kernel_pars, kernel):
 
 
 def get_output_fullpath(relative_path, output_filename):
+    """Returns the final output path given a name and relative path. 
+
+    Parameters
+    ----------
+    relative_path : str
+        relative path from this file to desired path. 
+    output_filename : str
+        desired name of output file (png or csv). 
+
+    Returns
+    -------
+    output_fullpath: str
+        final output path
+    """    
     local_path = os.path.dirname(__file__)
     output_name = os.path.join(relative_path, output_filename)
     output_fullpath = os.path.join(local_path, output_name)
