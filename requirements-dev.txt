@@ -3,3 +3,4 @@ git+https://github.com/spacetelescope/stsci.tools.git#egg=stsci.tools
 astropy>=0.0.dev0
 git+https://github.com/spacetelescope/stwcs.git#egg=stwcs
 git+https://github.com/astropy/astroquery.git#egg=astroquery
+numpy>=0.0.dev0
