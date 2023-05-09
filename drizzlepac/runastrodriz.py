@@ -5,7 +5,7 @@
 
 :License: :doc:`LICENSE`
 
-USAGE: runastrodriz.py [-fhdaibng] inputFilename [newpath]
+USAGE: runastrodriz.py [-bdahfginv] inputFilename [newpath]
 
 Alternative USAGE:
     python
@@ -29,6 +29,9 @@ running AstroDrizzle.
 
 The '-g' option allows the user to TURN OFF alignment of the images to an external
 astrometric catalog, such as GAIA, as accessible through the MAST interface.
+
+See the main() at the end of this module for all available options and a
+terse description.
 
 Additional control over whether or not to attempt to align to an external
 astrometric catalog, such as GAIA, is provided through the use of the
@@ -294,7 +297,16 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # Remove FLT file created here, since the calibration file can NOT be aligned or drizzled
             os.remove(inFilename)
             print("ERROR: Inappropriate input file.  Deleting converted WFPC2 FLT file.")
-            return
+
+            # write out manifest file, if requested
+            mani_filename = inFile[:inFile.find('_d0m')] + '_manifest.txt'
+            if make_manifest:
+                if os.path.exists(mani_filename):
+                    os.remove(mani_filename)
+                with open(mani_filename, 'w') as fout:
+                    _ = [fout.write(f"{fname}\n") for fname in manifest_list]
+                print(f"Created manifest file: {mani_filename}")
+            sys.exit(analyze.Ret_code.NO_VIABLE_DATA.value)
 
     infile_det = fits.getval(inFilename, 'detector')
     cal_ext = None
@@ -2133,6 +2145,7 @@ def main():
             force = True
         if opt == "-i":
             inmemory = True
+        # The "-m" option is specific for WFPC2 data
         if opt == "-m":
             make_manifest = True
         if opt == "-v":
@@ -2166,8 +2179,10 @@ def main():
             print("ERROR: Cannot run astrodrizzle on %s." % " ".join(sys.argv))
             raise Exception(str(errorobj))
 
-    sys.exit()
-
+        # This except handles sys.exit() which raises the SystemExit exception which inherits from BaseException.
+        except BaseException:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            print(f"Return Value: {exc_value}")
 
 if __name__ == "__main__":
     main()
