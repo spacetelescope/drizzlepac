@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.6.1 (Unreleased)
 ==================
 
+- Protect against writing the S_REGION keyword in intentionally empty DRZ/DRC
+  files in ``processinput.process`` to avoid messy crash. [#1547]
+
 - Fix a bug in ``processinput.buildFileListOrig`` due to which astrodrizzle
   might crash when ``updatewcs`` is set to ``True``. [#1549]
 
