@@ -22,7 +22,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - For WFPC2 datasets which turn out to have no viable data to process and
   a manifest file has been requested, force an empty manifest file to be
-  generated and issue the exit code NO_VIABLE_DATA. [#1550]
+  generated and issue the exit code NO_VIABLE_DATA (65). [#1550]
 
 - Protect against writing the S_REGION keyword in intentionally empty DRZ/DRC
   files in ``processinput.process`` to avoid messy crash. [#1547]
