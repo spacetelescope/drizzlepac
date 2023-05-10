@@ -17,12 +17,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.6.1 (Unreleased)
-==================
+3.6.0rc1 (10-May-2023)
+======================
 
 - For WFPC2 datasets which turn out to have no viable data to process and
   a manifest file has been requested, force an empty manifest file to be
-  generated and issue the exit code NO_VIABLE_DATA. [#1550]
+  generated and issue the exit code NO_VIABLE_DATA (65). [#1550]
 
 - Protect against writing the S_REGION keyword in intentionally empty DRZ/DRC
   files in ``processinput.process`` to avoid messy crash. [#1547]
@@ -30,8 +30,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Fix a bug in ``processinput.buildFileListOrig`` due to which astrodrizzle
   might crash when ``updatewcs`` is set to ``True``. [#1549]
 
-3.6.0 (28-Apr-2023)
-===================
+3.6.0rc0 (28-Apr-2023)
+======================
 
 - Turn off use of ``verify_guiding()`` for WFPC2 images only as its use
   incorrectly recognizes diffraction spikes from saturated stars as evidence
