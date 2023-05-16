@@ -625,14 +625,17 @@ class HAPCatalogs:
         # This does NOT identify or measure sources to create the catalogs at this point...
         # The syntax here is EXTREMELY cludgy, but until a more compact way to do this is found,
         #  it will have to do...
+        self.reject_cats = {}
         self.catalogs = {}
         if 'segment' in self.types:
             self.catalogs['segment'] = HAPSegmentCatalog(self.image, self.param_dict, self.param_dict_qc,
                                                          self.diagnostic_mode, tp_sources=tp_sources)
+            self.reject_cats['segment'] = False
 
         if 'aperture' in self.types:
             self.catalogs['aperture'] = HAPPointCatalog(self.image, self.param_dict, self.param_dict_qc,
                                                         self.diagnostic_mode, tp_sources=tp_sources)
+            self.reject_cats['aperture'] = False
 
         self.filters = {}
 
@@ -654,10 +657,23 @@ class HAPCatalogs:
     def verify_crthresh(self, n1_exposure_time):
         """Verify whether catalogs meet cosmic-ray threshold limits.
 
-        ... note : If either catalog fails the following test, then both are rejected.
-                        n_cat < thresh
-                   where
-                        thresh = crfactor * n1_exposure_time**2 / texptime
+        ... note : This algorithm has been modified from the original implementation
+                   where if either catalog failed the cosmic ray criterion test, then
+                   both catalogs would be rejected.
+
+                   Instead...
+                   an empty catalog (n_sources = 0) should not get rejected by the CR
+                   contamination test (since it is empty, it clearly is not contaminated
+                   by cosmic rays!) Also, if a catalog is empty because it is rejected
+                   for some other reason, it should never trigger the rejection of the
+                   other type of catalog.
+
+                   thresh = crfactor * n1_exposure_time**2 / texptime
+
+                   Since catalog output (*.ecsv) files are always written, rejection
+                   means that all of the rows of measurements are deleted from the
+                   output ECSV file.
+
         """
         for cat_type in self.catalogs:
             crthresh_mask = None
@@ -673,8 +689,6 @@ class HAPCatalogs:
                     crthresh_mask = np.bitwise_or(crthresh_mask, catalog_crmask)
             source_cat.sources_num_good = len(np.where(crthresh_mask)[0])
 
-        reject_catalogs = False
-
         log.info("Determining whether point and/or segment catalogs meet cosmic-ray threshold")
         log.info("  based on EXPTIME = {}sec for the n=1 filters".format(n1_exposure_time))
 
@@ -686,13 +700,11 @@ class HAPCatalogs:
                 n_sources = source_cat.sources_num_good  # len(source_cat)
                 all_sources = len(source_cat)
                 log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
-                # n_sources == 0 should never get here, but just to cover the past case of 0 < 0.0
-                if n_sources < thresh or n_sources == 0:
-                    reject_catalogs = True
-                    log.info("{} catalog FAILED CR threshold.  Rejecting both catalogs...".format(cat_type))
-                    break
+                if n_sources < thresh and 0 < n_sources:
+                    self.reject_cats[cat_type] = True
+                    log.info("{} catalog FAILED CR threshold.".format(cat_type))
 
-        return reject_catalogs
+        return self.reject_cats
 
     def measure(self, filter_name, **pars):
         """Perform photometry and other measurements on sources for this image.
@@ -719,8 +731,10 @@ class HAPCatalogs:
 
         Parameters
         ----------
-        reject_catalogs : bool
-            Indicator as to whether or not the catalogs (*.ecsv) should be written.
+        reject_catalogs : dictionary
+            Dictionary where the keys are the types of catalogs, and the values are
+            bools indicating whether or not the catalogs (*.ecsv) should be written
+            with their full contents or as empty catalogs.
 
         types : list
             List of catalog types to be generated.  If None, build all available catalogs.
@@ -1334,8 +1348,10 @@ class HAPPointCatalog(HAPCatalogBase):
 
         Parameters
         ----------
-        reject_catalogs : bool
-            Indicator as to whether or not the catalogs (*.ecsv) should be written.
+        reject_catalogs : dictionary
+            Dictionary where the keys are the types of catalogs, and the values are
+            bools indicating whether or not the catalogs (*.ecsv) should be written
+            with their full contents or as empty catalogs.
 
         Returns
         -------
@@ -1349,11 +1365,15 @@ class HAPPointCatalog(HAPCatalogBase):
         written to output ECSV files, they are written as empty ("") strings.  In order for the catalogs
         to be ingested into a database by possible downstream processing, the masked values will be
         replaced by a numeric indicator.
+
+        ... note : A catalog can have no rows of measurements because no sources were
+        found OR because the catalog was "rejected" according to the cosmic ray rejection
+        criterion.
         """
         # Insure catalog has all necessary metadata
         self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="aperture",
                                               product=self.image.ghd_product)
-        if reject_catalogs:
+        if reject_catalogs[self.catalog_type]:
             # We still want to write out empty files
             # This will delete all rows from the existing table
             self.source_cat.remove_rows(slice(0, None))
@@ -2796,8 +2816,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         Parameters
         ----------
-        reject_catalogs : bool
-            Indicator as to whether or not the catalogs (*.ecsv) should be written.
+        reject_catalogs : dictionary
+            Dictionary where the keys are the types of catalogs, and the values are
+            bools indicating whether or not the catalogs (*.ecsv) should be written
+            with their full contents or as empty catalogs.
 
         Returns
         -------
@@ -2811,11 +2833,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
         written to output ECSV files, they are written as empty ("") strings.  In order for the catalogs
         to be ingested into a database by possible downstream processing, the masked values will be
         replaced by a numeric indicator.
+
+        ... note : A catalog can have no rows of measurements because no sources were
+        found OR because the catalog was "rejected" according to the cosmic ray rejection
+        criterion.
         """
         self.source_cat = self.annotate_table(self.source_cat, self.param_dict_qc, proc_type="segment",
                                               product=self.image.ghd_product)
 
-        if reject_catalogs:
+        if reject_catalogs[self.catalog_type]:
             # We still want to write out empty files
             # This will delete all rows from the existing table
             self.source_cat.remove_rows(slice(0, None))
