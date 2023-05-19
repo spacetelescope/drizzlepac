@@ -11,6 +11,9 @@ from ci_watson.hst_helpers import raw_from_asn
 class TestAsnRegress(BaseACS):
 
     def test_hrc_asn(self):
+        # Customized tolerances as Linux and Mac would need different truth files.
+        self.rtol = 1e-4
+        self.atol = 1e-5
         rootname = 'j8bt06010'
         asn_file = rootname + '_asn.fits'
 
