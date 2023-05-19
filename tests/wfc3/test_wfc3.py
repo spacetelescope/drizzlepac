@@ -13,6 +13,9 @@ from ci_watson.hst_helpers import raw_from_asn
 class TestWFC3(BaseWFC3):
 
     def test_binned_single(self):
+        # Customized tolerances as Linux and Mac would need different truth files.
+        self.rtol = 1e-5
+        self.atol = 1e-5
         rootname = 'iacs01t9q'
         input_name = '{}_flt.fits'.format(rootname)
         output = '{}_drz.fits'.format(rootname)
@@ -41,6 +44,9 @@ class TestWFC3(BaseWFC3):
 
 
     def test_uvis_single(self):
+        # Customized tolerances as Linux and Mac would need different truth files.
+        self.rtol = 1e-3
+        self.atol = 1e-3
         rootname = 'iacr51ohq'
         input_name = '{}_flt.fits'.format(rootname)
         output = '{}_drz.fits'.format(rootname)
