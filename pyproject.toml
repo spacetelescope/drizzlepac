@@ -32,7 +32,7 @@ dependencies = [
     'stsci.skypac>=1.0.9',
     'stsci.stimage',
     'stwcs>=1.5.3',
-    'tweakwcs>=0.8.0',
+    'tweakwcs>=0.8.2',
     'stregion>=1.1.7',
     'requests',
     'scikit-learn>=0.20',
