@@ -17,8 +17,13 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.6.0rc1 (10-May-2023)
+3.6.0 (12-Jun-2023)
 ======================
+
+- Modified the pyproject.toml file to ensure the tweakwcs version is greater
+  than 0.8.2 as the issue of taking a very long time to compute the bounding 
+  polygon now defaults to an approximate method which is significantly faster.
+  [#1565]
 
 - For WFPC2 datasets which turn out to have no viable data to process and
   a manifest file has been requested, force an empty manifest file to be
@@ -29,9 +34,6 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Fix a bug in ``processinput.buildFileListOrig`` due to which astrodrizzle
   might crash when ``updatewcs`` is set to ``True``. [#1549]
-
-3.6.0rc0 (28-Apr-2023)
-======================
 
 - Turn off use of ``verify_guiding()`` for WFPC2 images only as its use
   incorrectly recognizes diffraction spikes from saturated stars as evidence
