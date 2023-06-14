@@ -10,6 +10,7 @@ from drizzlepac.haputils import testutils
 
 from ..resources import BaseACS, BaseWFC3
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
 def compare_apriori(dataset):
     """This test will perform fits between ALL a priori solutions and GAIA.

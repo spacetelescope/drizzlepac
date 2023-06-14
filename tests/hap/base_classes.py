@@ -8,7 +8,7 @@ from astropy.utils.data import conf
 from ci_watson.artifactory_helpers import get_bigdata
 from ci_watson.artifactory_helpers import compare_outputs
 
-from drizzlepac.haputils.astroquery_utils import retrieve_observation
+#from drizzlepac.haputils.astroquery_utils import retrieve_observation
 
 pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
@@ -99,7 +99,6 @@ class BaseTest(object):
         local_files : list
             This will return a list of all the files downloaded with 
             the full path to the local copy of the file.
-        """
         if len(args[0]) == 9: # Only a rootname provided
             local_files = retrieve_observation(args[0])
         else:
@@ -110,6 +109,14 @@ class BaseTest(object):
                                      *args,
                                      docopy=docopy)
             local_files = [local_files]
+        """
+        # If user has specified action for no_copy, apply it with
+        # default behavior being whatever was defined in the base class.
+        docopy = kwargs.get('docopy', self.docopy)
+        local_files = get_bigdata(*self.get_input_path(),
+                                 *args,
+                                 docopy=docopy)
+        local_files = [local_files]
 
         return local_files
 

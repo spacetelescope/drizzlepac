@@ -21,7 +21,7 @@ from stsci.tools import logutil
 
 from . import util
 from .haputils import astrometric_utils as amutils
-from .haputils import astroquery_utils as aqutils
+#from .haputils import astroquery_utils as aqutils
 from .haputils import get_git_rev_info
 from .haputils import align_utils
 from .haputils import config_utils
@@ -56,6 +56,10 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
     :func:`haputils/astroquery_utils/retrieve_observation`
     to get the files through AstroQuery.
 
+    ### Need to eliminate the use of astroquery.  As such, the files to be processed MUST be
+    ### available on disk for processing.  The user is responsible for making the data available.
+    ### BRUTE FORCE TEST
+
     Parameters
     ----------
     input_list : list
@@ -68,7 +72,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
     Returns
     =======
     total_input_list: list
-        list of full filenames
+        list of full filenames - ipppssoot names are no longer allowed.  Data must be on disk.
 
     See Also
     ========
@@ -109,11 +113,13 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
                         suffix))
                 return (empty_list)
 
+        """
         # Input is an ipppssoot (association or singleton), nine characters by definition.
         # This "else" block actually downloads the data specified as ipppssoot.
         elif len(input_item) == 9:
             try:
                 if input_item not in ipppssoot_list:
+                
                     input_item = input_item.lower()
                     # An ipppssoot of an individual file which is part of an association cannot be
                     # retrieved from MAST
@@ -152,6 +158,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
             except Exception:
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        """
 
     # Only the retrieve_list files via astroquery have been put into the total_input_list thus far.
     # Now check candidate_list to detect or acquire the requested files from MAST via astroquery.

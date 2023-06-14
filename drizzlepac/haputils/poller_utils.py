@@ -25,7 +25,7 @@ from drizzlepac import util
 from drizzlepac.haputils.product import ExposureProduct, FilterProduct, TotalProduct, GrismExposureProduct
 from drizzlepac.haputils.product import SkyCellProduct, SkyCellExposure
 from . import analyze
-from . import astroquery_utils as aqutils
+#from . import astroquery_utils as aqutils
 from . import processing_utils
 from . import cell_utils
 
@@ -914,6 +914,12 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
     poller_table : Table
         Astropy table object with the same columns as a poller file.
 
+    ### Need to eliminate the use of astroquery.  As such, the files to be processed MUST be
+    ### available on disk for processing.  The user is responsible for making the data available.
+    ### BRUTE FORCE TEST
+
+    ### The poller file must contain individual full image filenames.
+
     """
     log.setLevel(log_level)
 
@@ -1036,6 +1042,10 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
         for filename in filenames:
             # Look for dataset in local directory.
             if "asn" in filename or not os.path.exists(filename):
+              
+                raise FileNotFoundError(f"File {filename} not found in working directory.")
+                
+
                 # This retrieval will NOT overwrite any ASN members already on local disk
                 # Return value will still be list of all members
                 files = aqutils.retrieve_observation([filename[:9]], suffix=['FLC'], clobber=False)

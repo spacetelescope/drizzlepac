@@ -15,6 +15,7 @@ from stsci.tools import logutil
 
 log = logutil.create_logger('test_randomlist', level=logutil.logging.INFO, stream=sys.stdout)
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
 def pytest_generate_tests(metafunc):
     """Get the command line option."""

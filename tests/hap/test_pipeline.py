@@ -9,7 +9,7 @@ from astropy.utils.data import conf
 from ci_watson.artifactory_helpers import get_bigdata
 from ci_watson.hst_helpers import download_crds, ref_from_image
 
-from drizzlepac.haputils import astroquery_utils as aqutils
+#from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
 from astropy.io import fits
 
@@ -127,9 +127,9 @@ class TestSingleton(BaseWFC3Pipeline):
         """ Tests pipeline-style processing of a singleton exposure using runastrodriz.
         """
         # Get sample data through astroquery
-        flcfile = aqutils.retrieve_observation(dataset_names, suffix=['FLC'])[0]
-        fltfile = aqutils.retrieve_observation(dataset_names, suffix=['FLT'])[0]
-        rawfile = aqutils.retrieve_observation(dataset_names, suffix=['RAW'])[0]
+        #flcfile = aqutils.retrieve_observation(dataset_names, suffix=['FLC'])[0]
+        #fltfile = aqutils.retrieve_observation(dataset_names, suffix=['FLT'])[0]
+        #rawfile = aqutils.retrieve_observation(dataset_names, suffix=['RAW'])[0]
 
         # Retrieve reference files for these as well
         self.get_input_file('', fltfile, docopy=False)

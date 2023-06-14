@@ -17,7 +17,7 @@ import glob
 from stsci.tools import logutil
 from astropy.io import fits
 
-from drizzlepac.haputils import astroquery_utils as aqutils
+#from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
 
 pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
@@ -246,7 +246,7 @@ def check_disk_get_data(input_list, **pars):
         list of full filenames
 
     """
-    reload(aqutils)
+    #reload(aqutils)
 
     empty_list = []
     retrieve_list = []    # Actual files retrieved via astroquery and resident on disk
@@ -309,6 +309,7 @@ def check_disk_get_data(input_list, **pars):
 
         # Input is an ipppssoot (association or singleton), nine characters by definition.
         # This "else" block actually downloads the data specified as ipppssoot.
+        """
         elif len(input_item) == 9:
             try:
                 if input_item not in ipppssoot_list:
@@ -334,6 +335,7 @@ def check_disk_get_data(input_list, **pars):
                 log.info("Exception in check_disk_get_data")
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+        """
 
     # Only the retrieve_list files via astroquery have been put into the total_input_list thus far.
     # Now check candidate_list to detect or acquire the requested files from MAST via astroquery.
