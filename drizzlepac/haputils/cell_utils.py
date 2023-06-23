@@ -994,8 +994,8 @@ class ProjectionCell(object):
         print("SkyCell Ranges: {}, {}".format(mosaic_xr, mosaic_yr))
         # for each suspected sky cell or neighbor, look for any pixel by pixel
         #    overlap with input mosaic footprint
-        for xi in range(mosaic_xr[0], mosaic_xr[1]):
-            for yi in range(mosaic_yr[0], mosaic_yr[1]):
+        for xi in range(mosaic_xr[0], mosaic_xr[1]+1):
+            for yi in range(mosaic_yr[0], mosaic_yr[1]+1):
                 skycell = SkyCell(x=xi, y=yi, projection_cell=self)
 
                 if self.diagnostic_mode:
