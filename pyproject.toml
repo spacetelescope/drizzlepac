@@ -22,7 +22,7 @@ classifiers = [
     'Programming Language :: Python :: 3.9'
 ]
 dependencies = [
-    'astropy>=5.0.4, <5.3',
+    'astropy>=5.0.4',
     'fitsblender>=0.4.2',
     'scipy',
     'matplotlib',
