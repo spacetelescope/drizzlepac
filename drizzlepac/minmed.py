@@ -29,7 +29,6 @@ import numpy as np
 from scipy import signal
 from stsci.image.numcombine import numCombine, num_combine
 from . import __version__
-import pdb
 
 class minmed:
     """ **DEPRECATED** Create a median array, rejecting the highest pixel and
@@ -346,6 +345,11 @@ class minmed:
 
         return tsum
 
+def isListEmpty(inList):
+    if isinstance(inList, list): # Is a list
+        return all( map(isListEmpty, inList) )
+    return False # Not a list
+
 
 def min_med(images, weight_images, readnoise_list, exptime_list,
             background_values, weight_masks=[], combine_grow=1,
@@ -423,8 +427,7 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
     weight_images = np.asarray(weight_images)
 
     #if weight_masks == [] or weight_masks is None:
-    pdb.set_trace()
-    if bool(weight_masks):
+    if isListEmpty(weight_masks):
         weight_masks = None
         mask_sum = np.zeros(images.shape[1:], dtype=np.int16)
         all_bad_idx = np.array([], dtype=int)
@@ -634,3 +637,4 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
     combined_array[all_bad_idx, all_bad_idy] = 0
 
     return combined_array
+
