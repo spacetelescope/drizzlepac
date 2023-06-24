@@ -17,6 +17,14 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
+
+3.6.1 (unreleased)
+==================
+
+- Fixed an incompatibility in the ``minmed`` code for cosmic ray rejection
+  with the ``numpy`` version ``>=1.25``. [#1573]
+
+
 3.6.1rc0 (15-Jun-2023)
 ======================
 
@@ -28,7 +36,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 ======================
 
 - Modified the pyproject.toml file to ensure the tweakwcs version is greater
-  than 0.8.2 as the issue of taking a very long time to compute the bounding 
+  than 0.8.2 as the issue of taking a very long time to compute the bounding
   polygon now defaults to an approximate method which is significantly faster.
   [#1565]
 
