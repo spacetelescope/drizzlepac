@@ -352,7 +352,8 @@ def isListEmpty(inList):
 
 
 def min_med(images, weight_images, readnoise_list, exptime_list,
-            background_values, weight_masks=[], combine_grow=1,
+            #background_values, weight_masks=[], combine_grow=1,
+            background_values, weight_masks=None, combine_grow=1,
             combine_nsigma1=4, combine_nsigma2=3, fillval=False):
     """ Create a median array, rejecting the highest pixel and
     computing the lowest valid pixel after mask application.
@@ -427,7 +428,8 @@ def min_med(images, weight_images, readnoise_list, exptime_list,
     weight_images = np.asarray(weight_images)
 
     #if weight_masks == [] or weight_masks is None:
-    if isListEmpty(weight_masks):
+    #if isListEmpty(weight_masks):
+    if weight_masks is None or np.size(weight_masks) == 0:
         weight_masks = None
         mask_sum = np.zeros(images.shape[1:], dtype=np.int16)
         all_bad_idx = np.array([], dtype=int)
