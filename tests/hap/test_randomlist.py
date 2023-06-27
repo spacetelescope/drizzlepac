@@ -13,6 +13,7 @@ from drizzlepac import align as alignimages
 
 from stsci.tools import logutil
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 log = logutil.create_logger('test_randomlist', level=logutil.logging.INFO, stream=sys.stdout)
 
 

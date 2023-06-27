@@ -17,9 +17,9 @@ import glob
 from stsci.tools import logutil
 from astropy.io import fits
 
-from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
 log = logutil.create_logger('test_alignpipe_randomlist', level=logutil.logging.INFO, stream=sys.stdout)
 
@@ -245,8 +245,6 @@ def check_disk_get_data(input_list, **pars):
         list of full filenames
 
     """
-    reload(aqutils)
-
     empty_list = []
     retrieve_list = []    # Actual files retrieved via astroquery and resident on disk
     candidate_list = []   # File names gathered from *_asn.fits file
@@ -306,33 +304,7 @@ def check_disk_get_data(input_list, **pars):
                         suffix))
                 return (empty_list)
 
-        # Input is an ipppssoot (association or singleton), nine characters by definition.
-        # This "else" block actually downloads the data specified as ipppssoot.
-        elif len(input_item) == 9:
-            try:
-                if input_item not in ipppssoot_list:
-                    # An ipppssoot of an individual file which is part of an association cannot be
-                    # retrieved from MAST
-                    log.info("Collect data: {} Suffix: {}".format(input_item, suffix_to_retrieve))
-                    for filetype in suffix_to_retrieve:
-                        retrieve_list += aqutils.retrieve_observation(input_item, suffix=filetype,
-                                                                      product_type='pipeline')
-                    log.info("Collected data: {}".format(retrieve_list))
-
-                    # If the retrieved list is not empty, add filename(s) to the total_input_list.
-                    # Also, update the ipppssoot_list so we do not try to download the data again.  Need
-                    # to do this since retrieve_list can be empty because (1) data cannot be acquired (error)
-                    # or (2) data is already on disk (ok).
-                    if retrieve_list:
-                        total_input_list += retrieve_list
-                        ipppssoot_list.append(input_item)
-                    else:
-                        log.error('File {} cannot be retrieved from MAST.'.format(input_item))
-                        return(empty_list)
-            except Exception:
-                log.info("Exception in check_disk_get_data")
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+    # May need to add code here to accommodate loss of astroquery_utils MDD
 
     # Only the retrieve_list files via astroquery have been put into the total_input_list thus far.
     # Now check candidate_list to detect or acquire the requested files from MAST via astroquery.

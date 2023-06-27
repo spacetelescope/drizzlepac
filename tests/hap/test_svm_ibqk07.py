@@ -8,7 +8,6 @@ import math
 import numpy as np
 import pytest
 
-from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runsinglehap
 from astropy.io import fits, ascii
 from astropy.table import Table
@@ -27,6 +26,7 @@ from pathlib import Path
         originating directory.
 
 """
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
 POLLER_FILE = "wfc3_bqk_07_input.out"
 WCS_SUB_NAME = "HSC30"
@@ -88,10 +88,12 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     # avoid downloading too many images which are not needed for processing.
     flcfiles = []
     fltfiles = []
+    """
     if flc_flag:
         flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
     if flt_flag:
         fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
+    """
 
     flcfiles.extend(fltfiles)
 

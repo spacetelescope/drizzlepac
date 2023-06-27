@@ -18,19 +18,15 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.6.1 (unreleased)
-==================
+3.6.1rc0 (unreleased)
+=====================
 
 - Fixed an incompatibility in the ``minmed`` code for cosmic ray rejection
   with the ``numpy`` version ``>=1.25``. [#1573]
 
-
-3.6.1rc0 (15-Jun-2023)
-======================
-
 - Force the version of matplotlib to be <= 3.6.3 as the newer versions of
   the library cause problems with the calcloud preview generation.  This
-  is a temporary restriction.
+  is a temporary restriction. [#1571]
 
 3.6.0 (12-Jun-2023)
 ======================

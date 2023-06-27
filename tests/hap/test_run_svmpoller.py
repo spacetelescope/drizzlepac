@@ -14,8 +14,8 @@ import pytest
 from astropy.io import ascii
 from drizzlepac import runsinglehap
 from astropy.table import Table
-from drizzlepac.haputils import astroquery_utils as aqutils
 
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
 def pytest_generate_tests(metafunc):
     """Get the command line options."""
@@ -120,10 +120,12 @@ def test_run_svmpoller(tmpdir, dataset):
         # avoid downloading too many images which are not needed for processing.
         flcfiles = []
         fltfiles = []
+        """
         if flc_flag:
             flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
         if flt_flag:
             fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
+        """
 
         flcfiles.extend(fltfiles)
 

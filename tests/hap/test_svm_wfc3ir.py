@@ -6,7 +6,6 @@ import os
 import pytest
 import numpy as np
 
-from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runsinglehap
 from astropy.io import fits, ascii
 from pathlib import Path
@@ -22,6 +21,7 @@ from pathlib import Path
       * The POLLER_FILE exists in the tests/hap directory.
 
 """
+pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
 
 WCS_SUB_NAME = "FIT_SVM"
 POLLER_FILE = "wfc3_ir_ib6807_input.out"
@@ -72,10 +72,12 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     # avoid downloading too many images which are not needed for processing.
     flcfiles = []
     fltfiles = []
+    """
     if flc_flag:
         flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
     if flt_flag:
         fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
+    """
 
     flcfiles.extend(fltfiles)
 

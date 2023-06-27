@@ -21,7 +21,6 @@ from stsci.tools import logutil
 
 from . import util
 from .haputils import astrometric_utils as amutils
-from .haputils import astroquery_utils as aqutils
 from .haputils import get_git_rev_info
 from .haputils import align_utils
 from .haputils import config_utils
@@ -56,6 +55,10 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
     :func:`haputils/astroquery_utils/retrieve_observation`
     to get the files through AstroQuery.
 
+    ### Need to eliminate the use of astroquery.  As such, the files to be processed MUST be
+    ### available on disk for processing.  The user is responsible for making the data available.
+    ### Add code to indicate files need to be on disk. MDD
+
     Parameters
     ----------
     input_list : list
@@ -68,7 +71,7 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
     Returns
     =======
     total_input_list: list
-        list of full filenames
+        list of full filenames - ipppssoot names are no longer allowed.  Data must be on disk.
 
     See Also
     ========
@@ -108,50 +111,6 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
                     '"flc.fits", or "flt.fits".'.format(
                         suffix))
                 return (empty_list)
-
-        # Input is an ipppssoot (association or singleton), nine characters by definition.
-        # This "else" block actually downloads the data specified as ipppssoot.
-        elif len(input_item) == 9:
-            try:
-                if input_item not in ipppssoot_list:
-                    input_item = input_item.lower()
-                    # An ipppssoot of an individual file which is part of an association cannot be
-                    # retrieved from MAST
-                    retrieve_list = aqutils.retrieve_observation(input_item, **pars)
-
-                    # If the retrieved list is not empty, add filename(s) to the total_input_list.
-                    # Also, update the ipppssoot_list so we do not try to download the data again.  Need
-                    # to do this since retrieve_list can be empty because (1) data cannot be acquired (error)
-                    # or (2) data is already on disk (ok).
-                    if retrieve_list:
-                        total_input_list += retrieve_list
-                        ipppssoot_list.append(input_item)
-                    else:
-                        # log.error('File {} cannot be retrieved from MAST.'.format(input_item))
-                        # return(empty_list)
-                        log.warning('File {} cannot be retrieved from MAST.'.format(input_item))
-                        log.warning(f"    using pars: {pars}")
-                        # look for already downloaded ASN and related files instead
-                        # ASN filenames are the only ones that end in a digit
-                        if input_item[-1].isdigit():
-                            _asn_name = f"{input_item}_asn.fits"
-                            if not os.path.exists(_asn_name):
-                                _ = aqutils.retrieve_observation([f"{input_item}"],
-                                                                          suffix=['ASN'],
-                                                                          clobber=True)
-                            _local_files = _get_asn_members(_asn_name)
-                            if _local_files:
-                                log.warning(f"Using local files instead:\n    {_local_files}")
-                                total_input_list.extend(_local_files)
-                            else:
-                                _lfiles = os.listdir()
-                                log.error(f"No suitable files found for input {input_item}")
-                                log.error(f" in directory with files: \n {_lfiles}")
-                        return(total_input_list)
-
-            except Exception:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
 
     # Only the retrieve_list files via astroquery have been put into the total_input_list thus far.
     # Now check candidate_list to detect or acquire the requested files from MAST via astroquery.
