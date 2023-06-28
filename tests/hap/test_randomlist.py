@@ -13,7 +13,13 @@ from drizzlepac import align as alignimages
 
 from stsci.tools import logutil
 
-pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
+# This file will NOT run as-is.  Code has to be modified to accommodate properly
+# files which will actually need to be processed. This test is probably obsolete and
+# should be deprecated as it was used to find random datasets and try to see how
+# successful SVM processing could be.  The results were used for statistics to
+# determine if HAP were a project that could succeed.
+pytest.skip("Skipping all tests where files to be processed are not known in advance.", allow_module_level=True)
+
 log = logutil.create_logger('test_randomlist', level=logutil.logging.INFO, stream=sys.stdout)
 
 

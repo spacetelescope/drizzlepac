@@ -14,8 +14,13 @@ import pytest
 from astropy.io import ascii
 from drizzlepac import runsinglehap
 from astropy.table import Table
+from ci_watson.artifactory_helpers import get_bigdata
 
-pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
+# This file will NOT run as-is.  Code has to be modified to accommodate properly
+# files which will actually need to be processed.  In particular, the test_run_svmpoller()
+# will have to be updated.  It is not clear this test is useful any longer and perhaps
+# it should be deprecated.
+pytest.skip("Skipping all tests where files to be processed are not known in advance.", allow_module_level=True)
 
 def pytest_generate_tests(metafunc):
     """Get the command line options."""
@@ -97,52 +102,11 @@ def test_run_svmpoller(tmpdir, dataset):
         filenames = list(table[filename_column])
         print("\nread_csv_for_filenames. Filesnames from poller: {}".format(filenames))
 
-        # Establish FLC/FLT lists and obtain the requested data
-        flc_flag = ""
-        flt_flag = ""
-        # In order to obtain individual FLC or FLT images from MAST (if the files are not reside on disk) which
-        # may be part of an ASN, use only IPPPSS with a wildcard.  The unwanted images have to be removed
-        # after-the-fact.
-        for fn in filenames:
-            if fn.lower().endswith("flc.fits") and flc_flag == "":
-                flc_flag = fn[0:6] + "*"
-            elif fn.lower().endswith("flt.fits") and flt_flag == "":
-                flt_flag = fn[0:6] + "*"
-     
-            # If both flags have been set, then break out the loop early.  It may be
-            # that all files have to be checked which means the for loop continues
-            # until its natural completion.
-            if flc_flag and flt_flag:
-                break
+        # Get the data from Artifactory
+        inputs = [os.path.basename(get_bigdata('drizzlepac', 'dev', 'acs', 'input', i))
+                  for i in filenames]
 
-        # Get test data through astroquery - only retrieve the pipeline processed FLC and/or FLT files
-        # (e.g., j*_flc.fits) as necessary. The logic here and the above for loop is an attempt to
-        # avoid downloading too many images which are not needed for processing.
-        flcfiles = []
-        fltfiles = []
-        """
-        if flc_flag:
-            flcfiles = aqutils.retrieve_observation(flc_flag, suffix=["FLC"], product_type="pipeline")
-        if flt_flag:
-            fltfiles = aqutils.retrieve_observation(flt_flag, suffix=["FLT"], product_type="pipeline")
-        """
-
-        flcfiles.extend(fltfiles)
-
-        # Keep only the files which exist in BOTH lists for processing
-        files_to_process= set(filenames).intersection(set(flcfiles))
-
-        # Identify unwanted files from the download list and remove from disk
-        files_to_remove = set(filenames).symmetric_difference(set(flcfiles))
-
-        try:
-            for ftr in files_to_remove:
-               os.remove(ftr)
-        except Exception as x_cept:
-            print("")
-            print("Exception encountered: {}.".format(x_cept))
-            print("The file {} could not be deleted from disk. ".format(ftr))
-            print("Remove files which are not used for processing from disk manually.")
+        files_to_process = filenames
 
         # Run the SVM processing
         path = os.path.join(os.path.dirname(__file__), dataset)

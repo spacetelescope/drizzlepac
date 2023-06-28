@@ -8,8 +8,6 @@ from .base_test import BaseHLATest
 
 from stsci.tools import logutil
 
-pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
-
 log = logutil.create_logger('test_align', level=logutil.logging.INFO, stream=sys.stdout)
 
 # Nominal acceptable RMS limit for a good solution (IMPROVE THIS)
@@ -244,6 +242,7 @@ class TestAlignMosaic(BaseHLATest):
 
         assert 0.0 < total_rms <= RMS_LIMIT
 
+    pytest.skip("Skipping all tests using astroquery.", allow_module_level=True)
     def test_astroquery(self):
         """Verify that new astroquery interface will work"""
 
