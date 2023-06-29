@@ -66,7 +66,7 @@ def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
     os.chdir(curdir)
 
     # Get the data from Artifactory
-    inputs = [os.path.basename(get_bigdata('drizzlepac', 'dev', 'acs', 'input', i))
+    inputs = [os.path.basename(get_bigdata('drizzlepac', 'dev', 'wfc3', 'input', i))
               for i in read_csv_for_filenames]
 
     files_to_process = read_csv_for_filenames
