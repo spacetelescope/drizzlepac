@@ -46,7 +46,7 @@ module_logfile = ""
 
 
 def check_and_get_data(input_list: list, **pars: object) -> list:
-    """Verify that all specified files are present. If not, retrieve them from MAST.
+    """Verify that all specified files are present. If not, warn the user.
 
     This function relies on the `AstroQuery interface to MAST
     <https://astroquery.readthedocs.io/en/latest/mast/mast.html>`_

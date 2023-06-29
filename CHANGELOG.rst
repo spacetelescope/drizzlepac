@@ -21,6 +21,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.6.1rc0 (unreleased)
 =====================
 
+- Removed all use of the AstroQuery interface to MAST from this package as 
+  it seems to be causing unwanted interactions with PyTest and Artifactory.
+  XXX
+
 - Fixed an incompatibility in the ``minmed`` code for cosmic ray rejection
   with the ``numpy`` version ``>=1.25``. [#1573]
 
