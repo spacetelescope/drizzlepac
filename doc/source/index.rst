@@ -3,9 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-:tocdepth: 1
-.. toctree:: 
-   :maxdepth: 2
+.. tocdepth: 2
 
 Drizzlepac
 ==========
@@ -13,20 +11,10 @@ Drizzlepac
 
 The Drizzlepac package is a collection packages for aligning and combining astronomical images and coordinate transformations. Drizzlepac includes ``AstroDrizzle``, ``Tweakreg``, and the Hubble Archival Program (HAP) processing pipline, responsible for the creation of Hubble Single Visit Mosaics (SVMs) and Multi Visit Mosaics (MVMs).
 
+.. toctree:: 
+    :maxdepth: 2
 
-Getting Started
-===============
-.. _getting-started:
-
-* Quickstart Guide
-* Installation
-* `Release notes <CHANGELOG.html>`_
-* Tutorials
-* `Drizzlepac handbook <https://www.stsci.edu/scientific-community/software/drizzlepac.html>`_
-* Contributing and Reporting Issues
-* `FAQs <https://github.com/spacetelescope/notebooks/tree/master/notebooks/DrizzlePac>`_
-* Citing Drizzlepac
-
+    getting-started
 
 Drizzling images
 ================
@@ -96,8 +84,6 @@ API
 * MVM
 * Dependencies
 * Licence
-
-
 
 
 
