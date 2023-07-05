@@ -242,7 +242,7 @@ class TestAlignMosaic(BaseHLATest):
 
         assert 0.0 < total_rms <= RMS_LIMIT
 
-    pytest.skip("Skipping all tests using astroquery.", allow_module_level=True)
+    pytest.skip("Skipping the test to validate the use of the astroquery functionality.", allow_module_level=True)
     def test_astroquery(self):
         """Verify that new astroquery interface will work"""
 

@@ -9,8 +9,6 @@ import numpy as np
 from drizzlepac.haputils import testutils
 
 from ..resources import BaseACS, BaseWFC3
-pytest.skip("Skipping all tests using astroquery as an experiment", allow_module_level=True)
-
 
 def compare_apriori(dataset):
     """This test will perform fits between ALL a priori solutions and GAIA.
@@ -116,7 +114,7 @@ class TestAcsApriori(BaseACS):
     """
 
     @pytest.mark.bigdata
-    @pytest.mark.parametrize('dataset', ['jb1601020', 'J9I408010'])
+    @pytest.mark.parametrize('dataset', ['jb1601020_asn.fits', 'J9I408010_asn.fits'])
     def test_apriori(self, dataset):
         compare_apriori(dataset)
 
@@ -135,7 +133,7 @@ class TestWFC3Apriori(BaseWFC3):
 
     @pytest.mark.bigdata
     @pytest.mark.parametrize(
-        'dataset', ['ic0g0l010', 'icnw34040']
+        'dataset', ['ic0g0l010_asn.fits', 'icnw34040_asn.fits']
     )
     def test_apriori(self, dataset):
         compare_apriori(dataset)

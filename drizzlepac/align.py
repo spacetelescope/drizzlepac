@@ -48,16 +48,13 @@ module_logfile = ""
 def check_and_get_data(input_list: list, **pars: object) -> list:
     """Verify that all specified files are present. If not, warn the user.
 
-    This function relies on the `AstroQuery interface to MAST
+    This function formerly relied on the `AstroQuery interface to MAST
     <https://astroquery.readthedocs.io/en/latest/mast/mast.html>`_
-    to retrieve the exposures from the ``input_list`` that are not found in the current directory.  This
-    function calls the simplified interface in
-    :func:`haputils/astroquery_utils/retrieve_observation`
-    to get the files through AstroQuery.
-
-    ### Need to eliminate the use of astroquery.  As such, the files to be processed MUST be
-    ### available on disk for processing.  The user is responsible for making the data available.
-    ### Add code to indicate files need to be on disk. MDD
+    to retrieve the exposures from the ``input_list`` that are not found in
+    the current directory.  However, Astroquery was found to be interferring
+    in some manner with the PyTests and Artifactory, so Astroquery functionality
+    was removed from Drizzlepac.  Files are now expected to be available on disk
+    for processing, or an error is generated.
 
     Parameters
     ----------
@@ -71,22 +68,15 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
     Returns
     =======
     total_input_list: list
-        list of full filenames - ipppssoot names are no longer allowed.  Data must be on disk.
-
-    See Also
-    ========
-    haputils/astroquery_utils/retrieve_observation
+        list of full filenames
 
     """
     empty_list = []
-    retrieve_list = []    # Actual files retrieved via astroquery and resident on disk
     candidate_list = []   # File names gathered from *_asn.fits file
-    ipppssoot_list = []   # ipppssoot names used to avoid duplicate downloads
     total_input_list = []  # Output full filename list of data on disk
 
     # Loop over the input_list to determine if the item in the input_list is a full association file
-    # (*_asn.fits), a full individual image file (aka singleton, *_flt.fits), or a root name specification
-    # (association or singleton, ipppssoot).
+    # (*_asn.fits), or a full individual image file (aka singleton, *_flt.fits).
     for input_item in input_list:
         log.info('Input item: {}'.format(input_item))
         indx = input_item.find('_')
@@ -111,9 +101,14 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
                     '"flc.fits", or "flt.fits".'.format(
                         suffix))
                 return (empty_list)
-
-    # Only the retrieve_list files via astroquery have been put into the total_input_list thus far.
-    # Now check candidate_list to detect or acquire the requested files from MAST via astroquery.
+        else:
+            log.error(
+                'Inappropriate file specification.  Looking for "asn.fits", '
+                '"flc.fits", or "flt.fits".  Input files must be resident in'
+                'the working directory.')
+            return(empty_list)
+ 
+    # Now check candidate_list is actually on disk.
     for file in candidate_list:
         # If the file is found on disk, add it to the total_input_list and continue
         if glob.glob(file):
@@ -285,6 +280,9 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     zero_dt = starting_dt = datetime.datetime.now()
     log.info(str(starting_dt))
     imglist = check_and_get_data(input_list, archive=archive, clobber=clobber, product_type=product_type)
+    if not imglist:
+            log.error("Data not found on disk.  Retrieve data and try again.")
+            return None
     log.info("SUCCESS")
     log.info(f"Processing: {imglist}")
 
