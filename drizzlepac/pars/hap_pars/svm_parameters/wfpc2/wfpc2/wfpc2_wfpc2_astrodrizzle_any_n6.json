@@ -73,7 +73,7 @@
         "driz_combine": true,
         "final_pixfrac": 1.0,
         "final_fillval": null,
-        "final_bits": "2,8,1024",
+        "final_bits": "8,1024",
         "final_maskval": null,
         "final_wht_type": "EXP",
         "final_kernel": "square",
