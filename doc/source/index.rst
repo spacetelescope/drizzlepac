@@ -4,10 +4,8 @@
    contain the root `toctree` directive.
 
 :tocdepth: 1
-
-
 .. toctree:: 
-   :maxdepth: 1
+   :maxdepth: 2
 
 Drizzlepac
 ==========
@@ -20,25 +18,84 @@ Getting Started
 ===============
 .. _getting-started:
 
-* Quickstart guide
+* Quickstart Guide
 * Installation
-* `Release notes <../CHANGELOG>`_
+* `Release notes <CHANGELOG.html>`_
 * Tutorials
 * `Drizzlepac handbook <https://www.stsci.edu/scientific-community/software/drizzlepac.html>`_
+* Contributing and Reporting Issues
+* `FAQs <https://github.com/spacetelescope/notebooks/tree/master/notebooks/DrizzlePac>`_
+* Citing Drizzlepac
 
 
 Drizzling images
 ================
 .. _drizzling-images:
 
+* introduction
+* Primary User Interface: AstroDrizzle()
 
+Tweakreg & Tweakback
+====================
+.. _tweakreg-tweakback:
 
+* image registration tasks
+* Coordinate transformation tasks
 
+Pipeline processing
+===================
+.. _pipeline-processing:
 
+* introduction pipeline processing
+* overview of pipeline
+* Running astrodriz
 
+Hubble Archival Products
+========================
+.. _hubble-archival-products:
 
+* introduction
+* Astrometry and Advanced Pipeline Products
+* Improvements to HST astrometry
+* Astrometry and headerlets
+* HAP parameters
+* Glossary of HAP terms
 
+SVM
+~~~
+.. _SVM:
 
+* processing
+* catalog generation
+* Classes to manage Catalogs and WCS’s
+
+MVM
+~~~
+.. _MVM:
+
+* processing
+* interfaces
+* utilities
+
+Data products
+=============
+.. _data-products:
+
+* Drizzle
+* SVM
+* MVM
+
+API
+===
+.. _API:
+
+* Drizzle (Image drizzling step)
+* Pipeline processing
+* Tweakreg, Tweakback
+* SVM
+* MVM
+* Dependencies
+* Licence
 
 
 
