@@ -124,13 +124,11 @@ class TestAcsApriori(BaseACS):
     """
 
     @pytest.mark.bigdata
-    #@pytest.mark.parametrize('dataset', ['jb1601020_asn.fits', 'j9i408010_asn.fits'])
-    @pytest.mark.parametrize('dataset', ['j9i408010_asn.fits'])
+    @pytest.mark.parametrize('dataset', ['jb1601020_asn.fits', 'j9i408010_asn.fits'])
     def test_apriori(self, dataset):
         compare_apriori(dataset)
 
 
-pytest.mark.skip("Already tested")
 class TestWFC3Apriori(BaseWFC3):
     """ Tests which validate whether mosaics can be aligned to an astrometric
         standard, evaluate the quality of the fit, and generate a new WCS.
