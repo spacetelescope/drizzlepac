@@ -1,4 +1,4 @@
-Hubble Archival Products Parameters
+HAP Parameters
 -----------------------------------
 
 .. _hap-parameters:
@@ -107,67 +107,98 @@ skyuser: ""
 Step 3: Drizzle Separate images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-driz_separate: false
+driz_separate : bool, default=False
+    This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.
 
-driz_sep_bits: "16"
+driz_sep_bits: int, Default = "16"
+    Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of ``AstroDrizzle``, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the ``Bits`` Parameter for a more detailed discussion.
 
-driz_sep_kernel: "square"
+driz_sep_kernel : str, default=square
+    Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are: 'square', 'point', 'gaussian', 'turbo', 'tophat', and 'lanczos3'. See adrizzle.help for more details. 
 
-driz_sep_wt_scl: "exptime"
+driz_sep_wt_scl: float, default=image header exposure time 
+    This parameter specifies the weighting factor for input image. If ``driz_sep_wt_scl``\ =\ ``exptime``, then the scaling value will be set equal to the exposure time found in the image header. The use of the default value is recommended for producing optimal behavior for most scenarious. It is possible to set ``wt_scl``\ =\ 'expsq' for weighting by the square of the exposure time, which is optimal for read-noise dominated images.
 
-driz_sep_pixfrac: 1.0
+driz_sep_pixfrac: float, default=1.0
+    Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", of a pixel in units of the input pixel size. If ``pixfrac`` is set to less than 0.001, the kernel parameter will be reset to 'point' for more efficient processing. In the step of drizzling each input image onto a separate output image, the default value of 1.0 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the ``drizzle`` task.
 
-driz_sep_fillval: null
+.. null?!?!?!?!?
 
-driz_sep_compress: false
+driz_sep_fillval: int or INDEF, default = null
+    Value to be assigned to output pixels that have zero weight, or that receive flux from any input pixels during drizzling. This parameter corresponds to the ``fillval`` parameter of the ``drizzle`` task. If the default of ``INDEF`` is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that value.
+
+driz_sep_compress: bool, default=False
+    Whether to use compression when writing out product.
 
 Step 3a: Custom WCS for Separate Outputs
 """"""""""""""""""""""""""""""""""""""""
 
-driz_sep_wcs: false
+driz_sep_wcs: bool, default=False
+    Define custom WCS for seperate output images?
 
-driz_sep_refimage: ""
+driz_sep_refimage: str, default=""
+    Reference image from which a WCS solution can be obtained.
 
-driz_sep_rot: null
+driz_sep_rot : float, default=null
+    Position Angle of output image's Y-axis relative to North.  A value of 0.0 would orient the final output image to be North up.  The default of ``INDEF`` specifies that the images will not be rotated,  but will instead be drizzled in the default orientation for the camera  with the x and y axes of the drizzled image corresponding approximately  to the detector axes. This conserves disk space, as these single  drizzled images are only used in the intermediate step of creating  a median image.
 
-driz_sep_scale: null
+driz_sep_scale : float, default=null
+    Linear size of the output pixels in arcseconds/pixel for each separate  drizzled image (used in creating the median for cosmic ray rejection).  The default value of ``INDEF`` specifies that the undistorted pixel  scale for the first input image will be used as the pixel scale for  all the output images.
 
-driz_sep_outnx: null
+driz_sep_outnx : int, default=null
+    Size, in pixels, of the X axis in the output images that each input  will be drizzled onto. If no value is specified, the smallest size that  can accommodate the full dithered field will be used.
 
-driz_sep_outny: null
+driz_sep_outny : int, default=null
+    Size, in pixels, of the Y axis in the output images that each input  will be drizzled onto. If no value is specified, the smallest size  that can accommodate the full dithered field will be used.
 
-driz_sep_ra: null
+driz_sep_ra : float, default=null
+    Right ascension (in decimal degrees) specifying the center of the output  image. If this value is not designated, the center will automatically  be calculated based on the distribution of image dither positions.
 
-driz_sep_dec: null
+driz_sep_dec : float, default=null
+    Declination (in decimal degrees) specifying the center of the output  image. If this value is not designated, the center will automatically  be calculated based on the distribution of image dither positions.
 
-driz_sep_crpix1: null
+driz_sep_crpix1: float, or null, default=null
+    Reference pixel X position on output (CRPIX1).
 
-driz_sep_crpix2: null
+driz_sep_crpix2: float, or null, default=null
+    Reference pixel Y position on output (CRPIX2).
 
 Step 4: Create Median Image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 median: false
+    Create a median image?
 
 median_newmasks: true
+    Create new masks when doing the median?
 
 combine_type: "minmed"
+    Type of combine operation. "minmed","iminmed","median","mean","imedian","imean","sum".
 
 combine_nlow: 0
+    Minmxa, number of low pixels to reject.
 
 combine_nhigh: 1
+    Minmxa, number of high pixels to reject.
 
 combine_maskpt: 0.3
+    Percentage of weight image value below which it is flagged as a bad pixel.
 
 combine_nsigma: "4 3"
+    Significance for accepting minimum instead of median.
+
 
 combine_lthresh: null
+    Lower threshold for clipping input pixel values.
 
 combine_hthresh: null
+    Upper threshold for clipping input pixel values.
 
 combine_grow: 1
+    Radius (pixels) for neighbor rejection.
 
 combine_bufsize: null
+    Size of buffer(in Mb) for each input image.
 
 
 Step 5: Blot back the median image
