@@ -12,75 +12,105 @@ Shown below are the parameters that are used by the Hubble Advanced Products. We
 Initialize HAP
 ^^^^^^^^^^^^^^
 
-\_mdriztab_btn\_: Update From MDRIZTAB
-    text asdlkfjasldkj falskdjf laskdjf laskd flaksjdfl kas dlfkjal sdfka sdlfkj alsdkjf laksjd laksjdlfka sldk
+\_mdriztab_btn\_: str, default='Update From MDRIZTAB'
+    Immediately read and use the values from the MDRIZTAB.
 
-runfile: "astrodrizzle.log"
-    sdflaskj dflaksj dflkasjd flkasjd lfkjasldk flaskjd f
+runfile: str, default="astrodrizzle.log"
+    File for logging the processing.
 
-wcskey: ""
+wcskey: str, default=""
+    WCS version to use in processing
 
-proc_unit: "native"
+proc_unit: str, default="native"
+    Units used during processing: "native", "electrons"
 
-coeffs: true
+coeffs: bool, default=True
+    Use header-based distortion coefficients?
 
-context: true
+context: bool, default=True
+    Create context image during final drizzle?
 
-group: ""
+group: str, default=""
+    Single extension or group to be combined/cleaned.
 
-build: true
+build: bool, default=True
+    Create multi-extension output file for final drizzle?
 
-crbit: 4096
+crbit: int, default=4096
+    Bit value for CR ident. in DQ array.
 
-stepsize: 10
+stepsize: int, default=10
+    Step size for drizzle coordinate computation.
 
 resetbits: "4096"
+    Bit values to reset in all input DQ arrays.
 
-num_cores: 1
+num_cores: int, default=1
+    Max CPU cores to use (n<2 disables, None = auto-decide).
 
-in_memory: false,
+in_memory: bool, default=False
+    Process everything in memory to minimize disk I/O?
 
 Instrument Parameters
 ^^^^^^^^^^^^^^^^^^^^^
 
-gnkeyword: "ATODGNA,ATODGNB,ATODGNC,ATODGND"
+.. or float?
 
-rnkeyword: "READNSEA,READNSEB,READNSEC,READNSED"
+gnkeyword: str, default="ATODGNA,ATODGNB,ATODGNC,ATODGND"
 
-expkeyword: "EXPTIME"
+rnkeyword: str, default="READNSEA,READNSEB,READNSEC,READNSED"
+    Keyword used to specify a value, which is used to override the instrument
+    specific default readnoise values. The value is assumed to be in units
+    of electrons. This parameter should not be populated if the ``rdnoise``
+    parameter is in use.
 
-gain: ""
+expkeyword: str, default="EXPTIME"
+    Keyword used to specify a value, which is used to override the default
+    exposure time image header values.  The value is assumed to be in units
+    of seconds. This parameter should not be populated if the ``exptime``
+    parameter is in use.
 
-rdnoise: ""
+gain: str, default=""
+    Value used to override instrument specific default gain values. The value
+    is assumed to be in units of electrons/count.  This parameter should not
+    be populated if the ``gainkeyword`` parameter is in use.
 
-exptime: ""
+rdnoise: str, default=""
+    Value used to override instrument specific default readnoise values.
+    The value is assumed to be in units of electrons. This parameter should
+    not be populated if the ``rnkeyword`` parameter is in use.
+
+exptime: str, default=""
 
 State of input files
 ^^^^^^^^^^^^^^^^^^^^
 
-restore: false
+restore: bool, default=False
 
-preserve: false
+preserve: bool, default=False
 
-overwrite: false
+overwrite: bool, default=False
 
-clean: true
+clean: bool, default=True
 
 Step 1: Static mask
 ^^^^^^^^^^^^^^^^^^^
 
-static: true
+static: bool, default=True
 
 static_sig: 4.0
 
 Step 2: Sky Subtraction
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-skysub: false
+skysub: bool, default=false
+    Turn on or off sky subtraction on the input data. When ``skysub`` is set  to ``no``, then ``skyuser`` field will be enabled and if user specifies a  header keyword showing the sky value in the image, then that value will  be used for CR-rejection but it will not be subtracted from the (drizzled)  image data. If user sets ``skysub`` to ``yes`` then ``skyuser`` field will be  disabled (and if it is not empty - it will be ignored) and user can use  one of the methods available through the ``skymethod`` parameter to  compute the sky or provide a file (see ``skyfile`` parameter) with values  that should be subtracted from (single) drizzled images.
 
-skymethod: "match"
+skymethod: str, default="match"
+    Sky computation method: "globalmin+match","localmin", "globalmin", "match". See astrodrizzle.help for more details.
 
-skystat: "median"
+skystat: str, default="median"
+    Statistical method for determining the sky value from the image pixel values: "median","mode","mean".
 
 skywidth: 0.1
 
@@ -98,7 +128,7 @@ skyusigma: 4.0
 
 skymask_cat: ""
 
-use_static: true
+use_static: bool, default=True
 
 skyfile: ""
 
@@ -110,13 +140,13 @@ Step 3: Drizzle Separate images
 driz_separate : bool, default=False
     This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.
 
-driz_sep_bits: int, Default = "16"
+driz_sep_bits: int, default="16"
     Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of ``AstroDrizzle``, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the ``Bits`` Parameter for a more detailed discussion.
 
-driz_sep_kernel : str, default=square
+driz_sep_kernel : str, default="square"
     Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are: 'square', 'point', 'gaussian', 'turbo', 'tophat', and 'lanczos3'. See adrizzle.help for more details. 
 
-driz_sep_wt_scl: float, default=image header exposure time 
+driz_sep_wt_scl: float, default=exposure time (from image header)
     This parameter specifies the weighting factor for input image. If ``driz_sep_wt_scl``\ =\ ``exptime``, then the scaling value will be set equal to the exposure time found in the image header. The use of the default value is recommended for producing optimal behavior for most scenarious. It is possible to set ``wt_scl``\ =\ 'expsq' for weighting by the square of the exposure time, which is optimal for read-noise dominated images.
 
 driz_sep_pixfrac: float, default=1.0
