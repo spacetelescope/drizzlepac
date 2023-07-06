@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 .. tocdepth: 2
-
+==========
 Drizzlepac
 ==========
 .. _drizzlepac:
@@ -15,13 +15,9 @@ The Drizzlepac package is a collection packages for aligning and combining astro
     :maxdepth: 2
 
     getting-started
+    drizzling-images
+    hubble-archival-products
 
-Drizzling images
-================
-.. _drizzling-images:
-
-* introduction
-* Primary User Interface: AstroDrizzle()
 
 Tweakreg & Tweakback
 ====================
@@ -50,7 +46,7 @@ Hubble Archival Products
 * Glossary of HAP terms
 
 SVM
-~~~
+
 .. _SVM:
 
 * processing
@@ -58,7 +54,7 @@ SVM
 * Classes to manage Catalogs and WCS’s
 
 MVM
-~~~
+
 .. _MVM:
 
 * processing
