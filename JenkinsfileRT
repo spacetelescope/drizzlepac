@@ -55,4 +55,4 @@ bc4.conda_packages = ['python=3.11']
 // Spawn a host (or workdir) for each combination and run in parallel.
 // Also apply the job configuration defined in `jobconfig` above.
 //utils.run([bc1, bc3, bc4, jobconfig])
-utils.run([bc1, jobconfig])
+utils.run([bc1, b3, jobconfig])
