@@ -25,7 +25,8 @@ bc1.conda_packages = ['python=3.9']
 bc1.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson==0.5",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --bigdata",
+//bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --bigdata",
+bc1.test_cmds = ["pytest --basetemp=/tests_output -s -v -m "not bigdata",
                 "codecov"]
 bc1.test_configs = [data_config]
 
@@ -55,4 +56,4 @@ bc4.conda_packages = ['python=3.11']
 // Spawn a host (or workdir) for each combination and run in parallel.
 // Also apply the job configuration defined in `jobconfig` above.
 //utils.run([bc1, bc3, bc4, jobconfig])
-utils.run([bc1, b3, jobconfig])
+utils.run([bc1, jobconfig])
