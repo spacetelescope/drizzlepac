@@ -57,6 +57,7 @@ Instrument Parameters
 .. or float?
 
 gnkeyword: str, default="ATODGNA,ATODGNB,ATODGNC,ATODGND"
+    .. the default readnoise/gain value? what are the options?
 
 rnkeyword: str, default="READNSEA,READNSEB,READNSEC,READNSED"
     Keyword used to specify a value, which is used to override the instrument
@@ -81,24 +82,31 @@ rdnoise: str, default=""
     not be populated if the ``rnkeyword`` parameter is in use.
 
 exptime: str, default=""
+    .. ?
 
 State of input files
 ^^^^^^^^^^^^^^^^^^^^
 
 restore: bool, default=False
+    Copy input files FROM archive directory for processing?
 
 preserve: bool, default=False
+    Copy input files to archive directory, if not already archived?
 
 overwrite: bool, default=False
+    Copy input files into archive, overwriting if required?
 
 clean: bool, default=True
+    Delete temporary files after completion?
 
 Step 1: Static mask
 ^^^^^^^^^^^^^^^^^^^
 
 static: bool, default=True
+    Create static bad-pixel mask from the data?
 
 static_sig: 4.0
+    Sigma*rms below mode to clip for static mask
 
 Step 2: Sky Subtraction
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -113,26 +121,37 @@ skystat: str, default="median"
     Statistical method for determining the sky value from the image pixel values: "median","mode","mean".
 
 skywidth: 0.1
+    Bin width of histogram for sampling sky statistics (in sigma)
 
 skylower: -100.0
+    Lower limit of usable data for sky (always in electrons)
 
 sky_bits: "16"
+    nteger mask bit values considered good pixels in DQ array
 
 skyupper: null
+    Upper limit of usable data for sky (always in electrons)
 
 skyclip: 5
+    Number of clipping iterations
 
 skylsigma: 4.0
+    Lower side clipping factor (in sigma)
 
 skyusigma: 4.0
+    Upper side clipping factor (in sigma)
 
 skymask_cat: ""
+    Catalog file listing image masks
 
 use_static: bool, default=True
+    Use static mask for skymatch computations?
 
 skyfile: ""
+    Name of file with user-computed sky values to be subtracted
 
 skyuser: ""
+    KEYWORD indicating a sky subtraction value if done by user
 
 Step 3: Drizzle Separate images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -235,71 +254,100 @@ Step 5: Blot back the median image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 blot: false
+    Blot the median back to the input frame?
 
 blot_interp: "poly5"
+    Interpolant (nearest,linear,poly3,poly5,sinc)
 
 blot_sinscl: 1.0
+    Scale for sinc interpolation kernel
 
 blot_addsky: true
+    Add sky using MDRIZSKY value from header?
 
 blot_skyval: 0.0
-
+    Custom sky value to be added to blot image
 
 Step 6: Remove cosmic rays with deriv, driz_cr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 driz_cr: false
+    Perform CR rejection with deriv and driz_cr?
 
 driz_cr_snr: "5.0 4.0"
-
+    Driz_cr.SNR parameter
+    
 driz_cr_grow: 1
+    Driz_cr_grow parameter
 
 driz_cr_ctegrow: 0
+    Driz_cr_ctegrow parameter
 
 driz_cr_scale: "3.0 2.4"
+    Driz_cr.scale parameter
 
 driz_cr_corr: false
+    Create CR cleaned _crclean file and a _crmask file?
 
 Step 7: Drizzle final combined image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 driz_combine: true
+    Perform final drizzle image combination?
 
 final_pixfrac: 1.0
+    Linear size of drop in input pixels
 
 final_fillval: null
+    Value to be assigned to undefined output points
 
 final_bits: "65535"
+    Integer mask bit values considered good
 
 final_maskval: null
+    Value to be assigned to regions outside SCI image
 
 final_wht_type: "EXP"
+    Type of weighting for final drizzle
 
 final_kernel: "square"
+    Shape of kernel function
 
 final_wt_scl: "exptime"
+    Weighting factor for input data image
 
 final_units: "cps"
+    Units for final drizzle image (counts or cps)
 
 Step 7a: Custom WCS for final output
 """"""""""""""""""""""""""""""""""""
 
 final_wcs: true
+    Define custom WCS for final output image?
 
 final_rot: 0.0
+    Position Angle of drizzled image's Y-axis w.r.t. North (degrees)
 
 final_refimage: ""
+    Reference image from which to obtain a WCS
 
 final_scale: null
+    Absolute size of output pixels in arcsec/pixel
 
 final_outnx: null
+    Size of FINAL output frame X-axis (pixels)
 
 final_outny: null
+    Size of FINAL output frame Y-axis (pixels)
 
 final_ra: null
+    right ascension output frame center in decimal degrees
 
 final_dec: null
+    declination output frame center in decimal degrees
 
 final_crpix1: null
+    Reference pixel X position on output (CRPIX1)
 
 final_crpix2: null
+    Reference pixel Y position on output (CRPIX2)

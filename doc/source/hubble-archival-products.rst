@@ -1,5 +1,5 @@
 ========================
-Hubble Archival Products
+Hubble Advanced Products
 ========================
 
 Introduction
