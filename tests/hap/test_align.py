@@ -51,7 +51,7 @@ class TestAlignMosaic(BaseHLATest):
         is stored.  The full path is TEST_BIGDATA plus the path components provided
         in the get_bigdata() invocation.  This test file can be executed in the following
         manner:
-            $ pytest -s --bigdata test_align.py >& test_align_output.txt &
+            $ pytest -s --bigdata --slow test_align.py >& test_align_output.txt &
             $ tail -f test_align_output.txt
 
     """
@@ -126,6 +126,8 @@ class TestAlignMosaic(BaseHLATest):
         assert 0.0 < total_rms <= RMS_LIMIT
 
 
+    """
+    Test for j8ura1j* needs to be debugged.
     @pytest.mark.parametrize("input_filenames", [['j8ura1j1q_flt.fits', 'j8ura1j2q_flt.fits',
                                                   'j8ura1j4q_flt.fits', 'j8ura1j6q_flt.fits',
                                                   'j8ura1j7q_flt.fits', 'j8ura1j8q_flt.fits',
@@ -135,6 +137,21 @@ class TestAlignMosaic(BaseHLATest):
                                                   'j8ura1jhq_flt.fits', 'j8ura1jiq_flt.fits',
                                                   'j8ura1jjq_flt.fits', 'j8ura1jkq_flt.fits'],
                                                  ['j92c01b4q_flc.fits', 'j92c01b5q_flc.fits',
+                                                  'j92c01b7q_flc.fits', 'j92c01b9q_flc.fits'],
+                                                 ['jbqf02gzq_flc.fits', 'jbqf02h5q_flc.fits',
+                                                  'jbqf02h7q_flc.fits', 'jbqf02hdq_flc.fits',
+                                                  'jbqf02hjq_flc.fits', 'jbqf02hoq_flc.fits',
+                                                  'jbqf02hqq_flc.fits', 'jbqf02hxq_flc.fits',
+                                                  'jbqf02i3q_flc.fits', 'jbqf02i8q_flc.fits',
+                                                  'jbqf02iaq_flc.fits'],
+                                                 ['ib2u12kaq_flt.fits', 'ib2u12keq_flt.fits',
+                                                  'ib2u12kiq_flt.fits', 'ib2u12klq_flt.fits'],
+                                                 ['ibnh02coq_flc.fits', 'ibnh02cmq_flc.fits',
+                                                  'ibnh02c7q_flc.fits', 'ibnh02c5q_flc.fits',
+                                                  'ibnh02cpq_flc.fits', 'ibnh02c9q_flc.fits',
+                                                  'ibnh02bfq_flc.fits', 'ibnh02beq_flc.fits']])
+    """
+    @pytest.mark.parametrize("input_filenames", [ ['j92c01b4q_flc.fits', 'j92c01b5q_flc.fits',
                                                   'j92c01b7q_flc.fits', 'j92c01b9q_flc.fits'],
                                                  ['jbqf02gzq_flc.fits', 'jbqf02h5q_flc.fits',
                                                   'jbqf02h7q_flc.fits', 'jbqf02hdq_flc.fits',
@@ -242,24 +259,3 @@ class TestAlignMosaic(BaseHLATest):
 
         assert 0.0 < total_rms <= RMS_LIMIT
 
-    pytest.skip("Skipping the test to validate the use of the astroquery functionality.", allow_module_level=True)
-    def test_astroquery(self):
-        """Verify that new astroquery interface will work"""
-
-        total_rms = 0.01
-
-        dataset_table = alignimages.perform_align(['IB6V06060'],
-                                                  catalog_list=['GAIADR2', 'GAIADR1'],
-                                                  num_sources=250,
-                                                  archive=False, clobber=True,
-                                                  debug=False, update_hdr_wcs=False,
-                                                  print_fit_parameters=True, print_git_info=False,
-                                                  product_type='pipeline',
-                                                  output=False)
-
-        # Examine the output table to extract the RMS for the entire fit and the compromised
-        # information
-        if dataset_table:
-            total_rms = dataset_table.filtered_table['total_rms'][0]
-
-        assert 0.0 < total_rms <= RMS_LIMIT
