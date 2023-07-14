@@ -15,15 +15,8 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage, stats
 
-import photutils  # needed to check version
-if Version(photutils.__version__) < Version('1.1.0'):
-    OLD_PHOTUTILS = True
-    from photutils.segmentation import (detect_sources, source_properties,
-                                        deblend_sources)
-else:
-    OLD_PHOTUTILS = False
-    from photutils.segmentation import (detect_sources, SourceCatalog,
-                                        deblend_sources)
+from photutils.segmentation import (detect_sources, SourceCatalog,
+                                    deblend_sources)
 from photutils.aperture import CircularAperture, CircularAnnulus
 from photutils.background import (Background2D, SExtractorBackground,
                                   StdBackgroundRMS)
@@ -50,16 +43,10 @@ CATALOG_TYPES = ['aperture', 'segment']
 # Only these options support conversion to/from ICRS in WCSLIB.
 RADESYS_OPTIONS = ['FK4', 'FK5', 'ICRS']
 
-if OLD_PHOTUTILS:
-    id_colname = 'id'
-    flux_colname = 'source_sum'
-    ferr_colname = 'source_sum_err'
-    bac_colname = 'background_at_centroid'
-else:
-    id_colname = 'label'
-    flux_colname = 'segment_flux'
-    ferr_colname = 'segment_fluxerr'
-    bac_colname = 'background_centroid'
+id_colname = 'label'
+flux_colname = 'segment_flux'
+ferr_colname = 'segment_fluxerr'
+bac_colname = 'background_centroid'
 
 __taskname__ = 'catalog_utils'
 
@@ -1541,6 +1528,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Initialize attributes to be computed later
         self.segm_img = None  # Segmentation image
 
+        # Image data convolved with the kernel
+        self.convolved_img = None
+
+        # Instance of a SourceCatalog object defined on the total image
+        # but used for the filtered objects
+        self.total_source_cat = None
+
         # Defined in measure_sources
         self.subset_filter_source_cat = None
 
@@ -1552,19 +1546,19 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # is deemed to be of poor quality, make sure to add documentation to the output catalog.
         self.is_big_island = False
 
+
     def identify_sources(self, **pars):
         """Use photutils to find sources in image based on segmentation.
 
         Returns
         -------
-        self.sources
-        self.source_cat
 
         Defines
         -------
         self.segm_img : ``photutils.segmentation.SegmentationImage``
             Two-dimensional segmentation image where found source regions are labeled with
             unique, non-zero positive integers.
+
         """
         # Recognize empty/blank images and treat gracefully
         if self.image.blank:
@@ -1573,6 +1567,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             return
 
         # If the total product sources have not been identified, then this needs to be done!
+        # Essentially, this "if" is the total product 'identify' block.  The filter product
+        # inherits some variables from the total product in the "else" block.
         if not self.tp_sources:
 
             # Report configuration values to log
@@ -1846,13 +1842,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Identifying sources in total detection image.")
             self.segm_img = copy.deepcopy(segm_img)
             del segm_img
-            if OLD_PHOTUTILS:
-                self.source_cat = source_properties(imgarr, self.segm_img, background=self.image.bkg_background_ra,
-                                                    filter_kernel=self.kernel, wcs=self.image.imgwcs)
-            else:
-                self.source_cat = SourceCatalog(imgarr, self.segm_img, background=self.image.bkg_background_ra,
-                                                    kernel=self.kernel, wcs=self.image.imgwcs,
-                                                    kron_params=[self._kron_scaling_radius, self._kron_minimum_radius])
+            self.source_cat = SourceCatalog(imgarr, self.segm_img, background=self.image.bkg_background_ra,
+                                            convolved_data = self.convolved_img, wcs=self.image.imgwcs,
+                                            kron_params=[self._kron_scaling_radius, self._kron_minimum_radius])
 
 
             enforce_icrs_compatibility(self.source_cat)
@@ -1863,21 +1855,28 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Filter the table to eliminate nans or inf based on the coordinates, then remove these segments from
             # the segmentation image too
             good_rows = []
-            bad_segm_rows_by_id = []
+            good_segm_rows_by_label = []
+            bad_segm_rows_by_label = []
             updated_table = None
             for i, old_row in enumerate(total_measurements_table):
                 if np.isfinite(old_row["xcentroid"]):
                     good_rows.append(old_row)
+                    good_segm_rows_by_label.append(total_measurements_table['label'][i])
                 else:
-                    bad_segm_rows_by_id.append(total_measurements_table['label'][i])
+                    bad_segm_rows_by_label.append(total_measurements_table['label'][i])
             updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
-            if self.diagnostic_mode and bad_segm_rows_by_id:
+            if self.diagnostic_mode and bad_segm_rows_by_label:
                 log.info("Bad segments removed from segmentation image for Total detection image {}.".format(self.imgname))
 
             # Remove the bad segments from the image
-            self.segm_img.remove_labels(bad_segm_rows_by_id, relabel=True)
+            self.segm_img.remove_labels(bad_segm_rows_by_label, relabel=True)
+
+            # Need to keep an updated copy of the total image SourceCatalog object for use when
+            # making measurements in the filtered images
+            self.total_source_cat = self.source_cat.get_labels(good_segm_rows_by_label)
 
             # Clean up the existing column names, format, and descriptions
+            # At this point self.source_cat has been converted into an Astropy table
             self.source_cat = self._define_total_table(updated_table)
 
             # self.sources needs to be passed to a filter catalog object based on code in hapsequencer.py
@@ -1891,11 +1890,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
             log.info("")
 
-        # If filter product, use sources identified in total detection product previously generated
+        # This is the filter product section -  use sources identified in total detection product 
+        # previously generated
         else:
-            self.sources = self.tp_sources['segment']['sources']
-            self.kernel = self.tp_sources['segment']['kernel']
-            self.total_source_table = self.tp_sources['segment']['source_cat']
+            self.sources = self.tp_sources['segment']['sources']                   # segmentation image
+            self.kernel = self.tp_sources['segment']['kernel']                  
+            self.total_source_table = self.tp_sources['segment']['source_cat']     # source catalog as a table
+            self.total_source_cat = self.tp_sources['segment']['total_source_cat'] # SourceCatalog datatype
 
         # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.
         # Create the image regions file here in case there is a failure.  This diagnostic portion of the
@@ -1909,8 +1910,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             indx = self.sourcelist_filename.find("ecsv")
             outname = self.sourcelist_filename[0:indx-1] + "_all.reg"
 
-            tbl["X-Centroid"].info.format = ".10f"
-            tbl["Y-Centroid"].info.format = ".10f"
+            tbl["X-Centroid"].info.format = ".12f"
+            tbl["Y-Centroid"].info.format = ".12f"
 
             # Add one to the X and Y table values to put the data onto a one-based system,
             # particularly for display with ds9
@@ -2021,8 +2022,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
            threshold :
                Image which defines, on a pixel-by-pixel basis, the low limit above which
-               sources are detected.
-
+               sources are detected.  The threshold is composed of the background + sigma * rms
+               
            ncount : int
                Invocation index for this method.  The index is used to create unique names
                for diagnostic output files.
@@ -2059,7 +2060,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
         segm_img = None
-        segm_img = detect_sources(convolve(img_bkg_sub, filter_kernel),
+        self.convolved_img = convolve(img_bkg_sub, filter_kernel)
+        segm_img = detect_sources(self.convolved_img,
                                   thresh0,
                                   npixels=source_box,
                                   mask=mask)
@@ -2119,7 +2121,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # segmentation. Sextractor uses a multi-thresholding technique.
             # npixels = number of connected pixels in source
             # npixels and filter_kernel should match those used by detect_sources()
-            segm_deblended_img = deblend_sources(convolve(imgarr, filter_kernel),
+            segm_deblended_img = deblend_sources(self.convolved_img,
                                                  segm_img,
                                                  npixels=source_box,
                                                  nlevels=self._nlevels,
@@ -2198,22 +2200,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                flux_colname, ferr_colname, 'xcentroid', 'ycentroid']
 
         # Compute source properties...
-        if OLD_PHOTUTILS:
-            self.source_cat = source_properties(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
-                                                error=total_error, filter_kernel=self.kernel, wcs=self.image.imgwcs)
-        else:
-            include_filter_cols.append('fwhm')
-            self.source_cat = SourceCatalog(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
-                                                error=total_error, kernel=self.kernel, wcs=self.image.imgwcs)
+        # No convolved image needed here since the detection_cat parameter is set.
+        include_filter_cols.append('fwhm')
+        self.source_cat = SourceCatalog(imgarr_bkgsub, self.sources, background=self.image.bkg_background_ra,
+                                        detection_cat=self.total_source_cat,
+                                        error=total_error, wcs=self.image.imgwcs)
 
         enforce_icrs_compatibility(self.source_cat)
 
         filter_measurements_table = Table(self.source_cat.to_table(columns=include_filter_cols))
-
-        # Create zero-value "fwhm" column which did not exist in the versions < 1.1.0 of Photutils
-        if OLD_PHOTUTILS:
-            fwhm_col = Column(name="fwhm", data=np.zeros_like(filter_measurements_table['area']))
-            filter_measurements_table.add_column(fwhm_col)
 
         # Compute aperture photometry measurements and append the columns to the measurements table
         self.do_aperture_photometry(imgarr, filter_measurements_table, self.imgname, filter_name)

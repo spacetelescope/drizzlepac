@@ -174,6 +174,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 if cat_type == "segment":
                     sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
                     sources_dict['segment']['source_cat'] = total_product_catalogs.catalogs['segment'].source_cat
+                    sources_dict['segment']['total_source_cat'] = total_product_catalogs.catalogs['segment'].total_source_cat
 
             # Get parameter from config files for CR rejection of catalogs
             cr_residual = total_product_obj.configobj_pars.get_pars('catalog generation')['cr_residual']
