@@ -18,11 +18,11 @@
     },
     "STEP 2: SKY SUBTRACTION": {
         "skysub": true,
-        "skymethod": "match",
+        "skymethod": "localmin",
         "skystat": "median",
         "skywidth": 0.1,
         "skylower": -100.0,
-        "sky_bits": "8,1024",
+        "sky_bits": "1024",
         "skyupper": null,
         "skyclip": 5,
         "skylsigma": 4.0,
@@ -34,7 +34,7 @@
     },
     "STEP 3: DRIZZLE SEPARATE IMAGES": {
         "driz_separate": true,
-        "driz_sep_bits": "8,1024",
+        "driz_sep_bits": "1024",
         "driz_sep_kernel": "square",
         "driz_sep_wt_scl": "exptime",
         "driz_sep_pixfrac": 1.0,
@@ -63,17 +63,17 @@
     },
     "STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR": {
         "driz_cr": true,
-        "driz_cr_snr": "6.0 5.0",
+        "driz_cr_snr": "5.5 3.5",
         "driz_cr_grow": 1,
         "driz_cr_ctegrow": 0,
-        "driz_cr_scale": "3.0 2.5",
+        "driz_cr_scale": "2.0 1.5",
         "driz_cr_corr": false
     },
     "STEP 7: DRIZZLE FINAL COMBINED IMAGE": {
         "driz_combine": true,
         "final_pixfrac": 1.0,
         "final_fillval": null,
-        "final_bits": "8,1024",
+        "final_bits": "61439",
         "final_maskval": null,
         "final_wht_type": "EXP",
         "final_kernel": "square",
