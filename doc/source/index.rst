@@ -50,6 +50,7 @@ SVM
 .. _SVM:
 
 * processing
+* interface
 * catalog generation
 * Classes to manage Catalogs and WCS’s
 
