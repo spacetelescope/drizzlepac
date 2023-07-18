@@ -111,9 +111,9 @@ class HAPProduct:
         self.refcat_filenames = []
 
     # def print_info(self):
-    # """ Generic print at this time to indicate the information used in the
-    #     construction of the object for debug purposes.
-    # """
+    """ Generic print at this time to indicate the information used in the
+        construction of the object for debug purposes.
+    """
     # print("Object information: {}".format(self.info))
 
     def generate_footprint_mask(self, save_mask=True):
@@ -352,9 +352,7 @@ class HAPProduct:
 
                         while mosaic_fitgeom_index > -1:
                             # In case of a downgrade, make sure the fit geometry "name" is based upon the index
-                            mosaic_fitgeom = mosaic_fitgeom_list[mosaic_fitgeom_index][
-                                0
-                            ]
+                            mosaic_fitgeom = mosaic_fitgeom_list[mosaic_fitgeom_index][0]
                             log.info(
                                 "Proceeding to use the '{}' fit geometry.".format(
                                     mosaic_fitgeom
@@ -379,31 +377,20 @@ class HAPProduct:
                                 )
 
                                 # Define comparison for min cross-matches based on fitgeom used
-                                alignment_pars["determine_fit_quality"][
-                                    "min_xmatches"
-                                ] = alignment_pars["run_align"]["mosaic_fitgeom_list"][
-                                    mosaic_fitgeom
-                                ]
+                                alignment_pars["determine_fit_quality"]["min_xmatches"] = \
+                                    alignment_pars["run_align"]["mosaic_fitgeom_list"][mosaic_fitgeom]
 
                                 # turn off consistency check for SVM and MVM processing since filter-to-filter
                                 # or visit-to-visit offsets could be large relative to measurement RMS.
-                                alignment_pars["determine_fit_quality"][
-                                    "do_consistency_check"
-                                ] = False
+                                alignment_pars["determine_fit_quality"]["do_consistency_check"] = False
 
                                 # Evaluate the quality of the fit
                                 # Need to create this log file specifically for the PyTest testing environment
                                 # when a single Python session is running and the tests are looking for dataset-specific
                                 # log files.
                                 log_file = "temp_align.log"
-                                (
-                                    is_good_fit,
-                                    _,
-                                    _,
-                                    _,
-                                    _,
-                                    _,
-                                ) = align.determine_fit_quality_mvm_interface(
+                                (is_good_fit,_,_,_,_,_,) = \
+                                    align.determine_fit_quality_mvm_interface(
                                     align_table.imglist,
                                     align_table.filtered_table,
                                     more_catalogs,
