@@ -250,10 +250,8 @@ class HapConfig(object):
                         if n_exp > 1:
                             self.conditions.append("wfpc2_wfpc2_any_n2")
                     if self.hap_pipeline_name == 'svm':
-                        if n_exp == 2:
+                        if n_exp in [2, 3]:
                             self.conditions.append("wfpc2_wfpc2_any_n2")
-                        if n_exp == 3:
-                            self.conditions.append("wfpc2_wfpc2_any_n3")
                         if n_exp >= 4:
                             self.conditions.append("wfpc2_wfpc2_any_n4")
                 else:
