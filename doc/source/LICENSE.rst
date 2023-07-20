@@ -1,5 +1,5 @@
-*******
-LICENSE
-*******
+License
+-------
 
 .. include:: ../../LICENSE.txt
+   :literal:

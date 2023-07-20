@@ -1,0 +1,11 @@
+@INPROCEEDINGS{2010bdrz.conf..382F,
+       author = {{Fruchter}, A.~S. and {et al.}},
+        title = "{BetaDrizzle: A Redesign of the MultiDrizzle Package}",
+     keywords = {betadrizzle, drizzlepac, astrodrizzle, drizzle, dither},
+    booktitle = {2010 Space Telescope Science Institute Calibration Workshop},
+         year = 2010,
+        month = jul,
+        pages = {382-387},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2010bdrz.conf..382F},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}

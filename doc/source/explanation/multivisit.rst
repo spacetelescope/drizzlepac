@@ -50,7 +50,7 @@ implemented for HAP MVM products relies on tesselation of the entire sky using t
 PanSTARRS project as described at `PanSTARRS Sky tessellation patterns
 <https://outerspace.stsci.edu/display/PANSTARRS/PS1+Sky+tessellation+patterns>`_.
 
-.. figure:: images/figure_aitoff.png
+.. figure:: ../images/figure_aitoff.png
   :figwidth: 90%
   :alt: Aitoff plot of all 2,009 PS1 projection cells for the 3PI survey.
 
@@ -58,7 +58,7 @@ PanSTARRS project as described at `PanSTARRS Sky tessellation patterns
   north celestial pole.
 
 
-.. figure:: images/figure_pole.png
+.. figure:: ../images/figure_pole.png
   :figwidth: 90%
   :alt: PS1 projection cells near the north celestial pole.
 
@@ -95,7 +95,7 @@ are approximately 0.2° x 0.2° in size (~18000 x ~18000 pixels) and
 they have the same WCS as the ProjectionCell.  Each SkyCell gets identified by its position within the ProjectionCell
 as shown in this figure:
 
-.. figure:: images/SkyCell_numbering.png
+.. figure:: ../images/SkyCell_numbering.png
   :width: 90%
   :alt: Numbering convention for SkyCells within a Projection Cell.
 
@@ -152,7 +152,7 @@ For example, observations from HST proposal 14175 were taken to study NGC 4594 (
 WFC3 cameras.  The footprints of all the HST/ACS and HST/WFC3 observations taken in this part of the sky as shown by MAST
 can be seen here:
 
-.. figure:: images/pg1202_acs_wfc3_mast_footprint.png
+.. figure:: ../images/pg1202_acs_wfc3_mast_footprint.png
   :width: 90%
   :alt: Footprints of HST/ACS and HST/WFC3 observations of PG1202+281 and surrounding area.
 

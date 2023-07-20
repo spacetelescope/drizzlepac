@@ -15,79 +15,8 @@ The Drizzlepac package is a collection packages for aligning and combining astro
     :maxdepth: 2
 
     getting-started
-    drizzling-images
-    hubble-archival-products
-
-
-Tweakreg & Tweakback
-====================
-.. _tweakreg-tweakback:
-
-* image registration tasks
-* Coordinate transformation tasks
-
-Pipeline processing
-===================
-.. _pipeline-processing:
-
-* introduction pipeline processing
-* overview of pipeline
-* Running astrodriz
-
-Hubble Archival Products
-========================
-.. _hubble-archival-products:
-
-* introduction
-* Astrometry and Advanced Pipeline Products
-* Improvements to HST astrometry
-* Astrometry and headerlets
-* HAP parameters
-* Glossary of HAP terms
-
-SVM
-
-.. _SVM:
-
-* processing
-* interface
-* catalog generation
-* Classes to manage Catalogs and WCS’s
-
-MVM
-
-.. _MVM:
-
-* processing
-* interfaces
-* utilities
-
-Data products
-=============
-.. _data-products:
-
-* Drizzle
-* SVM
-* MVM
-
-API
-===
-.. _API:
-
-* Drizzle (Image drizzling step)
-* Pipeline processing
-* Tweakreg, Tweakback
-* SVM
-* MVM
-* Dependencies
-* Licence
-
-
-
-
-
-
-
+    explanation
+    reference
 
      
 .. users can create custom pipelines 
@@ -208,7 +137,3 @@ API
 ..   :maxdepth: 1
 
 ..   Glossary of HAP Terms <hap_glossary.rst>
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
