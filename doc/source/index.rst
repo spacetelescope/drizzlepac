@@ -4,6 +4,7 @@
    contain the root `toctree` directive.
 
 .. tocdepth: 2
+
 ==========
 Drizzlepac
 ==========
@@ -18,31 +19,6 @@ The Drizzlepac package is a collection packages for aligning and combining astro
     explanation
     reference
 
-     
-.. users can create custom pipelines 
-.. ``AstroDrizzle`` from `~drizzlepac.astrodrizzle`
-
-
-.. Contents:
-
-
-..    :maxdepth: 1
-
-..    astrodrizzle
-..    imageobject
-..    process
-..    static
-..    sky
-..    adrizzle
-..    median
-..    ablot
-..    drizcr
-..    util
-..    tweakback
-..    LICENSE
-
-.. dependencies
-.. This package relies on the STWCS package in order to provide the support for the WCS-based distortion models and alignment of the input images.
 
 
 
@@ -67,24 +43,13 @@ The Drizzlepac package is a collection packages for aligning and combining astro
 .. coordinate transformations that take into account the full
 .. distortion model specified in HST image headers.
 
-.. The full description of all of these tasks have been added
-.. to the :ref:`imagereg` page.
-
-.. .. toctree::
-..    :maxdepth: 1
-
-..    image_registration
 
 
 .. Reproducing Pipeline Processing
 .. -------------------------------
 .. The task 'runastrodriz' can be used to reproduce the same Drizzle processing that gets performed on HST data when retrieving data from the HST archive.
 
-.. .. toctree::
-..    :maxdepth: 1
 
-..    Running Astrodriz <runastrodriz.rst>
-..    API for Astrometry Code <astrometry_api.rst>
 
 
 .. Astrometry and Advanced Pipeline Products
@@ -103,37 +68,8 @@ The Drizzlepac package is a collection packages for aligning and combining astro
 
 .. The **HAP Single Visit Mosaics (SVMs)** differ from the standard HST drizzled data products, which are aligned filter-by-filter to Gaia.  SVM data products, on the other hand, are all drizzled onto the same north-up pixel grid and may have improved relative alignment across filters within a given visit, enabling easy comparison of the images through multiple filters or for images to be combined to create color mosaics. When possible, sources in the images have been aligned directly to the Gaia source catalog to improve the WCS of the images. SVM data products with both relative alignment (by filter) and absolute alignment to Gaia will contain the string 'FIT_SVM_GAIA' in the 'WCSNAME' keyword in the science extension of the image header. More discussion on HAP alignment, may be found on the webpage `Improvements in HST Astrometry <https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=HAdP&title=Improvements+in+HST+Astrometry>`_.
 
-.. .. toctree::
-..   :maxdepth: 1
-
-..   Astrometry and Headerlets <astrometry.rst>
-
-..   singlevisit.rst
-..   runsinglehap.rst
-
-..   catalog_generation
-..   catalogs
 
 
 .. Combining data across visits to create mosaics for every observed location on the sky gets performed using
 .. **HAP Multi-Visit Mosaic (MVM)** processing.
 
-.. .. toctree::
-..   :maxdepth: 1
-
-..   Multi-Visit Mosaic Processing <multivisit.rst>
-..   Multi-Visit Mosaic Products <multivisit_products.rst>
-..   runmultihap.rst
-..   multivisit_api.rst
-
-..   makecustommosaic.rst
-..   mvmutilities.rst
-..   mvmutilities_api.rst
-
-
-.. Indices and tables
-.. ==================
-.. .. toctree::
-..   :maxdepth: 1
-
-..   Glossary of HAP Terms <hap_glossary.rst>
