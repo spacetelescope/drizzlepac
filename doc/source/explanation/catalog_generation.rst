@@ -572,14 +572,14 @@ alignment to GAIA.
 
 This algorithm starts by evaluating the central moments of all sources from the segment catalog.
 Any source where the maximum central moment (as determined by
-`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.SourceProperties.html#photutils.segmentation.SourceProperties>`_
+`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/segmentation.html>`_
 is 0 for both X and Y moments gets identified as cosmic-rays.  This indicates that the source has a
 concentration of flux greater than a point-source and most probably represents a 'head-on cosmic-ray'.
 
 In addition to these 'head-on cosmic-rays', 'glancing cosmic-rays' produce streaks across the detector.
 Those are identified by identifying sources with a minimum width (semiminor_axis) less than the FWHM of a point source
 and an elongation > 2.  The width and elongation are also properties defined by
-`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.SourceProperties.html#photutils.segmentation.SourceProperties>`_.
+`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/segmentation.html>`_.
 The combination of these criteria allows for the identification of a vast majority of cosmic-rays.  The DQ array
 of the single exposure then gets updated to flag those pixels identified as cosmic-rays based on these criteria.
 These DQ flags are then ONLY applied when creating the TotalProduct to limit the contribution of cosmic-rays
@@ -707,7 +707,7 @@ combining a background-only error array with the Poisson noise of sources.
 The isophotal photometry and morphological measurements are then performed on the background-subtracted
 single-filter drizzled image using the segmentation map derived from the multi-filter detection image,
 the background and total error images, the image kernel, and the known WCS with the
-`photutils.segmentation.source_properties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.source_properties.html#photutils.segmentation.source_properties>`_ tool. The measurements made using this tool and retained
+`photutils.segmentation.source_properties <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ tool. The measurements made using this tool and retained
 for the output segment catalog are denoted in Table 5.
 
 .. table:: Table 5: Isophotal Measurements - Subset of Segment Catalog Measurements and Descriptions

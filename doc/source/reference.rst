@@ -1,13 +1,6 @@
-Reference/API
+API
 =============
 .. reference_api:
-
-.. toctree:: 
-    :maxdepth: 1
-
-    CHANGELOG
-    LICENSE
-    DEPENDENCIES
 
 Drizzle (Image drizzling step)
 ------------------------------
@@ -96,6 +89,15 @@ Classes
     reference/stisobjects
     reference/wfc3objects
     reference/wfpc2objects
+
+Codebase references
+------------------
+.. toctree:: 
+    :maxdepth: 1
+
+    CHANGELOG
+    LICENSE
+    DEPENDENCIES
 
 Index
 -----

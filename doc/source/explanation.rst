@@ -11,8 +11,6 @@ Tweakreg & Tweakback
 
     explanation/image_registration
 
-* Coordinate transformation tasks
-
 Pipeline processing
 -------------------
 .. _pipeline-processing:
@@ -31,9 +29,8 @@ Hubble Archival Products
     :maxdepth: 1
 
     explanation/astrometry
+    Improvements to HST astrometry<https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=HAdP&title=Improvements+in+HST+Astrometry>
 
-* Improvements to HST astrometry
-* Astrometry and headerlets
 * HAP parameters
 * Glossary of HAP terms
 
@@ -49,7 +46,7 @@ SVM
 
     explanation/catalog_generation
 
-* Classes to manage Catalogs and WCS’s
+* Classes to manage Catalogs and WCS's
 
 MVM
 
@@ -60,8 +57,7 @@ MVM
 
     explanation/multivisit
     explanation/mvmutilities
-
-* interfaces
+    reference/runmultihap
 
 Data products
 -------------
