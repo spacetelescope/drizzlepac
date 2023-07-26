@@ -34,15 +34,13 @@ Pipeline processing
     reference/refimagefindpars
     reference/catalogs
     reference/drizcr
-    reference/hap_glossary
-    reference/hap-parameters
     reference/mdztab
     reference/process
     reference/util
     reference/utilfuncs
 
-Tweakreg, Tweakback
--------------------
+Interactive Image alignment
+---------------------------
 
 .. toctree::
     :maxdepth: 1
@@ -91,7 +89,7 @@ Classes
     reference/wfpc2objects
 
 Codebase references
-------------------
+-------------------
 .. toctree:: 
     :maxdepth: 1
 

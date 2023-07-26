@@ -1,8 +1,18 @@
 .. _astrodrizzle_:
 
-**************************************
+===================================
+Introduction to Pipeline processing
+===================================
+*Coming soon!*
+
+====================
+Overview of pipeline
+====================
+*Coming soon!*
+
+======================================
 Primary User Interface: AstroDrizzle()
-**************************************
+======================================
 
 .. moduleauthor:: Warren Hack <help@stsci.edu>
 

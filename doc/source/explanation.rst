@@ -2,8 +2,8 @@ Explanation
 ===========
 .. _explanation:
 
-Tweakreg & Tweakback
---------------------
+Interactive Image Alignment
+---------------------------
 .. _tweakreg-tweakback:
 
 .. toctree:: 
@@ -15,58 +15,45 @@ Pipeline processing
 -------------------
 .. _pipeline-processing:
 
-* introduction pipeline processing
-* overview of pipeline
-* Running astrodriz
+.. toctree:: 
+    :maxdepth: 1
+
+    reference/astrodrizzle
 
 Hubble Archival Products
 ------------------------
 .. _hubble-archival-products:
 
-* introduction
-
 .. toctree:: 
     :maxdepth: 1
 
+    explanation/hap_introduction
     explanation/astrometry
     Improvements to HST astrometry<https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=HAdP&title=Improvements+in+HST+Astrometry>
-
-* HAP parameters
-* Glossary of HAP terms
+    reference/catalogs
+    explanation/hap_glossary
+    explanation/hap-parameters
 
 SVM
+---
 
 .. _SVM:
 
-* processing
-* interface
-
 .. toctree:: 
     :maxdepth: 1
 
+    explanation/singlevisit
     explanation/catalog_generation
 
-* Classes to manage Catalogs and WCS's
-
 MVM
+---
 
 .. _MVM:
 
 .. toctree:: 
     :maxdepth: 1
 
-    explanation/multivisit
     explanation/mvmutilities
+    explanation/multivisit
     reference/runmultihap
-
-Data products
--------------
-.. _data-products:
-
-* Drizzle
-
-.. toctree:: 
-    :maxdepth: 1
-
-    explanation/singlevisit
     explanation/multivisit_products
