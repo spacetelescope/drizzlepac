@@ -1516,8 +1516,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._nsigma = self.param_dict["sourcex"]["segm_nsigma"]
         self._rw2d_size = self.param_dict["sourcex"]["rw2d_size"]
         self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
-        self._rw2d_biggest_source = self.param_dict["sourcex"]["rw2d_biggest_source"]
-        self._rw2d_source_fraction = self.param_dict["sourcex"]["rw2d_source_fraction"]
+        self._biggest_source_limit = self.param_dict["sourcex"]["biggest_source_limit"]
+        self._biggest_fraction_limit = self.param_dict["sourcex"]["biggest_fraction_limit"]
+        self._rw_biggest_source_limit = self.param_dict["sourcex"]["rw_biggest_source_limit"]
         self._bs_deblend_limit = self.param_dict["sourcex"]["biggest_source_deblend_limit"]
         self._sf_deblend_limit = self.param_dict["sourcex"]["source_fraction_deblend_limit"]
         self._ratio_bigsource_limit = self.param_dict["sourcex"]["ratio_bigsource_limit"]
@@ -1584,10 +1585,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("contrast (frac. flux for peak to be separate object, 0=max. deblend, 1=no deblend): {}".format(self._contrast))
             log.info("RickerWavelet nsigma (threshold = nsigma * background_rms): {}".format(self._rw2d_nsigma))
             log.info("RickerWavelet kernel X- and Y-dimension: {}".format(self._rw2d_size))
-            log.info("Percentage limit on biggest source (criterion for  RickerWavelet kernel): {}".format(100.0 * self._rw2d_biggest_source))
-            log.info("Percentage limit on source fraction over the image (criterion for RickerWavelet kernel): {}".format(100.0 * self._rw2d_source_fraction))
-            log.info("Percentage limit on biggest source deblending limit: {}".format(100.0 * self._bs_deblend_limit))
-            log.info("Percentage limit on source fraction deblending limit: {}".format(100.0 * self._sf_deblend_limit))
+            log.info("Maximum % limit on acceptable biggest source: {}".format(100.0 * self._biggest_source_limit))
+            log.info("Maximum % limit on acceptable source fraction over the image: {}".format(100.0 * self._biggest_fraction_limit))
+            log.info("Maximum % limit on acceptable RickerWavelet biggest source: {}".format(100.0 * self._rw_biggest_source_limit))
+            log.info("Minimum acceptable Gaussian vs RickerWavelet kernel big source ratio limit (overlapping PSFs): {}".format(self._ratio_bigsource_limit))
+            log.info("Maximum % limit on acceptable biggest source (RW deblend retry): {}".format(100.0 * self._bs_deblend_limit))
+            log.info("Maximum % limit on acceptable source fraction (RW deblend retry): {}".format(100.0 * self._sf_deblend_limit))
+            log.info("Ignore prohibitively big sources identified by mimimum ratio of the areas (biggest/biggest-1): {}".format(self._ratio_bigsource_deblend_limit))
             log.info("Scaling parameter of the Kron radius: {}".format(self._kron_scaling_radius))
             log.info("Kron minimum circular radius: {}".format(self._kron_minimum_radius))
             log.info("")
@@ -1617,6 +1621,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Round 1
             ncount = 0
             log.info("")
+            log.info("ROUND 1")
             log.info("Using Custom kernel or Gaussian to generate a segmentation map.")
             g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                      g2d_kernel,
@@ -1626,8 +1631,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                      self.image.bkg_background_ra,
                                                                                      self.image.bkg_rms_ra,
                                                                                      check_big_island_only=False,
-                                                                                     rw2d_biggest_source=self._rw2d_biggest_source,
-                                                                                     rw2d_source_fraction=self._rw2d_source_fraction)
+                                                                                     biggest_source=self._biggest_source_limit,
+                                                                                     source_fraction=self._biggest_fraction_limit)
             segm_img_orig = copy.deepcopy(g_segm_img)
 
             # If the science field via the segmentation map is deemed crowded or has big sources/islands, compute the
@@ -1658,14 +1663,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                              self.image.bkg_background_ra,
                                                                                              self.image.bkg_rms_ra,
                                                                                              check_big_island_only=True,
-                                                                                             rw2d_biggest_source=self._rw2d_biggest_source,
-                                                                                             rw2d_source_fraction=self._rw2d_source_fraction)
-
-                # Compute the ratio of big sources/islands using Custom/Gaussian kernel vs Rickerwavelet kernel
-                # This value can be used as a discriminant between overlapping point sources and nebulousity fields
-                ratio_cg2rw_bigsource = 3.0
-                if rw_bs > 0.0:
-                    ratio_cg2rw_bigsource = g_bs / rw_bs
+                                                                                             biggest_source=self._rw_biggest_source_limit,
+                                                                                             source_fraction=self._biggest_fraction_limit)
 
                 # Check if the RickerWavelet segmentation image still seems to be problematic
                 if rw_is_big_crowded and rw_segm_img:
@@ -1731,6 +1730,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     # Round 2
                     ncount += 1
                     log.info("")
+                    log.info("ROUND 2")
                     log.info("With alternate background...using Custom/Gaussian kernel to generate a segmentation map.")
                     del g_segm_img
                     g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
@@ -1741,8 +1741,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                              self.image.bkg_background_ra,
                                                                                              self.image.bkg_rms_ra,
                                                                                              check_big_island_only=False,
-                                                                                             rw2d_biggest_source=self._rw2d_biggest_source,
-                                                                                             rw2d_source_fraction=self._rw2d_source_fraction)
+                                                                                             biggest_source=self._biggest_source_limit,
+                                                                                             source_fraction=self._biggest_fraction_limit)
 
                     # Check again for big sources/islands or a large source fraction
                     if g_is_big_crowded:
@@ -1763,8 +1763,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                                      self.image.bkg_background_ra,
                                                                                                      self.image.bkg_rms_ra,
                                                                                                      check_big_island_only=False,
-                                                                                                     rw2d_biggest_source=self._bs_deblend_limit,
-                                                                                                     rw2d_source_fraction=self._sf_deblend_limit)
+                                                                                                     biggest_source=self._bs_deblend_limit,
+                                                                                                     source_fraction=self._sf_deblend_limit)
+
+                        # Compute the ratio of big sources/islands using Custom/Gaussian kernel vs Rickerwavelet kernel
+                        # This value can be used as a discriminant between overlapping point sources and nebulousity fields
+                        ratio_cg2rw_bigsource = 3.0
+                        if rw_bs > 0.0:
+                            ratio_cg2rw_bigsource = g_bs / rw_bs
 
                         # Last chance - The larger "deblend" limits were used in this last detection
                         # attempt based upon the the statistics of processing lots of data - looking
@@ -1923,7 +1929,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def detect_and_eval_segments(self, imgarr, kernel, ncount, size_source_box, nsigma_above_bkg, background_img, background_rms, check_big_island_only=False, rw2d_biggest_source=0.015, rw2d_source_fraction=0.075):
+    def detect_and_eval_segments(self, imgarr, kernel, ncount, size_source_box, nsigma_above_bkg, background_img, background_rms, check_big_island_only=False, biggest_source=0.015, source_fraction=0.075):
 
             # Compute the threshold to use for source detection
             threshold = self.compute_threshold(nsigma_above_bkg, background_img, background_rms)
@@ -1962,8 +1968,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 is_big_crowded, big_island, source_fraction = self._evaluate_segmentation_image(segm_img,
                                                                                                 imgarr,
                                                                                                 big_island_only=check_big_island_only,
-                                                                                                max_biggest_source=rw2d_biggest_source,
-                                                                                                max_source_fraction=rw2d_source_fraction)
+                                                                                                max_biggest_source=biggest_source,
+                                                                                                max_source_fraction=source_fraction)
 
             return segm_img, is_big_crowded, big_island, source_fraction
 
@@ -2053,10 +2059,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
             img_bkg_sub = np.clip(img_bkg_sub, 0, img_bkg_sub.max())
             # Now set threshold to 0, since it has already been applied to the input data array
             thresh0 = np.zeros_like(img_bkg_sub)
+            log.info("Setting threshold to zero as data has been background subtracted.")
         else:
             # Use inputs provided with the kernel
             img_bkg_sub = imgarr
             thresh0 = threshold
+            log.info("Using computed threshold which includes [bkg + nsigma * rms].")
 
         # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
         segm_img = None
@@ -2689,8 +2697,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         max_biggest_source : float, optional
             Maximum limit on the single largest detected "source".
 
-        max_source_fraction : float, optional
-            Maximum limit on the fraction of pixels identified as part of a "source".
+        max_source_fraction : float, optional Maximum limit on the fraction of pixels identified as part of a "source".
 
         Returns
         -------
@@ -2728,7 +2735,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         n, binedges = np.histogram(segm_img.data, range=(1, nbins))
         real_pixels = (image_data != 0).sum()
         biggest_source = n.max()/float(real_pixels)
-        log.info("Biggest_source: %f", biggest_source)
 
         # Compute which segments are larger than the kernel.
         deb_limit = self.kernel.size
@@ -2745,8 +2751,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # and is_poor_quality should be set to True.  The is_poor_quality is only an indicator that
         # a different kernel type or background computation could be tried for improved results.
         if biggest_source > max_biggest_source:
-            log.info("Biggest source %.4f percent exceeds %f percent of the image", (100.0*biggest_source), (100.0*max_biggest_source))
+            log.info("Biggest source %.4f percent exceeds %f percent of the image.", (100.0*biggest_source), (100.0*max_biggest_source))
             is_poor_quality = True
+        else:
+            log.info("Biggest source %.4f percent is WITHIN THE ACCEPTABLE limit of %f percent.", (100.0*biggest_source), (100.0*max_biggest_source))
 
         # Filter the big_segments array to remove the prohibitively large segments
         if big_segments.size > 0:
@@ -2793,11 +2801,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # big_island_only parameter allows control over whether the source_fraction should
         # or should not be ignored.
         source_fraction = n.sum()/float(real_pixels)
-        log.info("Source_fraction: %f", source_fraction)
         if not big_island_only:
             if source_fraction > max_source_fraction:
                 log.info("Total source fraction %.4f percent exceeds %f percent of the image.", (100.0*source_fraction), (100.0*max_source_fraction))
                 is_poor_quality = True
+            else:
+                log.info("Total source fraction %.4f percent is WITHIN THE ACCEPTABLE limit of %f percent.", (100.0*source_fraction), (100.0*max_source_fraction))
+        else:
+                log.info("Total source fraction %.4f percent is computed, but not set to be considered as a rejection criterion.", (100.0*source_fraction))
 
         return is_poor_quality, biggest_source, source_fraction
 
