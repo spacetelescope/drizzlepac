@@ -46,7 +46,7 @@ sys.path.insert(0, os.path.abspath('../../src/'))
 # sys.path.insert(0, os.path.abspath('exts/'))
 
 # If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = '1.3'
+# needs_sphinx = '1.3'
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
