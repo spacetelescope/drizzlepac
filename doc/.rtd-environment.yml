@@ -12,7 +12,7 @@ dependencies:
     - pip:
       - -e ..
       - sphinx
-      - sphinx_rtd_theme>1.2.0
+      - "sphinx_rtd_theme>1.2.0"
       - sphinx_automodapi
       - matplotlib
       - "spherical_geometry>=1.2.22"
