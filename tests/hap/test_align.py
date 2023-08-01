@@ -130,7 +130,8 @@ class TestAlignMosaic(BaseHLATest):
                                                   'j8ura1j4q_flt.fits', 'j8ura1j6q_flt.fits',
                                                   'j8ura1j7q_flt.fits', 'j8ura1j8q_flt.fits',
                                                   'j8ura1j9q_flt.fits', 'j8ura1jaq_flt.fits',
-                                                  'j8ura1jbq_flt.fits',
+                                                  'j8ura1jbq_flt.fits', 'j8ura1jcq_flt.fits',
+                                                  'j8ura1jdq_flt.fits', 'j8ura1jeq_flt.fits',
                                                   'j8ura1jfq_flt.fits', 'j8ura1jgq_flt.fits',
                                                   'j8ura1jhq_flt.fits', 'j8ura1jiq_flt.fits',
                                                   'j8ura1jjq_flt.fits', 'j8ura1jkq_flt.fits'],
@@ -188,7 +189,7 @@ class TestAlignMosaic(BaseHLATest):
         # information
         if dataset_table:
             total_rms = dataset_table.filtered_table['total_rms'][0]
-
+        import ipdb; ipdb.set_trace()
         assert 0.0 < total_rms <= RMS_LIMIT
 
     @pytest.mark.xfail

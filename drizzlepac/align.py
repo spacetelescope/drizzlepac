@@ -989,6 +989,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         log.info("Try again with the next catalog")
     else:
         log.info("Fit calculations successful.")
+    
     return max_rms_val, num_xmatches, fit_quality, filtered_table, fit_status_dict
 
 
