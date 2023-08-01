@@ -22,7 +22,7 @@ build:
     python: mambaforge-4.10
 
 conda:
-  environment: docs/rtd-environment.yml
+  environment: docs/.rtd-environment.yml
 
 python:
   system_packages: false
