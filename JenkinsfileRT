@@ -14,7 +14,7 @@ jobconfig.credentials = [
 // Configure artifactory ingest
 data_config = new DataConfig()
 data_config.server_id = 'bytesalad'
-data_config.root = 'tests_output'
+data_config.root = 'clone/tests_output'
 data_config.match_prefix = '(.*)_result' // .json is appended automatically
 
 bc1 = new BuildConfig()
