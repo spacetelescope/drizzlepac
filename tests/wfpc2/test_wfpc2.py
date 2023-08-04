@@ -9,7 +9,6 @@ from ..resources import BaseWFPC2
 
 class TestWFPC2(BaseWFPC2):
 
-    @pytest.mark.skip(reason="disable until truth files can be updated")
     def test_waiver_single(self):
         """ This test confirms that drizzlepac can correcly process .
         """
@@ -51,7 +50,6 @@ class TestWFPC2(BaseWFPC2):
         outputs = [(outfile, reffile)]
         self.compare_outputs(outputs)
 
-    @pytest.mark.skip(reason="disable until truth files can be updated")
     def test_waiver_asn(self):
         """ This test confirms that drizzlepac can correcly process input
         WFPC2 data stored in WAIVER fits format.
