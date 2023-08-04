@@ -16,6 +16,11 @@ from drizzlepac import runsinglehap
 from astropy.table import Table
 from drizzlepac.haputils import astroquery_utils as aqutils
 
+# This file will NOT run as-is.  Code has to be modified to accommodate properly
+# files which will actually need to be processed.  In particular, the test_run_svmpoller()
+# will have to be updated.  It is not clear this test is useful any longer and perhaps
+# it should be deprecated.
+pytest.skip("Skipping all tests where files to be processed are not known in advance.", allow_module_level=True)
 
 def pytest_generate_tests(metafunc):
     """Get the command line options."""

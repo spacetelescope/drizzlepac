@@ -13,6 +13,9 @@ from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
 from astropy.io import fits
 
+# This file will NOT run as-is.  Code has to be modified to accommodate properly
+# files which will actually need to be processed.
+pytest.skip("Skipping all tests not updated to eliminate the use of deprecated software.", allow_module_level=True)
 
 class BasePipeline:
     prevdir = os.getcwd()
