@@ -326,6 +326,9 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     zero_dt = starting_dt = datetime.datetime.now()
     log.info(str(starting_dt))
     imglist = check_and_get_data(input_list, archive=archive, clobber=clobber, product_type=product_type)
+    if not imglist:
+        log.error("Data not found on disk.  Retrieve data and try again.")
+        return None
     log.info("SUCCESS")
     log.info(f"Processing: {imglist}")
 
