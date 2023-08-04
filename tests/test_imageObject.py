@@ -2,6 +2,7 @@
 
 import pytest
 from drizzlepac import imageObject
+from drizzlepac.haputils import astroquery_utils as aqutils
 
 #from http://blog.moertel.com/articles/2008/03/19/property-checking-with-pythons-nose-testing-framework
 def forall_cases(cases):
@@ -14,7 +15,6 @@ def forall_cases(cases):
     return decorate
 
 
-#@pytest.mark.xfail(reason="Broken")
 class TestimageObject():
     """test the implementation of imageObject by creating and examining an object
        from an image file thats on disk
@@ -26,8 +26,10 @@ class TestimageObject():
         with pytest.raises(IOError):
             self.noFilename(filename)
 
-    def test_Attributes(self, filename="./j8uq10lbq_flt.fits"):
-        image=imageObject.imageObject(filename)
+    def test_Attributes(self, filename="./j6ll01yiq_flt.fits"):
+        input_files = []
+        input_files = aqutils.retrieve_observation('j6ll01yiq*', suffix=["FLT"], product_type="pipeline")
+        image=imageObject.imageObject(input_files[0])
 
         #just check to make sure the global attributes are not empty
         assert(image._filename != '')
