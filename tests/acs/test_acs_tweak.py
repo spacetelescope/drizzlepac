@@ -12,7 +12,6 @@ from ..resources import BaseACS
 
 class TestAcsTweak(BaseACS):
 
-    @pytest.mark.xfail
     def test_tweak(self):
         """ This test confirms that image alignment performed by tweakreg
         works to find the correct alignment solution and that the solution
@@ -79,7 +78,6 @@ class TestAcsTweak(BaseACS):
             self.ignore_keywords += ['D00{}DATA'.format(i), 'D00{}MASK'.format(i)]
         self.compare_outputs(outputs)
 
-    @pytest.mark.xfail
     def test_pixsky1(self):
         """This test verifies that the coordinate transformation tasks
         'pixtopix', 'pixtosky', and 'skytopix' still work as expected.
