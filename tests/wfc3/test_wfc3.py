@@ -4,8 +4,6 @@ from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
 
-from stwcs import updatewcs
-
 from ..resources import BaseWFC3
 from ci_watson.hst_helpers import raw_from_asn
 
@@ -31,12 +29,9 @@ class TestWFC3(BaseWFC3):
                       'skysub':False, 'driz_separate':False, 'median':False,
                       'blot':False, 'driz_cr':False}
 
-        # Update wcs in input file
-        driz_input = updatewcs.updatewcs(input_file)
-
         # run astrodrizzle now...
         parObj = teal.load('astrodrizzle', defaults=True)  # get all default values
-        astrodrizzle.AstroDrizzle(driz_input, configobj=parObj, **input_pars)
+        astrodrizzle.AstroDrizzle(input_file, configobj=parObj, **input_pars)
 
         # Compare results
         outputs = [(output, ref_file)]
@@ -64,12 +59,9 @@ class TestWFC3(BaseWFC3):
                       'driz_separate':False, 'median':False,
                       'blot':False, 'driz_cr':False}
 
-        # Update wcs in input file
-        driz_input = updatewcs.updatewcs(input_file)
-
         # run astrodrizzle now...
         parObj = teal.load('astrodrizzle', defaults=True)  # get all default values
-        astrodrizzle.AstroDrizzle(driz_input, mdriztab=False,
+        astrodrizzle.AstroDrizzle(input_file, mdriztab=False,
                                   configobj=parObj, **input_pars)
 
         # Compare results
