@@ -47,7 +47,7 @@ class TestWFC3(BaseWFC3):
         # Customized tolerances as Linux and Mac would need different truth files.
         self.rtol = 1e-3
         self.atol = 1e-3
-        rootname = 'iacr51ohq'
+        rootname = 'iacr51ogq'
         input_name = '{}_flt.fits'.format(rootname)
         output = '{}_drz.fits'.format(rootname)
         ref_file = 'reference_wfc3_uvis_single.fits'
