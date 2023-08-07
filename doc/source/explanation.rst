@@ -31,8 +31,6 @@ Hubble Archival Products
     explanation/astrometry
     Improvements to HST astrometry<https://outerspace.stsci.edu/pages/viewpage.action?spaceKey=HAdP&title=Improvements+in+HST+Astrometry>
     reference/catalogs
-    explanation/hap_glossary
-    explanation/hap-parameters
 
 SVM
 ---

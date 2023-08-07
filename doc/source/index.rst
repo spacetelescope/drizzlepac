@@ -17,6 +17,7 @@ The Drizzlepac package is a collection packages for aligning and combining astro
 
     getting-started
     explanation
+    parameters
     reference
 
 
