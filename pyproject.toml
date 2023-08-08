@@ -39,7 +39,6 @@ dependencies = [
     'bokeh',
     'pandas',
     'spherical_geometry>=1.2.22',
-    'astroquery>=0.4',
     'astrocut',
     'photutils>1.5.0',
     'lxml',

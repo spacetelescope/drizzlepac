@@ -7,9 +7,10 @@ import pytest
 import numpy as np
 
 from drizzlepac.haputils import testutils
+from ci_watson.artifactory_helpers import get_bigdata
+from ci_watson.hst_helpers import raw_from_asn
 
 from ..resources import BaseACS, BaseWFC3
-
 
 def compare_apriori(dataset):
     """This test will perform fits between ALL a priori solutions and GAIA.
@@ -27,6 +28,14 @@ def compare_apriori(dataset):
         in which case, that WCS is ignored (silently).
 
     """
+    # Get the data from Artifactory
+    dataset = dataset.lower()
+    instrument = "acs" if dataset[0] == "j" else "wfc3"
+    get_bigdata('drizzlepac', 'dev', instrument, 'input', dataset)
+    files = raw_from_asn(dataset, suffix='_flt.fits')
+    for input_file in files:
+        get_bigdata('drizzlepac', 'dev', instrument, 'input', input_file)
+
     # Perform alignment of all WCS solutions with GAIA
     results_dict = testutils.compare_wcs_alignment(dataset)
     limit = 0.001
@@ -115,7 +124,7 @@ class TestAcsApriori(BaseACS):
     """
 
     @pytest.mark.bigdata
-    @pytest.mark.parametrize('dataset', ['jb1601020', 'J9I408010'])
+    @pytest.mark.parametrize('dataset', ['jb1601020_asn.fits', 'j9i408010_asn.fits'])
     def test_apriori(self, dataset):
         compare_apriori(dataset)
 
@@ -134,7 +143,7 @@ class TestWFC3Apriori(BaseWFC3):
 
     @pytest.mark.bigdata
     @pytest.mark.parametrize(
-        'dataset', ['ic0g0l010', 'icnw34040']
+        'dataset', ['ic0g0l010_asn.fits', 'icnw34040_asn.fits']
     )
     def test_apriori(self, dataset):
         compare_apriori(dataset)

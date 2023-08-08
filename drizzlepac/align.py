@@ -21,7 +21,6 @@ from stsci.tools import logutil
 
 from . import util
 from .haputils import astrometric_utils as amutils
-from .haputils import astroquery_utils as aqutils
 from .haputils import get_git_rev_info
 from .haputils import align_utils
 from .haputils import config_utils
@@ -47,14 +46,15 @@ module_logfile = ""
 
 
 def check_and_get_data(input_list: list, **pars: object) -> list:
-    """Verify that all specified files are present. If not, retrieve them from MAST.
+    """Verify that all specified files are present. If not, warn the user.
 
-    This function relies on the `AstroQuery interface to MAST
+    This function formerly relied on the `AstroQuery interface to MAST
     <https://astroquery.readthedocs.io/en/latest/mast/mast.html>`_
-    to retrieve the exposures from the ``input_list`` that are not found in the current directory.  This
-    function calls the simplified interface in
-    :func:`haputils/astroquery_utils/retrieve_observation`
-    to get the files through AstroQuery.
+    to retrieve the exposures from the ``input_list`` that are not found in
+    the current directory.  However, Astroquery was found to be interferring
+    in some manner with the PyTests and Artifactory, so Astroquery functionality
+    was removed from Drizzlepac.  Files are now expected to be available on disk
+    for processing, or an error is generated.
 
     Parameters
     ----------
@@ -70,20 +70,13 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
     total_input_list: list
         list of full filenames
 
-    See Also
-    ========
-    haputils/astroquery_utils/retrieve_observation
-
     """
     empty_list = []
-    retrieve_list = []    # Actual files retrieved via astroquery and resident on disk
     candidate_list = []   # File names gathered from *_asn.fits file
-    ipppssoot_list = []   # ipppssoot names used to avoid duplicate downloads
     total_input_list = []  # Output full filename list of data on disk
 
     # Loop over the input_list to determine if the item in the input_list is a full association file
-    # (*_asn.fits), a full individual image file (aka singleton, *_flt.fits), or a root name specification
-    # (association or singleton, ipppssoot).
+    # (*_asn.fits), or a full individual image file (aka singleton, *_flt.fits).
     for input_item in input_list:
         log.info('Input item: {}'.format(input_item))
         indx = input_item.find('_')
@@ -108,53 +101,14 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
                     '"flc.fits", or "flt.fits".'.format(
                         suffix))
                 return (empty_list)
-
-        # Input is an ipppssoot (association or singleton), nine characters by definition.
-        # This "else" block actually downloads the data specified as ipppssoot.
-        elif len(input_item) == 9:
-            try:
-                if input_item not in ipppssoot_list:
-                    input_item = input_item.lower()
-                    # An ipppssoot of an individual file which is part of an association cannot be
-                    # retrieved from MAST
-                    retrieve_list = aqutils.retrieve_observation(input_item, **pars)
-
-                    # If the retrieved list is not empty, add filename(s) to the total_input_list.
-                    # Also, update the ipppssoot_list so we do not try to download the data again.  Need
-                    # to do this since retrieve_list can be empty because (1) data cannot be acquired (error)
-                    # or (2) data is already on disk (ok).
-                    if retrieve_list:
-                        total_input_list += retrieve_list
-                        ipppssoot_list.append(input_item)
-                    else:
-                        # log.error('File {} cannot be retrieved from MAST.'.format(input_item))
-                        # return(empty_list)
-                        log.warning('File {} cannot be retrieved from MAST.'.format(input_item))
-                        log.warning(f"    using pars: {pars}")
-                        # look for already downloaded ASN and related files instead
-                        # ASN filenames are the only ones that end in a digit
-                        if input_item[-1].isdigit():
-                            _asn_name = f"{input_item}_asn.fits"
-                            if not os.path.exists(_asn_name):
-                                _ = aqutils.retrieve_observation([f"{input_item}"],
-                                                                          suffix=['ASN'],
-                                                                          clobber=True)
-                            _local_files = _get_asn_members(_asn_name)
-                            if _local_files:
-                                log.warning(f"Using local files instead:\n    {_local_files}")
-                                total_input_list.extend(_local_files)
-                            else:
-                                _lfiles = os.listdir()
-                                log.error(f"No suitable files found for input {input_item}")
-                                log.error(f" in directory with files: \n {_lfiles}")
-                        return(total_input_list)
-
-            except Exception:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-
-    # Only the retrieve_list files via astroquery have been put into the total_input_list thus far.
-    # Now check candidate_list to detect or acquire the requested files from MAST via astroquery.
+        else:
+            log.error(
+                'Inappropriate file specification.  Looking for "asn.fits", '
+                '"flc.fits", or "flt.fits".  Input files must be resident in'
+                'the working directory.')
+            return(empty_list)
+ 
+    # Now check candidate_list is actually on disk.
     for file in candidate_list:
         # If the file is found on disk, add it to the total_input_list and continue
         if glob.glob(file):
@@ -326,6 +280,9 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     zero_dt = starting_dt = datetime.datetime.now()
     log.info(str(starting_dt))
     imglist = check_and_get_data(input_list, archive=archive, clobber=clobber, product_type=product_type)
+    if not imglist:
+            log.error("Data not found on disk.  Retrieve data and try again.")
+            return None
     log.info("SUCCESS")
     log.info(f"Processing: {imglist}")
 

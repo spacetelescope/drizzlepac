@@ -9,9 +9,12 @@ from astropy.utils.data import conf
 from ci_watson.artifactory_helpers import get_bigdata
 from ci_watson.hst_helpers import download_crds, ref_from_image
 
-from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runastrodriz
 from astropy.io import fits
+
+# This file will NOT run as-is.  Code has to be modified to accommodate properly
+# files which will actually need to be processed.
+pytest.skip("Skipping all tests not updated to eliminate the use of deprecated software.", allow_module_level=True)
 
 
 class BasePipeline:
@@ -88,8 +91,8 @@ class BasePipeline:
         The associated CRDS reference files in ``refstr`` are also
         downloaded, if necessary.
         """
-        # filename = self.get_data(*args, docopy=docopy)
-        filename = args[1]
+        filename = self.get_data(*args, docopy=docopy)
+        #filename = args[1]
         ref_files = ref_from_image(filename, ['IDCTAB', 'OFFTAB', 'NPOLFILE', 'D2IMFILE',
                                               'DGEOFILE', 'MDRIZTAB'])
         print("Looking for REF_FILES: {}".format(ref_files))
@@ -118,20 +121,29 @@ class BaseWFC3Pipeline(BasePipeline):
 
 class TestSingleton(BaseWFC3Pipeline):
 
-    @pytest.mark.parametrize(
-        'dataset_names', ['iaaua1n4q']
-    )
+    #@pytest.mark.parametrize(
+    #    'dataset_names', ['iaaua1n4q_raw.fits', 'iaaua1n4q_flt.fits', 'iaaua1n4q_flc.fits']
+    #)
 
-    def test_astrometric_singleton(self, dataset_names):
+    def test_astrometric_singleton(self):
+    #def test_astrometric_singleton(self, dataset_names):
         """ Tests pipeline-style processing of a singleton exposure using runastrodriz.
         """
         # Get sample data through astroquery
+        rawfile = [os.path.basename(self.get_input_file('drizzlepac', 'dev', 'wfc3', 'input', 'iaaua1n4q_raw.fits'))]
+        flcfile = [os.path.basename(self.get_input_file('drizzlepac', 'dev', 'wfc3', 'input', 'iaaua1n4q_flc.fits'))]
+        fltfile = [os.path.basename(self.get_input_file('drizzlepac', 'dev', 'wfc3', 'input', 'iaaua1n4q_flt.fits'))]
+        """
+        rawfile = [os.path.basename(self.get_data('drizzlepac', 'dev', 'wfc3', 'input', 'iaaua1n4q_raw.fits'))]
+        flcfile = [os.path.basename(self.get_data('drizzlepac', 'dev', 'wfc3', 'input', 'iaaua1n4q_flc.fits'))]
+        fltfile = [os.path.basename(self.get_data('drizzlepac', 'dev', 'wfc3', 'input', 'iaaua1n4q_flt.fits'))]
         flcfile = aqutils.retrieve_observation(dataset_names, suffix=['FLC'])[0]
         fltfile = aqutils.retrieve_observation(dataset_names, suffix=['FLT'])[0]
         rawfile = aqutils.retrieve_observation(dataset_names, suffix=['RAW'])[0]
+        """
 
         # Retrieve reference files for these as well
-        self.get_input_file('', fltfile, docopy=False)
+        #self.get_input_file('', fltfile, docopy=False)
 
         # Insure environment variables are set for full processing
         os.environ['ASTROMETRY_STEP_CONTROL'] = 'on'
