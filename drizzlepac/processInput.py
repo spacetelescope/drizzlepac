@@ -3,7 +3,7 @@ Process input to MultiDrizzle/PyDrizzle.
 
 :Authors: Warren Hack
 
-:License: :doc:`LICENSE`
+:License: :doc:`../LICENSE`
 
 The input can be one of:
 

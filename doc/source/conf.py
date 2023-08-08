@@ -46,7 +46,7 @@ sys.path.insert(0, os.path.abspath('../../src/'))
 # sys.path.insert(0, os.path.abspath('exts/'))
 
 # If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = '1.3'
+# needs_sphinx = '1.3'
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
@@ -132,7 +132,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'DrizzlePac'
-copyright = u'2021, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara, Michael Dulude, Michele De La Pena'
+copyright = u'2021, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara, Michael Dulude, Michele De La Pena, Steve Goldman'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

@@ -1,8 +1,8 @@
 .. _tweakback:
 
-*****************************
-Tweakback
-*****************************
+*********
+TWEAKBACK
+*********
 
 .. moduleauthor:: Warren Hack <help@stsci.edu>
 

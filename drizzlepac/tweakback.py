@@ -11,7 +11,7 @@ the "aligned" (to the new drizzled WCS) image coordinates.
 
 :Authors: Warren Hack, Mihai Cara
 
-:License: :doc:`LICENSE`
+:License: :doc:`../LICENSE`
 
 """
 import os

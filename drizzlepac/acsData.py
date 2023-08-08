@@ -3,7 +3,7 @@ Class used to model ACS specific instrument data.
 
 :Authors: Christopher Hanley, Warren Hack, Ivo Busko, David Grumm
 
-:License: :doc:`LICENSE`
+:License: :doc:`../LICENSE`
 
 """
 from stsci.tools import fileutil
