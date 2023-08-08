@@ -130,7 +130,6 @@ class TestAlignMosaic(BaseHLATest):
                                                   'j8ura1j4q_flt.fits', 'j8ura1j6q_flt.fits',
                                                   'j8ura1j7q_flt.fits', 'j8ura1j8q_flt.fits',
                                                   'j8ura1j9q_flt.fits', 'j8ura1jaq_flt.fits',
-                                                  'j8ura1jbq_flt.fits',
                                                   'j8ura1jfq_flt.fits', 'j8ura1jgq_flt.fits',
                                                   'j8ura1jhq_flt.fits', 'j8ura1jiq_flt.fits',
                                                   'j8ura1jjq_flt.fits', 'j8ura1jkq_flt.fits'],

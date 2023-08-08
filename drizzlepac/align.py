@@ -777,7 +777,6 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     log.info("Log file: {}".format(module_logfile))
 
     max_rms_val = 1e9
-    num_xmatches = 0
     fit_status_dict = {}
     xshifts = []
     yshifts = []
@@ -803,8 +802,8 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         else:
             # Fit not successful, so no shifts to collate
             break
-
     for item in imglist:
+        num_xmatches=0
         image_name = item.meta['name']
         chip_num = item.meta['chip']
         fit_info = item.meta['fit_info']
@@ -830,8 +829,12 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
             continue
         if fit_info['status'].startswith("REFERENCE") or 'FIT_RMS' not in fit_info:
             # No fit information available for reference image
+            fit_status_dict[dict_key]['valid'] = False
+            fit_status_dict[dict_key]['compromised'] = True
+            fit_status_dict[dict_key]['reason'] = 'No fit information'
+            overall_valid = False
+            overall_comp = True
             continue
-
         fit_rms_val = fit_info['FIT_RMS']
         max_rms_val = fit_info['TOTAL_RMS']
         # fit_rms_ra = fit_info['RMS_RA']
@@ -840,7 +843,6 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         num_xmatches = len(fit_info['ref_mag'])  # fit_info['nmatches']
         fit_status_dict[dict_key]['max_rms'] = max_rms_val
         fit_status_dict[dict_key]['num_matches'] = num_xmatches
-
         if num_xmatches < align_pars['general']['MIN_FIT_MATCHES']:
             overall_valid = False
             if catalogs_remaining:
@@ -989,6 +991,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
         log.info("Try again with the next catalog")
     else:
         log.info("Fit calculations successful.")
+    
     return max_rms_val, num_xmatches, fit_quality, filtered_table, fit_status_dict
 
 
