@@ -23,10 +23,6 @@ These images all have the same WCS based on the original input parameters
 and those provided for this step; specifically, output shape, pixel size,
 and orientation, if any have been specified at all.
 
-For more information on the science applications of the drizzle task,
-see the `AstroDrizzle Handbook <http://documents.stsci.edu/hst/HST_overview/documents/DrizzlePac/DrizzlePac.cover.html>`_
-
-
 Other Parameters
 ----------------
 driz_separate : bool (Default = No)

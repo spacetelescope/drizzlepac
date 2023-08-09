@@ -1,8 +1,8 @@
 .. _astrometry:
 
-===================================================
-Headerlets and You: Astrometry in Drizzle Products
-===================================================
+=========================
+Astrometry and headerlets
+=========================
 
 The astrometry for any given observation relies upon accurate pointing information from the telescope.   However, HST has evolved over time since it was put into orbit, with the focus changing over time as the telescope desorbs.  The instruments have also changed positions over time relative to the FGS guides, and the coordinates for the guide stars were orginally determined using ground-based information.  All this has limited the calculation of the pointing of any given observation on the sky (absolute astrometry) to no better than 1-2 arc-seconds.
 
@@ -143,8 +143,8 @@ The terms are defined as:
 
   * **`FIT`**
 
-    - This term refers to the fact that sources from the image were identified, cross-matched and fit to sources from an astrometric catalog to create an *a posteriori* WCS solution.  
-        
+    - This term refers to the fact that sources from the image were identified, cross-matched and fit to sources from an astrometric catalog to create an *a posteriori* WCS solution.
+
   * **`<REL|IMG|EVM|SVM>`**
 
     - ``REL`` : This term denotes the fact that all images were aligned relative (REL) to each other and then aligned to an astrometric catalog.  This attempts to maintain the original relative alignment between the images in a given visit.
@@ -175,33 +175,33 @@ These separate terms provide as succinct a description of the solution determine
 Pipeline Processing
 -------------------
 All HST observations get processed in an automated environment using standard
-parameters for the calibration code, including the alignment and combination of 
+parameters for the calibration code, including the alignment and combination of
 individual exposures into undistorted products.  The standard pipeline processing
-to create the undistorted drizzled images (drc.fits or drz.fits) gets performed 
-using the 'runastrodriz' task in this package.  This same processing can be 
+to create the undistorted drizzled images (drc.fits or drz.fits) gets performed
+using the 'runastrodriz' task in this package.  This same processing can be
 run at any time using:
 
 .. code-block:: bash
 
     runastrodriz j8cw03010_asn.fits
-    
+
     runastrodriz j8cw03f6q_raw.fits
-    
+
 The files which need to be present are:
 
     * RAW files (\*raw.fits)
     * FLT files (\*flt.fits)
     * FLC files (\*flc.fits, if any were created by the pipeline)
     * ASN file  (\*asn.fits, if applicable)
-    
-This processing includes a lot of logic intended to not only apply pre-defined (apriori) 
-WCS solutions, but also to try and determine a new aposteriori solution then 
+
+This processing includes a lot of logic intended to not only apply pre-defined (apriori)
+WCS solutions, but also to try and determine a new aposteriori solution then
 verify which solution (default pipeline, apriori or aposteriori) actually provides
-the WCS which comes closest to the GAIA astrometric frame.  
-The :ref:`runastrodriz-description` of the runastrodriz task provides 
+the WCS which comes closest to the GAIA astrometric frame.
+The :ref:`runastrodriz-description` of the runastrodriz task provides
 the full discussion of the logic used to define the
 defined 'active' WCS that gets used to create the products which get archived.
- 
+
 
 Choosing a WCS
 ---------------

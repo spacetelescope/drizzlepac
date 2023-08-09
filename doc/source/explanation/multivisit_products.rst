@@ -83,13 +83,13 @@ We can see how the exposures land in the SkyCell as defined with this subarray W
 
 .. list-table::
 
-  * - .. figure:: images/skycell-p1889x07y19_f775w_full.jpg
+  * - .. figure:: ../images/skycell-p1889x07y19_f775w_full.jpg
          :figwidth: 95%
          :alt: SkyCell p1889x07y19 WFC3/UVIS F775W layer.
 
          All the WFC3/UVIS F775W exposures that overlap SkyCell **p1889x07y19**.
 
-    -  .. figure:: images/skycell-p1889x07y19_f105w_full.jpg
+    -  .. figure:: ../images/skycell-p1889x07y19_f105w_full.jpg
           :figwidth: 95%
           :alt: SkyCell p1889x07y19 WFC3/IR F105W layer.
 
@@ -163,7 +163,7 @@ This can be seen when examining the SkyCell mosaic WFC3/UVIS F555W layer for Sky
 defined based on different astrometric catalogs for one of the visits of this source.  This results in
 'blurred' sources being seen in the overlap between exposures from different visits.
 
-.. figure:: images/mvm_p0498x16y19_f555w.png
+.. figure:: ../images/mvm_p0498x16y19_f555w.png
          :figwidth: 95%
          :alt: SkyCell p0498x16y19 WFC3/UVIS F555W layer.
 
@@ -180,7 +180,7 @@ when the proposer requested exposures be taken in 'SCAN' mode.  No reliable meth
 such exposures prior to creating mosaics with them, resulting in exposures where the sources are trailed across
 the image.
 
-.. figure:: images/skycell_p0080x09y16-slewing-example-color.jpg
+.. figure:: ../images/skycell_p0080x09y16-slewing-example-color.jpg
          :figwidth: 95%
          :alt: SkyCell p0080x09y16 SCAN mode data.
 

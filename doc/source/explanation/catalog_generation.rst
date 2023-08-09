@@ -4,8 +4,8 @@
 Catalog Generation
 ==================
 
-The Hubble Advanced Products (HAP) project generates two source list catalogs, colloquially 
-referred to as the Point and Segment catalogs.  Both catalogs are generated using 
+The Hubble Advanced Products (HAP) project generates two source list catalogs, colloquially
+referred to as the Point and Segment catalogs.  Both catalogs are generated using
 utilities from `Photutils <https://photutils.readthedocs.io/en/stable/>`_
 with the Point catalog created based upon functionality similar to DAOPhot-style photometry,
 and the Segment catalog created with Source Extractor segmentation capabilities and output
@@ -21,8 +21,8 @@ account for flux falling outside of the selected aperture. For details, see
 
 1.1: Important Clarifications
 -----------------------------
-As previously discussed in :ref:`singlevisit`, AstroDrizzle creates a single multi-filter, detector-level 
-drizzle-combined image for source identification and one or more detector/filter-level drizzle-combined images 
+As previously discussed in :ref:`singlevisit`, AstroDrizzle creates a single multi-filter, detector-level
+drizzle-combined image for source identification and one or more detector/filter-level drizzle-combined images
 (depending on
 which filters were used in the dataset) for photometry. The same set of sources identified in the
 multi-filter detection image is used to measure photometry for each filter. We use this method to maximize the
@@ -40,40 +40,40 @@ photometry.
 
 1.2: Generation of Pixel Masks
 ------------------------------
-Every multi-filter, detector-level drizzle-combined image is associated with a boolean footprint mask which 
-defines the illuminated (True) and non-illuminated (False) portions of the image based upon its constituent 
+Every multi-filter, detector-level drizzle-combined image is associated with a boolean footprint mask which
+defines the illuminated (True) and non-illuminated (False) portions of the image based upon its constituent
 exposures and the corresponding WCS solution.  The boundary of the illuminated portion
 is iteratively eroded or contracted to minimize the impact of regions where signal
-quality is known to be degraded, and thereby, could affect source identification and subsequent 
-photometric measurements.  The erosion depth is approximately ten pixels and is done by using the 
+quality is known to be degraded, and thereby, could affect source identification and subsequent
+photometric measurements.  The erosion depth is approximately ten pixels and is done by using the
 `ndimage.binary_erosion <https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.binary_erosion.html>`_ scipy tool.
 For computational convenience, an inverse footprint mask is also available for functions
-which utilize masks to indicate pixels which should be ignored during processing of the 
+which utilize masks to indicate pixels which should be ignored during processing of the
 input data.
 
 1.3: Detection Image Background Determination
 ---------------------------------------------
 For consistency, the same background and background RMS images are used by both the point and
 segment algorithms.
-To ensure optimal source detection, the multi-filter detection image must be background-subtracted. 
-In order to accommodate the different types of detectors, disparate signal levels, and highly varying 
-astronomical image content, three background computations are used as applicable.  The first category 
-of background definition is a special case situation, and if it is found to be applicable to the detection 
-image, the background and background RMS images are defined and no further background evaluation is done. 
+To ensure optimal source detection, the multi-filter detection image must be background-subtracted.
+In order to accommodate the different types of detectors, disparate signal levels, and highly varying
+astronomical image content, three background computations are used as applicable.  The first category
+of background definition is a special case situation, and if it is found to be applicable to the detection
+image, the background and background RMS images are defined and no further background evaluation is done.
 
-It has been observed that some background regions of ACS SBC drizzle-combined 
+It has been observed that some background regions of ACS SBC drizzle-combined
 detection images, *though the evaluation is done for all instrument detection images*,
 are measured to have values identically
 equal to zero.  If the number of identically zero pixels in the footprint portion of the detection image
-exceeds a configurable percentage threshold value (default is 25%), then a two-dimensional background image 
-is constructed and set to the value of zero, hence the **Zero Background Algorithm**. Its companion 
+exceeds a configurable percentage threshold value (default is 25%), then a two-dimensional background image
+is constructed and set to the value of zero, hence the **Zero Background Algorithm**. Its companion
 constructed RMS image set to the RMS
 value computed for the non-zero pixels which reside within the footprint portion of the image.
 
 If the **Zero Background Algorithm** is not applicable, then sigma-clipped statistics are
 computed, known as the **Constant Background Algorithm**,
-for the detection image using the 
-`astropy.stats.sigma_clipped_stats <https://docs.astropy.org/en/stable/api/astropy.stats.sigma_clipped_stats.html>`_ 
+for the detection image using the
+`astropy.stats.sigma_clipped_stats <https://docs.astropy.org/en/stable/api/astropy.stats.sigma_clipped_stats.html>`_
 Astropy tool. This algorithm uses the detection image and its inverse footprint mask, as well
 as a specification for the number of standard deviations and the maximum number of iterations
 to compute the mean, median, and rms of the
@@ -83,34 +83,34 @@ of iterations are configurable values which are set to 3.0 and 3 by default, res
 At this point the Pearson's second coefficient of skewness is computed.
 
 .. math::
-    skewness = 3.0 * (mean - median) / rms 
+    skewness = 3.0 * (mean - median) / rms
 
 The skewness compares our sample distribution with a normal distribution where the
 larger the absolute value of the skewness, the more the sample distribution differs from
-a normal distribution. The skewness is computed in this context to aid in determining 
+a normal distribution. The skewness is computed in this context to aid in determining
 whether it is worth computing the background by other means (i.e., our third option of
-a two-dimensional background).  For example, a high positive skew 
-value can be indicative of there being a significant number of sources in the image 
+a two-dimensional background).  For example, a high positive skew
+value can be indicative of there being a significant number of sources in the image
 which need to be taken into account with a more complex background.
 
 Since the median and rms values will be used to generate the two-dimensional background and
 RMS images, respectively, the values need to be deemed reasonable.  A negative mean or median value
 is reset to zero, and a minimum rms value is computed for comparison to the sigma-clipped statistic
-based upon FITS keyword values in 
+based upon FITS keyword values in
 the detection image header.  For the CCD detectors only, a-to-d gain (ATODGN), read noise
 (READNSE), number of drizzled images (NDRIZIM), and total exposure time (TEXPTIME) are employed
 to compute a minimum rms, with the larger of the two rms values (sigma-clipped rms or minimum rms)
-adopted for further use.  Once viable background and background RMS values are determined, 
+adopted for further use.  Once viable background and background RMS values are determined,
 two-dimensional images matching the dimensions of the detection image are constructed.
 Through a configuration setting, a user can specify the sigma-clipped statistics algorithm be
-the chosen method used to compute the background and RMS images, though the special case of 
-identically zero background data will always be evaluated and will supersede the user request when 
+the chosen method used to compute the background and RMS images, though the special case of
+identically zero background data will always be evaluated and will supersede the user request when
 applicable.
 
 For the final background determination algorithm, **Conformal Background Algorithm**, the
-`photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_ 
+`photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_
 Astropy tool is *only* invoked if the **Zero Background Algorithm** has not been applied,
-the user has not requested that only the **Constant Background Algorithm** computed, and the 
+the user has not requested that only the **Constant Background Algorithm** computed, and the
 skewness value derived using the sigma-clipped statistics is less than a pre-defined and configurable
 threshold (default value 0.5).
 
@@ -120,12 +120,12 @@ a localized fashion in contrast to **Constant Background Algorithm**. An initial
 estimate of the background is performed by computing sigma-clipped median values in 27x27 pixel boxes across
 the image. This low-resolution background image is then median-filtered using a 3x3 pixel sample window to
 correct for local small-scale overestimates and/or underestimates.  Both the 27 and 3 pixel
-settings are configurable variables for the user. 
+settings are configurable variables for the user.
 
-Once a background and RMS image are determined using this final technique, a preliminary 
+Once a background and RMS image are determined using this final technique, a preliminary
 background-subtracted image is computed so it can be evaluated for the percentage of negative
 values in the illuminated portion of the image. If the percentage of negative values exceeds a
-configurable and defined threshold (default value 15%), the computation of the background and RMS image 
+configurable and defined threshold (default value 15%), the computation of the background and RMS image
 from this
 algorithm are discarded.  Instead the background and RMS images computed using **Constant Background Algorithm**,
 with the associated updates, are ultimately chosen as the images to use.
@@ -139,7 +139,7 @@ with the associated updates, are ultimately chosen as the images to use.
 1.3.1: Configurable Variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Through-out this section variables have been mentioned which can be configured by the user.  The
-values used for these variables for generating the default catalogs are deemed to be the best for 
+values used for these variables for generating the default catalogs are deemed to be the best for
 the general situation, but users can tune these values to optimize for their own data.
 
 To this end, users can adjust
@@ -162,11 +162,11 @@ argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` f
 -----------------
 In an attempt to optimize the source detection for the specific image being processed,
 the software attempts to derive a custom image kernel based upon the data.
-The multi-filter detection image is analyzed to find an isolated, non-saturated  
-point source away from the edge of the image to use as a template for a source detection kernel.  
+The multi-filter detection image is analyzed to find an isolated, non-saturated
+point source away from the edge of the image to use as a template for a source detection kernel.
 If no suitable source is found, the algorithm falls back to the use of a two-dimensional Gaussian
-kernel based upon the supplied FWHM and the 
-`astropy.convolution.Gaussian2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.Gaussian2DKernel.html>`_ 
+kernel based upon the supplied FWHM and the
+`astropy.convolution.Gaussian2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.Gaussian2DKernel.html>`_
 Astropy tool.
 
 2: Point (Aperture) Photometric Catalog Generation
@@ -572,14 +572,14 @@ alignment to GAIA.
 
 This algorithm starts by evaluating the central moments of all sources from the segment catalog.
 Any source where the maximum central moment (as determined by
-`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.SourceProperties.html#photutils.segmentation.SourceProperties>`_
+`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/segmentation.html>`_
 is 0 for both X and Y moments gets identified as cosmic-rays.  This indicates that the source has a
 concentration of flux greater than a point-source and most probably represents a 'head-on cosmic-ray'.
 
 In addition to these 'head-on cosmic-rays', 'glancing cosmic-rays' produce streaks across the detector.
 Those are identified by identifying sources with a minimum width (semiminor_axis) less than the FWHM of a point source
 and an elongation > 2.  The width and elongation are also properties defined by
-`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.SourceProperties.html#photutils.segmentation.SourceProperties>`_.
+`photutils.segmentation.SourceProperties <https://photutils.readthedocs.io/en/stable/segmentation.html>`_.
 The combination of these criteria allows for the identification of a vast majority of cosmic-rays.  The DQ array
 of the single exposure then gets updated to flag those pixels identified as cosmic-rays based on these criteria.
 These DQ flags are then ONLY applied when creating the TotalProduct to limit the contribution of cosmic-rays
@@ -633,21 +633,21 @@ Should the catalogs fail this test, neither type of catalogs will be written out
 4.1: Source Identification with PhotUtils
 -----------------------------------------
 For the segmentation algorithm the
-`photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy 
-tool is used to identify sources in the background-subtracted multi-filter detection image. 
-As is the case for the point-source detection algorithm, this is the juncture where the  
+`photutils.segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ Astropy
+tool is used to identify sources in the background-subtracted multi-filter detection image.
+As is the case for the point-source detection algorithm, this is the juncture where the
 common background computed in Section 1.3, relevant for both the point and segment
 algorithms, is applied to the science data to begin the source detection process.
 To identify a signal as a source, the signal must have a minimum number
 of connected pixels, each of which is greater than its two-dimensional threshold image
-counterpart.  Connectivity refers to how pixels are literally touching along their edges and 
-corners, and the threshold image is the background RMS image (Section 1.3) 
+counterpart.  Connectivity refers to how pixels are literally touching along their edges and
+corners, and the threshold image is the background RMS image (Section 1.3)
 multiplied by a configurable n-sigma value and modulated by a weighting scheme based
-upon the WHT extension of the detection image. Before applying the threshold, the detection 
-image is filtered by the image kernel (Section 1.4) to smooth the data and enhance the ability 
+upon the WHT extension of the detection image. Before applying the threshold, the detection
+image is filtered by the image kernel (Section 1.4) to smooth the data and enhance the ability
 to identify signal which is similar in shape to the kernel. This process generates a two-dimensional
 segmentation image or map where a segment is defined to be a number of connected pixels which are
-all identified by a numeric label and are considered part of the same source. 
+all identified by a numeric label and are considered part of the same source.
 
 The segmentation map gets evaluated to determine the fraction of sources which are larger than a
 user-specified fraction of the image ("large" segments) and the total fraction of the image covered by segments.
@@ -668,13 +668,13 @@ of the image covered by segments.  Should the new map indicate too many "large" 
 image covered by segments, then deblending gets applied to the map.
 
 Because different sources in close proximity can be mis-identified as a single source, it is necessary
-to apply a deblending procedure to the segmentation map.  The deblending is a combination of 
+to apply a deblending procedure to the segmentation map.  The deblending is a combination of
 multi-thresholding, as is done by `Source Extractor <https://sextractor.readthedocs.io/en/latest/Introduction.html>`_
 and the `watershed technique <https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_.
 
 .. caution::
 
-    The deblending can be problematic if the background determination has not been well-determined, resulting in 
+    The deblending can be problematic if the background determination has not been well-determined, resulting in
     segments which are a large percentage of the map footprint.  In this case, the
     deblending can take unreasonable amounts of time (e.g., days) to conclude. This led to the
     implementation of logic to **limit the use of deblending to only those segments which are larger
@@ -684,30 +684,30 @@ and the `watershed technique <https://en.wikipedia.org/wiki/Watershed_(image_pro
 After deblending has successfully concluded, the resultant segmentation map is further evaluated
 based on an algorithm developed for the `Hubble Legacy Archive
 <https://hla.stsci.edu>`_ to determine if
-big segments/blended regions persist or if a large percentage of the map is covered by segments.  
+big segments/blended regions persist or if a large percentage of the map is covered by segments.
 
 The segmentation map derived from *and when used in conjunction with* the multi-filter detection image for
 measuring source properties is **only** used to determine the centroids of sources.
 
 .. note::
 
-    Questionable centroids (e.g., values of nan or infinity) and their corresponding segments are 
+    Questionable centroids (e.g., values of nan or infinity) and their corresponding segments are
     removed from the catalog entirely.
 
 
 4.2: Isophotal Photometry Measurements
 --------------------------------------
-The actual isophotal photometry measurements are made on the single-filter drizzled images using the 
+The actual isophotal photometry measurements are made on the single-filter drizzled images using the
 cleaned segmentation map derived from the multi-filter detection image.  As was the case for the
-multi-filter detection image, the single-filter drizzled image is used in the determination of 
+multi-filter detection image, the single-filter drizzled image is used in the determination of
 appropriate background and RMS images (Section 1.3). In preparation for the photometry measurements,
-the background-subtracted image, as well as the RMS image, are used to compute a total error array by 
-combining a background-only error array with the Poisson noise of sources. 
+the background-subtracted image, as well as the RMS image, are used to compute a total error array by
+combining a background-only error array with the Poisson noise of sources.
 
 The isophotal photometry and morphological measurements are then performed on the background-subtracted
-single-filter drizzled image using the segmentation map derived from the multi-filter detection image, 
+single-filter drizzled image using the segmentation map derived from the multi-filter detection image,
 the background and total error images, the image kernel, and the known WCS with the
-`photutils.segmentation.source_properties <https://photutils.readthedocs.io/en/stable/api/photutils.segmentation.source_properties.html#photutils.segmentation.source_properties>`_ tool. The measurements made using this tool and retained
+`photutils.segmentation.source_properties <https://photutils.readthedocs.io/en/stable/segmentation.html>`_ tool. The measurements made using this tool and retained
 for the output segment catalog are denoted in Table 5.
 
 .. table:: Table 5: Isophotal Measurements - Subset of Segment Catalog Measurements and Descriptions
@@ -763,18 +763,18 @@ for the output segment catalog are denoted in Table 5.
 -------------------------------------
 The aperture photometry measurements included with the segmentation algorithm use the same configuration
 variable values and literally follow the same steps as what is done for the point algorithm as
-documented in Sections 2.2 - 2.4.  The fundamental difference between the point and segment computations is 
+documented in Sections 2.2 - 2.4.  The fundamental difference between the point and segment computations is
 the source position list used for the measurements.
 
 5: The Output Segment Catalog Files
 ===================================
-The metadata for the catalogs, both total detection and filter, as discussed in Sections 3.1 and 3.2, 
+The metadata for the catalogs, both total detection and filter, as discussed in Sections 3.1 and 3.2,
 is pre-dominantly the same.  The differences arise with respect to the specific columns present in the
-catalog.  The naming convention for the catalogs is also the same except the filter name is replaced 
+catalog.  The naming convention for the catalogs is also the same except the filter name is replaced
 by the literal *total* for the total detection catalog:
 <TELESCOPE>_<PROPOSAL ID>_<OBSERVATION SET ID>_<INSTRUMENT>_<DETECTOR>_total_<DATASET NAME>_<CATALOG TYPE>.ecsv
 where CATALOG TYPE is either *point-cat* or *segment-cat*.
-Using the same example from Section 3.1, the resulting auto-generated segment total detection catalog 
+Using the same example from Section 3.1, the resulting auto-generated segment total detection catalog
 filename will be:
 
 * hst_98765_43_acs_wfc_total_j65c43_segment-cat.ecsv
@@ -783,25 +783,25 @@ and the filter catalog filename will be:
 
 * hst_98765_43_acs_wfc_f606w_j65c43_segment-cat.ecsv
 
-5.1: Total Detection Segment Catalog 
+5.1: Total Detection Segment Catalog
 ------------------------------------
-The multi-filter detection level (aka total) catalog contains the fundamental position measurements of 
-the detected source: ID, X-Centroid, Y-Centroid, RA, and DEC, supplemented by some of the 
-aperture photometry measurements from *each* of the filter catalogs (ABMAG of the outer aperture, Concentration 
-Index, and Flags).  Effectively, the output Total Detection Segment Catalog is a distilled version of all of 
-the Filter Segment Catalogs.  
+The multi-filter detection level (aka total) catalog contains the fundamental position measurements of
+the detected source: ID, X-Centroid, Y-Centroid, RA, and DEC, supplemented by some of the
+aperture photometry measurements from *each* of the filter catalogs (ABMAG of the outer aperture, Concentration
+Index, and Flags).  Effectively, the output Total Detection Segment Catalog is a distilled version of all of
+the Filter Segment Catalogs.
 
 5.2: Filter Segment Catalog and Comparison to the HLA Catalog
 -------------------------------------------------------------
 Section 3.2 discusses the file format for the output filter catalogs, where the latter portion of this
 section is specific to the point catalogs.  The general commentary is still relevant for the segment catalogs,
-except for the specific columns.  In the case of the segment filter catalogs, the specific columns and the 
-order of the columns were designed to be similar to the Source Extractor catalogs produced by the 
+except for the specific columns.  In the case of the segment filter catalogs, the specific columns and the
+order of the columns were designed to be similar to the Source Extractor catalogs produced by the
 `Hubble Legacy Archive (HLA) <https://hla.stsci.edu>`_ project.
 
 Having said this, the `PhotUtils/Segmentation <https://photutils.readthedocs.io/en/stable/segmentation.html>`_
-tool is not as mature as Source Extractor, and it was not clear that all of the output columns in the HLA 
-product were relevant for most users.  As a result, some measurements in the HLA Source Extractor 
+tool is not as mature as Source Extractor, and it was not clear that all of the output columns in the HLA
+product were relevant for most users.  As a result, some measurements in the HLA Source Extractor
 catalog may be missing from the output segment catalog at this time.
 The current Segment column measurements are as follows in Table 6 with the same left-to-right ordering as found
 in the .ecsv:
@@ -892,15 +892,15 @@ An Astropy example with a Segmentation filter catalog will generate the followin
     >>> astro_tab=Table.read("hst_15064_11_acs_wfc_f814w_jdjb11_segment-cat.ecsv", format="ascii.ecsv")
     >>> astro_tab
     <Table length=375>
-    X-Centroid Y-Centroid       RA           DEC         ID      CI   ...    CYY       CXY    Elongation Ellipticity  Theta  
-       pix        pix          deg           deg              mag(AB) ...  1 / pix2  1 / pix2                          rad   
-     float64    float64      float64       float64     int64  float64 ...  float64   float64   float64     float64   float64 
+    X-Centroid Y-Centroid       RA           DEC         ID      CI   ...    CYY       CXY    Elongation Ellipticity  Theta
+       pix        pix          deg           deg              mag(AB) ...  1 / pix2  1 / pix2                          rad
+     float64    float64      float64       float64     int64  float64 ...  float64   float64   float64     float64   float64
     ---------- ---------- ------------- ------------- ------- ------- ... --------- --------- ---------- ----------- --------
       3774.045     87.935   313.5799763    -0.1839533       1   2.144 ...   0.25651  -0.13623       1.30        0.23   52.349
       3630.189    101.246   313.5819743    -0.1837685       2   1.642 ...   0.12165  -0.00195       1.03        0.03   82.412
 
-The “comment" parameter in this Pandas example is necessary so that the reader will skip over the header lines which it cannot 
-parse.  The first line which is actually read is the “line 0" (header=0) which consists of the ascii column names.  The result is a 
+The “comment" parameter in this Pandas example is necessary so that the reader will skip over the header lines which it cannot
+parse.  The first line which is actually read is the “line 0" (header=0) which consists of the ascii column names.  The result is a
 Pandas dataframe for this example of the Point filter catalog::
 
     >>> import pandas

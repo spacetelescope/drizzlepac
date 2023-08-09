@@ -657,7 +657,7 @@ an attempt to perform an *a posteriori* fit to GAIA:
           the GAIA catalog and performs an **rscale** linear fit (as defined by
           ``runastrodriz``), then updates the input WCS with the results of the
           fit upon success.  See the `tweakwcs readthedocs pages
-          <https://tweakwcs.readthedocs.io/en/latest/imalign.html>`_ for more
+          <https://tweakwcs.readthedocs.io/en/latest/>`_ for more
           details.
         * The function ``align_wcs`` is first called without using the GAIA
           reference catalog in order to perform a relative alignment between the observations.

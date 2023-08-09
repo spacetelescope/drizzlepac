@@ -187,7 +187,6 @@ class TestAlignMosaic(BaseHLATest):
         # information
         if dataset_table:
             total_rms = dataset_table.filtered_table['total_rms'][0]
-
         assert 0.0 < total_rms <= RMS_LIMIT
 
     @pytest.mark.xfail

@@ -314,23 +314,23 @@ image will be ignored. Individual exposures from a single skycell will also be i
 
    2021295104255 INFO src=hapcut- Cutout combination is done.
 
-.. figure:: SkyCell14_14.png
+.. figure:: ../images/SkyCell14_14.png
    :scale: 75 %
 
    This cutout is hst_cutout_skycell-p0081x14y14-ra84d9207-decs69d8533_acs_wfc_f658n.fits scaled in size by 75%.  The region in common with skycell-p0081x14y15 is in the upper-right corner.
 
-.. figure:: SkyCell14_15.png
+.. figure:: ../images/SkyCell14_15.png
    :scale: 75 %
 
    This cutout is hst_cutout_skycell-p0081x14y15-ra84d9207-decs69d8533_acs_wfc_f658n.fits scaled in size by 75%.  The region in common with skycell-p0081x14y14 is in the lower-right corner.
 
 
-.. figure:: SkyCellCombo.png
+.. figure:: ../images/SkyCellCombo.png
    :scale: 75 %
 
    This figure is the combination of the two cutouts scaled in size by 75%.
 
-.. figure:: ZoomSkyCellCombo.png
+.. figure:: ../images/ZoomSkyCellCombo.png
    :scale: 75 %
 
    Finally, this figure is the combination of the two cutouts scaled in size by 75% and zoomed in to the overlap region.

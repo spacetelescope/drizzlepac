@@ -1,0 +1,13 @@
+@INPROCEEDINGS{2021AAS...23821602H,
+       author = {{Hoffmann}, S.~L. and {Mack}, J. and {Avila}, R. and {Martlin}, C. and {Cohen}, Y. and {Bajaj}, V.},
+        title = "{New Drizzlepac Handbook Version 2.0 Released In Hdox: Updated Documentation For HST Image Analysis}",
+    booktitle = {American Astronomical Society Meeting Abstracts},
+         year = 2021,
+       series = {American Astronomical Society Meeting Abstracts},
+       volume = {53},
+        month = jun,
+          eid = {216.02},
+        pages = {216.02},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2021AAS...23821602H},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
