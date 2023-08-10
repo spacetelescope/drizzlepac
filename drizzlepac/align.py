@@ -434,9 +434,7 @@ def perform_align(
             table = alignment_table.extracted_sources[imgname]
 
             # Get the location of the current image in the filtered table
-            index = np.where(alignment_table.filtered_table["imageName"] == imgname)[0][
-                0
-            ]
+            index = np.where(alignment_table.filtered_table["imageName"] == imgname)[0][0]
 
             # First ensure sources were found
             if table is None:
@@ -500,12 +498,6 @@ def perform_align(
         best_fit_qual = 5
         best_num_matches = -1
         best_fit_label = [None, None]
-        # create pristine copy of imglist that will be used to restore imglist back so it always starts exactly the same
-        # for each run.
-        # orig_imglist = copy.deepcopy(imglist) # deprecated becasue it is not used
-        # create dummy list that will be used to preserve imglist best_meta information
-        # through the imglist reset process
-        # best_imglist = []
         fit_info_dict = OrderedDict()
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
             log.info("Applying {} fit method".format(algorithm_name))
@@ -557,9 +549,7 @@ def perform_align(
                             "ERROR! No astrometric sources found in any catalog. Exiting..."
                         )
                         alignment_table.filtered_table["status"][:] = 1
-                        alignment_table.filtered_table["processMsg"][
-                            :
-                        ] = "No astrometric sources found"
+                        alignment_table.filtered_table["processMsg"][:] = "No astrometric sources found"
                         alignment_table.filtered_table["fit_qual"][:] = fit_quality
                         current_dt = datetime.datetime.now()
                         delta_dt = (current_dt - starting_dt).total_seconds()
