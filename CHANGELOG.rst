@@ -17,23 +17,20 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
+3.6.1 (15-Jun-2023)
+===================
 
-3.6.1 (unreleased)
-==================
-
-- Fixed an incompatibility in the ``minmed`` code for cosmic ray rejection
+- Fixed an incompatiblity in the ``minmed`` code for cosmic ray rejection
   with the ``numpy`` version ``>=1.25``. [#1573]
 
-
-3.6.1rc0 (15-Jun-2023)
-======================
+- Fixed projection cell identification in overlapping regions. [#1572]
 
 - Force the version of matplotlib to be <= 3.6.3 as the newer versions of
   the library cause problems with the calcloud preview generation.  This
   is a temporary restriction.
 
 3.6.0 (12-Jun-2023)
-======================
+===================
 
 - Modified the pyproject.toml file to ensure the tweakwcs version is greater
   than 0.8.2 as the issue of taking a very long time to compute the bounding
