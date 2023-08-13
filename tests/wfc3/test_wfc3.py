@@ -4,8 +4,6 @@ from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
 
-from stwcs import updatewcs
-
 from ..resources import BaseWFC3
 from ci_watson.hst_helpers import raw_from_asn
 
@@ -31,12 +29,9 @@ class TestWFC3(BaseWFC3):
                       'skysub':False, 'driz_separate':False, 'median':False,
                       'blot':False, 'driz_cr':False}
 
-        # Update wcs in input file
-        driz_input = updatewcs.updatewcs(input_file)
-
         # run astrodrizzle now...
         parObj = teal.load('astrodrizzle', defaults=True)  # get all default values
-        astrodrizzle.AstroDrizzle(driz_input, configobj=parObj, **input_pars)
+        astrodrizzle.AstroDrizzle(input_file, configobj=parObj, **input_pars)
 
         # Compare results
         outputs = [(output, ref_file)]
@@ -47,7 +42,7 @@ class TestWFC3(BaseWFC3):
         # Customized tolerances as Linux and Mac would need different truth files.
         self.rtol = 1e-3
         self.atol = 1e-3
-        rootname = 'iacr51ohq'
+        rootname = 'iacr51ogq'
         input_name = '{}_flt.fits'.format(rootname)
         output = '{}_drz.fits'.format(rootname)
         ref_file = 'reference_wfc3_uvis_single.fits'
@@ -64,12 +59,9 @@ class TestWFC3(BaseWFC3):
                       'driz_separate':False, 'median':False,
                       'blot':False, 'driz_cr':False}
 
-        # Update wcs in input file
-        driz_input = updatewcs.updatewcs(input_file)
-
         # run astrodrizzle now...
         parObj = teal.load('astrodrizzle', defaults=True)  # get all default values
-        astrodrizzle.AstroDrizzle(driz_input, mdriztab=False,
+        astrodrizzle.AstroDrizzle(input_file, mdriztab=False,
                                   configobj=parObj, **input_pars)
 
         # Compare results
