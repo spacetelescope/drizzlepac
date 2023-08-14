@@ -19,7 +19,6 @@ from astropy.io import fits
 
 from stsci.tools import logutil
 
-from . import util
 from .haputils import astrometric_utils as amutils
 from .haputils import astroquery_utils as aqutils
 from .haputils import get_git_rev_info
@@ -27,15 +26,22 @@ from .haputils import align_utils
 from .haputils import config_utils
 from . import __version__
 
-__taskname__ = 'align'
+__taskname__ = "align"
 
-MSG_DATEFMT = '%Y%j%H%M%S'
-SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
+MSG_DATEFMT = "%Y%j%H%M%S"
+SPLUNK_MSG_FORMAT = "%(asctime)s %(levelname)s src=%(name)s- %(message)s"
+
 
 def _init_logger():
-    log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
-                                format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+    log = logutil.create_logger(
+        __name__,
+        level=logutil.logging.NOTSET,
+        stream=sys.stdout,
+        format=SPLUNK_MSG_FORMAT,
+        datefmt=MSG_DATEFMT,
+    )
     return log
+
 
 log = _init_logger()
 
@@ -76,38 +82,38 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
 
     """
     empty_list = []
-    retrieve_list = []    # Actual files retrieved via astroquery and resident on disk
-    candidate_list = []   # File names gathered from *_asn.fits file
-    ipppssoot_list = []   # ipppssoot names used to avoid duplicate downloads
+    retrieve_list = []  # Actual files retrieved via astroquery and resident on disk
+    candidate_list = []  # File names gathered from *_asn.fits file
+    ipppssoot_list = []  # ipppssoot names used to avoid duplicate downloads
     total_input_list = []  # Output full filename list of data on disk
 
     # Loop over the input_list to determine if the item in the input_list is a full association file
     # (*_asn.fits), a full individual image file (aka singleton, *_flt.fits), or a root name specification
     # (association or singleton, ipppssoot).
     for input_item in input_list:
-        log.info('Input item: {}'.format(input_item))
-        indx = input_item.find('_')
+        log.info("Input item: {}".format(input_item))
+        indx = input_item.find("_")
 
         # Input with a suffix (_xxx.fits)
         if indx != -1:
             lc_input_item = input_item.lower()
-            suffix = lc_input_item[indx + 1:indx + 4]
-            log.info('file: {}'.format(lc_input_item))
+            suffix = lc_input_item[indx + 1 : indx + 4]
+            log.info("file: {}".format(lc_input_item))
             # For an association, need to open the table and read the image names as this could
             # be a custom association.  The assumption is this file is on local disk when specified
             # in this manner (vs just the ipppssoot of the association).
             # This "if" block just collects the wanted full file names.
-            if suffix == 'asn':
+            if suffix == "asn":
                 candidate_list.extend(_get_asn_members(input_item))
-            elif suffix in ['flc', 'flt', 'c0m']:
+            elif suffix in ["flc", "flt", "c0m"]:
                 if lc_input_item not in candidate_list:
                     candidate_list.append(lc_input_item)
             else:
                 log.error(
                     'Inappropriate file suffix: {}.  Looking for "asn.fits", '
-                    '"flc.fits", or "flt.fits".'.format(
-                        suffix))
-                return (empty_list)
+                    '"flc.fits", or "flt.fits".'.format(suffix)
+                )
+                return empty_list
 
         # Input is an ipppssoot (association or singleton), nine characters by definition.
         # This "else" block actually downloads the data specified as ipppssoot.
@@ -129,25 +135,31 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
                     else:
                         # log.error('File {} cannot be retrieved from MAST.'.format(input_item))
                         # return(empty_list)
-                        log.warning('File {} cannot be retrieved from MAST.'.format(input_item))
+                        log.warning(
+                            "File {} cannot be retrieved from MAST.".format(input_item)
+                        )
                         log.warning(f"    using pars: {pars}")
                         # look for already downloaded ASN and related files instead
                         # ASN filenames are the only ones that end in a digit
                         if input_item[-1].isdigit():
                             _asn_name = f"{input_item}_asn.fits"
                             if not os.path.exists(_asn_name):
-                                _ = aqutils.retrieve_observation([f"{input_item}"],
-                                                                          suffix=['ASN'],
-                                                                          clobber=True)
+                                _ = aqutils.retrieve_observation(
+                                    [f"{input_item}"], suffix=["ASN"], clobber=True
+                                )
                             _local_files = _get_asn_members(_asn_name)
                             if _local_files:
-                                log.warning(f"Using local files instead:\n    {_local_files}")
+                                log.warning(
+                                    f"Using local files instead:\n    {_local_files}"
+                                )
                                 total_input_list.extend(_local_files)
                             else:
                                 _lfiles = os.listdir()
-                                log.error(f"No suitable files found for input {input_item}")
+                                log.error(
+                                    f"No suitable files found for input {input_item}"
+                                )
                                 log.error(f" in directory with files: \n {_lfiles}")
-                        return(total_input_list)
+                        return total_input_list
 
             except Exception:
                 exc_type, exc_value, exc_tb = sys.exc_info()
@@ -161,37 +173,37 @@ def check_and_get_data(input_list: list, **pars: object) -> list:
             total_input_list.append(file)
             continue
         else:
-            log.error('File {} cannot be found on the local disk.'.format(file))
-            return(empty_list)
+            log.error("File {} cannot be found on the local disk.".format(file))
+            return empty_list
 
     log.info("TOTAL INPUT LIST: {}".format(total_input_list))
     return total_input_list
+
 
 # ----------------------------------------------------------------------------------------------------------
 
 
 def _get_asn_members(asnfile):
-
     # default ASN member type
-    member_suffix = '_flc.fits'
+    member_suffix = "_flc.fits"
 
     candidate_list = []
     try:
-        asntab = Table.read(asnfile, format='fits')
+        asntab = Table.read(asnfile, format="fits")
     except FileNotFoundError:
-        log.error('File {} not found.'.format(asnfile))
-        return ([])
+        log.error("File {} not found.".format(asnfile))
+        return []
     for row in asntab:
-        if row['MEMTYPE'].startswith('PROD'):
+        if row["MEMTYPE"].startswith("PROD"):
             continue
-        memname = row['MEMNAME'].lower().strip()
+        memname = row["MEMNAME"].lower().strip()
         # Need to check if the MEMNAME is a full filename or an ipppssoot
-        if memname.find('_') != -1:
+        if memname.find("_") != -1:
             candidate_list.append(memname)
         else:
             # Define suffix for all members based on what files are present
             if not os.path.exists(memname + member_suffix):
-                member_suffix = '_flt.fits'
+                member_suffix = "_flt.fits"
 
             candidate_list.append(memname + member_suffix)
 
@@ -201,11 +213,24 @@ def _get_asn_members(asnfile):
 # ------------------------------------------------------------------------------------------------------------
 
 
-def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=False, debug=False,
-                  update_hdr_wcs=False, result=None,
-                  runfile="temp_align.log", print_fit_parameters=True, print_git_info=False, output=False,
-                  headerlet_filenames=None, fit_label=None, product_type=None,
-                  **alignment_pars):
+def perform_align(
+    input_list,
+    catalog_list,
+    num_sources,
+    archive=False,
+    clobber=False,
+    debug=False,
+    update_hdr_wcs=False,
+    result=None,
+    runfile="temp_align.log",
+    print_fit_parameters=True,
+    print_git_info=False,
+    output=False,
+    headerlet_filenames=None,
+    fit_label=None,
+    product_type=None,
+    **alignment_pars,
+):
     """Actual Main calling function.
 
     This function performs ``a posteriori`` astrometric fits to the images specified in the
@@ -314,9 +339,13 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
         if not os.path.exists(repo_path):
             repo_path = None  # protect against non-existent paths
         if repo_path:
-            get_git_rev_info.print_rev_id(repo_path)  # Display git repository information
+            get_git_rev_info.print_rev_id(
+                repo_path
+            )  # Display git repository information
         else:
-            log.warning("WARNING: Unable to display Git repository revision information.")
+            log.warning(
+                "WARNING: Unable to display Git repository revision information."
+            )
 
     # Initialize key variables
     filtered_table = None
@@ -325,31 +354,36 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
     log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
     zero_dt = starting_dt = datetime.datetime.now()
     log.info(str(starting_dt))
-    imglist = check_and_get_data(input_list, archive=archive, clobber=clobber, product_type=product_type)
+    imglist = check_and_get_data(
+        input_list, archive=archive, clobber=clobber, product_type=product_type
+    )
     log.info("SUCCESS")
     log.info(f"Processing: {imglist}")
 
-    log.info(make_label('Processing time of [STEP 1]', starting_dt))
+    log.info(make_label("Processing time of [STEP 1]", starting_dt))
     starting_dt = datetime.datetime.now()
 
     # Get default alignment parameters if not provided by the user...
     hdr0 = fits.getheader(imglist[0])
-    inst = hdr0.get('instrume')
-    if inst.lower() == 'wfpc2' and 'detector' not in hdr0:
-        det = 'wfpc2'
+    inst = hdr0.get("instrume")
+    if inst.lower() == "wfpc2" and "detector" not in hdr0:
+        det = "wfpc2"
     else:
-        det = hdr0.get('detector')
+        det = hdr0.get("detector")
     apars = get_default_pars(inst, det)
     alignment_pars.update(apars)
-    alignment_pars['MAX_SOURCES_PER_CHIP'] = num_sources
+    alignment_pars["MAX_SOURCES_PER_CHIP"] = num_sources
 
     # define min num of acceptable cross-matches for a good fit
-    apars['determine_fit_quality']['min_xmatches'] = apars['determine_fit_quality']['MIN_FIT_MATCHES']
+    apars["determine_fit_quality"]["min_xmatches"] = apars["determine_fit_quality"][
+        "MIN_FIT_MATCHES"
+    ]
 
     try:
         # Instantiate AlignmentTable class with these input files
-        alignment_table = align_utils.AlignmentTable(imglist, log_level=loglevel,
-                                                     **alignment_pars)
+        alignment_table = align_utils.AlignmentTable(
+            imglist, log_level=loglevel, **alignment_pars
+        )
         if alignment_table.process_list is None:
             log.warning("NO viable images to align.")
             alignment_table.close()
@@ -365,25 +399,27 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
         if len(process_list) == 1:
             fit_algorithm_list.remove("relative")
 
-        log.info(make_label('Processing time of [STEP 2]', starting_dt))
+        log.info(make_label("Processing time of [STEP 2]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 3: Build WCS for full set of input observations
         log.info("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
         # refwcs = amutils.build_reference_wcs(process_list)
         log.info("SUCCESS")
 
-        log.info(make_label('Processing time of [STEP 3]', starting_dt))
+        log.info(make_label("Processing time of [STEP 3]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 4: Extract catalog of observable sources from each input image
-        log.info(
-            "{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
+        log.info("{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
         if debug:
             pickle_filename = "{}.source_catalog.pickle".format(process_list[0])
             if os.path.exists(pickle_filename):
                 pickle_in = open(pickle_filename, "rb")
                 alignment_table.extracted_sources = pickle.load(pickle_in)
-                log.info("Using sourcelist extracted from {} generated during the last run to save time.".format(
-                    pickle_filename))
+                log.info(
+                    "Using sourcelist extracted from {} generated during the last run to save time.".format(
+                        pickle_filename
+                    )
+                )
             else:
                 alignment_table.find_alignment_sources(output=True)
 
@@ -398,14 +434,14 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
             table = alignment_table.extracted_sources[imgname]
 
             # Get the location of the current image in the filtered table
-            index = np.where(alignment_table.filtered_table['imageName'] == imgname)[0][0]
+            index = np.where(alignment_table.filtered_table["imageName"] == imgname)[0][0]
 
             # First ensure sources were found
             if table is None:
                 log.warning("No sources found in image {}".format(imgname))
-                alignment_table.filtered_table[:]['status'] = 1
-                alignment_table.filtered_table[:]['processMsg'] = "No sources found"
-                log.info(make_label('Processing time of [STEP 4]', starting_dt))
+                alignment_table.filtered_table[:]["status"] = 1
+                alignment_table.filtered_table[:]["processMsg"] = "No sources found"
+                log.info(make_label("Processing time of [STEP 4]", starting_dt))
                 alignment_table.close()
                 return None
 
@@ -416,20 +452,29 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                     total_num_sources += len(table[chipnum])
 
             # Update filtered table with number of found sources
-            alignment_table.filtered_table[index]['foundSources'] = total_num_sources
+            alignment_table.filtered_table[index]["foundSources"] = total_num_sources
 
             # TODO: Revise this logic, if possible, to allow for a subset of the input images to
             #       be ignored if they have no identifiable sources.
-            if total_num_sources < apars['determine_fit_quality']['MIN_OBSERVABLE_THRESHOLD']:
-                log.warning("Not enough sources ({}) found in image {}".format(total_num_sources, imgname))
-                alignment_table.filtered_table[:]['status'] = 1
-                alignment_table.filtered_table[:]['processMsg'] = "Not enough sources found"
-                log.info(make_label('Processing time of [STEP 4]', starting_dt))
+            if (
+                total_num_sources
+                < apars["determine_fit_quality"]["MIN_OBSERVABLE_THRESHOLD"]
+            ):
+                log.warning(
+                    "Not enough sources ({}) found in image {}".format(
+                        total_num_sources, imgname
+                    )
+                )
+                alignment_table.filtered_table[:]["status"] = 1
+                alignment_table.filtered_table[:][
+                    "processMsg"
+                ] = "Not enough sources found"
+                log.info(make_label("Processing time of [STEP 4]", starting_dt))
                 alignment_table.close()
                 return None
 
         log.info("SUCCESS")
-        log.info(make_label('Processing time of [STEP 4]', starting_dt))
+        log.info(make_label("Processing time of [STEP 4]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 5: Retrieve list of astrometric sources from database
 
@@ -437,71 +482,94 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
         # attach source catalogs to them.
         imglist = []
         for group_id, image in enumerate(process_list):
-            img = amutils.build_wcscat(image, group_id,
-                                       alignment_table.extracted_sources[image])
+            img = amutils.build_wcscat(
+                image, group_id, alignment_table.extracted_sources[image]
+            )
             imglist.extend(img)
         # store mapping of group_id to filename/chip
         group_id_dict = {}
         for image in imglist:
-            group_id_dict["{}_{}".format(image.meta["rootname"], image.meta["chip"])] = image.meta["group_id"]
+            group_id_dict[
+                "{}_{}".format(image.meta["rootname"], image.meta["chip"])
+            ] = image.meta["group_id"]
 
         best_fit_rms = -99999.0
         best_fit_status_dict = {}
         best_fit_qual = 5
         best_num_matches = -1
         best_fit_label = [None, None]
-        # create pristine copy of imglist that will be used to restore imglist back so it always starts exactly the same
-        # for each run.
-        orig_imglist = copy.deepcopy(imglist)
-        # create dummy list that will be used to preserve imglist best_meta information
-        # through the imglist reset process
-        # best_imglist = []
         fit_info_dict = OrderedDict()
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
             log.info("Applying {} fit method".format(algorithm_name))
-            for catalog_index, catalog_name in enumerate(catalog_list):  # loop over astrometric catalog
-                log.info("{} STEP 5: Detect astrometric sources {}".format("-" * 20, "-" * 48))
+            for catalog_index, catalog_name in enumerate(
+                catalog_list
+            ):  # loop over astrometric catalog
+                log.info(
+                    "{} STEP 5: Detect astrometric sources {}".format(
+                        "-" * 20, "-" * 48
+                    )
+                )
                 log.info("Astrometric Catalog: {}".format(catalog_name))
                 # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
                 #  execute unnecessarily after it's been run once for a given astrometric catalog.
                 if catalog_name in alignment_table.reference_catalogs:
-                    log.info("Using {} reference catalog from earlier this run.".format(catalog_name))
+                    log.info(
+                        "Using {} reference catalog from earlier this run.".format(
+                            catalog_name
+                        )
+                    )
                     reference_catalog = alignment_table.reference_catalogs[catalog_name]
                 else:
-                    log.info("Generating new reference catalog for {};"
-                             " Storing it for potential re-use later this run.".format(catalog_name))
-                    reference_catalog = generate_astrometric_catalog(process_list,
-                                                                     catalog=catalog_name,
-                                                                     output=output)
+                    log.info(
+                        "Generating new reference catalog for {};"
+                        " Storing it for potential re-use later this run.".format(
+                            catalog_name
+                        )
+                    )
+                    reference_catalog = generate_astrometric_catalog(
+                        process_list, catalog=catalog_name, output=output
+                    )
                     alignment_table.reference_catalogs[catalog_name] = reference_catalog
-                log.info(make_label('Processing time of [STEP 5]', starting_dt))
+                log.info(make_label("Processing time of [STEP 5]", starting_dt))
                 starting_dt = datetime.datetime.now()
 
-                if len(reference_catalog) < apars['determine_fit_quality']['MIN_CATALOG_THRESHOLD']:
-                    log.warning("Not enough sources found in catalog {}".format(catalog_name))
+                if (
+                    len(reference_catalog)
+                    < apars["determine_fit_quality"]["MIN_CATALOG_THRESHOLD"]
+                ):
+                    log.warning(
+                        "Not enough sources found in catalog {}".format(catalog_name)
+                    )
                     fit_quality = 5
                     if catalog_index < len(catalog_list) - 1:
                         log.info("Try again with other catalog")
                     else:
                         # bail out if not enough sources can be found any of the astrometric catalogs
-                        log.warning("ERROR! No astrometric sources found in any catalog. Exiting...")
-                        alignment_table.filtered_table['status'][:] = 1
-                        alignment_table.filtered_table['processMsg'][:] = "No astrometric sources found"
-                        alignment_table.filtered_table['fit_qual'][:] = fit_quality
+                        log.warning(
+                            "ERROR! No astrometric sources found in any catalog. Exiting..."
+                        )
+                        alignment_table.filtered_table["status"][:] = 1
+                        alignment_table.filtered_table["processMsg"][:] = "No astrometric sources found"
+                        alignment_table.filtered_table["fit_qual"][:] = fit_quality
                         current_dt = datetime.datetime.now()
                         delta_dt = (current_dt - starting_dt).total_seconds()
-                        log.info('Processing time of [STEP 5]: {} sec'.format(delta_dt))
+                        log.info("Processing time of [STEP 5]: {} sec".format(delta_dt))
                         alignment_table.close()
                         return alignment_table
                 else:
-                    log.info("{} Cross matching and fitting {}".format("-" * 20, "-" * 47))
                     log.info(
-                        "{} Catalog {} matched using {} {}".format("-" * 18,
-                                                                   catalog_name,
-                                                                   algorithm_name, "-" * 18))
+                        "{} Cross matching and fitting {}".format("-" * 20, "-" * 47)
+                    )
+                    log.info(
+                        "{} Catalog {} matched using {} {}".format(
+                            "-" * 18, catalog_name, algorithm_name, "-" * 18
+                        )
+                    )
                     try:
                         alignment_table.configure_fit()
-                        log.debug("####\n# Running configure fit for AlignmentTable to use: \n")
+                        log.debug(
+                            "####\n# Running configure fit for AlignmentTable to use: \n"
+                        )
                         log.debug([img.wcs for img in alignment_table.imglist])
                         log.debug("####\n")
 
@@ -509,37 +577,50 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                         alignment_table.reset_group_id(len(reference_catalog))
 
                         # execute the correct fitting/matching algorithm
-                        alignment_table.imglist = alignment_table.perform_fit(algorithm_name,
-                                                                              catalog_name,
-                                                                              reference_catalog)
+                        alignment_table.imglist = alignment_table.perform_fit(
+                            algorithm_name, catalog_name, reference_catalog
+                        )
 
                         # determine the quality of the fit
-                        fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = \
-                            determine_fit_quality(
-                                alignment_table.imglist,
-                                alignment_table.filtered_table,
-                                (catalog_index < (len(catalog_list) - 1)),
-                                apars,
-                                print_fit_parameters=print_fit_parameters,
-                                loglevel=loglevel,
-                                runfile=runfile)
+                        (
+                            fit_rms,
+                            fit_num,
+                            fit_quality,
+                            filtered_table,
+                            fit_status_dict,
+                        ) = determine_fit_quality(
+                            alignment_table.imglist,
+                            alignment_table.filtered_table,
+                            (catalog_index < (len(catalog_list) - 1)),
+                            apars,
+                            print_fit_parameters=print_fit_parameters,
+                            loglevel=loglevel,
+                            runfile=runfile,
+                        )
                         alignment_table.filtered_table = filtered_table
 
                         # save fit algorithm name to dictionary key "fit method" in imglist.
                         for imglist_ctr in range(0, len(alignment_table.imglist)):
-                            table_fit = alignment_table.fit_dict[(catalog_name, algorithm_name)]
-                            table_fit[imglist_ctr].meta['fit method'] = algorithm_name
-                            table_fit[imglist_ctr].meta['fit quality'] = fit_quality
+                            table_fit = alignment_table.fit_dict[
+                                (catalog_name, algorithm_name)
+                            ]
+                            table_fit[imglist_ctr].meta["fit method"] = algorithm_name
+                            table_fit[imglist_ctr].meta["fit quality"] = fit_quality
 
                         # populate fit_info_dict
-                        fit_info_dict["{} {}".format(catalog_name, algorithm_name)] = \
-                            fit_status_dict[next(iter(fit_status_dict))]
-                        fit_info_dict["{} {}".format(catalog_name, algorithm_name)]['fit_qual'] = fit_quality
+                        fit_info_dict[
+                            "{} {}".format(catalog_name, algorithm_name)
+                        ] = fit_status_dict[next(iter(fit_status_dict))]
+                        fit_info_dict["{} {}".format(catalog_name, algorithm_name)][
+                            "fit_qual"
+                        ] = fit_quality
 
                         # Figure out which fit solution to go with based on fit_quality value and maybe also total_rms
                         if fit_quality < 5:
                             best_matches = fit_num > best_num_matches
-                            if fit_quality == 1:  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
+                            if (
+                                fit_quality == 1
+                            ):  # valid, non-comprimised solution with total rms < 10 mas...go with this solution.
                                 best_fit_rms = fit_rms
                                 best_fit_label = (catalog_name, algorithm_name)
                                 best_num_matches = fit_num
@@ -560,7 +641,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
                                 # new solution same level of fit_quality.
                                 # Choose whichever one has the most matches and lowest total rms as "best"
                                 # and keep looping to see if another fit is better.
-                                if best_fit_rms >= 0.:
+                                if best_fit_rms >= 0.0:
                                     if best_matches and fit_rms < best_fit_rms:
                                         best_fit_rms = fit_rms
                                         best_num_matches = fit_num
@@ -574,21 +655,27 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
 
                     except Exception:
                         exc_type, exc_value, exc_tb = sys.exc_info()
-                        traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
+                        traceback.print_exception(
+                            exc_type, exc_value, exc_tb, file=sys.stdout
+                        )
                         log.warning(
                             "WARNING: Catastrophic fitting failure with catalog {} and matching "
-                            "algorithm {}.".format(catalog_name,
-                                                   algorithm_name))
-                        alignment_table.filtered_table['status'][:] = 1
-                        alignment_table.filtered_table['processMsg'][:] = "Fitting failure"
+                            "algorithm {}.".format(catalog_name, algorithm_name)
+                        )
+                        alignment_table.filtered_table["status"][:] = 1
+                        alignment_table.filtered_table["processMsg"][
+                            :
+                        ] = "Fitting failure"
                         # It may be there are additional catalogs and algorithms to try, so keep going
                         fit_quality = 5  # Flag this fit with the 'bad' quality value
-                        alignment_table.filtered_table['fit_qual'][:] = fit_quality
+                        alignment_table.filtered_table["fit_qual"][:] = fit_quality
                         continue
                     if fit_quality == 1:  # break out of inner  astrometric catalog loop
                         break
             # break out of outer fit algorithm loop either with a fit_rms < 10 or a 'valid' relative fit
-            if fit_quality == 1 or (best_fit_qual in [2, 3, 4] and "relative" in algorithm_name):
+            if fit_quality == 1 or (
+                best_fit_qual in [2, 3, 4] and "relative" in algorithm_name
+            ):
                 break
         log.info("best_fit found to be: {}".format(best_fit_label))
         log.info("FIT_DICT: {}".format(alignment_table.fit_dict.keys()))
@@ -598,61 +685,72 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
         filtered_table = alignment_table.filtered_table
 
         # Report processing time for this step
-        log.info(make_label('Processing time of [STEP 5b]', starting_dt))
+        log.info(make_label("Processing time of [STEP 5b]", starting_dt))
         starting_dt = datetime.datetime.now()
 
         # 6: Populate the filtered_table
         log.info(
             "{} STEP 6: Collect up information and populate the filtered table "
-            "{}".format("-" * 20, "-" * 20))
-        if 0 < best_fit_rms < apars['determine_fit_quality']['MAX_FIT_RMS']:
-            log.info("The fitting process was successful with a best fit total "
-                     "rms of {} mas".format(best_fit_rms))
+            "{}".format("-" * 20, "-" * 20)
+        )
+        if 0 < best_fit_rms < apars["determine_fit_quality"]["MAX_FIT_RMS"]:
+            log.info(
+                "The fitting process was successful with a best fit total "
+                "rms of {} mas".format(best_fit_rms)
+            )
         else:
             log.info(
                 "The fitting process was unsuccessful with a best fit total rms "
-                "of {} mas".format(best_fit_rms))
+                "of {} mas".format(best_fit_rms)
+            )
 
-        if 0 < best_fit_rms < apars['determine_fit_quality']['MAX_FIT_LIMIT']:
+        if 0 < best_fit_rms < apars["determine_fit_quality"]["MAX_FIT_LIMIT"]:
             # Update filtered table with best fit results
-            filtered_table['status'][:] = 0
+            filtered_table["status"][:] = 0
             fit_status_dict = best_fit_status_dict.copy()
 
             for item in imglist:
-                imgname = item.meta['name']
-                index = np.where(filtered_table['imageName'] == imgname)[0][0]
+                imgname = item.meta["name"]
+                index = np.where(filtered_table["imageName"] == imgname)[0][0]
 
                 # populate self.filtered_table fields "status", "compromised" and
                 # "processMsg" with fit_status_dict fields "valid", "compromised"
                 # and "reason".
-                explicit_dict_key = "{},{}".format(item.meta['name'], item.meta['chip'])
-                if fit_status_dict[explicit_dict_key]['valid'] is True:
-                    filtered_table[index]['status'] = 0
+                explicit_dict_key = "{},{}".format(item.meta["name"], item.meta["chip"])
+                if fit_status_dict[explicit_dict_key]["valid"] is True:
+                    filtered_table[index]["status"] = 0
                 else:
-                    filtered_table[index]['status'] = 1
-                if fit_status_dict[explicit_dict_key]['compromised'] is False:
-                    filtered_table['compromised'] = 0
+                    filtered_table[index]["status"] = 1
+                if fit_status_dict[explicit_dict_key]["compromised"] is False:
+                    filtered_table["compromised"] = 0
                 else:
-                    filtered_table['compromised'] = 1
+                    filtered_table["compromised"] = 1
 
-                filtered_table[index]['processMsg'] = fit_status_dict[explicit_dict_key]['reason']
-                filtered_table['fit_qual'][index] = item.meta['fit quality']
+                filtered_table[index]["processMsg"] = fit_status_dict[
+                    explicit_dict_key
+                ]["reason"]
+                filtered_table["fit_qual"][index] = item.meta["fit quality"]
 
-        log.info(make_label('Processing time of [STEP 6]', starting_dt))
+        log.info(make_label("Processing time of [STEP 6]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 7: Write new fit solution to input image headers
-        log.info("{} STEP 7: Update image headers with new WCS information "
-                 "{}".format("-" * 20, "-" * 29))
-        if (0 < best_fit_rms < 9999.) and update_hdr_wcs:
+        log.info(
+            "{} STEP 7: Update image headers with new WCS information "
+            "{}".format("-" * 20, "-" * 29)
+        )
+        if (0 < best_fit_rms < 9999.0) and update_hdr_wcs:
             # determine the quality of the fit
             alignment_table.apply_fit(headerlet_filenames, fit_label=fit_label)
             log.info("SUCCESS")
         else:
             log.info(" STEP SKIPPED")
 
-        log.info(make_label('Processing time of [STEP 7]', starting_dt))
-        log.info('TOTAL Processing time of {} sec'.format(
-                 (datetime.datetime.now() - zero_dt).total_seconds()))
+        log.info(make_label("Processing time of [STEP 7]", starting_dt))
+        log.info(
+            "TOTAL Processing time of {} sec".format(
+                (datetime.datetime.now() - zero_dt).total_seconds()
+            )
+        )
         log.info(best_fit_status_dict)
         log.info("-" * 104)
 
@@ -679,6 +777,7 @@ def perform_align(input_list, catalog_list, num_sources, archive=False, clobber=
             filtered_table.pprint(max_width=-1)
     return alignment_table
 
+
 # ----------------------------------------------------------------------------------------------------------
 
 
@@ -686,13 +785,21 @@ def make_label(label, starting_dt):
     """Create a time-stamped label for use in log messages"""
     current_dt = datetime.datetime.now()
     delta_dt = (current_dt - starting_dt).total_seconds()
-    return '{}: {} sec'.format(label, delta_dt)
+    return "{}: {} sec".format(label, delta_dt)
+
 
 # ----------------------------------------------------------------------------------------------------------
 
 
-def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_pars, print_fit_parameters=True,
-                          loglevel=logutil.logging.NOTSET, runfile="temp_align.log"):
+def determine_fit_quality(
+    imglist,
+    filtered_table,
+    catalogs_remaining,
+    align_pars,
+    print_fit_parameters=True,
+    loglevel=logutil.logging.NOTSET,
+    runfile="temp_align.log",
+):
     """Determine the quality of the fit to the data
 
     Parameters
@@ -763,7 +870,7 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     # Only want to remove a file handler if there were one set in the first place.
     global module_fh
     global module_logfile
-    #if module_fh is not None and module_logfile != runfile.upper():
+    # if module_fh is not None and module_logfile != runfile.upper():
     if module_fh is not None:
         print("Removing old file handler for logging.")
         log.removeHandler(module_fh)
@@ -777,7 +884,6 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     log.info("Log file: {}".format(module_logfile))
 
     max_rms_val = 1e9
-    num_xmatches = 0
     fit_status_dict = {}
     xshifts = []
     yshifts = []
@@ -787,98 +893,119 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
     # See whether or not 'consistency_check' should be performed.
     # This will only be turned on for pipeline processing due to the potentially extreme
     # variations in photometry across a visit or in a SkyCell.
-    do_consistency_check = align_pars['determine_fit_quality'].get('do_consistency_check', True)
-    auto_good_rms = float(align_pars['determine_fit_quality']['MAX_FIT_RMS'])
+    do_consistency_check = align_pars["determine_fit_quality"].get(
+        "do_consistency_check", True
+    )
+    auto_good_rms = float(align_pars["determine_fit_quality"]["MAX_FIT_RMS"])
 
     for item in imglist:
-        if item.meta['fit_info']['status'].startswith('REFERENCE'):
+        if item.meta["fit_info"]["status"].startswith("REFERENCE"):
             # Reference will never be modified, so set shifts to (0., 0.)
             # so that there are entries for all images.
             xshifts.append(0.0)
             yshifts.append(0.0)
             continue
-        if not item.meta['fit_info']['status'].startswith('FAILED'):
-            xshifts.append(item.meta['fit_info']['shift'][0])
-            yshifts.append(item.meta['fit_info']['shift'][1])
+        if not item.meta["fit_info"]["status"].startswith("FAILED"):
+            xshifts.append(item.meta["fit_info"]["shift"][0])
+            yshifts.append(item.meta["fit_info"]["shift"][1])
         else:
             # Fit not successful, so no shifts to collate
             break
-
     for item in imglist:
-        image_name = item.meta['name']
-        chip_num = item.meta['chip']
-        fit_info = item.meta['fit_info']
-        fitgeom = fit_info['fitgeom'] if 'fitgeom' in fit_info else 'rscale'
+        num_xmatches = 0
+        image_name = item.meta["name"]
+        chip_num = item.meta["chip"]
+        fit_info = item.meta["fit_info"]
+        fitgeom = fit_info["fitgeom"] if "fitgeom" in fit_info else "rscale"
 
-        log.debug("\n{}\n".format("-"*40))
+        log.debug("\n{}\n".format("-" * 40))
         log.debug("FIT being evaluated for {}".format(image_name))
         log.debug(fit_info)
-        log.debug("\n{}\n".format("-"*40))
+        log.debug("\n{}\n".format("-" * 40))
 
         # Build fit_status_dict entry
         dict_key = "{},{}".format(image_name, chip_num)
-        fit_status_dict[dict_key] = {'valid': True,
-                                     'max_rms': max_rms_val,
-                                     'num_matches': num_xmatches,
-                                     'compromised': False,
-                                     'reason': ""}
+        fit_status_dict[dict_key] = {
+            "valid": True,
+            "max_rms": max_rms_val,
+            "num_matches": num_xmatches,
+            "compromised": False,
+            "reason": "",
+        }
 
         # Handle fitting failures (no matches found or any other failure in fit)
-        if fit_info['status'].startswith("FAILED"):
-            log.warning("Alignment FAILED for {} - no processing done.".format(image_name))
+        if fit_info["status"].startswith("FAILED"):
+            log.warning(
+                "Alignment FAILED for {} - no processing done.".format(image_name)
+            )
             overall_valid = False
             continue
-        if fit_info['status'].startswith("REFERENCE") or 'FIT_RMS' not in fit_info:
+        if fit_info["status"].startswith("REFERENCE") or "FIT_RMS" not in fit_info:
             # No fit information available for reference image
+            fit_status_dict[dict_key]["valid"] = False
+            fit_status_dict[dict_key]["compromised"] = True
+            fit_status_dict[dict_key]["reason"] = "No fit information"
+            overall_valid = False
+            overall_comp = True
             continue
-
-        fit_rms_val = fit_info['FIT_RMS']
-        max_rms_val = fit_info['TOTAL_RMS']
+        fit_rms_val = fit_info["FIT_RMS"]
+        max_rms_val = fit_info["TOTAL_RMS"]
         # fit_rms_ra = fit_info['RMS_RA']
         # fit_rms_dec = fit_info['RMS_DEC']
         # rms_ratio = abs(fit_rms_ra - fit_rms_dec) / min(fit_rms_ra, fit_rms_dec)
-        num_xmatches = len(fit_info['ref_mag'])  # fit_info['nmatches']
-        fit_status_dict[dict_key]['max_rms'] = max_rms_val
-        fit_status_dict[dict_key]['num_matches'] = num_xmatches
-
-        if num_xmatches < align_pars['general']['MIN_FIT_MATCHES']:
+        num_xmatches = len(fit_info["ref_mag"])  # fit_info['nmatches']
+        fit_status_dict[dict_key]["max_rms"] = max_rms_val
+        fit_status_dict[dict_key]["num_matches"] = num_xmatches
+        if num_xmatches < align_pars["general"]["MIN_FIT_MATCHES"]:
             overall_valid = False
             if catalogs_remaining:
                 log.warning(
                     "Not enough cross matches found between astrometric"
-                    " catalog and sources found in {}".format(image_name))
+                    " catalog and sources found in {}".format(image_name)
+                )
                 continue
 
         # Compute correlation between input and GAIA magnitudes
         # This check will only be performed when the fit may be uncertain
         # due to less than 100 matches.
-        ref_cat_limit = min(1000, item.meta['num_ref_catalog'])
-        log.info("MAG CHECK REF_CAT_LIMIT: {}    XMATCHES: {}".format(ref_cat_limit, num_xmatches))
+        ref_cat_limit = min(1000, item.meta["num_ref_catalog"])
+        log.info(
+            "MAG CHECK REF_CAT_LIMIT: {}    XMATCHES: {}".format(
+                ref_cat_limit, num_xmatches
+            )
+        )
         if num_xmatches < max(0.1 * ref_cat_limit, 10):
             cross_match_check = amutils.check_mag_corr([item])[0]
-            log.info("Cross-match check: {} on {} ref sources".format(cross_match_check,
-                                                                      item.meta['num_ref_catalog']))
+            log.info(
+                "Cross-match check: {} on {} ref sources".format(
+                    cross_match_check, item.meta["num_ref_catalog"]
+                )
+            )
         else:
             cross_match_check = True
 
         # Execute checks
         nmatches_check = False
-        if num_xmatches >= align_pars['run_align']['mosaic_fitgeom_list'][fitgeom] or \
-                (num_xmatches >= 2 and fit_rms_val > 0.5):
+        if num_xmatches >= align_pars["run_align"]["mosaic_fitgeom_list"][fitgeom] or (
+            num_xmatches >= 2 and fit_rms_val > 0.5
+        ):
             nmatches_check = True
 
         radial_offset_check = False
-        radial_offset = math.sqrt(
-            float(fit_info['shift'][0])**2 +
-            float(fit_info['shift'][1])**2) * item.wcs.pscale  # radial offset in arssec
+        radial_offset = (
+            math.sqrt(
+                float(fit_info["shift"][0]) ** 2 + float(fit_info["shift"][1]) ** 2
+            )
+            * item.wcs.pscale
+        )  # radial offset in arssec
         # Without the '+2', this will always fail for xmatches < 3 regardless of how small
         # the offset is:  2*0.36 == 0.72 vs 0.8 + 0 [perfect alignment]
         # Adding 2 allows low offset solutions with only 1 or 2 sources to pass this check.
-        if float(num_xmatches + 2) * 0.36 > 0.8 + (radial_offset / 10.0)**8:
+        if float(num_xmatches + 2) * 0.36 > 0.8 + (radial_offset / 10.0) ** 8:
             radial_offset_check = True
 
         large_rms_check = True
-        max_fit_limit = align_pars['determine_fit_quality']['MAX_FIT_LIMIT']
+        max_fit_limit = align_pars["determine_fit_quality"]["MAX_FIT_LIMIT"]
         if fit_rms_val > max_fit_limit or max_rms_val > max_fit_limit:
             large_rms_check = False
 
@@ -888,115 +1015,169 @@ def determine_fit_quality(imglist, filtered_table, catalogs_remaining, align_par
 
         consistency_check = True
         if do_consistency_check:
-            rms_limit = max(fit_info['TOTAL_RMS'], auto_good_rms)
-            if not math.sqrt(np.std(np.asarray(xshifts)) ** 2 + np.std(
-                             np.asarray(yshifts)) ** 2) <= (rms_limit / align_pars['determine_fit_quality']['MAS_TO_ARCSEC']) / (item.wcs.pscale):  # \
-                             # or rms_ratio > MAX_RMS_RATIO:
+            rms_limit = max(fit_info["TOTAL_RMS"], auto_good_rms)
+            if not math.sqrt(
+                np.std(np.asarray(xshifts)) ** 2 + np.std(np.asarray(yshifts)) ** 2
+            ) <= (rms_limit / align_pars["determine_fit_quality"]["MAS_TO_ARCSEC"]) / (
+                item.wcs.pscale
+            ):  # \
+                # or rms_ratio > MAX_RMS_RATIO:
                 consistency_check = False
 
         # Decide if fit solutions are valid based on checks
         if not consistency_check:  # Failed consistency check
-            fit_status_dict[dict_key]['valid'] = False
-            fit_status_dict[dict_key]['compromised'] = False
-            fit_status_dict[dict_key]['reason'] = "Consistency violation!"
+            fit_status_dict[dict_key]["valid"] = False
+            fit_status_dict[dict_key]["compromised"] = False
+            fit_status_dict[dict_key]["reason"] = "Consistency violation!"
         elif not large_rms_check:  # RMS value(s) too large
-            fit_status_dict[dict_key]['valid'] = False
-            fit_status_dict[dict_key]['compromised'] = False
-            fit_status_dict[dict_key]['reason'] = "RMS too large (>150 mas)!"
+            fit_status_dict[dict_key]["valid"] = False
+            fit_status_dict[dict_key]["compromised"] = False
+            fit_status_dict[dict_key]["reason"] = "RMS too large (>150 mas)!"
         elif not radial_offset_check:  # Failed radial offset check
-            fit_status_dict[dict_key]['valid'] = False
-            fit_status_dict[dict_key]['compromised'] = False
-            fit_status_dict[dict_key]['reason'] = "Radial offset value too large!"
+            fit_status_dict[dict_key]["valid"] = False
+            fit_status_dict[dict_key]["compromised"] = False
+            fit_status_dict[dict_key]["reason"] = "Radial offset value too large!"
         elif not nmatches_check:  # Too few matches
-            fit_status_dict[dict_key]['valid'] = False
-            fit_status_dict[dict_key]['compromised'] = True
-            fit_status_dict[dict_key]['reason'] = "Too few matches!"
+            fit_status_dict[dict_key]["valid"] = False
+            fit_status_dict[dict_key]["compromised"] = True
+            fit_status_dict[dict_key]["reason"] = "Too few matches!"
         elif not cross_match_check:
-            fit_status_dict[dict_key]['valid'] = True
-            fit_status_dict[dict_key]['compromised'] = True
-            fit_status_dict[dict_key]['reason'] = "Cross-match magnitudes not correlated!"
+            fit_status_dict[dict_key]["valid"] = True
+            fit_status_dict[dict_key]["compromised"] = True
+            fit_status_dict[dict_key][
+                "reason"
+            ] = "Cross-match magnitudes not correlated!"
         else:  # all checks passed. Valid solution.
-            fit_status_dict[dict_key]['valid'] = True
-            fit_status_dict[dict_key]['compromised'] = False
-            fit_status_dict[dict_key]['reason'] = ""
+            fit_status_dict[dict_key]["valid"] = True
+            fit_status_dict[dict_key]["compromised"] = False
+            fit_status_dict[dict_key]["reason"] = ""
         # for now, generate overall valid and compromised values. Basically, if any of the entries for "valid" is False,
         # "valid" is False, treat the whole dataset as not valid. Same goes for compromised.
-        if not fit_status_dict[dict_key]['valid']:
+        if not fit_status_dict[dict_key]["valid"]:
             overall_valid = False
-        if fit_status_dict[dict_key]['compromised']:
+        if fit_status_dict[dict_key]["compromised"]:
             overall_comp = True
 
-        log.info('RESULTS FOR {} Chip {}: FIT_RMS = {} mas, TOTAL_RMS = {}'
-                 ' mas, NUM =  {}'.format(image_name,
-                                          item.meta['chip'],
-                                          fit_rms_val,
-                                          max_rms_val,
-                                          num_xmatches))
+        log.info(
+            "RESULTS FOR {} Chip {}: FIT_RMS = {} mas, TOTAL_RMS = {}"
+            " mas, NUM =  {}".format(
+                image_name, item.meta["chip"], fit_rms_val, max_rms_val, num_xmatches
+            )
+        )
         # print fit params to screen
         if print_fit_parameters:
-            log_info_keys = ['status', 'fitgeom', 'eff_minobj', 'matrix', 'shift', 'center', 'proper_rot',
-                             'proper', '<rot>', '<scale>', 'skew', 'rmse', 'mae', 'nmatches', 'FIT_RMS',
-                             'TOTAL_RMS', 'NUM_FITS', 'RMS_RA', 'RMS_DEC', 'catalog']
+            log_info_keys = [
+                "status",
+                "fitgeom",
+                "eff_minobj",
+                "matrix",
+                "shift",
+                "center",
+                "proper_rot",
+                "proper",
+                "<rot>",
+                "<scale>",
+                "skew",
+                "rmse",
+                "mae",
+                "nmatches",
+                "FIT_RMS",
+                "TOTAL_RMS",
+                "NUM_FITS",
+                "RMS_RA",
+                "RMS_DEC",
+                "catalog",
+            ]
             log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
             log.info("image: {}".format(image_name))
-            log.info("chip: {}".format(item.meta['chip']))
-            log.info("group_id: {}".format(item.meta['group_id']))
+            log.info("chip: {}".format(item.meta["chip"]))
+            log.info("group_id: {}".format(item.meta["group_id"]))
             for tweakwcs_info_key in log_info_keys:
-                log.info("{} : {}".format(tweakwcs_info_key, fit_info[tweakwcs_info_key]))
+                log.info(
+                    "{} : {}".format(tweakwcs_info_key, fit_info[tweakwcs_info_key])
+                )
             log.info("~" * 84)
-            log.info("nmatches_check: {} radial_offset_check: {}"
-                     " large_rms_check: {},"
-                     " consistency_check: {}".format(nmatches_check,
-                                                     radial_offset_check,
-                                                     large_rms_check,
-                                                     consistency_check))
+            log.info(
+                "nmatches_check: {} radial_offset_check: {}"
+                " large_rms_check: {},"
+                " consistency_check: {}".format(
+                    nmatches_check,
+                    radial_offset_check,
+                    large_rms_check,
+                    consistency_check,
+                )
+            )
 
     # determine which fit quality category this latest fit falls into
     if overall_valid is False:
         fit_quality = 5
         log.info("FIT SOLUTION REJECTED")
-        filtered_table['status'][:] = 1
+        filtered_table["status"][:] = 1
         for ctr in range(0, len(filtered_table)):
-            imgname = filtered_table[ctr]['imageName'] + ",1"
+            imgname = filtered_table[ctr]["imageName"] + ",1"
             if imgname in fit_status_dict:
-                filtered_table[ctr]['processMsg'] = fit_status_dict[imgname]["reason"]
+                filtered_table[ctr]["processMsg"] = fit_status_dict[imgname]["reason"]
             else:
-                filtered_table[ctr]['processMsg'] = "Not a valid exposure"
+                filtered_table[ctr]["processMsg"] = "Not a valid exposure"
     else:
         for ctr in range(0, len(filtered_table)):
-            filtered_table[ctr]['processMsg'] = ""
+            filtered_table[ctr]["processMsg"] = ""
         if overall_comp is False and max_rms_val < auto_good_rms:
             log.info("Valid solution with RMS < {} mas found!".format(auto_good_rms))
             fit_quality = 1
         elif overall_comp is True and max_rms_val < auto_good_rms:
-            log.info("Valid but compromised solution with RMS < {} mas found!".format(auto_good_rms))
+            log.info(
+                "Valid but compromised solution with RMS < {} mas found!".format(
+                    auto_good_rms
+                )
+            )
             fit_quality = 2
-        elif overall_comp is False and 1000. >= max_rms_val >= auto_good_rms:
+        elif overall_comp is False and 1000.0 >= max_rms_val >= auto_good_rms:
             log.info("Valid solution with RMS >= {} mas found!".format(auto_good_rms))
             fit_quality = 3
         else:
-            log.info("Valid but compromised solution with RMS >= {} mas found!".format(auto_good_rms))
+            log.info(
+                "Valid but compromised solution with RMS >= {} mas found!".format(
+                    auto_good_rms
+                )
+            )
             fit_quality = 4
 
     if print_fit_parameters:
-        for item in imglist: log.info(fit_status_dict["{},{}".format(item.meta['name'], item.meta['chip'])])
+        for item in imglist:
+            log.info(
+                fit_status_dict["{},{}".format(item.meta["name"], item.meta["chip"])]
+            )
 
     if max_rms_val > auto_good_rms:
-        log.info("Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(max_rms_val, auto_good_rms))
+        log.info(
+            "Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(
+                max_rms_val, auto_good_rms
+            )
+        )
     if not overall_valid:
         log.info("The fit solution for some or all of the images is not valid.")
     if max_rms_val > auto_good_rms or not overall_valid:
         log.info("Try again with the next catalog")
     else:
         log.info("Fit calculations successful.")
-    
+
     return max_rms_val, num_xmatches, fit_quality, filtered_table, fit_status_dict
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remaining, ref_catalog_length,
-                                        align_pars, print_fit_parameters=True, loglevel=logutil.logging.NOTSET, runfile="temp_align.log"):
+
+def determine_fit_quality_mvm_interface(
+    imglist,
+    filtered_table,
+    catalogs_remaining,
+    ref_catalog_length,
+    align_pars,
+    print_fit_parameters=True,
+    loglevel=logutil.logging.NOTSET,
+    runfile="temp_align.log",
+):
     """Simple interface to allow MVM code to use determine_fit_quality().
 
     Parameters
@@ -1068,20 +1249,28 @@ def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remain
 
     # Check if num_ref_catalog is in imglist...if not, add it.
     for ctr in range(0, len(imglist)):
-        if 'num_ref_catalog' not in imglist[ctr].meta.keys():
-            imglist[ctr].meta['num_ref_catalog'] = ref_catalog_length
+        if "num_ref_catalog" not in imglist[ctr].meta.keys():
+            imglist[ctr].meta["num_ref_catalog"] = ref_catalog_length
 
     # Execute determine_fit_quality
-    fit_rms, fit_num, fit_quality, filtered_table, fit_status_dict = determine_fit_quality(imglist,
-                                                                                           filtered_table,
-                                                                                           catalogs_remaining,
-                                                                                           align_pars,
-                                                                                           print_fit_parameters=print_fit_parameters,
-                                                                                           loglevel=loglevel,
-                                                                                           runfile=runfile)
+    (
+        fit_rms,
+        fit_num,
+        fit_quality,
+        filtered_table,
+        fit_status_dict,
+    ) = determine_fit_quality(
+        imglist,
+        filtered_table,
+        catalogs_remaining,
+        align_pars,
+        print_fit_parameters=print_fit_parameters,
+        loglevel=loglevel,
+        runfile=runfile,
+    )
 
     # Determine if the fit quality is acceptable
-    if fit_quality in align_pars['determine_fit_quality']['GOOD_FIT_QUALITY_VALUES']:
+    if fit_quality in align_pars["determine_fit_quality"]["GOOD_FIT_QUALITY_VALUES"]:
         is_good_fit = True
     else:
         is_good_fit = False
@@ -1090,6 +1279,7 @@ def determine_fit_quality_mvm_interface(imglist, filtered_table, catalogs_remain
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def generate_astrometric_catalog(imglist, **pars):
     """Generates a catalog of all sources from an existing astrometric catalog are
@@ -1115,38 +1305,48 @@ def generate_astrometric_catalog(imglist, **pars):
     """
     # generate catalog
     temp_pars = pars.copy()
-    if pars['output'] is True:
-        pars['output'] = 'ref_cat.ecsv'
+    if pars["output"] is True:
+        pars["output"] = "ref_cat.ecsv"
     else:
-        pars['output'] = None
+        pars["output"] = None
 
-    overwrite = pars.get('clobber', True)
+    overwrite = pars.get("clobber", True)
 
     out_catalog = amutils.create_astrometric_catalog(imglist, **pars)
     pars = temp_pars.copy()
     # if the catalog has contents, write the catalog to ascii text file
-    if len(out_catalog) > 0 and pars['output']:
+    if len(out_catalog) > 0 and pars["output"]:
         catalog_filename = "refcatalog.cat"
-        out_catalog.write(catalog_filename, format="ascii.fast_commented_header", overwrite=overwrite)
+        out_catalog.write(
+            catalog_filename, format="ascii.fast_commented_header", overwrite=overwrite
+        )
         log.info("Wrote reference catalog {}.".format(catalog_filename))
 
-    return(out_catalog)
+    return out_catalog
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def get_default_pars(instrument, detector, step='alignment',
-                     condition=['filter_basic'], hap_pipeline_name='svm'):
 
+def get_default_pars(
+    instrument,
+    detector,
+    step="alignment",
+    condition=["filter_basic"],
+    hap_pipeline_name="svm",
+):
     step_list = config_utils.step_title_list
     if step not in step_list:
-        log.error("{} not valid!  Needs to be one of: {}".format(step,
-                  step_list))
+        log.error("{} not valid!  Needs to be one of: {}".format(step, step_list))
         raise ValueError
 
-    full_cfg_index, pars_dir = config_utils.read_index(instrument, detector, hap_pipeline_name=hap_pipeline_name)
+    full_cfg_index, pars_dir = config_utils.read_index(
+        instrument, detector, hap_pipeline_name=hap_pipeline_name
+    )
 
     par_class = config_utils.step_name_list[step_list.index(step)]
-    apars = par_class(full_cfg_index[step], condition, hap_pipeline_name,
-                      pars_dir, step, True, None)
+    apars = par_class(
+        full_cfg_index[step], condition, hap_pipeline_name, pars_dir, step, True, None
+    )
 
     return apars.outpars
