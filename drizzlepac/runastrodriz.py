@@ -186,7 +186,9 @@ envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
 envvar_qa_stats_name = "PIPELINE_QUALITY_TESTING"
 envvar_reset_idctab_name = "PIPELINE_RESET_IDCTAB"
 
-# Order of preference for common WCS solutions - brute force choice of the GAIA catalog preference
+# Order of preference for common WCS solutions - brute force choice of the GAIA catalog preference.
+# Enforce the chosen order for the WCS preferential solution for all exposures in a dataset.
+# REL fit method is better than IMG, and GAIA*3 catalog is better than GAIADR2 or GAIADR1.
 wcs_preference = ['IDC_?????????-FIT_REL_GAIA*3', 'IDC_?????????-FIT_IMG_GAIA*3', 'IDC_?????????-FIT_REL_GAIADR2',
                   'IDC_?????????-FIT_IMG_GAIADR2', 'IDC_?????????-FIT_REL_GAIADR1', 'IDC_?????????-FIT_IMG_GAIADR1',
                   'IDC_?????????-GSC240', 'IDC_?????????']
