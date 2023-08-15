@@ -494,7 +494,7 @@ class TestBlot(BaseUnit):
         assert(med_diff < 1.0e-6)
         assert(max_diff < 1.0e-5)
 
-    @pytest.mark.xfail(reason='Input with different distortion')
+    #@pytest.mark.xfail(reason='Input with different distortion')
     def test_blot_with_image(self):
         """
         Test do_blot with full image
