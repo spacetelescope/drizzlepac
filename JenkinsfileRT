@@ -9,12 +9,12 @@ jobconfig = new JobConfig()
 jobconfig.credentials = [
         ['drizzlepac_codecov', 'CODECOV_TOKEN']
     ]
-// jobconfig.post_test_summary = true
+jobconfig.post_test_summary = true
 
 // Configure artifactory ingest
 data_config = new DataConfig()
 data_config.server_id = 'bytesalad'
-data_config.root = 'tests_output'
+data_config.root = 'clone/tests_output'
 data_config.match_prefix = '(.*)_result' // .json is appended automatically
 
 bc1 = new BuildConfig()
@@ -25,16 +25,17 @@ bc1.conda_packages = ['python=3.9']
 bc1.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson==0.5",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --bigdata",
+bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
                 "codecov"]
 bc1.test_configs = [data_config]
-
+bc1.failedFailureThresh = 0
 
 bc2 = utils.copy(bc1)
 bc2.name = '3.9-dev'
 bc2.build_cmds[1] = "pip install -r requirements-dev.txt --upgrade -e '.[test]'"
 
 bc3 = new BuildConfig()
+bc3.runtime.add('CFLAGS=-std=gnu99')
 bc3.nodetype = 'linux'
 bc3.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc3.name = '3.10-dev'
@@ -49,7 +50,6 @@ bc3.test_configs = [data_config]
 bc4 = utils.copy(bc3)
 bc4.name = '3.11-dev'
 bc4.conda_packages = ['python=3.11']
-
 
 // Iterate over configurations that define the (distributed) build matrix.
 // Spawn a host (or workdir) for each combination and run in parallel.
