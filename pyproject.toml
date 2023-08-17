@@ -25,7 +25,7 @@ dependencies = [
     'astropy>=5.0.4',
     'fitsblender>=0.4.2',
     'scipy',
-    'matplotlib<=3.6.3',
+    'matplotlib',
     'stsci.tools>=4.0',
     'stsci.image>=2.3.4',
     'stsci.imagestats',
