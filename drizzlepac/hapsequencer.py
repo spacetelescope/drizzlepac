@@ -174,6 +174,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 if cat_type == "segment":
                     sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
                     sources_dict['segment']['source_cat'] = total_product_catalogs.catalogs['segment'].source_cat
+                    sources_dict['segment']['total_source_cat'] = total_product_catalogs.catalogs['segment'].total_source_cat
 
             # Get parameter from config files for CR rejection of catalogs
             cr_residual = total_product_obj.configobj_pars.get_pars('catalog generation')['cr_residual']
@@ -302,11 +303,13 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
 
             # Determine whether any catalogs should be written out at all based on comparison to expected
             # rate of cosmic-ray contamination for the total detection product
+            reject_catalogs = {}
             reject_catalogs = total_product_catalogs.verify_crthresh(n1_exposure_time)
 
             if diagnostic_mode:
                 # If diagnostic mode, we want to inspect the original full source catalogs
-                reject_catalogs = False
+                for cat_type in total_product_catalogs.catalogs.keys():
+                    reject_catalogs[cat_type] = False
 
             for filter_product_obj in total_product_obj.fdp_list:
                 filter_product_catalogs = filter_catalogs[filter_product_obj.drizzle_filename]

@@ -5,7 +5,7 @@
 
 :License: :doc:`LICENSE`
 
-USAGE: runastrodriz.py [-fhdaibng] inputFilename [newpath]
+USAGE: runastrodriz.py [-bdahfginv] inputFilename [newpath]
 
 Alternative USAGE:
     python
@@ -29,6 +29,9 @@ running AstroDrizzle.
 
 The '-g' option allows the user to TURN OFF alignment of the images to an external
 astrometric catalog, such as GAIA, as accessible through the MAST interface.
+
+See the main() at the end of this module for all available options and a
+terse description.
 
 Additional control over whether or not to attempt to align to an external
 astrometric catalog, such as GAIA, is provided through the use of the
@@ -183,8 +186,12 @@ envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
 envvar_qa_stats_name = "PIPELINE_QUALITY_TESTING"
 envvar_reset_idctab_name = "PIPELINE_RESET_IDCTAB"
 
-# Order of preference for common WCS solutions
-wcs_preference = ['IDC_?????????-FIT_REL_GAIA*', 'IDC_?????????-FIT_IMG_GAIA*', 'IDC_?????????-GSC240', 'IDC_?????????']
+# Order of preference for common WCS solutions - brute force choice of the GAIA catalog preference.
+# Enforce the chosen order for the WCS preferential solution for all exposures in a dataset.
+# REL fit method is better than IMG, and GAIA*3 catalog is better than GAIADR2 or GAIADR1.
+wcs_preference = ['IDC_?????????-FIT_REL_GAIA*3', 'IDC_?????????-FIT_IMG_GAIA*3', 'IDC_?????????-FIT_REL_GAIADR2',
+                  'IDC_?????????-FIT_IMG_GAIADR2', 'IDC_?????????-FIT_REL_GAIADR1', 'IDC_?????????-FIT_IMG_GAIADR1',
+                  'IDC_?????????-GSC240', 'IDC_?????????']
 
 # History:
 # Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
@@ -294,7 +301,16 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # Remove FLT file created here, since the calibration file can NOT be aligned or drizzled
             os.remove(inFilename)
             print("ERROR: Inappropriate input file.  Deleting converted WFPC2 FLT file.")
-            return
+
+            # write out manifest file, if requested
+            mani_filename = inFile[:inFile.find('_d0m')] + '_manifest.txt'
+            if make_manifest:
+                if os.path.exists(mani_filename):
+                    os.remove(mani_filename)
+                with open(mani_filename, 'w') as fout:
+                    _ = [fout.write(f"{fname}\n") for fname in manifest_list]
+                print(f"Created manifest file: {mani_filename}")
+            sys.exit(analyze.Ret_code.NO_VIABLE_DATA.value)
 
     infile_det = fits.getval(inFilename, 'detector')
     cal_ext = None
@@ -698,8 +714,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 drz_output = drz_product
             # keep track of output files
             manifest_list.append(drz_output)
-            # update s_region header keyword
-            processing_utils.compute_sregion(drz_product)
+            # update s_region header keyword only if the drz_output
+            # contains actual data, not just header information.
+            if asn_dicts is not None:
+                processing_utils.compute_sregion(drz_output)
 
     else:
         # Create default trailer file messages when astrodrizzle is not
@@ -2131,6 +2149,7 @@ def main():
             force = True
         if opt == "-i":
             inmemory = True
+        # The "-m" option is specific for WFPC2 data
         if opt == "-m":
             make_manifest = True
         if opt == "-v":
@@ -2161,11 +2180,13 @@ def main():
 
         except Exception as errorobj:
             print(str(errorobj))
-            print("ERROR: Cannot run astrodrizzle on %s." % sys.argv[1])
+            print("ERROR: Cannot run astrodrizzle on %s." % " ".join(sys.argv))
             raise Exception(str(errorobj))
 
-    sys.exit()
-
+        # This except handles sys.exit() which raises the SystemExit exception which inherits from BaseException.
+        except BaseException:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            print(f"Return Value: {exc_value}")
 
 if __name__ == "__main__":
     main()

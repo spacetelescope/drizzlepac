@@ -3,7 +3,7 @@
 
 :Authors: Megan Sosey, Christopher Hanley
 
-:License: :doc:`LICENSE`
+:License: :doc:`../LICENSE`
 
 """
 from stsci.tools import fileutil

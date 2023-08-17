@@ -302,27 +302,6 @@ def buildShadowMaskImage(dqfile, detnum, extnum, maskname, bitvalue=None, binned
         finally:
             fdq.close()
             del fdq
-
-        # shrink functional shadow mask region by 2 pixels to avoid edge effects when comparing to
-        # DQ based mask
-        smaskarr = ndimage.binary_erosion(maskarr, iterations=2)
-        # create mask of pixels for all pixels in shadow mask region only
-        imaskarr = np.invert(smaskarr)
-
-        # Now combine with shadow mask created from calibrated functions
-        # Start by only keeping pixels flagged with DQ=2 in shadowmask region defined in maskarr
-        # We hard-code this to always use the DQ=2 bit for identifying vignetted pixels.
-        dq2mask = buildMask(dqarr, ~2)
-
-        # Identify shadow region from dq2mask corresponding to functional form of shadow
-        dq2or = np.bitwise_or(smaskarr, dq2mask).astype(bool)
-        # expand mask of good pixels from dq2or by 5 pixels to reduce which shadow pixels are masked out
-        dq2ore5 = ndimage.binary_dilation(dq2or, iterations=SHADOW_BUFFER)
-        # finally, combine this shadowmask with the DQ mask requested by the user based on bitvalue
-        # This is done by resetting pixels in shadow mask region from user-defined DQ mask
-        # based on expanded/dilated mask based on DQ=2
-        dqmaskarr[imaskarr] = dq2ore5[imaskarr]
-
     else:
         # simply use the functional shadow mask
         dqmaskarr = maskarr

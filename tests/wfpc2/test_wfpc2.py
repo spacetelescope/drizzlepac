@@ -132,6 +132,9 @@ class TestWFPC2(BaseWFPC2):
         WFPC2 data stored in Multi-extensions FITS(MEF) format.
         """
 
+        # Customized tolerances as Linux and Mac would need different truth files.
+        self.rtol = 1e-6
+        self.atol = 1e-4
         # Prepare input files.
         raw_inputs = ['u9yq0703m_c0m.fits', 'u9yq0704m_c0m.fits',
                       'u9yq0707m_c0m.fits', 'u9yq0708m_c0m.fits',

@@ -38,8 +38,9 @@ in this description can be found in the :ref:`hap-glossary`.
           <https://mast.stsci.edu/portal/Mashup/Clients/Mast/Portal.html>`_ using the
           search filter ``Project=HAP``.
 
+======================
 Primary User-Interface
-=======================
+======================
 One task has been written to perform the single-visit processing: ``runsinglehap``.
 It gets used by STScI to generate the single-visit products which
 can be found in the Mikulski Archive for Space Telescopes (MAST) archive. This task

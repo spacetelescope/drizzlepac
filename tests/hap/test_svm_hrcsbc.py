@@ -29,9 +29,7 @@ POLLER_FILE = "acs_hrc_sbc_input.out"
 
 # Gather expected values for pass/fail criteria here
 expected_total_point_sources = {'hrc': 268, 'sbc': 65}
-expected_total_segment_sources = {'hrc': 642, 'sbc': 283}
-expected_filter_point_sources = {'hrc': 269, 'sbc': 208}
-expected_filter_segment_sources = {'hrc': 642, 'sbc': 399}
+expected_total_segment_sources = {'hrc': 642, 'sbc': 250}
 tolerance = 0.25 
 
 
@@ -204,7 +202,7 @@ def test_svm_empty_cats(gather_output_data):
 # Due to the way the catalogs are filtered, check the size of the total catalog and one of the filter
 # catalogs separately.  The total catalog has the row removed for each source where the constituent 
 # filter catalogs *ALL* have flag>5 for the source.  Rows are NOT removed from the filter table based on
-# flag values.
+# flag values. NOTE: Filtered catalogs are actually not checked by these tests.
 def test_svm_point_total_cat(gather_output_data):
     # Check the output catalogs should contain the correct number of sources -- allows for a broad tolerance
     print("\ntest_svm_point_total_cat.")

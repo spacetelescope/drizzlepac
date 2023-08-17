@@ -3,7 +3,7 @@ Process input to MultiDrizzle/PyDrizzle.
 
 :Authors: Warren Hack
 
-:License: :doc:`LICENSE`
+:License: :doc:`../LICENSE`
 
 The input can be one of:
 
@@ -704,7 +704,9 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     newfilelist, ivmlist = check_files.checkFiles(updated_input, ivmlist)
 
     if updatewcs:
-        uw.updatewcs(','.join(set(newfilelist) - set(filelist)))
+        new_flist = set(newfilelist) - set(filelist)
+        if new_flist:
+            uw.updatewcs(','.join(new_flist))
 
     if len(ivmlist) > 0:
         ivmlist, filelist = list(zip(*ivmlist))
@@ -950,6 +952,11 @@ def buildEmptyDRZ(input, output):
     pipeline can handle the Multidrizzle zero expossure time exception
     where all data has been excluded from processing.
 
+    Notes
+    -----
+    The existance of the DRZ file is also necessary to satisfy the interface
+    expectations of the archive.  Do NOT delete this file.
+
     Parameters
     ----------
     input : str
@@ -981,7 +988,7 @@ def buildEmptyDRZ(input, output):
         if '_drz' not in output:
             output = fileutil.buildNewRootname(output, extn='_drz.fits')
 
-    print('Building emtpy DRZ file with output name: %s' % output)
+    print('Building empty DRZ file with output name: %s' % output)
 
     # Open the first image (of the excludedFileList?) to use as a template to build
     # the DRZ file.
@@ -1021,7 +1028,6 @@ def buildEmptyDRZ(input, output):
                                   "DRZ product because**")
     fitsobj[0].header.add_history("** all input images were excluded from "
                                   "processing.**")
-
 
     # Change the filename in the primary header to reflect the name of the output
     # filename.

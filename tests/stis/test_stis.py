@@ -107,6 +107,10 @@ class TestSTIS(BaseSTIS):
         distortion model for STIS CCD data and create a combined product.
         """
 
+        # Customized tolerances as Linux and Mac would need different truth files.
+        self.rtol = 1e-3
+        self.atol = 1e-4
+
         # Prepare input files.
         raw_inputs = ['o6cl10arq_flt.fits', 'o6cl10asq_flt.fits',
                       'o6cl10atq_flt.fits', 'o6cl10auq_flt.fits',
