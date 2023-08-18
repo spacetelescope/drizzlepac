@@ -17,6 +17,43 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
+
+3.6.2rc0 (unreleased)
+=====================
+
+- Removed the version restriction on matplotlib. [#1649]
+
+- Forced a preferential order on the final selection of the WCS solution 
+  from the common pool of solutions among all input exposurea.  All input images 
+  need to have the same WCSNAME (same WCS solution) when performing pipeline 
+  alignment to avoid imprinting differences from one catalog to another on the 
+  final fit and destroying the relative alignment. [#1645, #1638]
+
+- Redesigned the overall structure of the documentation, readthedocs, for the
+  package. [#1620]
+
+- Addressed a bug in the calculation of measurements for each detected source
+  in the filter catalogs. The detection catalog, based upon the "total" image,
+  is now used in the correct manner to define the source centroids and shape 
+  properties.  In addition, these properties are used to perform aperture 
+  photometry. [#1614]
+
+- Updated the HAP drizzle parameters for WFPC2. The primary change includes 
+  changing skymethod='localmin' from the prior 'match' which did not work well 
+  for the overlapping chips. [#1617]
+
+- Corrected reference catalog weights from being proportional to sigma to
+  the proper 1/sigma**2. [#1616]
+
+- Removed the use of the shadow mask as an initial step in addressing the WFPC2 
+  chip gaps [#1551]
+
+- Fixed a bug in processing of the ``group`` argument due to which the code
+  would crash when ``group`` would be an integer number or a list of numbers.
+  Also, added support for specifying extensions as tuples of
+  ``(extname, extver)``. [#1612]
+
+
 3.6.1 (15-Jun-2023)
 ===================
 
@@ -25,14 +62,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Fixed projection cell identification in overlapping regions. [#1572]
 
-- Fixed a bug in processing of the ``group`` argument due to which the code
-  would crash when ``group`` would be an integer number or a list of numbers.
-  Also, added support for specifying extensions as tuples of
-  ``(extname, extver)``. [#1612]
-
 - Force the version of matplotlib to be <= 3.6.3 as the newer versions of
-  the library cause problems with the calcloud preview generation.  This
-  is a temporary restriction.
+  the library cause problems with the calcloud preview generation. [#1571] 
 
 3.6.0 (12-Jun-2023)
 ===================
