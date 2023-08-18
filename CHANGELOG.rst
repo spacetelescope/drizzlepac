@@ -25,6 +25,11 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Fixed projection cell identification in overlapping regions. [#1572]
 
+- Fixed a bug in processing of the ``group`` argument due to which the code
+  would crash when ``group`` would be an integer number or a list of numbers.
+  Also, added support for specifying extensions as tuples of
+  ``(extname, extver)``. [#1612]
+
 - Force the version of matplotlib to be <= 3.6.3 as the newer versions of
   the library cause problems with the calcloud preview generation.  This
   is a temporary restriction.
