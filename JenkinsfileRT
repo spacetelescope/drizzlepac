@@ -22,11 +22,10 @@ bc1.nodetype = 'linux'
 bc1.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc1.name = '3.9'
 bc1.conda_packages = ['python=3.9']
-bc1.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson==0.5",
+bc1.build_cmds = ["pip install numpy astropy pytest-cov ci-watson==0.5",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
-                "codecov"]
+bc1.test_cmds = ["pytest --basetemp=tests_output --junitxml results.xml --bigdata"]
 bc1.test_configs = [data_config]
 bc1.failedFailureThresh = 0
 
@@ -40,11 +39,10 @@ bc3.nodetype = 'linux'
 bc3.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc3.name = '3.10-dev'
 bc3.conda_packages = ['python=3.10']
-bc3.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson==0.5",
+bc3.build_cmds = ["pip install numpy astropy pytest-cov ci-watson==0.5",
 		 "pip install -r requirements-dev.txt --upgrade -e '.[test]'",
                  "pip freeze"]
-bc3.test_cmds = ["pytest --cov=./ --basetemp=tests_output --bigdata",
-                "codecov"]
+bc3.test_cmds = ["pytest --basetemp=tests_output --bigdata"]
 bc3.test_configs = [data_config]
 
 bc4 = utils.copy(bc3)
