@@ -9,7 +9,7 @@ Closes #
 This PR addresses ...
 
 **Checklist for maintainers**
-- [ ] added entry in `CHANGES.rst` within the relevant release section
+- [ ] added entry in `CHANGELOG.rst` within the relevant release section
 - [ ] updated or added relevant tests
 - [ ] updated relevant documentation
 - [ ] added relevant milestone
