@@ -6,6 +6,7 @@
 
 """
 from astropy.io import fits as pyfits
+from astropy.wcs.utils import is_proj_plane_distorted
 import copy
 import numpy as np
 from numpy import linalg
@@ -1074,23 +1075,11 @@ def make_mosaic_wcs(filenames, rot=None, scale=None):
     if not isinstance(filenames, list):
         filenames = [filenames]
 
-    # checks if drz/drc or flc/flt identifies type with extension var
-    extension='None'
-    if all(['flc' in x or 'flt' in x for x in filenames]):
-        extension='fl'
-    elif np.all(['drc' in x or 'drz' in x for x in filenames]):
-        extension='dr'
-    else:
-        raise Exception('Invalid filename array. Must be a set of files with uniform extensions ending in either flc, flt, drc, or drz.')
+    hstwcs_list = [get_hstwcs(f, extnum) for f in filenames for extnum in get_extns(f)]
 
-    # Compile list of WCSs for all chips from all input filenames
-    hstwcs_list = []
-    for f in filenames:
-        hstwcs_list.extend([get_hstwcs(f, extnum) for extnum in get_extns(f)])
-
-    # Generate output WCS based on input WCSs, and undistorts depending on extension. 
-    output_wcs = utils.output_wcs(hstwcs_list, undistort=(extension == 'fl'))
-
+    # Generate output WCS based on input WCSs, and undistorts depending on extension.
+    output_wcs = utils.output_wcs(hstwcs_list, undistort=is_proj_plane_distorted(hstwcs_list[0]))
+  
     # Combine them into a single mosaic WCS    
     output_wcs.wcs.cd = make_perfect_cd(output_wcs)
 
