@@ -1,4 +1,4 @@
-name: drizzlepac
+name: rtd311
 channels:
     - defaults
 dependencies:
