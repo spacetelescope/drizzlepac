@@ -1076,7 +1076,7 @@ def make_mosaic_wcs(filenames, rot=None, scale=None):
 
     # checks if drz/drc or flc/flt identifies type with extension var
     extension='None'
-    if np.all(['flc' in x or 'flt' in x for x in filenames]):
+    if all(['flc' in x or 'flt' in x for x in filenames]):
         extension='fl'
     elif np.all(['drc' in x or 'drz' in x for x in filenames]):
         extension='dr'
