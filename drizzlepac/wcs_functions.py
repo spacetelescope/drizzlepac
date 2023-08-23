@@ -1069,21 +1069,33 @@ def make_mosaic_wcs(filenames, rot=None, scale=None):
     mosaic_wcs : HSTWCS object
         the merged composite WCS
     """
+    
+    # makes str into list of str
     if not isinstance(filenames, list):
         filenames = [filenames]
 
+    # checks if drz/drc or flc/flt identifies type with extension var
+    extension='None'
+    if np.all(['flc' in x or 'flt' in x for x in filenames]):
+        extension='fl'
+    elif np.all(['drc' in x or 'drz' in x for x in filenames]):
+        extension='dr'
+    else:
+        raise Exception('Invalid filename array. Must be a set of files with uniform extensions ending in either flc, flt, drc, or drz.')
+
     # Compile list of WCSs for all chips from all input filenames
     hstwcs_list = []
-    
     for f in filenames:
-        if ('flc.fits' in f) | ('flt.fits' in f):
-            hstwcs_list.extend([get_hstwcs(f, extnum) for extnum in get_extns(f)])
-            output_wcs = utils.output_wcs(hstwcs_list, undistort=True)
-        elif ('drc.fits' in f) | ('drz.fits' in f):
-            hstwcs_list.extend([get_hstwcs(f, extnum) for extnum in get_extns(f)])
-            output_wcs = utils.output_wcs(hstwcs_list, undistort=False)
-        else: 
-            raise Exception('Invalid file type. Must be flc, flt, drc, or drz.')
+        hstwcs_list.extend([get_hstwcs(f, extnum) for extnum in get_extns(f)])
+
+    # Generate output WCS based on input WCSs, and undistorts depending on extension. 
+    if extension == 'fl':
+        output_wcs = utils.output_wcs(hstwcs_list, undistort=True)
+    elif extension == 'dr':
+        output_wcs = utils.output_wcs(hstwcs_list, undistort=False)
+    else:
+        raise Exception('Invalid extension type. Must be either fl or dr.')
+
     # Combine them into a single mosaic WCS    
     output_wcs.wcs.cd = make_perfect_cd(output_wcs)
 
