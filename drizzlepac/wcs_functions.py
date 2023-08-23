@@ -1089,12 +1089,7 @@ def make_mosaic_wcs(filenames, rot=None, scale=None):
         hstwcs_list.extend([get_hstwcs(f, extnum) for extnum in get_extns(f)])
 
     # Generate output WCS based on input WCSs, and undistorts depending on extension. 
-    if extension == 'fl':
-        output_wcs = utils.output_wcs(hstwcs_list, undistort=True)
-    elif extension == 'dr':
-        output_wcs = utils.output_wcs(hstwcs_list, undistort=False)
-    else:
-        raise Exception('Invalid extension type. Must be either fl or dr.')
+    output_wcs = utils.output_wcs(hstwcs_list, undistort=(extension == 'fl'))
 
     # Combine them into a single mosaic WCS    
     output_wcs.wcs.cd = make_perfect_cd(output_wcs)
