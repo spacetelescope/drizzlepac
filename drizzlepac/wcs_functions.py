@@ -130,8 +130,8 @@ def get_hstwcs(filename, extnum):
     """ Return the HSTWCS object for a given chip. """
     hdrwcs = wcsutil.HSTWCS(filename, ext=extnum)
     hdrwcs.filename = filename
-    # hdrwcs.expname = pyfits.getval(filename, 'expname', ext=extnum)
-    # hdrwcs.extver = pyfits.getval(filename, 'extver', ext=extnum)
+    hdrwcs.expname = pyfits.getval(filename, 'expname', ext=extnum)
+    hdrwcs.extver = pyfits.getval(filename, 'extver', ext=extnum)
 
     return hdrwcs
 
