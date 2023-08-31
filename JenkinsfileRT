@@ -25,7 +25,7 @@ bc1.conda_packages = ['python=3.9']
 bc1.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
+bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata",
                 "codecov"]
 bc1.test_configs = [data_config]
 bc1.failedFailureThresh = 0
