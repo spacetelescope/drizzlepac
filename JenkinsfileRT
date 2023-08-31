@@ -22,7 +22,7 @@ bc1.nodetype = 'linux'
 bc1.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc1.name = '3.9'
 bc1.conda_packages = ['python=3.9']
-bc1.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson==0.5",
+bc1.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
 bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml results.xml --bigdata",
@@ -38,17 +38,15 @@ bc3 = new BuildConfig()
 bc3.runtime.add('CFLAGS=-std=gnu99')
 bc3.nodetype = 'linux'
 bc3.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
-bc3.name = '3.10-dev'
+bc3.name = '3.10'
 bc3.conda_packages = ['python=3.10']
-bc3.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson==0.5",
-		 "pip install -r requirements-dev.txt --upgrade -e '.[test]'",
+bc3.build_cmds = ["pip install numpy astropy ci-watson",
+		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc3.test_cmds = ["pytest --cov=./ --basetemp=tests_output --bigdata",
-                "codecov"]
 bc3.test_configs = [data_config]
 
 bc4 = utils.copy(bc3)
-bc4.name = '3.11-dev'
+bc4.name = '3.11'
 bc4.conda_packages = ['python=3.11']
 
 // Iterate over configurations that define the (distributed) build matrix.
