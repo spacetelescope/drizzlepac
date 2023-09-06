@@ -812,7 +812,6 @@ class HAPCatalogBase:
         self_scale = (self.image.keyword_dict['ndrizim'] - 1) / 2
         scale = max(self.param_dict['scale'], self_scale)
         self.tp_masks = None
-        import ipdb; ipdb.set_trace()
         if not self.image.blank:
             self.tp_masks = make_wht_masks(
                 self.image.wht_image, 
