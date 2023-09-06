@@ -812,12 +812,16 @@ class HAPCatalogBase:
         self_scale = (self.image.keyword_dict['ndrizim'] - 1) / 2
         scale = max(self.param_dict['scale'], self_scale)
         self.tp_masks = None
+        import ipdb; ipdb.set_trace()
         if not self.image.blank:
-            self.tp_masks = make_wht_masks(self.image.wht_image, self.image.inv_footprint_mask,
-                                           scale=scale,
-                                           sensitivity=self.param_dict['sensitivity'],
-                                           kernel=(self.param_dict['region_size'],
-                                                   self.param_dict['region_size']))
+            self.tp_masks = make_wht_masks(
+                self.image.wht_image, 
+                self.image.inv_footprint_mask,
+                scale=scale,
+                sensitivity=self.param_dict['sensitivity'],
+                kernel=(self.param_dict['region_size'],
+                self.param_dict['region_size'])
+                )
 
     def identify_sources(self, **pars):
         pass
@@ -2905,8 +2909,19 @@ def make_inv_mask(mask):
     return invmask
 
 
-def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11, 11)):
-
+def make_wht_masks(
+    whtarr: np.ndarray, # image weight arraay (dtype=float32), zeros outside of footprint
+    maskarr: np.ndarray, # mask array (dtype=bool), typically inverse of footprint 
+    scale: float = 1.5,
+    sensitivity: float = 0.95,
+    kernel: tuple = (11, 11)
+) -> np.ndarray: # list containing a dictionary 
+    """ Produces a list including a dictionary with the scale (float), wht_limit (float), 
+    mask (np.ndarray, dtype=int16), and rel_weight (np.ndarray, dtype=float32) with values 
+    between 0 and 1 (full weight). 
+    
+    """
+    
     invmask = make_inv_mask(maskarr)
 
     maxwht = ndimage.filters.maximum_filter(whtarr, size=kernel)
@@ -2917,16 +2932,19 @@ def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11, 11)
     limit = 1 / scale
     masks = []
     while delta < sensitivity:
-
         mask = rel_wht > limit
         mask = (mask.astype(np.uint16) * invmask) - master_mask
 
         new_delta = master_mask.sum() / mask.sum()
         if new_delta < sensitivity:
-            masks.append(dict(scale=limit,
-                              wht_limit=limit * maxwht.max(),
-                              mask=mask,
-                              rel_weight=rel_wht * mask))
+            masks.append(
+                dict(
+                    scale=limit,
+                    wht_limit=limit * maxwht.max(),
+                    mask=mask,
+                    rel_weight=rel_wht * mask,
+                )
+            )
 
         delta = new_delta
         master_mask = master_mask + mask
