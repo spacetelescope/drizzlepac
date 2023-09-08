@@ -25,7 +25,6 @@ conda:
   environment: doc/.rtd-environment.yml
 
 python:
-  system_packages: false
   install:
     - method: pip
       path: .
