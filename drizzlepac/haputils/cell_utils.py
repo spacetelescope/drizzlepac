@@ -1662,8 +1662,8 @@ def fill_row_k(imin, imax, k, S, J, sum_x, sum_x_sq, N):
     fill_row_k(i + 1, imax, k, S, J, sum_x, sum_x_sq, N)
 
 def fill_dp_matrix(data, S, J, K, N):
-    sum_x = np.zeros(N, dtype=np.float_)
-    sum_x_sq = np.zeros(N, dtype=np.float_)
+    sum_x = np.zeros(N, dtype=np.float64)
+    sum_x_sq = np.zeros(N, dtype=np.float64)
 
     # median. used to shift the values of x to improve numerical stability
     shift = data[N // 2]
@@ -1702,7 +1702,7 @@ def ckmeans(data, n_clusters):
     data.sort()
     n = len(data)
 
-    S = np.zeros((n_clusters, n), dtype=np.float_)
+    S = np.zeros((n_clusters, n), dtype=np.float64)
 
     J = np.zeros((n_clusters, n), dtype=np.uint64)
 
