@@ -1,7 +1,6 @@
 # Drizzlepac
 
-[![Build Status](https://dev.azure.com/spacetelescope/drizzlepac/_apis/build/status/spacetelescope.drizzlepac?branchName=master)](https://dev.azure.com/spacetelescope/drizzlepac/_build/latest?definitionId=2&branchName=master)
-[![Build Status](https://ssbjenkins.stsci.edu/job/STScI/job/drizzlepac/job/master/badge/icon)](https://ssbjenkins.stsci.edu/job/STScI/job/drizzlepac/job/master/)
+[![Build Status](https://github.com/spacetelescope/drizzlepac/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/drizzlepac/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/drizzlepac/badge/?version=latest)](http://drizzlepac.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/spacetelescope/drizzlepac/branch/master/graph/badge.svg)](https://codecov.io/gh/spacetelescope/drizzlepac)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3743274.svg)](https://doi.org/10.5281/zenodo.3743274)
