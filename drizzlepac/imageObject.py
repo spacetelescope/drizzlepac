@@ -3,7 +3,7 @@ A class which makes image objects for each input filename.
 
 :Authors: Warren Hack
 
-:License: :doc:`LICENSE`
+:License: :doc:`../LICENSE`
 
 """
 import copy, os, re, sys
@@ -1038,26 +1038,11 @@ class imageObject(baseImageObject):
         fimg.close()
         del fimg
 
-        if group not in [None,'']:
-            # Only use selected chip
-            if ',' in group:
-                group_id = group.split(',')
-                if group_id[0].isalpha(): # user specified a specific extname,extver
-                    self.group = [int(group_id[1])]
-                else: # user specified a list of extension numbers to process
-                    self.group = []
-                    for grp in group_id:
-                        # find extname/extver which corresponds to this extension number
-                        group_extname = self._image[int(grp)].header['EXTNAME']
-                        group_extver = self._image[int(grp)].header['EXTVER']
-                        self.group.append(group_extver)
-            else:
-                # find extname/extver which corresponds to this extension number
-                group_extver = self._image[int(group)].header['EXTVER']
-                self.group = [int(group_extver)]
-        else:
-            # Use all chips
-            self.group = None
+        self.group = util._parse_ext_spec(
+            hdulist=self._image,
+            extno=group,
+            extname=self.scienceExt
+        )
 
         if not self._isSimpleFits:
 

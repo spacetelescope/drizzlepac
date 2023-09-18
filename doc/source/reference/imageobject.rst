@@ -2,7 +2,7 @@
 .. _imageobject:
 
 ***********************
-``imageObject`` Classes
+imageObject Classes
 ***********************
 This class and related sub-classes manage all the instrument-specific
 images for processing by `~drizzlepac.astrodrizzle`.

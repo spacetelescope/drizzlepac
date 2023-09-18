@@ -24,16 +24,16 @@ are available.
 .. toctree::
    :maxdepth: 2
 
-   tweakreg
-   refimagefindpars
-   imagefindpars
-   image
-   wcscorr
-   tweakutils
-   updatehdr
-   mapreg
-   photeq
-   pixreplace
+   ../reference/tweakreg
+   ../reference/refimagefindpars
+   ../reference/imagefindpars
+   ../reference/image
+   ../reference/wcscorr
+   ../reference/tweakutils
+   ../reference/updatehdr
+   ../reference/mapreg
+   ../reference/photeq
+   ../reference/pixreplace
 
 
 ACS Header Update Task
@@ -45,7 +45,7 @@ This task should be used to update all ACS images prior to processing them with 
 .. toctree::
    :maxdepth: 2
 
-   updatenpol
+   ../reference/updatenpol
 
 
 ================================
@@ -59,6 +59,6 @@ distortion model specified in HST image headers.
 .. toctree::
    :maxdepth: 1
 
-   pixtopix
-   pixtosky
-   skytopix
+   ../reference/pixtopix
+   ../reference/pixtosky
+   ../reference/skytopix

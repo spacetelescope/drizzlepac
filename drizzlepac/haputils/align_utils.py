@@ -844,7 +844,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     fit_pars : dict
         Set of parameters and values to be used for the fit.  This should include
         ``fitgeom`` as well as any `tweakwcs.XYXYMatch
-        <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.XYXYMatch>`_
+        <https://tweakwcs.readthedocs.io/en/latest/source/matchutils.html>`_
         parameter which the user feels needs to be adjusted to work best with the input data.
 
     Returns
@@ -960,7 +960,7 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
     fit_pars : dict
         Set of parameters and values to be used for the fit.  This should include
         ``fitgeom`` as well as any `tweakwcs.XYXYMatch
-        <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.XYXYMatch>`_
+        <https://tweakwcs.readthedocs.io/en/latest/source/matchutils.html>`_
         parameter which the user feels needs to be adjusted to work best with the input data.
 
     Returns
@@ -1027,7 +1027,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     fit_pars : dict
         Set of parameters and values to be used for the fit.  This should include
         ``fitgeom`` as well as any `tweakwcs.XYXYMatch
-        <https://tweakwcs.readthedocs.io/en/latest/matchutils.html#tweakwcs.matchutils.XYXYMatch>`_
+        <https://tweakwcs.readthedocs.io/en/latest/source/matchutils.html>`_
         parameter which the user feels needs to be adjusted to work best with the input data.
 
     Returns

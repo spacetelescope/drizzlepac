@@ -3,7 +3,7 @@ Process input to MultiDrizzle/PyDrizzle.
 
 :Authors: Warren Hack
 
-:License: :doc:`LICENSE`
+:License: :doc:`../LICENSE`
 
 The input can be one of:
 
@@ -375,22 +375,11 @@ def applyContextPar(imageObjectList,contextpar):
 def _getInputImage (input, output=None, group=None):
     """ Factory function to return appropriate imageObject class instance"""
     # extract primary header and SCI,1 header from input image
-    sci_ext = 'SCI'
-    if group in [None,'']:
-        exten = '[sci,1]'
-        phdu = fits.getheader(input, memmap=False)
-    else:
-        # change to use fits more directly here?
-        if group.find(',') > 0:
-            grp = group.split(',')
-            if grp[0].isalpha():
-                grp = (grp[0],int(grp[1]))
-            else:
-                grp = int(grp[0])
-        else:
-            grp = int(group)
-        phdu = fits.getheader(input, memmap=False)
-        phdu.extend(fits.getheader(input, ext=grp, memmap=False))
+    phdu = fits.getheader(input, memmap=False)
+    grp = util._parse_ext_spec(input, extno=group, extname=None)
+    exten = '[sci,1]'
+    if grp is not None:
+        phdu.extend(fits.getheader(input, ext=grp[0], memmap=False))
 
     # Extract the instrument name for the data that is being processed by Multidrizzle
     _instrument = phdu['INSTRUME']

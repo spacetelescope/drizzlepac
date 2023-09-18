@@ -7,9 +7,9 @@ description = """
     generally to improve the fidelity of data in the final image.
     """
 readme = { file = 'README.md', content-type = 'text/x-rst' }
-requires-python = '>=3.8'
+requires-python = '>=3.9'
 license = { file = "LICENSE.txt" }
-authors = [{ name = 'Megan Sosey' }, { name = 'Warren Hack' }, { name = 'Christopher Hanley' }, { name = 'Chris Sontag' }, { name = 'Mihai Cara' }]
+authors = [{ name = 'Megan Sosey' }, { name = 'Warren Hack' }, { name = 'Christopher Hanley' }, { name = 'Chris Sontag' }, { name = 'Mihai Cara' }, { name = 'Steven Goldman' }]
 classifiers = [
     'Intended Audience :: Science/Research',
     "Topic :: Scientific/Engineering :: Astronomy",
@@ -25,7 +25,7 @@ dependencies = [
     'astropy>=5.0.4',
     'fitsblender>=0.4.2',
     'scipy',
-    'matplotlib<=3.6.3',
+    'matplotlib',
     'stsci.tools>=4.0',
     'stsci.image>=2.3.4',
     'stsci.imagestats',

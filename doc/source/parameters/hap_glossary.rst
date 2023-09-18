@@ -1,7 +1,7 @@
 .. _hap-glossary:
 
 ==================================
-Hubble Advanced Products Glossary
+HAP Glossary
 ==================================
 
 .. glossary::

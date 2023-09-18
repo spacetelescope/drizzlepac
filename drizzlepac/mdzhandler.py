@@ -4,7 +4,7 @@ processing as used in the pipeline.
 
 :Authors: Warren Hack, Ivo Busko, Christopher Hanley
 
-:License: :doc:`LICENSE`
+:License: :doc:`../LICENSE`
 
 """
 import string, os
