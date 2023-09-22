@@ -961,7 +961,7 @@ def determine_fit_quality(
             if catalogs_remaining:
                 log.warning(
                     "Not enough cross matches found between astrometric"
-                    " catalog and sources found in {}".format(image_name)
+                    " catalog and sources found in {} ()".format(image_name, num_xmatches)
                 )
                 continue
 
@@ -1158,7 +1158,7 @@ def determine_fit_quality(
     if not overall_valid:
         log.info("The fit solution for some or all of the images is not valid.")
     if max_rms_val > auto_good_rms or not overall_valid:
-        log.info("Try again with the next catalog")
+        log.info("Trying again with the next catalog, method, or geometry depending upon the current fitting cycle.")
     else:
         log.info("Fit calculations successful.")
 
