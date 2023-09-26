@@ -461,7 +461,7 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
     if rstr[0].startswith('Error'):
         # Try again without EPOCH
         serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, base_spec)
-        log.warning(f"Error accessing catalog service - getting catalog using: \n    {serviceUrl}")
+        log.warning(f"Problem accessing catalog service - getting catalog using: \n    {serviceUrl}")
         rawcat = requests.get(serviceUrl, headers=headers)
         r_contents = rawcat.content.decode()  # convert from bytes to a String
         rstr = r_contents.split('\r\n')
@@ -523,7 +523,7 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     spec = base_spec + epoch_str.format(epoch) if epoch else base_spec
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
-    log.debug("Getting catalog using: \n    {}".format(serviceUrl))
+    log.info(f"Getting catalog from footprint using: \n    {serviceUrl}")
 
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
@@ -533,7 +533,7 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     if rstr[0].startswith('Error'):
         # Try again without EPOCH
         serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, base_spec)
-        log.debug("Getting catalog using: \n    {}".format(serviceUrl))
+        log.warning(f"Problem accessing catalog service - getting catalog from footprint using: \n    {serviceUrl}")
         rawcat = requests.get(serviceUrl, headers=headers)
         r_contents = rawcat.content.decode()  # convert from bytes to a String
         rstr = r_contents.split('\r\n')
