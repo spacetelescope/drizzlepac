@@ -167,6 +167,7 @@ SUPPORTED_CATALOGS = {
                'mag': 'mag', 'objID': 'objID', 'epoch': 'epoch'},
     }
 
+log.info(f'ASTROMETRIC_CATALOG_URL = {SERVICELOCATION}')
 
 # CRBIT definitions
 CRBIT = 4096
