@@ -822,7 +822,6 @@ class HAPCatalogBase:
                 self.param_dict['region_size'])
                 )
 
-    # ? Unclear why these are here?
     def identify_sources(self, **pars):
         pass
 
@@ -2910,7 +2909,7 @@ def make_inv_mask(mask):
 
 
 def make_wht_masks(
-    whtarr: np.ndarray, # image weight arraay (dtype=float32), zeros outside of footprint
+    whtarr: np.ndarray, # image weight array (dtype=float32), zeros outside of footprint
     maskarr: np.ndarray, # mask array (dtype=bool), typically inverse of footprint 
     scale: float = 1.5,
     sensitivity: float = 0.95,
