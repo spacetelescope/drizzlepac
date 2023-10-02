@@ -78,6 +78,10 @@ class HAPProduct:
         self.filetype = filetype
         self.rules_file = None
 
+        # Special logic to specify the WFPC2 detector name always to PC (as opposed to WFPC2) for filenaming. 
+        if instrument =='wfpc2':
+            self.detector = 'pc'
+
         self.basename = (
             "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector])) + "_"
         )
