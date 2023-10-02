@@ -70,6 +70,11 @@ class HAPProduct:
         log.setLevel(log_level)
         self.log_level = log_level
 
+        # Special logic to specify the WFPC2 detector name always to PC (as opposed to WFPC2) for filenaming. 
+        if instrument =='wfpc2':
+            detector = 'pc'
+        # import ipdb; ipdb.set_trace()
+
         # Make sure the proposal ID is a 5-character string
         self.prop_id = prop_id.zfill(5)
         self.obset_id = obset_id
@@ -77,11 +82,7 @@ class HAPProduct:
         self.detector = detector
         self.filetype = filetype
         self.rules_file = None
-
-        # Special logic to specify the WFPC2 detector name always to PC (as opposed to WFPC2) for filenaming. 
-        if instrument =='wfpc2':
-            self.detector = 'pc'
-
+        
         self.basename = (
             "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector])) + "_"
         )
