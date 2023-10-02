@@ -42,7 +42,6 @@ jobs:
     with:
       envs: |
         - linux: check-style
-        - linux: check-build
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
     needs: [ crds ]

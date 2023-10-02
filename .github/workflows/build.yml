@@ -1,0 +1,19 @@
+name: build
+
+on:
+  release:
+    types: [ released ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/publish.yml@v1
+    with:
+      upload_to_pypi: ${{ (github.event_name == 'release') && (github.event.action == 'released') }}
+      targets: |
+        - cp3?-manylinux_x86_64
+        - cp3?-macosx_x86_64
+      sdist: true
+    secrets:
+      pypi_token: ${{ secrets.PYPI_PASSWORD_STSCI_MAINTAINER }}
