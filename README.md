@@ -22,10 +22,7 @@ can be found at:
 
 ## Conda (Recommended)
 
-```bash
-$ conda config --add channels http://ssb.stsci.edu/astroconda
-$ conda create -n astroconda stsci
-```
+``Drizzlepac`` is installed when you install the ``stenv`` conda environment, formerly (astropy). Select your desired release through the [stenv readthedocs page](https://stenv.readthedocs.io/en/latest/getting_started.html) and follow the instructions for installation. 
 
 ## From Source
 
