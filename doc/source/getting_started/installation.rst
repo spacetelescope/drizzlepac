@@ -37,17 +37,6 @@ Install drizzlepac
 
 .. code-block:: shell
 
-    python setup.py install
-
-SUPPORT for PIP Installation:
-*****************************
-
-Installation tools are evolving to rely on commands such as ``pip`` 
-to build and install software.  This package can now be installed 
-using the following command:
-
-.. code-block:: shell
-
     pip install .
 
 The option ``--no-use-pep517`` MAY be required in order to correctly build 
