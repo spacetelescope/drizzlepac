@@ -28,7 +28,8 @@ this step.
 
 .. code-block:: shell
 
-    python setup.py build_sphinx
+    cd doc/
+    make html
 
 
 Install drizzlepac
