@@ -22,7 +22,7 @@ can be found at:
 
 ## Conda (Recommended)
 
-``Drizzlepac`` is installed when you install the ``stenv`` conda environment, formerly (astropy). Select your desired release through the [stenv readthedocs page](https://stenv.readthedocs.io/en/latest/getting_started.html) and follow the instructions for installation. 
+`Drizzlepac` is installed when you install the `stenv` conda environment (a replacement for `astroconda`). Select your desired release and follow the instructions on the [`stenv` installation page](https://stenv.readthedocs.io/en/latest/getting_started.html). 
 
 ## From Source
 
