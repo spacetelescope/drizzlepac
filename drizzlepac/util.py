@@ -1174,7 +1174,7 @@ def base_taskname(taskname, packagename=None):
     ----------
     taskname : str, None
         Full task name. If it is ``None``, :py:func:`base_taskname` will
-        return ``None``\ .
+        return ``None`` .
 
     packagename : str, None (Default = None)
         Package name. It is assumed that a compound task name is formed by
