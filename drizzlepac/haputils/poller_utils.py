@@ -482,7 +482,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 # mvm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
                 #
                 prod_list = prod_info.split(" ")
-                multi_scale = prod_list[2].upper() in ['IR']
+                multi_scale = prod_list[2].upper() in ['IR', 'PC']
                 pscale = 'fine' if not multi_scale else 'coarse'
                 prod_info += " {:s}".format(pscale)
 
