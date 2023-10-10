@@ -1,0 +1,19 @@
+{
+    "alignment": {
+        "all": "wfpc2/pc/wfpc2_pc_alignment_all.json"
+    },
+    "astrodrizzle": {
+        "any_n1": "wfpc2/pc/wfpc2_pc_astrodrizzle_any_n1.json",
+        "filter_basic": "wfpc2/pc/wfpc2_pc_astrodrizzle_any_total.json",
+        "single_basic": "wfpc2/pc/wfpc2_pc_astrodrizzle_any_n1.json",
+        "wfpc2_pc_any_n2": "wfpc2/pc/wfpc2_pc_astrodrizzle_any_n2.json",
+        "wfpc2_pc_any_n4": "wfpc2/pc/wfpc2_pc_astrodrizzle_any_n4.json",
+        "wfpc2_pc_any_total": "wfpc2/pc/wfpc2_pc_astrodrizzle_any_total.json"
+    },
+    "catalog generation": {
+        "all": "wfpc2/pc/wfpc2_pc_catalog_generation_all.json"
+    },
+    "quality control": {
+        "all": "wfpc2/pc/wfpc2_pc_quality_control_all.json"
+    }
+}
