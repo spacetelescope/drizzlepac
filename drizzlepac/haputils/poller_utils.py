@@ -482,7 +482,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 # mvm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
                 #
                 prod_list = prod_info.split(" ")
-                multi_scale = prod_list[2].upper() in ['IR', 'PC']
+                multi_scale = prod_list[2].upper() in ['IR']
                 pscale = 'fine' if not multi_scale else 'coarse'
                 prod_info += " {:s}".format(pscale)
 
@@ -931,10 +931,26 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
         poller_dtype = POLLER_DTYPE
 
     datasets = []
+    
+    # limit column string types to minimum length formats e.g. str8, str11, etc. 
     obs_converters = {'col4': [ascii.convert_numpy(np.str_)]}
+
     if isinstance(input, str):
         input_table = ascii.read(input, format='no_header', converters=obs_converters)
-        if len(input_table.columns) == len(poller_colnames):
+        
+        if len(input_table.columns) == 1:
+            input_table.columns[0].name = 'filename'
+            is_poller_file = False # gets important keywords from file headers instead of poller file
+            
+        # unique logic to collect wfpc2 aperture data from poller file
+        if len(input_table.columns) == 2:
+            input_table.columns[0].name = 'filename'
+            input_table.columns[1].name = 'aperture'
+            # add dtype for aperture column
+            poller_dtype+=('str',)
+            is_poller_file = False
+        
+        elif len(input_table.columns) == len(poller_colnames):
             # We were provided a poller file
             # Now assign column names to table
             for i, colname in enumerate(poller_colnames):
@@ -1012,10 +1028,12 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
                     err_msg = "Input image {} missing from current working directory and from the path specified in the poller file. Exiting... ".format(table_line['filename'])
                     log.error(err_msg)
                     raise Exception(err_msg)
-        elif len(input_table.columns) == 1:
-            input_table.columns[0].name = 'filename'
-            is_poller_file = False
-
+                
+        # input is string with unexpected number of columns
+        else:
+            log.error(f'Poller file has an unexpected number of columns, code expects either 1, 2, or {len(poller_colnames)} but received: {len(input_table.columns)}')
+            raise ValueError
+        
         # Since a poller file was the input, it is assumed all the input
         # data is in the locale directory so just collect the filenames.
         # datasets = input_table[input_table.colnames[0]].tolist()
@@ -1023,6 +1041,7 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
 
     elif isinstance(input, list):
         filenames = input
+        input_table= None
 
     else:
         id = '[poller_utils.build_poller_table] '
@@ -1066,7 +1085,10 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
     for cname in poller_colnames:
         cols[cname] = []
     cols['filename'] = usable_datasets
-
+    if input_table:
+        if 'aperture' in input_table.colnames:
+            cols['aperture'] = input_table['aperture'].tolist()
+        
     # If MVM processing and a poller file is the input, this implies there is
     # only one skycell of interest for all the listed filenames in the poller
     # file. Establish the WCS, but no need for discovery of overlapping skycells
@@ -1120,7 +1142,6 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
         poller_names = [colname for colname in cols]
         poller_table = Table(data=poller_data, names=poller_names,
                              dtype=poller_dtype)
-
     # The input was a poller file, so just keep the viable data rows for output
     else:
         good_rows = []
@@ -1184,7 +1205,7 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
             sys.exit(0)
 
         poller_table = new_poller_table
-
+        
     return poller_table
 
 
