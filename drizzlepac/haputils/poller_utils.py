@@ -146,7 +146,8 @@ def interpret_obset_input(results, log_level):
     # Now create the output product objects
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_obset_tree(obset_tree, log_level)
-
+    import ipdb; ipdb.set_trace()
+    
     # This little bit of code adds an attribute to single exposure objects that is True
     # if a given filter only contains one input (e.g. n_exp = 1)
     for tot_obj in tdp_list:
@@ -198,7 +199,7 @@ def build_obset_tree(obset_table):
 def create_row_info(row):
     """Build info string for a row from the obset table"""
     info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
-                 row['detector'], row['filename'][:row['filename'].find('_')], row['filters']]
+                 row['detector'], row['filename'][:row['filename'].find('_')], row['filters'], row['aperture']]
     return ' '.join(map(str.upper, info_list)), row['filename']
 
 
@@ -888,9 +889,12 @@ def determine_filter_name(raw_filter):
 # ------------------------------------------------------------------------------
 
 
-def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm',
+def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], poller_type='svm',
                        include_small=True, only_cte=False):
-    """Create a poller file from dataset names.
+    """Create a poller file from dataset names for either SMV or MVM processing. Information is either gathered 
+    from the poller file or by using the filename to open the file and pulling information from the header keywords. 
+    The code treats WFPC2 differently, by uses both approaches. For WFPC2, We use simple poller files with a second column 
+    that includes the aperture. The code gathers the rest of the relevant informaiton from the header keywords.
 
     Parameters
     -----------
@@ -942,7 +946,7 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
             input_table.columns[0].name = 'filename'
             is_poller_file = False # gets important keywords from file headers instead of poller file
             
-        # unique logic to collect wfpc2 aperture data from poller file
+        # unique logic to collect WFPC2 aperture data from poller file
         if len(input_table.columns) == 2:
             input_table.columns[0].name = 'filename'
             input_table.columns[1].name = 'aperture'
@@ -1039,6 +1043,7 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
         # datasets = input_table[input_table.colnames[0]].tolist()
         filenames = list(input_table.columns[0])
 
+    # If input is a list of filenames
     elif isinstance(input, list):
         filenames = input
         input_table= None
