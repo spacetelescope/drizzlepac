@@ -146,7 +146,6 @@ def interpret_obset_input(results, log_level):
     # Now create the output product objects
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_obset_tree(obset_tree, log_level)
-    import ipdb; ipdb.set_trace()
     
     # This little bit of code adds an attribute to single exposure objects that is True
     # if a given filter only contains one input (e.g. n_exp = 1)
