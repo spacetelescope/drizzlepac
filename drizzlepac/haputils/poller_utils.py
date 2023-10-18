@@ -127,7 +127,6 @@ def interpret_obset_input(results, log_level):
     """
     # set logging level to user-specified level
     log.setLevel(log_level)
-
     log.debug("Interpret the poller file for the observation set.")
     obset_table = build_poller_table(results, log_level)
     # Add INSTRUMENT column
@@ -946,7 +945,7 @@ def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], polle
             is_poller_file = False # gets important keywords from file headers instead of poller file
             
         # unique logic to collect WFPC2 aperture data from poller file
-        if len(input_table.columns) == 2:
+        elif len(input_table.columns) == 2:
             input_table.columns[0].name = 'filename'
             input_table.columns[1].name = 'aperture'
             # add dtype for aperture column
@@ -1092,6 +1091,8 @@ def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], polle
     if input_table:
         if 'aperture' in input_table.colnames:
             cols['aperture'] = input_table['aperture'].tolist()
+        else:
+            cols['aperture'] = [' '] * len(usable_datasets)
         
     # If MVM processing and a poller file is the input, this implies there is
     # only one skycell of interest for all the listed filenames in the poller
