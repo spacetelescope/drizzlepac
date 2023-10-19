@@ -197,7 +197,7 @@ def build_obset_tree(obset_table):
 def create_row_info(row):
     """Build info string for a row from the obset table"""
     info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
-                 row['detector'], row['filename'][:row['filename'].find('_')], row['filters'], row['aperture']]
+                 row['detector'], row['aperture'], row['filename'][:row['filename'].find('_')], row['filters']]
     return ' '.join(map(str.upper, info_list)), row['filename']
 
 
@@ -675,11 +675,11 @@ def parse_obset_tree(det_tree, log_level):
                     is_grism = True
                     filt_indx -= 1
                     grism_sep_obj = GrismExposureProduct(prod_list[0], prod_list[1], prod_list[2],
-                                                         prod_list[3], filename[1], prod_list[5],
-                                                         prod_list[6], log_level)
+                                                         prod_list[3], prod_list[4], filename[1], prod_list[6],
+                                                         prod_list[7], log_level)
                 else:
-                    sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                              filename[1], prod_list[5], prod_list[6], log_level)
+                    sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4],
+                                              filename[1], prod_list[6], prod_list[7], log_level)
                 # Now that we have defined the ExposureProduct for this input exposure,
                 # do not include it any total or filter product.
                 if not is_member:
@@ -699,7 +699,7 @@ def parse_obset_tree(det_tree, log_level):
 
                         # Create a filter product object for this instrument/detector
                         filt_obj = FilterProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                                 prod_list[4], prod_list[5], prod_list[6], log_level)
+                                                 prod_list[4], prod_list[5], prod_list[6], prod_list[7], log_level)
                     # Append exposure object to the list of exposure objects for this specific filter product object
                     filt_obj.add_member(sep_obj)
                     # Populate filter product dictionary with input filename
@@ -712,7 +712,7 @@ def parse_obset_tree(det_tree, log_level):
 
                     # Create a total detection product object for this instrument/detector
                     tdp_obj = TotalProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                           prod_list[4], prod_list[6], log_level)
+                                           prod_list[4], prod_list[5], prod_list[7], log_level)
 
                 if not is_grism:
                     # Append exposure object to the list of exposure objects for this specific total detection product
