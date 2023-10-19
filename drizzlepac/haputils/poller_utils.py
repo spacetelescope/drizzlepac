@@ -1019,17 +1019,23 @@ def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], polle
             # an exception and exit.
             for table_line in input_table:
                 if os.path.exists(table_line['filename']):
-                    log.info("Input image {} found in current working directory.".format(table_line['filename']))
+                    log.info(f"Input image {table_line['filename']} found in current working directory.")
                 elif os.path.exists(table_line['pathname']):
-                    log.info("Input image {} not found in current working directory. However, it was found in the path specified in the poller file.".format(table_line['filename']))
+                    log.info(f"Input image {table_line['filename']} not found in current working directory. However, it was found in the path specified in the poller file.")
                     shutil.copy(table_line['pathname'], os.getcwd())
-                    log.info("Input image {} copied to current working directory.".format(table_line['pathname']))
+                    log.info(f"Input image {table_line['pathname']} copied to current working directory.")
                 else:
-                    log.error("Input image {} not found in current working directory.".format(table_line['filename']))
-                    log.error("Archived input image {} not found.".format(table_line['pathname']))
-                    err_msg = "Input image {} missing from current working directory and from the path specified in the poller file. Exiting... ".format(table_line['filename'])
+                    log.error(f"Input image {table_line['filename']} not found in current working directory.")
+                    log.error(f"Archived input image {table_line['pathname']} not found.")
+                    err_msg = f"Input image {table_line['filename']} missing from current working directory and from the path specified in the poller file. Exiting... "
                     log.error(err_msg)
                     raise Exception(err_msg)
+        
+        elif (poller_type == 'mvm') & (len(input_table.columns) != len(poller_colnames)):
+            log.error(f"MVMs should use full poller files with {len(poller_colnames)} columns.")
+            err_msg = f"Full poller files should have {len(poller_colnames)} columns. Exiting... "
+            log.error(err_msg)
+            raise Exception(err_msg)
                 
         # input is string with unexpected number of columns
         else:
