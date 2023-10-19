@@ -64,7 +64,7 @@ class HAPProduct:
     """
 
     def __init__(
-        self, prop_id, obset_id, instrument, detector, filename, filetype, log_level
+        self, prop_id, obset_id, instrument, detector, aperture, filename, filetype, log_level
     ):
         # set logging level to user-specified level
         log.setLevel(log_level)
@@ -79,6 +79,7 @@ class HAPProduct:
         self.obset_id = obset_id
         self.instrument = instrument
         self.detector = detector
+        self.aperture = aperture
         self.filetype = filetype
         self.rules_file = None
         self.basename = (
@@ -536,13 +537,13 @@ class TotalProduct(HAPProduct):
     """
 
     def __init__(
-        self, prop_id, obset_id, instrument, detector, filename, filetype, log_level
+        self, prop_id, obset_id, instrument, detector, aperture, filename, filetype, log_level
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture, filename, filetype, log_level
         )
         self.info = "_".join(
-            [prop_id, obset_id, instrument, detector, filename, filetype]
+            [prop_id, obset_id, instrument, detector, aperture, filename, filetype]
         )
         self.exposure_name = filename[0:6]
 
@@ -702,17 +703,18 @@ class FilterProduct(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture,
         filename,
         filters,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture, filename, filetype, log_level
         )
 
         self.info = "_".join(
-            [prop_id, obset_id, instrument, detector, filename, filters, filetype]
+            [prop_id, obset_id, instrument, detector, aperture, filename, filters, filetype]
         )
         if filename[0:7].lower() != "metawcs":
             self.exposure_name = filename[0:6]
@@ -849,17 +851,18 @@ class ExposureProduct(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture, 
         filename,
         filters,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture, filename, filetype, log_level
         )
 
         self.info = "_".join(
-            [prop_id, obset_id, instrument, detector, filename, filters, filetype]
+            [prop_id, obset_id, instrument, detector, aperture, filename, filters, filetype]
         )
         self.filters = filters
         self.full_filename = self.copy_exposure(filename)
@@ -1014,17 +1017,18 @@ class GrismExposureProduct(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture,
         filename,
         filters,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture, filename, filetype, log_level
         )
 
         self.info = "_".join(
-            [prop_id, obset_id, instrument, detector, filename, filters, filetype]
+            [prop_id, obset_id, instrument, detector, aperture, filename, filters, filetype]
         )
         self.filters = filters
         self.full_filename = self.copy_exposure(filename)
@@ -1110,13 +1114,14 @@ class SkyCellExposure(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture,
         filename,
         layer,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture, filename, filetype, log_level
         )
 
         filter_str = layer[0]
@@ -1345,13 +1350,14 @@ class SkyCellProduct(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture,
         skycell_name,
         layer,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, skycell_name, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture, skycell_name, filetype, log_level
         )
         # May need to exclude 'filter' component from layer_str
         filter_str = layer[0]
@@ -1369,7 +1375,7 @@ class SkyCellProduct(HAPProduct):
         layer_scale = layer[1]
 
         self.info = "_".join(
-            ["hst", skycell_name, instrument, detector, filter_str, layer_str]
+            ["hst", skycell_name, instrument, detector, aperture, filter_str, layer_str]
         )
         self.exposure_name = skycell_name
         self.cell_id = skycell_name.strip("skycell-")
