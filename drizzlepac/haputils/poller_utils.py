@@ -939,9 +939,10 @@ def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], polle
 
     if isinstance(input, str):
         input_table = ascii.read(input, format='no_header', converters=obs_converters)
-        
         if len(input_table.columns) == 1:
             input_table.columns[0].name = 'filename'
+            input_table['aperture']= 'empty_aperture'
+            poller_dtype+=('str',)
             is_poller_file = False # gets important keywords from file headers instead of poller file
             
         # unique logic to collect WFPC2 aperture data from poller file
@@ -1098,7 +1099,10 @@ def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], polle
         if 'aperture' in input_table.colnames:
             cols['aperture'] = input_table['aperture'].tolist()
         else:
-            cols['aperture'] = [' '] * len(usable_datasets)
+            cols['aperture'] = ['aperture'] * len(usable_datasets)
+            poller_dtype+=('str',)
+    else:
+        raise ValueError("Input table is empty. Exiting...")
         
     # If MVM processing and a poller file is the input, this implies there is
     # only one skycell of interest for all the listed filenames in the poller
@@ -1160,6 +1164,7 @@ def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], polle
             for i, old_row in enumerate(input_table):
                 if d == input_table['filename'][i]:
                     good_rows.append(old_row)
+        import ipdb; ipdb.set_trace()
 
         # This table contains the pipeline specified skycell_id for each row
         # which should be the same value in every row

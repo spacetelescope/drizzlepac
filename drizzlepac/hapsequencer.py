@@ -769,7 +769,6 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
             gaia_obj = product.FilterProduct(prod_list[0], prod_list[1], prod_list[2],
                                              prod_list[3], prod_list[4], prod_list[5], "all",
                                              prod_list[6][0:3], log_level)
-            import ipdb; ipdb.set_trace()
             gaia_obj.configobj_pars = tot_obj.configobj_pars
         gaia_obj.add_member(exp_obj)
 
