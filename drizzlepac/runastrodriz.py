@@ -200,7 +200,7 @@ wcs_preference = ['IDC_?????????-FIT_REL_GAIA*3', 'IDC_?????????-FIT_IMG_GAIA*3'
 # Primary user interface
 def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             headerlets=True, align_to_gaia=True, force_alignment=False,
-            do_verify_guiding=True, debug=False, make_manifest=False):
+            do_verify_guiding=False, debug=False, make_manifest=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
@@ -277,7 +277,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     else:
         # start by turning off 'verify_guiding' since loss of lock
         # was exceedingly rare and noted in the quality keywords
-        # which get checked in '_anayze_exposure'.
+        # which get checked in '_analyze_exposure'.
         do_verify_guiding = False
         # Convert input c0m file into compatible flt file
         if 'd0m' in inFilename:
