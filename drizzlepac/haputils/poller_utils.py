@@ -671,7 +671,7 @@ def parse_obset_tree(det_tree, log_level):
 
                 # Determine if this image is a Grism/Prism or a nominal direct exposure
                 is_grism = False
-                if prod_list[5].lower().find('g') != -1 or prod_list[5].lower().find('pr') != -1:
+                if prod_list[6].lower().find('g') != -1 or prod_list[6].lower().find('pr') != -1:
                     is_grism = True
                     filt_indx -= 1
                     grism_sep_obj = GrismExposureProduct(prod_list[0], prod_list[1], prod_list[2],
@@ -704,7 +704,6 @@ def parse_obset_tree(det_tree, log_level):
                     filt_obj.add_member(sep_obj)
                     # Populate filter product dictionary with input filename
                     obset_products[fprod]['files'].append(filename[1])
-
                 # Set up the total detection product dictionary and create a total detection product object
                 # Initialize `info` key for total detection product
                 if not obset_products[totprod]['info']:
@@ -713,7 +712,6 @@ def parse_obset_tree(det_tree, log_level):
                     # Create a total detection product object for this instrument/detector
                     tdp_obj = TotalProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
                                            prod_list[4], prod_list[5], prod_list[7], log_level)
-
                 if not is_grism:
                     # Append exposure object to the list of exposure objects for this specific total detection product
                     tdp_obj.add_member(sep_obj)
@@ -1099,7 +1097,7 @@ def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], polle
         if 'aperture' in input_table.colnames:
             cols['aperture'] = input_table['aperture'].tolist()
         else:
-            cols['aperture'] = ['aperture'] * len(usable_datasets)
+            cols['aperture'] = ['empty_aperture'] * len(usable_datasets)
             poller_dtype+=('str',)
     else:
         raise ValueError("Input table is empty. Exiting...")
@@ -1164,7 +1162,6 @@ def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], polle
             for i, old_row in enumerate(input_table):
                 if d == input_table['filename'][i]:
                     good_rows.append(old_row)
-        import ipdb; ipdb.set_trace()
 
         # This table contains the pipeline specified skycell_id for each row
         # which should be the same value in every row
