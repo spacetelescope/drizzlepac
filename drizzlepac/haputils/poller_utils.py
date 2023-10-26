@@ -64,7 +64,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # -----------------------------------------------------------------------------
 # Single Visit Processing Functions
 #
-def interpret_obset_input(results, log_level):
+def interpret_obset_input(results: str, log_level):
     """
 
     Parameters
@@ -885,7 +885,7 @@ def determine_filter_name(raw_filter):
 # ------------------------------------------------------------------------------
 
 
-def build_poller_table(input: str | list, log_level, all_mvm_exposures=[], poller_type='svm',
+def build_poller_table(input: str, log_level, all_mvm_exposures=[], poller_type='svm',
                        include_small=True, only_cte=False):
     """Create a poller file from dataset names for either SMV or MVM processing. Information is either gathered 
     from the poller file or by using the filename to open the file and pulling information from the header keywords. 
