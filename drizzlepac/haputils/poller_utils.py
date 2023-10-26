@@ -91,38 +91,50 @@ def interpret_obset_input(results: str, log_level):
     Interpret the database query for a given obset to prepare the returned
     values for use in generating the names of all the expected output products.
 
-    Input will have format of::
-
+    Input will have formated rows of one of the following three options::
+    
+    1) Full poller file
         ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,/foo/bar/ib4606c5q_flc.fits
+        
+    2) Simpler poller file (list); other info taken from file header keywords
+        ib4606c5q_flc.fits
+        
+    3) For updating the WFPC2 SVM aperture keyword using the poller file; it
+        is important that there are no spaces within the poller aperture keyword(s)
+    
+        ib4606c5q_flc.fits, PC1-FIX;F160BN15
 
-    which are filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname.
+    Full poller files contain filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname.
 
     The output dict will have format (as needed by further code for creating the product filenames) of::
 
-        obs_info_dict["single exposure product 00": {"info": '11665 06 wfc3 uvis ib4606c5q f555w drc',
+        obs_info_dict["single exposure product 00": {"info": '11665 06 wfc3 uvis empty_aperture ib4606c5q f555w drc',
                                                      "files": ['ib4606c5q_flc.fits']}
         .
         .
         .
-        obs_info_dict["single exposure product 08": {"info": '11665 06 wfc3 ir ib4606clq f110w drz',
+        obs_info_dict["single exposure product 08": {"info": '11665 06 wfc3 ir empty_aperture ib4606clq f110w drz',
                                                      "files": ['ib4606clq_flt.fits']}
 
-        obs_info_dict["filter product 00": {"info": '11665 06 wfc3 uvis ib4606c5q f555w drc',
+        obs_info_dict["filter product 00": {"info": '11665 06 wfc3 uvis empty_aperture ib4606c5q f555w drc',
                                             "files": ['ib4606c5q_flc.fits', 'ib4606c6q_flc.fits']},
         .
         .
         .
-        obs_info_dict["filter product 01": {"info": '11665 06 wfc3 ir ib4606cmq f160w drz',
+        obs_info_dict["filter product 01": {"info": '11665 06 wfc3 ir empty_aperture ib4606cmq f160w drz',
                                             "files": ['ib4606cmq_flt.fits', 'ib4606crq_flt.fits']},
 
 
-        obs_info_dict["total detection product 00": {"info": '11665 06 wfc3 uvis ib4606c5q f555w drc',
+        obs_info_dict["total detection product 00": {"info": '11665 06 wfc3 uvis empty_aperture ib4606c5q f555w drc',
                                                      "files": ['ib4606c5q_flc.fits', 'ib4606c6q_flc.fits']}
         .
         .
         .
-        obs_info_dict["total detection product 01": {"info": '11665 06 wfc3 ir ib4606cmq f160w drz',
+        obs_info_dict["total detection product 01": {"info": '11665 06 wfc3 ir empty_aperture ib4606cmq f160w drz',
                                                      "files": ['ib4606cmq_flt.fits', 'ib4606crq_flt.fits']}
+
+    The aperture keyword, which has a default value of 'empty_aperture' is filled in the case of WFPC2 observations,
+    and the use of the two-column format. 
 
     """
     # set logging level to user-specified level
@@ -728,7 +740,7 @@ def parse_obset_tree(det_tree, log_level):
                     if is_ccd and len(filt_obj.edp_list) == 1:
                         for e in filt_obj.edp_list:
                             e.crclean = True
-
+                    import ipdb;ipdb.set_trace()
                 elif is_grism:
                     tdp_obj.add_grism_member(grism_sep_obj)
 
