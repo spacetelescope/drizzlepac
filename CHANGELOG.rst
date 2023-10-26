@@ -21,6 +21,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.6.2rc0 (unreleased)
 =====================
 
+- Added functionality to allow the use of a two-column poller file. This is used
+  to update the WFPC2 SVM aperture header keywords from the values in the poller 
+  file.
+
 - Removed the version restriction on matplotlib. [#1649]
 
 - Forced a preferential order on the final selection of the WCS solution 
