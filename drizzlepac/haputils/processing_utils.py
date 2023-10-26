@@ -171,10 +171,12 @@ def refine_product_headers(product, total_obj_list):
         phdu['filter'] = get_acs_filters(hdu, delimiter=';')
         
     # WFPC2 update aperture if in poller file
-    if total_obj_list[0].aperture != 'empty_aperture':
+    if (total_obj_list[0].aperture != 'empty_aperture') & (phdu['instrume'] =='WFPC2'):
         log.info(f"Updating aperture header keyword from {phdu['aperture']} to {total_obj_list[0].aperture}")
         phdu['aperture'] = total_obj_list[0].aperture
-
+    else:
+        log.debug("Not updating aperture keyword.")
+        
     # Insure PHOT* keywords are always in SCI extension
     for pkw in PHOT_KEYWORDS:
         if pkw in phdu:
