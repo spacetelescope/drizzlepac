@@ -671,15 +671,18 @@ def parse_obset_tree(det_tree, log_level):
                 sep_indx += 1
 
                 # Create a single exposure product object
-                #
-                # The prod_list[5] is the filter - use this information to distinguish between
+                
+                # The GrismExposureProduct is only an attribute of the TotalProduct.
+                prod_list = exp_prod_info.split(" ")
+                
+                # prod_list is 0: proposal_id, 1:observation_id, 2:instrument, 3:detector, 
+                # 4:aperture_from_poller, 5:filename, 6:filters, 7:filetype
+                
+                # The prod_list[6] is the filter - use this information to distinguish between
                 # a direct exposure for drizzling (ExposureProduct) and an exposure
                 # (GrismExposureProduct) which is carried along (Grism/Prism) to make analysis
                 # easier for the user by having the same WCS in both the direct and
                 # Grism/Prism products.
-                #
-                # The GrismExposureProduct is only an attribute of the TotalProduct.
-                prod_list = exp_prod_info.split(" ")
 
                 # Determine if this image is a Grism/Prism or a nominal direct exposure
                 is_grism = False
@@ -740,7 +743,6 @@ def parse_obset_tree(det_tree, log_level):
                     if is_ccd and len(filt_obj.edp_list) == 1:
                         for e in filt_obj.edp_list:
                             e.crclean = True
-                    import ipdb;ipdb.set_trace()
                 elif is_grism:
                     tdp_obj.add_grism_member(grism_sep_obj)
 
