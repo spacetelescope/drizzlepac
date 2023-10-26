@@ -1097,7 +1097,8 @@ def build_poller_table(input: str, log_level, all_mvm_exposures=[], poller_type=
         if 'aperture' in input_table.colnames:
             cols['aperture'] = input_table['aperture'].tolist()
         else:
-            cols['aperture'] = ['empty_aperture'] * len(usable_datasets)
+            add_col = Column(['empty_aperture'] * len(usable_datasets), name='aperture', dtype='str')
+            input_table.add_column(add_col, index=7)
             poller_dtype+=('str',)
     else:
         raise ValueError("Input table is empty. Exiting...")
