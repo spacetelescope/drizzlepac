@@ -162,7 +162,7 @@ focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
               "ACS/WFC": {'sigma': 1.5, 'good_bits': 1360},
               "ACS/SBC": {'sigma': 2.0, 'good_bits': 0},
               "ACS/HRC": {'sigma': 1.5, 'good_bits': 1360},
-              "WFPC2/WFPC2": {'sigma': 1.5, 'good_bits': 1360}}
+              "WFPC2/PC": {'sigma': 1.5, 'good_bits': 1360}}
 
 sub_dirs = ['OrIg_files', 'pipeline-default']
 valid_alignment_modes = ['apriori', 'aposteriori', 'default-pipeline']
@@ -200,7 +200,7 @@ wcs_preference = ['IDC_?????????-FIT_REL_GAIA*3', 'IDC_?????????-FIT_IMG_GAIA*3'
 # Primary user interface
 def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             headerlets=True, align_to_gaia=True, force_alignment=False,
-            do_verify_guiding=True, debug=False, make_manifest=False):
+            do_verify_guiding=False, debug=False, make_manifest=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
@@ -277,7 +277,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     else:
         # start by turning off 'verify_guiding' since loss of lock
         # was exceedingly rare and noted in the quality keywords
-        # which get checked in '_anayze_exposure'.
+        # which get checked in '_analyze_exposure'.
         do_verify_guiding = False
         # Convert input c0m file into compatible flt file
         if 'd0m' in inFilename:

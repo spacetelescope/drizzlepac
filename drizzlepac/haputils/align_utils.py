@@ -174,7 +174,7 @@ class AlignmentTable:
                 hdr0 = fits.getheader(img)
                 instrume = hdr0.get('instrume')
                 if instrume.lower() == 'wfpc2' and 'detector' not in hdr0:
-                    detector = 'WFPC2'
+                    detector = 'PC'
                 else:
                     detector = hdr0.get('detector')
 

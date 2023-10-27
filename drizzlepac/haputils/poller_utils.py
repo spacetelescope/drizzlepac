@@ -64,7 +64,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 # -----------------------------------------------------------------------------
 # Single Visit Processing Functions
 #
-def interpret_obset_input(results, log_level):
+def interpret_obset_input(results: str, log_level):
     """
 
     Parameters
@@ -91,43 +91,54 @@ def interpret_obset_input(results, log_level):
     Interpret the database query for a given obset to prepare the returned
     values for use in generating the names of all the expected output products.
 
-    Input will have format of::
-
+    Input will have formated rows of one of the following three options::
+    
+    1) Full poller file
         ib4606c5q_flc.fits,11665,B46,06,1.0,F555W,UVIS,/foo/bar/ib4606c5q_flc.fits
+        
+    2) Simpler poller file (list); other info taken from file header keywords
+        ib4606c5q_flc.fits
+        
+    3) For updating the WFPC2 SVM aperture keyword using the poller file; it
+        is important that there are no spaces within the poller aperture keyword(s)
+    
+        ib4606c5q_flc.fits, PC1-FIX;F160BN15
 
-    which are filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname.
+    Full poller files contain filename, proposal_id, program_id, obset_id, exptime, filters, detector, pathname.
 
     The output dict will have format (as needed by further code for creating the product filenames) of::
 
-        obs_info_dict["single exposure product 00": {"info": '11665 06 wfc3 uvis ib4606c5q f555w drc',
+        obs_info_dict["single exposure product 00": {"info": '11665 06 wfc3 uvis empty_aperture ib4606c5q f555w drc',
                                                      "files": ['ib4606c5q_flc.fits']}
         .
         .
         .
-        obs_info_dict["single exposure product 08": {"info": '11665 06 wfc3 ir ib4606clq f110w drz',
+        obs_info_dict["single exposure product 08": {"info": '11665 06 wfc3 ir empty_aperture ib4606clq f110w drz',
                                                      "files": ['ib4606clq_flt.fits']}
 
-        obs_info_dict["filter product 00": {"info": '11665 06 wfc3 uvis ib4606c5q f555w drc',
+        obs_info_dict["filter product 00": {"info": '11665 06 wfc3 uvis empty_aperture ib4606c5q f555w drc',
                                             "files": ['ib4606c5q_flc.fits', 'ib4606c6q_flc.fits']},
         .
         .
         .
-        obs_info_dict["filter product 01": {"info": '11665 06 wfc3 ir ib4606cmq f160w drz',
+        obs_info_dict["filter product 01": {"info": '11665 06 wfc3 ir empty_aperture ib4606cmq f160w drz',
                                             "files": ['ib4606cmq_flt.fits', 'ib4606crq_flt.fits']},
 
 
-        obs_info_dict["total detection product 00": {"info": '11665 06 wfc3 uvis ib4606c5q f555w drc',
+        obs_info_dict["total detection product 00": {"info": '11665 06 wfc3 uvis empty_aperture ib4606c5q f555w drc',
                                                      "files": ['ib4606c5q_flc.fits', 'ib4606c6q_flc.fits']}
         .
         .
         .
-        obs_info_dict["total detection product 01": {"info": '11665 06 wfc3 ir ib4606cmq f160w drz',
+        obs_info_dict["total detection product 01": {"info": '11665 06 wfc3 ir empty_aperture ib4606cmq f160w drz',
                                                      "files": ['ib4606cmq_flt.fits', 'ib4606crq_flt.fits']}
+
+    The aperture keyword, which has a default value of 'empty_aperture' is filled in the case of WFPC2 observations,
+    and the use of the two-column format. 
 
     """
     # set logging level to user-specified level
     log.setLevel(log_level)
-
     log.debug("Interpret the poller file for the observation set.")
     obset_table = build_poller_table(results, log_level)
     # Add INSTRUMENT column
@@ -146,7 +157,7 @@ def interpret_obset_input(results, log_level):
     # Now create the output product objects
     log.debug("Parse the observation set tree and create the exposure, filter, and total detection objects.")
     obset_dict, tdp_list = parse_obset_tree(obset_tree, log_level)
-
+    
     # This little bit of code adds an attribute to single exposure objects that is True
     # if a given filter only contains one input (e.g. n_exp = 1)
     for tot_obj in tdp_list:
@@ -198,7 +209,7 @@ def build_obset_tree(obset_table):
 def create_row_info(row):
     """Build info string for a row from the obset table"""
     info_list = [str(row['proposal_id']), "{}".format(row['obset_id']), row['instrument'],
-                 row['detector'], row['filename'][:row['filename'].find('_')], row['filters']]
+                 row['detector'], row['aperture'], row['filename'][:row['filename'].find('_')], row['filters']]
     return ' '.join(map(str.upper, info_list)), row['filename']
 
 
@@ -482,7 +493,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 # mvm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
                 #
                 prod_list = prod_info.split(" ")
-                multi_scale = prod_list[2].upper() in ['IR']
+                multi_scale = prod_list[2].upper() in ['IR', 'PC']
                 pscale = 'fine' if not multi_scale else 'coarse'
                 prod_info += " {:s}".format(pscale)
 
@@ -660,27 +671,30 @@ def parse_obset_tree(det_tree, log_level):
                 sep_indx += 1
 
                 # Create a single exposure product object
-                #
-                # The prod_list[5] is the filter - use this information to distinguish between
+                
+                # The GrismExposureProduct is only an attribute of the TotalProduct.
+                prod_list = exp_prod_info.split(" ")
+                
+                # prod_list is 0: proposal_id, 1:observation_id, 2:instrument, 3:detector, 
+                # 4:aperture_from_poller, 5:filename, 6:filters, 7:filetype
+                
+                # The prod_list[6] is the filter - use this information to distinguish between
                 # a direct exposure for drizzling (ExposureProduct) and an exposure
                 # (GrismExposureProduct) which is carried along (Grism/Prism) to make analysis
                 # easier for the user by having the same WCS in both the direct and
                 # Grism/Prism products.
-                #
-                # The GrismExposureProduct is only an attribute of the TotalProduct.
-                prod_list = exp_prod_info.split(" ")
 
                 # Determine if this image is a Grism/Prism or a nominal direct exposure
                 is_grism = False
-                if prod_list[5].lower().find('g') != -1 or prod_list[5].lower().find('pr') != -1:
+                if prod_list[6].lower().find('g') != -1 or prod_list[6].lower().find('pr') != -1:
                     is_grism = True
                     filt_indx -= 1
                     grism_sep_obj = GrismExposureProduct(prod_list[0], prod_list[1], prod_list[2],
-                                                         prod_list[3], filename[1], prod_list[5],
-                                                         prod_list[6], log_level)
+                                                         prod_list[3], prod_list[4], filename[1], prod_list[6],
+                                                         prod_list[7], log_level)
                 else:
-                    sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                              filename[1], prod_list[5], prod_list[6], log_level)
+                    sep_obj = ExposureProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3], prod_list[4],
+                                              filename[1], prod_list[6], prod_list[7], log_level)
                 # Now that we have defined the ExposureProduct for this input exposure,
                 # do not include it any total or filter product.
                 if not is_member:
@@ -700,12 +714,11 @@ def parse_obset_tree(det_tree, log_level):
 
                         # Create a filter product object for this instrument/detector
                         filt_obj = FilterProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                                 prod_list[4], prod_list[5], prod_list[6], log_level)
+                                                 prod_list[4], prod_list[5], prod_list[6], prod_list[7], log_level)
                     # Append exposure object to the list of exposure objects for this specific filter product object
                     filt_obj.add_member(sep_obj)
                     # Populate filter product dictionary with input filename
                     obset_products[fprod]['files'].append(filename[1])
-
                 # Set up the total detection product dictionary and create a total detection product object
                 # Initialize `info` key for total detection product
                 if not obset_products[totprod]['info']:
@@ -713,8 +726,7 @@ def parse_obset_tree(det_tree, log_level):
 
                     # Create a total detection product object for this instrument/detector
                     tdp_obj = TotalProduct(prod_list[0], prod_list[1], prod_list[2], prod_list[3],
-                                           prod_list[4], prod_list[6], log_level)
-
+                                           prod_list[4], prod_list[5], prod_list[7], log_level)
                 if not is_grism:
                     # Append exposure object to the list of exposure objects for this specific total detection product
                     tdp_obj.add_member(sep_obj)
@@ -731,7 +743,6 @@ def parse_obset_tree(det_tree, log_level):
                     if is_ccd and len(filt_obj.edp_list) == 1:
                         for e in filt_obj.edp_list:
                             e.crclean = True
-
                 elif is_grism:
                     tdp_obj.add_grism_member(grism_sep_obj)
 
@@ -888,9 +899,12 @@ def determine_filter_name(raw_filter):
 # ------------------------------------------------------------------------------
 
 
-def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm',
+def build_poller_table(input: str, log_level, all_mvm_exposures=[], poller_type='svm',
                        include_small=True, only_cte=False):
-    """Create a poller file from dataset names.
+    """Create a poller file from dataset names for either SMV or MVM processing. Information is either gathered 
+    from the poller file or by using the filename to open the file and pulling information from the header keywords. 
+    The code treats WFPC2 differently, by uses both approaches. For WFPC2, We use simple poller files with a second column 
+    that includes the aperture. The code gathers the rest of the relevant informaiton from the header keywords.
 
     Parameters
     -----------
@@ -931,10 +945,27 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
         poller_dtype = POLLER_DTYPE
 
     datasets = []
+    
+    # limit column string types to minimum length formats e.g. str8, str11, etc. 
     obs_converters = {'col4': [ascii.convert_numpy(np.str_)]}
+
     if isinstance(input, str):
         input_table = ascii.read(input, format='no_header', converters=obs_converters)
-        if len(input_table.columns) == len(poller_colnames):
+        if len(input_table.columns) == 1:
+            input_table.columns[0].name = 'filename'
+            input_table['aperture']= 'empty_aperture'
+            poller_dtype+=('str',)
+            is_poller_file = False # gets important keywords from file headers instead of poller file
+            
+        # unique logic to collect WFPC2 aperture data from poller file
+        elif len(input_table.columns) == 2:
+            input_table.columns[0].name = 'filename'
+            input_table.columns[1].name = 'aperture'
+            # add dtype for aperture column
+            poller_dtype+=('str',)
+            is_poller_file = False
+        
+        elif len(input_table.columns) == len(poller_colnames):
             # We were provided a poller file
             # Now assign column names to table
             for i, colname in enumerate(poller_colnames):
@@ -1001,28 +1032,38 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
             # an exception and exit.
             for table_line in input_table:
                 if os.path.exists(table_line['filename']):
-                    log.info("Input image {} found in current working directory.".format(table_line['filename']))
+                    log.info(f"Input image {table_line['filename']} found in current working directory.")
                 elif os.path.exists(table_line['pathname']):
-                    log.info("Input image {} not found in current working directory. However, it was found in the path specified in the poller file.".format(table_line['filename']))
+                    log.info(f"Input image {table_line['filename']} not found in current working directory. However, it was found in the path specified in the poller file.")
                     shutil.copy(table_line['pathname'], os.getcwd())
-                    log.info("Input image {} copied to current working directory.".format(table_line['pathname']))
+                    log.info(f"Input image {table_line['pathname']} copied to current working directory.")
                 else:
-                    log.error("Input image {} not found in current working directory.".format(table_line['filename']))
-                    log.error("Archived input image {} not found.".format(table_line['pathname']))
-                    err_msg = "Input image {} missing from current working directory and from the path specified in the poller file. Exiting... ".format(table_line['filename'])
+                    log.error(f"Input image {table_line['filename']} not found in current working directory.")
+                    log.error(f"Archived input image {table_line['pathname']} not found.")
+                    err_msg = f"Input image {table_line['filename']} missing from current working directory and from the path specified in the poller file. Exiting... "
                     log.error(err_msg)
                     raise Exception(err_msg)
-        elif len(input_table.columns) == 1:
-            input_table.columns[0].name = 'filename'
-            is_poller_file = False
-
+        
+        elif (poller_type == 'mvm') & (len(input_table.columns) != len(poller_colnames)):
+            log.error(f"MVMs should use full poller files with {len(poller_colnames)} columns.")
+            err_msg = f"Full poller files should have {len(poller_colnames)} columns. Exiting... "
+            log.error(err_msg)
+            raise Exception(err_msg)
+                
+        # input is string with unexpected number of columns
+        else:
+            log.error(f'Poller file has an unexpected number of columns, code expects either 1, 2, or {len(poller_colnames)} but received: {len(input_table.columns)}')
+            raise ValueError
+        
         # Since a poller file was the input, it is assumed all the input
         # data is in the locale directory so just collect the filenames.
         # datasets = input_table[input_table.colnames[0]].tolist()
         filenames = list(input_table.columns[0])
 
+    # If input is a list of filenames
     elif isinstance(input, list):
         filenames = input
+        input_table= None
 
     else:
         id = '[poller_utils.build_poller_table] '
@@ -1066,7 +1107,16 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
     for cname in poller_colnames:
         cols[cname] = []
     cols['filename'] = usable_datasets
-
+    if input_table:
+        if 'aperture' in input_table.colnames:
+            cols['aperture'] = input_table['aperture'].tolist()
+        else:
+            add_col = Column(['empty_aperture'] * len(usable_datasets), name='aperture', dtype='str')
+            input_table.add_column(add_col, index=7)
+            poller_dtype+=('str',)
+    else:
+        raise ValueError("Input table is empty. Exiting...")
+        
     # If MVM processing and a poller file is the input, this implies there is
     # only one skycell of interest for all the listed filenames in the poller
     # file. Establish the WCS, but no need for discovery of overlapping skycells
@@ -1120,7 +1170,6 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
         poller_names = [colname for colname in cols]
         poller_table = Table(data=poller_data, names=poller_names,
                              dtype=poller_dtype)
-
     # The input was a poller file, so just keep the viable data rows for output
     else:
         good_rows = []
@@ -1184,7 +1233,7 @@ def build_poller_table(input, log_level, all_mvm_exposures=[], poller_type='svm'
             sys.exit(0)
 
         poller_table = new_poller_table
-
+        
     return poller_table
 
 

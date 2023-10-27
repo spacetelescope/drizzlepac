@@ -813,11 +813,14 @@ class HAPCatalogBase:
         scale = max(self.param_dict['scale'], self_scale)
         self.tp_masks = None
         if not self.image.blank:
-            self.tp_masks = make_wht_masks(self.image.wht_image, self.image.inv_footprint_mask,
-                                           scale=scale,
-                                           sensitivity=self.param_dict['sensitivity'],
-                                           kernel=(self.param_dict['region_size'],
-                                                   self.param_dict['region_size']))
+            self.tp_masks = make_wht_masks(
+                self.image.wht_image, 
+                self.image.inv_footprint_mask,
+                scale=scale,
+                sensitivity=self.param_dict['sensitivity'],
+                kernel=(self.param_dict['region_size'],
+                self.param_dict['region_size'])
+                )
 
     def identify_sources(self, **pars):
         pass
@@ -2905,28 +2908,50 @@ def make_inv_mask(mask):
     return invmask
 
 
-def make_wht_masks(whtarr, maskarr, scale=1.5, sensitivity=0.95, kernel=(11, 11)):
-
+def make_wht_masks(
+    whtarr: np.ndarray, # image weight array (dtype=float32), zeros outside of footprint
+    maskarr: np.ndarray, # mask array (dtype=bool), typically inverse of footprint 
+    scale: float = 1.5,
+    sensitivity: float = 0.95,
+    kernel: tuple = (11, 11) # kernel size for maximum filter window
+) -> list: # list containing a dictionary 
+    """ Uses scipy's maximum_filter to create the image weight masks of floats between 0 and 1. 
+    Function produces a list including a dictionary with the scale (float), wht_limit (float), 
+    mask (np.ndarray of bools, dtype=int16), and  relative weight (np.ndarray, dtype=float32). 
+    
+    """
+    
+    # create inverse of mask as ints
     invmask = make_inv_mask(maskarr)
 
+    # uses scipy maximum filter on image. Maximum filter selects the largest value within an ordered 
+    # window of pixels values and replaces the central pixel with the largest value.
     maxwht = ndimage.filters.maximum_filter(whtarr, size=kernel)
+    
+    # normalized weight array
     rel_wht = maxwht / maxwht.max()
 
+    # initialize values
     delta = 0.0
     master_mask = np.zeros(invmask.shape, dtype=np.uint16)
     limit = 1 / scale
     masks = []
+    
+    # loop through scale values until delta is greater than sensitivity
     while delta < sensitivity:
-
         mask = rel_wht > limit
         mask = (mask.astype(np.uint16) * invmask) - master_mask
 
         new_delta = master_mask.sum() / mask.sum()
         if new_delta < sensitivity:
-            masks.append(dict(scale=limit,
-                              wht_limit=limit * maxwht.max(),
-                              mask=mask,
-                              rel_weight=rel_wht * mask))
+            masks.append(
+                dict(
+                    scale=limit,
+                    wht_limit=limit * maxwht.max(),
+                    mask=mask,
+                    rel_weight=rel_wht * mask,
+                )
+            )
 
         delta = new_delta
         master_mask = master_mask + mask
