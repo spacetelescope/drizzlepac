@@ -1,8 +1,8 @@
 .. _tweakback:
 
-*********
-TWEAKBACK
-*********
+***********************************
+TWEAKBACK: Propagating The Solution
+***********************************
 
 .. moduleauthor:: Warren Hack <help@stsci.edu>
 

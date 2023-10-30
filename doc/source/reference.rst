@@ -9,18 +9,19 @@ Drizzle (Image drizzling step)
     :maxdepth: 1
 
     reference/astrodrizzle
-    reference/adrizzle
-    reference/ablot
+    reference/updatenpol
+    reference/static
+    reference/sky
     reference/median
+    reference/ablot
+    reference/drizcr
+    reference/adrizzle
     reference/outimage
     reference/photeq
     reference/pixreplace
     reference/pixtopix
     reference/pixtosky
-    reference/sky
     reference/skytopix
-    reference/static
-    reference/updatenpol
 
 
 Pipeline processing
@@ -30,14 +31,12 @@ Pipeline processing
     :maxdepth: 1
 
     reference/astrometry_api
+    reference/process
     reference/imagefindpars
     reference/refimagefindpars
     reference/catalogs
-    reference/drizcr
     reference/mdztab
-    reference/process
     reference/util
-    reference/utilfuncs
 
 Interactive Image alignment
 ---------------------------
@@ -45,12 +44,12 @@ Interactive Image alignment
 .. toctree::
     :maxdepth: 1
 
-    reference/mapreg
-    reference/tweakback
     reference/tweakreg
+    reference/tweakback
     reference/tweakutils
     reference/updatehdr
     reference/wcscorr
+    reference/mapreg
     reference/wcsutils
 
 
@@ -68,10 +67,10 @@ MVM
 .. toctree::
     :maxdepth: 1
 
-    reference/makecustommosaic
-    reference/multivisit_api
     reference/mvmutilities_api
+    reference/multivisit_api
     reference/runmultihap
+    reference/makecustommosaic
 
 Classes
 -------
@@ -79,9 +78,9 @@ Classes
 .. toctree::
     :maxdepth: 1
 
+    reference/imageobject
     reference/baseobjects
     reference/image
-    reference/imageobject
     reference/acsobjects
     reference/nicmosobjects
     reference/stisobjects
