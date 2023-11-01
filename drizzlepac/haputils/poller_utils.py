@@ -491,6 +491,9 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 prod_info = (filename[0] + " " + filetype).lower()
                 #
                 # mvm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
+                
+                # prod_list is 0: proposal_id, 1:observation_id, 2:instrument, 3:detector, 
+                # 4:aperture_from_poller, 5:filename, 6:filters, 7:filetype
                 #
                 prod_list = prod_info.split(" ")
                 multi_scale = prod_list[2].upper() in ['IR', 'PC']
@@ -498,9 +501,9 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 prod_info += " {:s}".format(pscale)
 
                 if prod_list[5].strip() != '':
-                    layer = (prod_list[3], pscale, prod_list[4], prod_list[5])
+                    layer = (prod_list[3], pscale, prod_list[5], prod_list[6])
                 else:
-                    layer = (prod_list[3], pscale, prod_list[4])
+                    layer = (prod_list[3], pscale, prod_list[5])
 
                 ftype = prod_list[-1]
                 cellid = prod_list[0].split('-')[1]
@@ -510,7 +513,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 # Create a single sky cell exposure product object
                 # __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level)
                 sep_obj = SkyCellExposure(prop_id, obset_id, prod_list[1], prod_list[2],
-                                          filename[1], layer, ftype, log_level)
+                                          'empty_aperture', filename[1], layer, ftype, log_level)
 
                 # set flag to record whether this is a 'new' exposure or one that
                 # has already been aligned to a layer already:
@@ -530,7 +533,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                     # FilterProduct(prop_id, obset_id, instrument, detector,
                     #               filename, filters, filetype, log_level)
                     filt_obj = SkyCellProduct(str(0), str(0), prod_list[1], prod_list[2],
-                                              prod_list[0], layer, ftype, log_level)
+                                              'empty_aperture',prod_list[0], layer, ftype, log_level)
                 # Append exposure object to the list of exposure objects for this specific filter product object
                 filt_obj.add_member(sep_obj)
                 # Populate filter product dictionary with input filename
@@ -552,7 +555,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                         # FilterProduct(prop_id, obset_id, instrument, detector,
                         #               filename, filters, filetype, log_level)
                         filt_obj_fine = SkyCellProduct(str(0), str(0), prod_list[1], prod_list[2],
-                                                       prod_list[0], layer_fine, ftype, log_level)
+                                                       'empty_aperture',prod_list[0], layer_fine, ftype, log_level)
 
                     obset_products[fprod_fine]['files'].append(filename[1])
                     filt_obj_fine.add_member(sep_obj)
