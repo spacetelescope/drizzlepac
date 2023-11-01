@@ -572,8 +572,15 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 #
                 # mvm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
 
-                # prod_list is 0: proposal_id, 1:observation_id, 2:instrument, 3:detector,
-                # 4:aperture_from_poller, 5:filename, 6:filters, 7:filetype
+                #     info_list = [
+                #     str(row["skycell_id"]),
+                #     row["instrument"],
+                #     row["detector"],
+                #     row["filters"],
+                #     str(row["exp_layer"]),
+                #     str(row["year_layer"]),
+                #     str(row["skycell_new"]),
+                # ]
                 #
                 prod_list = prod_info.split(" ")
                 multi_scale = prod_list[2].upper() in ["IR", "PC"]
@@ -581,9 +588,9 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 prod_info += " {:s}".format(pscale)
 
                 if prod_list[5].strip() != "":
-                    layer = (prod_list[3], pscale, prod_list[5], prod_list[6])
+                    layer = (prod_list[3], pscale, prod_list[4], prod_list[5])
                 else:
-                    layer = (prod_list[3], pscale, prod_list[5])
+                    layer = (prod_list[3], pscale, prod_list[4])
 
                 ftype = prod_list[-1]
                 cellid = prod_list[0].split("-")[1]
