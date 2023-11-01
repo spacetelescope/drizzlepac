@@ -696,6 +696,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
             tdp_list.append(filt_obj)
             if pscale == "coarse":
                 tdp_list.append(filt_obj_fine)
+                
     # Done... return dict and object product list
     return obset_products, tdp_list
 
