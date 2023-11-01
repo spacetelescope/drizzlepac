@@ -571,17 +571,8 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 prod_info = (filename[0] + " " + filetype).lower()
                 #
                 # mvm prod_info = 'skycell_p1234_x01y01 wfc3 uvis f200lp all 2009 1 drz'
-
-                #     info_list = [
-                #     str(row["skycell_id"]),
-                #     row["instrument"],
-                #     row["detector"],
-                #     row["filters"],
-                #     str(row["exp_layer"]),
-                #     str(row["year_layer"]),
-                #     str(row["skycell_new"]),
-                # ]
-                #
+                # prod_list is:
+                # skycell, instrument, detector, filters, exposure_layer, year_layer, old_or_new, and filetype (CTE corrected or not).
                 prod_list = prod_info.split(" ")
                 multi_scale = prod_list[2].upper() in ["IR", "PC"]
                 pscale = "fine" if not multi_scale else "coarse"
@@ -595,8 +586,8 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                 ftype = prod_list[-1]
                 cellid = prod_list[0].split("-")[1]
                 xindx = cellid.index("x")
-                prop_id = cellid[1:xindx]
-                obset_id = cellid[xindx:]
+                prop_id = cellid[1:xindx] # projection cell number
+                obset_id = cellid[xindx:] # x and y skycell coordniates
                 # Create a single sky cell exposure product object
                 # __init__(self, prop_id, obset_id, instrument, detector, filename, filters, filetype, log_level)
                 sep_obj = SkyCellExposure(
@@ -604,7 +595,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                     obset_id,
                     prod_list[1],
                     prod_list[2],
-                    "empty_aperture",
+                    "empty_aperture", #aperture
                     filename[1],
                     layer,
                     ftype,
@@ -633,7 +624,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                         str(0),
                         prod_list[1],
                         prod_list[2],
-                        "empty_aperture",
+                        "empty_aperture", #aperture
                         prod_list[0],
                         layer,
                         ftype,
@@ -667,7 +658,7 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
                             str(0),
                             prod_list[1],
                             prod_list[2],
-                            "empty_aperture",
+                            "empty_aperture", #aperture
                             prod_list[0],
                             layer_fine,
                             ftype,
@@ -705,7 +696,6 @@ def parse_mvm_tree(det_tree, all_mvm_exposures, log_level):
             tdp_list.append(filt_obj)
             if pscale == "coarse":
                 tdp_list.append(filt_obj_fine)
-
     # Done... return dict and object product list
     return obset_products, tdp_list
 
