@@ -126,7 +126,7 @@ def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.DEBUG):
     log.setLevel(log_level)
 
     # Invoke the low-level analyze_data routine with type = "MVM"
-    filtered_table = analyze_data([input_filename], type = "MVM")
+    filtered_table, _ = analyze_data([input_filename], type = "MVM")
 
     # There is only one row in this output table
     use_for_mvm = False

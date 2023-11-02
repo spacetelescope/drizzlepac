@@ -2098,7 +2098,7 @@ def _analyze_exposure(filename):
         print("        GUIDING == BAD.  Skipping processing ")
         process_exposure = False  # Yes, there was bad guiding...
 
-    badtab = analyze.analyze_data([filename])
+    badtab, _ = analyze.analyze_data([filename])
     if badtab['doProcess'][0] == 0:
         process_exposure = False
 
