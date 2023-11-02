@@ -1305,7 +1305,7 @@ def build_poller_table(
     # viable, it should not be included in the output "poller" table.
     # NOTE: The "all_mvm_exposures" variable does not need to be checked for "usable" datasets
     # as it is used to create a WCS/footprint to accommodate *all* exposures in an MVM visit.
-    usable_datasets, return_code = analyze.analyze_wrapper(
+    usable_datasets, usable_dataset_index, return_code = analyze.analyze_wrapper(
         datasets, use_sbchrc=include_small, type=poller_type
     )
     if not usable_datasets:
@@ -1326,7 +1326,9 @@ def build_poller_table(
     cols["filename"] = usable_datasets
     if input_table:
         if "aperture" in input_table.colnames:
-            cols["aperture"] = input_table["aperture"].tolist()
+            aperture_all_datasets = input_table["aperture"].tolist()
+            aperture_of_useable_dataset = np.array(aperture_all_datasets)[usable_dataset_index]
+            cols["aperture"] = aperture_of_useable_dataset
         else:
             cols["aperture"] = ["empty_aperture"] * len(usable_datasets)
             add_col = Column(

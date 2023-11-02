@@ -175,6 +175,9 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     =======
     viable_images_list : list
        List of images which can be used in the drizzle process.
+       
+    good_index : list
+        indices of the viable images in the input_file_list
 
     return_code : int
         Numeric code indicative of the status of the analysis of the input data.
@@ -187,7 +190,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     log.setLevel(log_level)
  
     # Analyze the input file list and get the full table assessment
-    filtered_table = analyze_data(input_file_list, type=type)
+    filtered_table, analyze_data_good_index = analyze_data(input_file_list, type=type)
 
     # Reduce table to only the data which should be processed (doProcess == 1)
     mask = filtered_table["doProcess"] > 0
@@ -201,6 +204,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
 
     good_table = None
     good_rows = []
+    good_index = []
     process_list = []
     return_value = Ret_code.OK.value
 
@@ -210,6 +214,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
         if filtered_table:
             for i, old_row in enumerate(filtered_table):
                 if old_row["detector"].upper() != "SBC" and old_row["detector"].upper() != "HRC":
+                    good_index.append(i)
                     good_rows.append(old_row)
 
             # The entire filtered_table contains only SBC or HRC data
@@ -234,11 +239,11 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
         if filtered_table:
             # Get the list of all "good" files to use for the alignment
             process_list = filtered_table['imageName'].tolist()
+            good_index = analyze_data_good_index
         else:
             log.warning("No viable images in single/multi-visit table - no processing done.\n")
             return_value = Ret_code.NO_VIABLE_DATA.value
-
-    return process_list, return_value
+    return process_list, good_index, return_value
 
 
 def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
@@ -268,6 +273,9 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         Astropy Table object containing data pertaining to the associated dataset, including
         the do_process bool.  It is intended this table is updated by subsequent functions for
         bookkeeping purposes.
+    
+    analyze_data_good_index : list
+        indices of the viable images in the input_file_list
 
     Notes
     =====
@@ -295,6 +303,8 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     # Set logging level to user-specified level
     log.setLevel(log_level)
 
+    analyze_data_good_index = []
+    
     acs_filt_name_list = [DEFAULT_KEYS['FILKEY1'], DEFAULT_KEYS['FILKEY2']]
 
     # Interpret input filenames and adjust size of column accordingly
@@ -351,7 +361,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     # available for the output table regardless of which keyword is used to
     # to determine the data is not viable for alignment.
 
-    for input_file in input_file_list:
+    for i, input_file in enumerate(input_file_list):
         header_hdu = 0
         header_data = getheader(input_file, header_hdu)
 
@@ -521,6 +531,9 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             # processing should be allowed, but there may be some issue with the result (e.g.,
             # GYROS mode so some drift)
             generate_msg(input_file, msg_type, no_proc_key, no_proc_value)
+        
+        else:
+            analyze_data_good_index.append(i)
 
         # Populate a row of the table
         output_table.add_row([input_file, instrume, detector, sfilter, aperture, obstype, subarray,
@@ -530,8 +543,8 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                               total_rms, dataset_key, status, fit_qual, headerlet_file,
                               compromised])
         process_msg = ""
-
-    return output_table
+        
+    return output_table, analyze_data_good_index
 
 
 def generate_msg(filename, msg, key, value):
