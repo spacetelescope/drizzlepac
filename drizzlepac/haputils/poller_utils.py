@@ -1329,6 +1329,11 @@ def build_poller_table(
             cols["aperture"] = input_table["aperture"].tolist()
         else:
             cols["aperture"] = ["empty_aperture"] * len(usable_datasets)
+            add_col = Column(
+                ["empty_aperture"] * len(input_table), name="aperture", dtype="str"
+            )
+            input_table.add_column(add_col, index=7)
+            poller_dtype += ("str",)
     else:
         raise ValueError("Input table is empty. Exiting...")
     # If MVM processing and a poller file is the input, this implies there is
