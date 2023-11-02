@@ -805,15 +805,15 @@ def parse_obset_tree(det_tree, log_level):
                     is_grism = True
                     filt_indx -= 1
                     grism_sep_obj = GrismExposureProduct(
-                        prod_list[0],
-                        prod_list[1],
-                        prod_list[2],
-                        prod_list[3],
-                        prod_list[4],
-                        filename[1],
-                        prod_list[6],
-                        prod_list[7],
-                        log_level,
+                        prod_list[0], # prop_id
+                        prod_list[1], # obset_id
+                        prod_list[2], # instrument
+                        prod_list[3], # detector
+                        prod_list[4], # aperture_from_poller
+                        filename[1], # filename
+                        prod_list[6], # filters
+                        prod_list[7], # filetype
+                        log_level, # log_level
                     )
                 else:
                     sep_obj = ExposureProduct(
@@ -1328,14 +1328,9 @@ def build_poller_table(
         if "aperture" in input_table.colnames:
             cols["aperture"] = input_table["aperture"].tolist()
         else:
-            add_col = Column(
-                ["empty_aperture"] * len(usable_datasets), name="aperture", dtype="str"
-            )
-            input_table.add_column(add_col, index=7)
-            poller_dtype += ("str",)
+            cols["aperture"] = ["empty_aperture"] * len(usable_datasets)
     else:
         raise ValueError("Input table is empty. Exiting...")
-
     # If MVM processing and a poller file is the input, this implies there is
     # only one skycell of interest for all the listed filenames in the poller
     # file. Establish the WCS, but no need for discovery of overlapping skycells
