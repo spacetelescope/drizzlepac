@@ -1243,7 +1243,7 @@ def build_poller_table(
                     log.error(err_msg)
                     raise Exception(err_msg)
 
-        elif (poller_type == "mvm") & (
+        elif (poller_type == "mvm") and (
             len(input_table.columns) != len(poller_colnames)
         ):
             log.error(
