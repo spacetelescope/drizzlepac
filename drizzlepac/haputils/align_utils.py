@@ -150,7 +150,7 @@ class AlignmentTable:
         # Apply filter to input observations to insure that they meet minimum criteria for being able to be aligned
         log.info(
             "{} AlignmentTable: Filter STEP {}".format("-" * 20, "-" * 63))
-        self.filtered_table = analyze.analyze_data(input_list, type=process_type)
+        self.filtered_table, _ = analyze.analyze_data(input_list, type=process_type)
         log.debug("Input sorted as: \n{}".format(self.filtered_table))
 
         if self.filtered_table['doProcess'].sum() == 0:
