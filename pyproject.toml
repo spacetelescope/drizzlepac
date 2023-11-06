@@ -9,7 +9,7 @@ description = """
 readme = { file = 'README.md', content-type = 'text/x-rst' }
 requires-python = '>=3.9'
 license = { file = "LICENSE.txt" }
-authors = [{ name = 'Megan Sosey' }, { name = 'Warren Hack' }, { name = 'Christopher Hanley' }, { name = 'Chris Sontag' }, { name = 'Mihai Cara' }, { name = 'Steven Goldman' }]
+authors = [{ name = 'Megan Sosey' }, { name = 'Warren Hack' }, { name = 'Christopher Hanley' }, { name = 'Chris Sontag' }, { name = 'Mihai Cara' }, { name = 'Michael Dulude' }, { name = 'Michele De La Pena' }, { name = 'Steven Goldman' }]
 classifiers = [
     'Intended Audience :: Science/Research',
     "Topic :: Scientific/Engineering :: Astronomy",
