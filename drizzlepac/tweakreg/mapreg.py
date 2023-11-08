@@ -14,7 +14,7 @@ import stwcs
 import os
 from stsci.tools.fileutil import findExtname
 from stsci.tools import teal
-from . import util
+from .. import util
 from .regfilter import fast_filter_outer_regions
 
 

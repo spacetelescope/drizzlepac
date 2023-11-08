@@ -22,7 +22,7 @@ import stsci.imagestats as imagestats
 import stregion as pyregion
 
 #import idlphot
-from . import tweakutils, util
+from .. import tweakutils, util
 from .mapreg import _AuxSTWCS
 
 

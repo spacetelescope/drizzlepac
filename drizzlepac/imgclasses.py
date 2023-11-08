@@ -30,7 +30,7 @@ from stsci.tools.bitmask import interpret_bit_flags
 
 from drizzlepac.tweakreg import linearfit
 
-from . import catalogs
+from drizzlepac.tweakreg import catalogs
 from . import updatehdr
 from . import util
 from . import tweakutils

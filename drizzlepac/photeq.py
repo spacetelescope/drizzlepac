@@ -22,7 +22,7 @@ import logging
 # THIRD PARTY
 import numpy as np
 from astropy.io import fits
-from . import __version__
+from drizzlepac import __version__
 
 __all__ = ['photeq']
 __taskname__ = 'photeq'
@@ -36,7 +36,7 @@ except ImportError:
 
 # LOCAL
 from stsci.skypac import parseat, utils
-from . import util
+from drizzlepac import util
 
 # create logger
 logging.captureWarnings(capture=True)

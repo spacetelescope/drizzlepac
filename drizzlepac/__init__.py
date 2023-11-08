@@ -43,7 +43,6 @@ from . import buildmask
 from . import createMedian
 from . import drizCR
 from . import imageObject
-from . import mapreg
 from . import mdzhandler
 from . import outputimage
 from . import photeq
@@ -63,8 +62,8 @@ from . import pixtopix
 # The following modules are for 'tweakreg' and are included here to make
 # it easier to get to this code interactively
 try:
-    from drizzlepac.tweakreg import tweakreg, imagefindpars, refimagefindpars
-    from . import catalogs, imgclasses, mapreg, photeq, tweakutils
+    from drizzlepac.tweakreg import tweakreg, imagefindpars, refimagefindpars, mapreg, catalogs, photeq
+    from . import imgclasses, tweakutils
 except ImportError as e :
     print('The libraries needed for "tweakreg" were not available!')
     print('None of the code related to that task can be used at this time.')
