@@ -1375,7 +1375,7 @@ class SkyCellProduct(HAPProduct):
         layer_scale = layer[1]
 
         self.info = "_".join(
-            ["hst", skycell_name, instrument, detector, aperture_from_poller, filter_str, layer_str]
+            ["hst", skycell_name, instrument, detector, filter_str, layer_str]
         )
         self.exposure_name = skycell_name
         self.cell_id = skycell_name.strip("skycell-")

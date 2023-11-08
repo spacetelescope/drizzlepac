@@ -20,9 +20,6 @@ The Drizzlepac package is a collection packages for aligning and combining astro
     parameters
     reference
 
-
-
-
 .. DrizzlePac Release Notes
 .. ------------------------
 .. The code for this package gets released through a number of methods: namely,
@@ -73,4 +70,3 @@ The Drizzlepac package is a collection packages for aligning and combining astro
 
 .. Combining data across visits to create mosaics for every observed location on the sky gets performed using
 .. **HAP Multi-Visit Mosaic (MVM)** processing.
-
