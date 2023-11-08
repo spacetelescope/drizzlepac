@@ -63,8 +63,8 @@ from . import pixtopix
 # The following modules are for 'tweakreg' and are included here to make
 # it easier to get to this code interactively
 try:
-    from . import tweakreg, catalogs, imgclasses, tweakutils, mapreg, photeq, \
-                  imagefindpars, refimagefindpars
+    from drizzlepac.tweakreg import tweakreg, imagefindpars, refimagefindpars
+    from . import catalogs, imgclasses, mapreg, photeq, tweakutils
 except ImportError as e :
     print('The libraries needed for "tweakreg" were not available!')
     print('None of the code related to that task can be used at this time.')
@@ -75,7 +75,7 @@ from . import updatenpol
 from . import buildwcs
 
 # This module supports applying WCS from _drz to _flt files
-from . import tweakback
+from drizzlepac.tweakreg import tweakback
 
 # This module enables users to replace NaNs in images with another value easily
 from . import pixreplace

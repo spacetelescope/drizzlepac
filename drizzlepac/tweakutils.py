@@ -19,8 +19,8 @@ from astropy.utils import deprecated
 
 import stsci.imagestats as imagestats
 
-from . import findobj
-from . import cdriz
+from drizzlepac.tweakreg import findobj
+# from drizzlepac import cdriz
 
 __all__ = [
     'parse_input', 'atfile_sci', 'parse_atfile_cat', 'ndfind',

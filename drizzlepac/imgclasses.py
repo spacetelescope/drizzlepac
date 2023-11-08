@@ -28,9 +28,9 @@ from stsci.stimage import xyxymatch
 from stsci.tools import logutil, textutil
 from stsci.tools.bitmask import interpret_bit_flags
 
+from drizzlepac.tweakreg import linearfit
 
 from . import catalogs
-from . import linearfit
 from . import updatehdr
 from . import util
 from . import tweakutils

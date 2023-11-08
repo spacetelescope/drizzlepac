@@ -75,7 +75,8 @@ import numpy as np
 
 from astropy.io import fits
 from stsci.tools import fileutil, teal
-from . import util,wcs_functions,tweakutils
+from . import util,wcs_functions
+from . import tweakutils
 import stwcs
 from stwcs import distortion,wcsutil
 from . import __version__

@@ -12,9 +12,7 @@ import math
 import numpy as np
 from scipy import ndimage
 
-import stsci.imagestats as imagestats
-
-from . import cdriz
+from .. import cdriz
 
 __all__ = ['gaussian1', 'gausspars', 'gaussian', 'moments', 'errfunc',
            'findstars', 'apply_nsigma_separation', 'xy_round',
