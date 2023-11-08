@@ -6,13 +6,12 @@ A suite of functions for finding sources in images.
 :License: :doc:`LICENSE`
 
 """
-import sys
 import math
 
 import numpy as np
 from scipy import ndimage
 
-from .. import cdriz
+from drizzlepac import cdriz
 
 __all__ = ['gaussian1', 'gausspars', 'gaussian', 'moments', 'errfunc',
            'findstars', 'apply_nsigma_separation', 'xy_round',
