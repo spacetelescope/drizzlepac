@@ -524,6 +524,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                 msg_type = Messages.NOPROC.value
             else:
                 msg_type = Messages.WARN.value
+                analyze_data_good_index.append(i)
 
             process_msg = no_proc_key + '=' + str(no_proc_value)
 
