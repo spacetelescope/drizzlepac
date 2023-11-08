@@ -19,8 +19,9 @@ import stsci.imagestats as imagestats
 import stregion as pyregion
 
 #import idlphot
-from drizzlepac import tweakutils, util
+from drizzlepac import util
 from .mapreg import _AuxSTWCS
+from . import tweakutils
 
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']

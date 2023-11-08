@@ -30,10 +30,9 @@ from stsci.tools.bitmask import interpret_bit_flags
 
 from drizzlepac.tweakreg import linearfit
 
-from drizzlepac.tweakreg import catalogs
+from drizzlepac.tweakreg import catalogs, tweakutils
 from . import updatehdr
 from . import util
-from . import tweakutils
 from . import wcs_functions
 
 # DEBUG

@@ -76,7 +76,7 @@ import numpy as np
 from astropy.io import fits
 from stsci.tools import fileutil, teal
 from . import util,wcs_functions
-from . import tweakutils
+from drizzlepac.tweakreg import tweakutils
 import stwcs
 from stwcs import distortion,wcsutil
 from . import __version__

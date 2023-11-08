@@ -76,7 +76,7 @@ from stsci.tools.bitmask import bitfield_to_boolean_mask
 
 import stsci.tools
 
-from ..tweakutils import build_xy_zeropoint, ndfind
+from drizzlepac.tweakreg.tweakutils import build_xy_zeropoint, ndfind
 
 __taskname__ = 'astrometric_utils'
 
