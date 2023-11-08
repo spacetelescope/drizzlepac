@@ -12,9 +12,7 @@ from astropy.io import fits
 import stregion as pyregion
 import stwcs
 import os
-from stsci.tools.fileutil import findExtname
-from stsci.tools import teal
-from .. import util
+from drizzlepac import util
 from .regfilter import fast_filter_outer_regions
 
 
