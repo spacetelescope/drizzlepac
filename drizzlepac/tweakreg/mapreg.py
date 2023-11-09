@@ -9,6 +9,7 @@ of multiple images using the WCS information from the images.
 
 """
 from astropy.io import fits
+from stsci.tools import teal
 import stregion as pyregion
 import stwcs
 import os

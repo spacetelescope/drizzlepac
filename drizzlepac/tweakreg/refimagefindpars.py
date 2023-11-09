@@ -5,6 +5,7 @@
 :License: :doc:`LICENSE`
 
 """
+from stsci.tools import teal
 from drizzlepac import util
 from drizzlepac import __version__
 
