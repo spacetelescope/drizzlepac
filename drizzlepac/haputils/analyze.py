@@ -544,7 +544,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                               total_rms, dataset_key, status, fit_qual, headerlet_file,
                               compromised])
         process_msg = ""
-        assert len(output_table) == len(analyze_data_good_index), "Table length does not match good_index length."
+        assert (len(output_table) == len(analyze_data_good_index)) or do_process == False, "Table length does not match good_index length."
     return output_table, analyze_data_good_index
 
 
