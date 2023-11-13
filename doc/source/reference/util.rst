@@ -12,7 +12,6 @@ and interpretation of the ``MDRIZTAB`` reference file.
 .. toctree::
    :maxdepth: 3
 
-   utilfuncs
    wcsutils
    outimage
    mdztab
