@@ -2,23 +2,25 @@ name: rtd311
 channels:
     - defaults
 dependencies:
-    - python
-    - setuptools
+    - astropy
     - numpy
     - numpydoc
+    - pip
+    - python=3.11
     - scipy
-    - astropy
     - graphviz
     - pip:
-      - -e ..
+      - astroquery
+      - fitsblender
+      - lxml
+      - matplotlib
+      - nictools
+      - photutils
+      - pyregion
+      - "spherical_geometry>=1.2.22"
       - sphinx
       - "sphinx_rtd_theme>1.2.0"
       - sphinx_automodapi
-      - matplotlib
-      - "spherical_geometry>=1.2.22"
-      - fitsblender
-      - nictools
-      - pyregion
       - stwcs
       - stsci.tools
       - "stsci.image>=2.3.0"
@@ -27,7 +29,4 @@ dependencies:
       - stsci.stimage
       - "tweakwcs>=0.8.0"
       - stregion
-      - astroquery
-      - photutils
-      - lxml
       - tables
