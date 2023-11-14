@@ -19,7 +19,7 @@ from astropy.utils import deprecated
 
 import stsci.imagestats as imagestats
 
-from drizzlepac.tweakreg import findobj
+from . import findobj
 # from drizzlepac import cdriz
 
 __all__ = [
