@@ -76,7 +76,7 @@ from stsci.tools.bitmask import bitfield_to_boolean_mask
 
 import stsci.tools
 
-from drizzlepac.tweakreg.tweakutils import build_xy_zeropoint, ndfind
+from drizzlepac.tweak.tweakutils import build_xy_zeropoint, ndfind
 
 __taskname__ = 'astrometric_utils'
 
@@ -1870,7 +1870,7 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
                   format='ascii.fast_commented_header', overwrite=True)
     searchrad = search_radius / refwcs.pscale
 
-    # Use 2d-Histogram builder from drizzlepac.tweakreg -- for demo only...
+    # Use 2d-Histogram builder from drizzlepac.tweak -- for demo only...
     xp, yp, nmatches, zpqual = build_xy_zeropoint(seg_xy, ref_xy,
                                                   searchrad=searchrad,
                                                   histplot=False, figure_id=1,

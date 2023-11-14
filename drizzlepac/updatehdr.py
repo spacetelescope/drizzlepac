@@ -18,7 +18,7 @@ from stwcs.wcsutil import wcscorr, altwcs
 from stsci.skypac.utils import get_ext_list, ext2str
 
 from . import util
-from drizzlepac.tweakreg import linearfit
+from drizzlepac.tweak import linearfit
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 

@@ -5,7 +5,7 @@ import pytest
 from stsci.tools import teal
 from stwcs import updatewcs
 from drizzlepac import astrodrizzle
-from drizzlepac.tweakreg import tweakreg
+from drizzlepac.tweak import tweakreg
 from drizzlepac import pixtopix, pixtosky, skytopix
 
 from ..resources import BaseACS
