@@ -8,9 +8,10 @@ Drizzle (Image drizzling step)
 .. toctree::
     :maxdepth: 1
 
-    reference/astrodrizzle
-    reference/adrizzle
     reference/ablot
+    reference/adrizzle
+    reference/astrodrizzle
+    reference/drizcr
     reference/median
     reference/outimage
     reference/photeq
@@ -30,14 +31,12 @@ Pipeline processing
     :maxdepth: 1
 
     reference/astrometry_api
-    reference/imagefindpars
-    reference/refimagefindpars
     reference/catalogs
-    reference/drizcr
+    reference/imagefindpars
     reference/mdztab
     reference/process
+    reference/refimagefindpars
     reference/util
-    reference/utilfuncs
 
 Interactive Image alignment
 ---------------------------
@@ -79,10 +78,10 @@ Classes
 .. toctree::
     :maxdepth: 1
 
+    reference/acsobjects
     reference/baseobjects
     reference/image
     reference/imageobject
-    reference/acsobjects
     reference/nicmosobjects
     reference/stisobjects
     reference/wfc3objects
