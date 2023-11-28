@@ -18,7 +18,14 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.6.2rc2 (unreleased)
+3.6.3 (unreleased)
+=====================
+- Added FluxAp1, FluxErrAp1, FluxAp2, and FluxErrAp2 to point sources catalogs 
+as a part of a bug fix for negative magnitude errors and consequently false postives 
+in the flagging. [#1700]
+
+
+3.6.2 (27-Nov-2023)
 =====================
 - At this time pin Astrocut to versions <=0.9 to avoid conflicts with urllib3
   package.  [#1145]
