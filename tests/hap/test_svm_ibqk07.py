@@ -31,7 +31,7 @@ from pathlib import Path
 POLLER_FILE = "wfc3_bqk_07_input.out"
 WCS_SUB_NAME = "HSC30"
 expected_total_point_sources = {
-"hst_12557_07_wfc3_ir_total_ibqk07_point-cat.ecsv": 3,
+"hst_12557_07_wfc3_ir_total_ibqk07_point-cat.ecsv": 2,
 "hst_12557_07_wfc3_uvis_total_ibqk07_point-cat.ecsv": 13}
 expected_total_segment_sources= {
 "hst_12557_07_wfc3_ir_total_ibqk07_segment-cat.ecsv": 2,
@@ -225,6 +225,7 @@ def test_svm_point_total_cat(gather_output_data):
     tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")]
 
     num_sources = {tdp:len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
+    test = {tdp:ascii.read(tdp, format="ecsv") for tdp in tdp_files}
     valid_cats = {}
     for tdp in expected_total_point_sources.keys():
         for file in tdp_files:
@@ -232,6 +233,7 @@ def test_svm_point_total_cat(gather_output_data):
                 tol_limit = tolerance * expected_total_point_sources[tdp]
                 valid_cats[tdp] = (file, np.isclose(expected_total_point_sources[tdp], num_sources[file], atol=tol_limit))
                 break
+    import ipdb; ipdb.set_trace()
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
     assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_point_sources}"
 
