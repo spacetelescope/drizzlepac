@@ -225,7 +225,6 @@ def test_svm_point_total_cat(gather_output_data):
     tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")]
 
     num_sources = {tdp:len(ascii.read(tdp, format="ecsv")) for tdp in tdp_files}
-    test = {tdp:ascii.read(tdp, format="ecsv") for tdp in tdp_files}
     valid_cats = {}
     for tdp in expected_total_point_sources.keys():
         for file in tdp_files:
