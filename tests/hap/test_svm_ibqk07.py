@@ -233,7 +233,6 @@ def test_svm_point_total_cat(gather_output_data):
                 tol_limit = tolerance * expected_total_point_sources[tdp]
                 valid_cats[tdp] = (file, np.isclose(expected_total_point_sources[tdp], num_sources[file], atol=tol_limit))
                 break
-    import ipdb; ipdb.set_trace()
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][1]]
     assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_point_sources}"
 
