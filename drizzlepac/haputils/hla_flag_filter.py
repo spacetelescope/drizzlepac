@@ -580,7 +580,7 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
             if saturation_flag[i]:
                 table_row["Flags"] = int(table_row["Flags"]) | 4
 
-        phot_table_rows = flag4and8_hunter_killer(phot_table_rows, column_titles)
+        # phot_table_rows = flag4and8_hunter_killer(phot_table_rows, column_titles)
 
         if diagnostic_mode:
             phot_table_temp = phot_table_root + '_SATFILT.txt'
