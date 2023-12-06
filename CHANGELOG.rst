@@ -22,7 +22,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 =====================
 - Added FluxAp1, FluxErrAp1, FluxAp2, and FluxErrAp2 to point sources catalogs 
   as a part of a bug fix for negative magnitude errors and consequently false 
-  postives in the flagging. [#1700]
+  positives in the flagging. [#1700]
 
   
 3.6.2 (27-Nov-2023)
