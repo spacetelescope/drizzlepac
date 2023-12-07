@@ -1277,15 +1277,16 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl.add_column(flag_col)
 
         # build final output table
-        final_col_order = ["X-Center", "Y-Center", "RA", "DEC", "ID", "MagAp1", "MagErrAp1", "MagAp2", "MagErrAp2",
-                           "MSkyAp2", "StdevAp2", "FluxAp2", "CI", "Flags"]
+        final_col_order = ["X-Center", "Y-Center", "RA", "DEC", "ID", "MagAp1", "MagErrAp1", "FluxAp1", 
+                           "FluxErrAp1", "MagAp2", "MagErrAp2", "MSkyAp2", "StdevAp2", "FluxAp2", 
+                           "FluxErrAp2", "CI", "Flags"]
         output_photometry_table = photometry_tbl[final_col_order]
 
         # format output table columns
         final_col_format = {"X-Center": "10.3f", "Y-Center": "10.3f", "RA": "13.7f", "DEC": "13.7f", "ID": "7d",
-                            "MagAp1": '7.3f', "MagErrAp1": '7.3f', "MagAp2": '7.3f',
-                            "MagErrAp2": '7.3f', "MSkyAp2": '7.3f', "StdevAp2": '7.3f',
-                            "FluxAp2": '10.4f', "CI": "7.3f", "Flags": "5d"}  # TODO: Standardize precision
+                            "MagAp1": '7.3f', "MagErrAp1": '7.3f', "FluxAp1": '10.4f', "FluxErrAp1": '10.4f',
+                            "MagAp2": '7.3f', "MagErrAp2": '7.3f', "MSkyAp2": '7.3f', "StdevAp2": '7.3f',
+                            "FluxAp2": '10.4f', "FluxErrAp2": '10.4f', "CI": "7.3f", "Flags": "5d"}  # TODO: Standardize precision
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
@@ -1297,11 +1298,14 @@ class HAPPointCatalog(HAPCatalogBase):
                              "DEC": "Sky coordinate at epoch of observation",
                              "MagAp1": "ABMAG of source based on the inner (smaller) aperture",
                              "MagErrAp1": "Error of MagAp1",
+                             "FluxAp1": "Flux of source based on the outer (smaller) aperture",
+                             "FluxErrAp1": "Flux of source based on the outer (smaller) aperture",
                              "MagAp2": "ABMAG of source based on the outer (larger) aperture",
                              "MagErrAp2": "Error of MagAp2",
                              "MSkyAp2": "Sky estimate from an annulus outside Aperture 2",
                              "StdevAp2": "Standard deviation of sky estimate from annulus outside Aperture 2",
                              "FluxAp2": "Flux of source based on the outer (larger) aperture",
+                             "FluxErrAp2": "Flux of source based on the outer (larger) aperture",
                              "CI": "Concentration Index",
                              "Flags": "Numeric encoding for conditions on detected sources"}
         for fcd_key in final_col_descrip.keys():
@@ -1311,7 +1315,8 @@ class HAPPointCatalog(HAPCatalogBase):
         final_col_units = {"X-Center": "pixel", "Y-Center": "pixel", "RA": "degree", "DEC": "degree",
                            "ID": "", "MagAp1": "mag(AB)", "MagErrAp1": "mag(AB)", "MagAp2": "mag(AB)",
                            "MagErrAp2": "mag(AB)", "MSkyAp2": "electron/(s pixel)", "StdevAp2": "electron/(s pixel)",
-                           "FluxAp2": "electron/s", "CI": "mag(AB)", "Flags": ""}
+                           "FluxAp1": "electron/s", "FluxErrAp1": "electron/s","FluxAp2": "electron/s", 
+                           "FluxErrAp2": "electron/s", "CI": "mag(AB)", "Flags": ""}
         for col_title in final_col_units:
             output_photometry_table[col_title].unit = final_col_units[col_title]
 

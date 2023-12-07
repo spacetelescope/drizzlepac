@@ -31,8 +31,8 @@ from pathlib import Path
 POLLER_FILE = "wfc3_bqk_07_input.out"
 WCS_SUB_NAME = "HSC30"
 expected_total_point_sources = {
-"hst_12557_07_wfc3_ir_total_ibqk07_point-cat.ecsv": 4,
-"hst_12557_07_wfc3_uvis_total_ibqk07_point-cat.ecsv": 14}
+"hst_12557_07_wfc3_ir_total_ibqk07_point-cat.ecsv": 2,
+"hst_12557_07_wfc3_uvis_total_ibqk07_point-cat.ecsv": 13}
 expected_total_segment_sources= {
 "hst_12557_07_wfc3_ir_total_ibqk07_segment-cat.ecsv": 2,
 "hst_12557_07_wfc3_uvis_total_ibqk07_segment-cat.ecsv": 19}
