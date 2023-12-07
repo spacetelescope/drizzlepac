@@ -585,8 +585,6 @@ def hla_saturation_flags(drizzled_image, flt_list, catalog_name, catalog_data, p
             if saturation_flag[i]:
                 table_row["Flags"] = int(table_row["Flags"]) | 4
 
-        phot_table_rows = flag4and8_hunter_killer(phot_table_rows, column_titles)
-
         if diagnostic_mode:
             phot_table_temp = phot_table_root + '_SATFILT.txt'
             phot_table_rows.write(phot_table_temp, delimiter=",", format='ascii')
@@ -1618,43 +1616,6 @@ def xytord(xy_coord_array, image, image_ext, origin=1):
     return (rd_arr)
 
 # ======================================================================================================================
-
-
-def flag4and8_hunter_killer(catalog_data, column_titles):
-    """This function searches through photometry catalogs for sources whose flags contain
-    both bits 4 (multi-pixel saturation), and 8 (faint magnitude limit).
-    If found, the subroutine removes the "8" bit value from the set of flags for that source.
-
-    Parameters
-    ----------
-    catalog_data : astropy Table object
-        catalog data to process
-
-    column_titles : dictionary
-        Relevant column titles
-
-    Returns
-    -------
-    catalog_data : astropy Table object
-        input catalog data with updated flags
-    """
-    conf_ctr = 0
-    log.info("Searching for flag 4 + flag 8 conflicts....")
-    for catalog_line in catalog_data:
-        if ((catalog_line["Flags"] & 4 > 0) and (catalog_line["Flags"] & 8 > 0)):
-            conf_ctr += 1
-            catalog_line["Flags"] = int(catalog_line["Flags"]) - 8
-    if conf_ctr == 0:
-        log.info("No conflicts found.")
-    if conf_ctr == 1:
-        log.info("{} conflict fixed.".format(conf_ctr))
-    if conf_ctr > 1:
-        log.info("{} conflicts fixed.".format(conf_ctr))
-
-    return catalog_data
-
-# ======================================================================================================================
-
 
 def make_mask_array(drz_image):
     """
