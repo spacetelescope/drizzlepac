@@ -249,7 +249,12 @@ def ci_filter(drizzled_image, catalog_name, catalog_data, proc_type, param_dict,
             merr2 = numpy.nan
         else:
             merr2 = float(merr2)
-        good_snr = merr2 <= 2.5 / (snr * numpy.log(10))
+        
+        # SNR calculation based on flux instead of magnitude as negative magnitudes are possible
+        fluxap2 = table_row["FluxAp2"]
+        fluxerr2 = table_row["FluxErrAp2"]
+        good_snr = fluxap2 >= snr * fluxerr2
+        
         ci_err = numpy.sqrt(merr1 ** 2 + merr2 ** 2)
 
         if not good_snr:
