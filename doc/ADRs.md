@@ -1,4 +1,4 @@
-# Updating WCS in Headers
+# Updating WCS in Headers 11/14/23
 
 ## Context
 
@@ -13,7 +13,7 @@ In order to ensure reproducibility and the ability to share consistent datasets 
 Headerlets can now be used to easily update and select WCS for datasets. Headerlets are files with the _hlet.fits suffix
 
 
-# Updating APERTURE keyword through poller
+# Updating APERTURE keyword through poller 11/14/23
 
 ## Context
 
