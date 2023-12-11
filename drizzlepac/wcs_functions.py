@@ -1077,7 +1077,9 @@ def make_mosaic_wcs(filenames, rot=None, scale=None):
 
     hstwcs_list = [get_hstwcs(f, extnum) for f in filenames for extnum in get_extns(f)]
 
-    # Generate output WCS based on input WCSs, and undistorts depending on extension.
+    # Generate output WCS based on input WCSs, 
+    # is_proj_plane_distorted checks for distortion correction and creates an undistorted 
+    # output WCS if that is the case
     output_wcs = utils.output_wcs(hstwcs_list, undistort=is_proj_plane_distorted(hstwcs_list[0]))
   
     # Combine them into a single mosaic WCS    
