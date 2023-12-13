@@ -151,6 +151,8 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
             mag_err = mag
         else:
             mag_err = 1.0857 * flux_error / flux
+            # Set magnitude errors to infinity if flux is negative
+            mag_err[np.logical_not(flux>0)]=np.inf
 
         # Build the final data table
         stacked = np.stack([flux, flux_error, mag, mag_err], axis=1)
