@@ -2,7 +2,7 @@
 
 :Authors: Warren Hack, Mihai Cara
 
-:License: :doc:`LICENSE`
+:License: :doc:`../LICENSE`
 
 """
 from stsci.tools import teal
