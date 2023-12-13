@@ -16,9 +16,10 @@ The Drizzlepac package is a collection packages for aligning and combining astro
     :maxdepth: 2
 
     getting-started
-    explanation
-    parameters
-    reference
+    drizzlepac_api
+    mast_data_products
+    user_reprocessing
+    utilities
 
 .. DrizzlePac Release Notes
 .. ------------------------

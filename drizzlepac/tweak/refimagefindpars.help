@@ -1,0 +1,129 @@
+These parameters control the operation of the algorithm that extracts
+sources from the reference image (if specified) as called by :ref:`tweakreg`.
+The algorithm implemented follows the concepts defined by ``DAOFIND``
+(without actually using any ``DAOFIND`` code).
+
+
+:Attributes:
+
+    **computesig**: bool (Default = True)
+        This parameter controls whether or not to automatically compute a
+        sigma value to be used for object identification. If set to ``True``,
+        then the value computed will override any user input for
+        the parameter ``skysigma``. The automatic sigma value gets
+        computed from each input exposure as:
+
+        .. math::
+            \sigma = \sqrt{2\left|mode\right|}
+
+        This single value will then be used for object identification
+        for all input exposures.
+
+    **skysigma**: float (Default = 0.0)
+        The standard deviation of the sky pixels. This value will only be
+        used if computesig is ``False``.
+
+    **conv_width**: float (Default = 3.5)
+        The convolution kernel width in pixels. Recommended values
+        (~2x the PSF FWHM): ACS/WFC & WFC3/UVIS ~3.5 pix and
+        WFC3/IR ~2.5 pix.
+
+    **peakmin**: float, None (Default = None)
+        This parameter allows the user to select only those sources whose
+        peak value (in the units of the input image) is greater than this
+        value.
+
+    **peakmax**: float, None  (Default = None)
+        This parameter allows the user to select only those sources
+        whose peak value (in the units of the input image) is less than
+        this value.
+
+    **threshold**: float (Default = 4.0)
+        The object detection threshold above the local background in units
+        of sigma.
+
+    **nsigma**: float (Default = 1.5)
+        The semi-major axis of the Gaussian convolution kernel used to
+        compute the density enhancement and mean density images in
+        Gaussian sigma.
+
+    **ratio**: float (Default = 1.0)
+        The ratio of the sigma of the Gaussian convolution kernel along
+        the minor axis direction to the sigma along the major axis direction.
+        For a circularly-symmetric kernel use ratio = 1.0.
+
+    **theta**: float (Default = 0.0)
+        The position angle (degrees) of the major axis of the Gaussian
+        convolution kernel. Theta is measured counter-clockwise from
+        the x axis.
+
+    **fluxmin**: float, None (Default = None)
+        This parameter allows the user to select only those sources whose
+        total flux (in the units of the input image) is greater than
+        this value.
+
+    **fluxmax**: float, None (Default = None)
+        This parameter allows the user to select only those sources whose
+        total flux (in the units of the input image) is less than this value.
+
+    **dqbits**: int, str, None, optional (Default = None)
+        Integer sum of all the DQ bit values from the input image's DQ array
+        that should be considered "good" when building masks for source
+        finding. For example, if pixels in the DQ array can be combinations
+        of 1, 2, 4, and 8 flags and one wants to consider DQ "defects"
+        having flags 2 and 4 as being acceptable for source finding,
+        then ``dqbits`` should be set to 2+4=6. Then a DQ pixel having values
+        2,4, or 6 will be considered a good pixel, while a DQ pixel with
+        a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a "bad" pixel.
+
+        Alternatively, one can enter a comma- or '+'-separated list of
+        integer bit flags that should be added to obtain the final "good"
+        bits. For example, both ``4,8`` and ``4+8`` are equivalent to
+        setting ``dqbits`` to 12.
+
+        | Setting ``dqbits`` to 0 will make *all* non-zero pixels in the DQ
+          mask to be considered "bad" pixels, and the corresponding image
+          pixels will not be used for source finding.
+
+        | The default value of ``None`` will turn off the use of image's DQ
+          array for source finding.
+
+        | In order to reverse the meaning of the ``dqbits``
+          parameter from indicating values of the "good" DQ flags
+          to indicating the "bad" DQ flags, prepend '~' to the string
+          value. For example, in order not to use pixels with
+          DQ flags 4 and 8 for source finding and to consider
+          as "good" all other pixels (regardless of their DQ flag),
+          set ``dqbits`` to ``~4+8``, or ``~4,8``. To obtain the
+          same effect with an ``int`` input value (except for 0),
+          enter -(4+8+1)=-13. Following this convention,
+          a ``dqbits`` string value of ``'~0'`` would be equivalent to
+          setting ``dqbits=None``.
+
+    **use_sharp_round**: bool (Default = False)
+        This parameter controls whether or not to enable selection of sources
+        based on their sharpness and roundness statistics.
+
+    **sharplo**: float (Default = 0.2)
+        ``sharplo`` and ``sharphi`` are designed to eliminate brightness
+        maxima that are due to bad pixels rather than to astronomical objects.
+        Only sources with sharpness above the ``sharplo`` value will be
+        selected.
+
+    **sharphi**: float (Default = 1.0)
+        ``sharplo`` and ``sharphi`` are designed to eliminate brightness
+        maxima that are due to bad pixels rather than to astronomical objects.
+        Only sources with sharpness below the ``sharphi`` value will be
+        selected.
+
+    **roundlo**: float (Default = -1.0)
+        ``roundlo`` and ``roundhi`` are designed to eliminate brightness
+        maxima that are due to bad rows or columns, rather than to
+        astronomical objects. Only sources with roundness above the
+        ``roundlo`` value will be selected.
+
+    **roundhi**: float (Default = 1.0)
+        ``roundlo`` and ``roundhi`` are designed to eliminate brightness
+        maxima that are due to bad rows or columns, rather than to
+        astronomical objects. Only sources with roundness below the
+        ``roundhi`` value will be selected.

@@ -1,0 +1,220 @@
+:py:func:`~drizzlepac.mapreg.MapReg` provides an automated interface for converting
+a region file to the image coordinate system (CS) of multiple images (and
+their extensions) using WCS information from the image(s) header(s).
+This conversion does not take into account pointing errors and, therefore,
+an examination and adjustment (if required) of output region files is highly
+recommended. This task is designed to simplify the creation of the exclusions
+and/or inclusions region files used with :py:func:`~drizzlepac.tweakreg.TweakReg`
+task for sources finding.
+
+Parameters
+----------
+input_reg : string or list of strings (Default = '')
+    Input region files that need to be mapped to image CS using WCS information
+    from ``images`` (see below). Only region files saved in sky CS are allowed
+    in this release. Regions specified in image-like coordinates (e.g., image,
+    physical) will be ignored.
+
+    This paramater can be provided in any of several forms:
+
+     - filename of a single image
+     - comma-separated list of filenames
+     - ``@-file`` filelist containing list of desired input region filenames
+
+    The ``@-file`` filelist needs to be provided as an ASCII text file
+    containing a list of filenames for all input region files with one
+    filename on each line of the file.
+
+images : string or list of strings (Default = ``*.fits``)
+    FITS images onto which the region files ``input_reg`` will be mapped. These
+    image files must contain WCS information in their headers in order to
+    convert ``input_reg`` from sky coordinates to correct image coordinates.
+    This paramater can be provided in any of several forms:
+
+     - filename of a single image
+     - filename of an association (ASN)table
+     - wild-card specification for files in directory (using ``*``, ``?`` etc.)
+     - comma-separated list of filenames
+     - ``@-file`` filelist containing list of desired input filenames
+       (and optional inverse variance map filenames)
+
+    The ``@-file`` filelist needs to be provided as an ASCII text file
+    containing a list of filenames for all input images (to which ``input_reg``
+    regions should be mapped) with one filename on each line of the file.
+
+img_wcs_ext : string or list of strings (Default = ``SCI``)
+    Extension name, extension name and version, or extension number of FITS
+    extensions in the ``images`` to which the input regions ``input_reg`` should be
+    mapped. The header of each extension must contain WCS information that will
+    be used to convert ``input_reg`` from sky CS to image-like CS. Multiple
+    extensions must be separated by semicolon while extension name and version
+    (if present) must be separated by comma, e.g., ``'SCI;DQ,1;0'``.
+    When specifying the extension name only, internally it will be expanded
+    into a list of extension names and versions for each version of that
+    extension name present in the input ``images``. For example, if a FITS file
+    has four SCI and four DQ extensions, then ``'SCI;DQ,1;0'`` will be expanded into
+    ``'SCI,1;SCI,2;SCI,3;SCI,4;DQ,1;0'``.
+
+refimg : string (Default = '')
+    **Reserved for future use.**
+    Filename of the reference image. May contain extension specifier:
+    [extname,extver], [extname], or [extnumber].
+
+    .. note::
+       This parameter is reserved for future use and it is not
+       available through ``TEAL`` interface.
+
+ref_wcs_ext : string (Default = ``SCI``)
+    **Reserved for future use.**
+    Extension name and/or version of FITS extensions
+    in the ``refimg`` that contain WCS information that will be used to convert
+    ``input_reg`` from image-like CS to sky CS. NOTE: Only extension name is
+    allowed when ``input_reg`` is a list of region files that contain regions
+    in image-like CS. In this case, the number of regions in ``input_reg`` must
+    agree with the number of extensions with name specified by ``ref_wcs_ext``
+    present in the ``refimg`` FITS image.
+
+    .. note::
+       This parameter is reserved for future use and it is not
+       available through ``TEAL`` interface.
+
+chip_reg : string or list of strings (Default = '')
+    Input region files in image CS associated with each extension specified by
+    the ``img_wcs_ext`` parameter above. These regions will be added directly
+    (without any transformation) to the ``input_reg`` regions mapped to each
+    extension of the input ``images``. These regions must be specified in
+    image-like coordinates. Typically, these regions should contain "exclude"
+    regions to exclude parts of the image specific to the detector **chip**
+    (e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
+    images) from being used for source finding.
+    This paramater can be provided in one of the following forms:
+
+     - filename of a single image (if ``img_wcs_ext`` specifies a single FITS
+       extension);
+     - comma-separated list of filenames (if ``img_wcs_ext`` specifies more than
+       one extension) or ``None`` for extensions that do not need any
+       chip-specific regions to be excluded/included;
+     - '' (empty string) or None if no chip-specific region files are provided.
+
+     The number of regions ideally must be equal to the number of extensions
+     specified by the ``img_wcs_ext`` parameter. If the number of chip-specific
+     regions is less than the number of ``img_wcs_ext`` extensions then 'chip_reg'
+     regions will be assigned to the first extensions from ``img_wcs_ext``
+     (after internal expansion described in help for the ``img_wcs_ext``
+     parameter above). If the number of 'chip_reg' is larger than the number of
+     ``img_wcs_ext`` extensions then extra regions will be ignored.
+
+outpath : string (Default = ``./regions``)
+    The directory to which the transformed regions should be saved.
+
+filter : string {'None', 'fast', or 'precise' } (Default = 'None')
+    Specify whether or not to remove the regions in the transformed region files
+    that are outside the image array. With the 'fast' mehod only intersection
+    of the bounding boxes is being checked.
+
+    .. note::
+       The ``'precise'`` method is not
+       implemented in this release and, if specified, defaults to 'fast'.
+       The ``'precise'`` option is not available through the ``TEAL``
+       interface.
+
+catfname : string (Default = ``exclusions_cat.txt``)
+    The file name of the output exclusions catalog file to be created from the
+    supplied image and region file names. This file can be passed as an input
+    to TweakReg task. Verify that the created file is correct!
+
+append : bool (Default = False)
+    Specify whether or not to append the transformed regions to the existing
+    region files with the same name.
+
+interactive : bool (Default = False)
+    **Reserved for future use.** (This switch controls whether the program stops
+    and waits for the user to examine any generated region files before
+    continuing on to the next image.)
+
+    .. note::
+       This parameter is reserved for future use and it is not
+       available through ``TEAL`` interface.
+
+verbose : bool (Default = False)
+    Specify whether or not to print extra messages during processing.
+
+
+Notes
+-----
+**NOTE 1:** This task takes a region file (or multiple files) that describe(s)
+what regions of sky should be used for source finding (*include* regions) and
+what regions should be avoided (*exclude* regions) and transforms/maps
+this region file onto a number of image files that need to be alighned.
+
+The idea behind this task is automate the creation of region files that then can
+be passed to *exclusions* parameter of the ``TweakReg`` task.
+
+The same thing can be achieved manually using, for example, external FITS
+viewers, e.g., SAO DS9. For example, based on some image ``refimg.fits`` we can
+select a few small regions of sky that contain several good (bright, not
+saturated) point-like sources that could be used for image alignment of other
+images (say ``img1.fits``, ``img2.fits``, etc.). We can save this region file in
+sky coordinates (e.g., ``fk5``), e.g., under the name ``input_reg.reg``. We can then
+load a specific extension of each of the images ``img1.fits``, ``img2.fits``, etc.
+one by one into DS9 and then load onto those images the previously created
+include/exclude region file ``input_reg.reg``. Now we can save the regions using
+*image* coordinates. To do conversion from the sky coordinates to image
+coordinates, DS9 will use the WCS info from the image onto which the region file
+was loaded. The :py:func:`~drizzlepac.mapreg.MapReg` task tries to automate this process.
+
+**NOTE 2:** :py:func:`~drizzlepac.mapreg.MapReg` relies on the
+`stregion <https://github.com/spacetelescope/stregion>`_ package for region file
+parsing and coordinate transformation. Unfortunately, as of writing,
+**stregion** does not consider distortion corrections when performing coordinate
+transformations. Therefore, there might be a slight discrepancy between the
+regions produced by :py:func:`~drizzlepac.mapreg.MapReg` and the DS9 regions obtained as described in
+the NOTE 1 above.
+
+**NOTE 3:** :py:func:`~drizzlepac.mapreg.MapReg` does not take into account pointing errors and thus the
+produced region files can be somewhat misaligned compared to their intended
+position around the sources identified in the "reference" image. Threfore, it is
+highly recommended that the produced region files be loaded into DS9 and their
+position be adjusted manually to include the sources of interest (or to avoid
+the regions that need to be avoided).
+If possible, the *include* or *exclude* regions should be large enough as to
+allow for most pointing errors.
+
+Examples
+--------
+Let's say that based on some image ``refimg.fits`` we have produced a "master"
+reference image (``master.reg``) that includes regions around sources that we want
+to use for image alignment in task :py:func:`~drizzlepac.tweakreg.TweakReg` and excludes regions that we
+want to avoid being used for image alignment (e.g, diffraction spikes, saturated
+quasars, stars, etc.). We save the file ``master.reg`` in sky CS (e.g., ``fk5``).
+
+Also, let's assume that we have a set of images ``img1.fits``, ``img2.fits``, etc.
+with four FITS extensions named 'SCI' and 'DQ'. For some of the extensions,
+after analizing the ``img*.fits`` images we have identified parts of the chips that
+cannot be used for image alighnment. We create region files for those extensions
+and save the files in image CS as, e.g., ``img1_chip_sci2.reg`` (in our example
+this will be the only chip that needs "special" treatment).
+
+Finally, let's say we want to "replicate" the "master" region file to all SCI
+exctensions of the ``img*.fits`` images as well as to the 2nd DQ extension and to
+the 8th extension of the ``img*.fits`` images.
+
+To do this we run:
+
+    >>> mapreg(input_reg = 'master.reg', images='img*.fits',
+    ...        img_wcs_ext='sci;dq,2;8', chip_reg='None,
+    ...        img1_chip_sci2.reg,None,None,None,None')
+
+This will produce six region files in the ./regions subdirectory for *each*
+input image::
+
+    ``img1_sci1_twreg.reg``,    ``img1_sci2_twreg.reg``,    ``img1_sci3_twreg.reg``,
+    ``img1_sci4_twreg.reg``,    ``img1_dq2_twreg.reg``,     ``img1_extn8_twreg.reg``
+    ...
+
+::
+
+    ``img2_sci1_twreg.reg``,    ``img2_sci2_twreg.reg``,    ``img2_sci3_twreg.reg``,
+    ``img2_sci4_twreg.reg``,    ``img2_dq2_twreg.reg``,     ``img2_extn8_twreg.reg``
+    ...
+
