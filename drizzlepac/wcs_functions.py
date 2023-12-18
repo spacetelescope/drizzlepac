@@ -6,7 +6,6 @@
 
 """
 from astropy.io import fits as pyfits
-from astropy.wcs.utils import is_proj_plane_distorted
 import copy
 import numpy as np
 from numpy import linalg
@@ -1075,14 +1074,12 @@ def make_mosaic_wcs(filenames, rot=None, scale=None):
     if not isinstance(filenames, list):
         filenames = [filenames]
 
-    hstwcs_list = [get_hstwcs(f, extnum) for f in filenames for extnum in get_extns(f)]
-
-    # Generate output WCS based on input WCSs, 
-    # is_proj_plane_distorted checks for distortion correction and creates an undistorted 
-    # output WCS if that is the case
-    output_wcs = utils.output_wcs(hstwcs_list, undistort=is_proj_plane_distorted(hstwcs_list[0]))
-  
-    # Combine them into a single mosaic WCS    
+    # Compile list of WCSs for all chips from all input filenames
+    hstwcs_list = []
+    for f in filenames:
+        hstwcs_list.extend([get_hstwcs(f, extnum) for extnum in get_extns(f)])
+    # Combine them into a single mosaic WCS
+    output_wcs = utils.output_wcs(hstwcs_list, undistort=True)
     output_wcs.wcs.cd = make_perfect_cd(output_wcs)
 
     # Apply each parameter in order, as this is effectively what is
