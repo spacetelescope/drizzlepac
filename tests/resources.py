@@ -75,8 +75,8 @@ class BaseCal:
         self.tree = envopt
 
         # Collect pytest configuration values specified in setup.cfg or pytest.ini
-        self.inputs_root = pytestconfig.getini('inputs_root')[0]
-        self.results_root = pytestconfig.getini('results_root')[0]
+        self.inputs_root = pytestconfig.getini('inputs_root')
+        self.results_root = pytestconfig.getini('results_root')
 
     def teardown_class(self):
         """Reset path and variables."""
