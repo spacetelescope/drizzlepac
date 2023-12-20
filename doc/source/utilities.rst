@@ -5,5 +5,8 @@ Utilities
 .. toctree:: 
     :maxdepth: 2
 
-    getting_started/installation
-    
+    utilities/pixtopix
+    utilities/pixtosky
+    utilities/skytopix
+    utilities/resetbits
+    utilities/
