@@ -21,6 +21,7 @@ Misc Tools
     :maxdepth: 1
     
     utilities/resetbits
+    updatewcs (STWCS) <https://stwcs.readthedocs.io/en/latest/updatewcs.html>
     utilities/pixreplace
     utilities/photeq
     utilities/updatenpol

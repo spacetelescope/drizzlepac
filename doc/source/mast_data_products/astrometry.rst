@@ -15,9 +15,13 @@ Therefore, multiple efforts have been undertaken to improve the absolute astrome
 
 Each solution has its own advantages and errors, making some good for one use but inadequate for others.  As a result,  **all new WCS solutions which are approved by STScI** are being offered with HST data provided by MAST with headerlets serving as the mechanism for providing and applying all WCS solutions.
 
-
-Where are all the WCS solutions?
+Pipeline Astrometric Calibration
 ================================
+
+`Pipeline Astrometric Calibraion <https://hst-docs.stsci.edu/drizzpac/chapter-4-astrometric-information-in-the-header/4-5-absolute-astrometry>`_
+
+WCS solutions
+=============
 
 All calibrated HST products delivered by the Barbara A. Mikulski Archive for Space Telescopes (MAST) contain the best available WCS solutions available at the time the data was last processed.  Unfortunately, only 1 WCS can be used at a time to transform the position in the image to an undistorted position on the sky.  The FITS Standard, however, describes how multiple WCS solutions can be defined for an image in `FITS Paper I (Greisen, E. W., and Calabretta, M. R., Astronomy & Astrophysics, 395, 1061-1075, 2002) <http://adsabs.harvard.edu/cgi-bin/nph-bib_query?bibcode=2002A%26A...395.1061G&db_key=AST&high=3db47576cf06933>`_.
 
@@ -293,3 +297,9 @@ The full details on the headerlet, it's required set of keywords, and how the di
 Code Interface to headerlets
 -----------------------------
 The `STWCS package <https://stwcs.readthedocs.io/en/latest/>`_ provides the code used to work with headerlets and WCS solutions.
+
+
+Astrometry Database (STWCS)
+===========================
+
+Astrometry Database <https://stwcs.readthedocs.io/en/latest/astrometry_utils.html>
