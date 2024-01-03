@@ -9,5 +9,7 @@ Hubble Advanced Products API
     run_singlehap
     mvm_api
     run_multihap
-    mvm_utilities
+    mvm_utilities_api
     make_custom_mosaic
+    object_classes
+    

@@ -11,4 +11,5 @@ Introduction: (Mitchell)
 
     getting_started/installation
     getting_started/drizzlepac_resources
+    getting_started/contributor_resources
     getting_started/citing_drizzlepac

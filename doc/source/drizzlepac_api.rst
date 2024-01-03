@@ -14,3 +14,11 @@ Drizzlepac API
     drizzlepac_api/ablot
     drizzlepac_api/drizcr
     drizzlepac_api/outimage
+
+
+Index
+-----
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
