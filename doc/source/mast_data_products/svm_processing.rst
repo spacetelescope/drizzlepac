@@ -5,7 +5,7 @@ Single-visit Mosaic Processing
 ==============================
 Standard calibration pipeline processing focuses on aligning data taken as
 associations or as single exposures as closely to a standard astrometric coordinate
-frame as possible (see :ref:`runastrodriz-description` for full details).
+frame as possible (see the `DrizzlePac Handbook <https://hst-docs.stsci.edu/drizzpac/chapter-4-astrometric-information-in-the-header/4-5-absolute-astrometry>`_ for full details).
 This involves alignment of very few images all taken under
 as identical conditions as possible; namely, detector, filter, guide stars,
 guiding mode, and so on.  These observations were intended by the user to

@@ -202,7 +202,7 @@ This processing includes a lot of logic intended to not only apply pre-defined (
 WCS solutions, but also to try and determine a new aposteriori solution then
 verify which solution (default pipeline, apriori or aposteriori) actually provides
 the WCS which comes closest to the GAIA astrometric frame.
-The :ref:`runastrodriz-description` of the runastrodriz task provides
+The `runastrodriz <https://hst-docs.stsci.edu/drizzpac/chapter-4-astrometric-information-in-the-header/4-5-absolute-astrometry>`_ task provides
 the full discussion of the logic used to define the
 defined 'active' WCS that gets used to create the products which get archived.
 
