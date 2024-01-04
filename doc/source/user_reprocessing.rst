@@ -1,5 +1,5 @@
-User Reprocessing
-=================
+User Data Reprocessing
+======================
 .. _user_reprocessing:
 
 Recommended drizzle parameters to your specific data

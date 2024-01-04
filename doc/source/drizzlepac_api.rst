@@ -1,5 +1,5 @@
-Drizzlepac API
-==============
+Drizzlepac Interface
+====================
 .. _drizzlepac_api:
 
 .. toctree:: 
