@@ -7,8 +7,8 @@ Conda (Recommended)
 ``Drizzlepac`` is installed when you install the ``stenv`` conda environment (a replacement for ``astroconda``). Select your desired release and follow the instructions on the `installation page <https://stenv.readthedocs.io/en/latest/getting_started.html>`_. 
 
 
-From Source
-===========
+From Source (Experimental)
+==========================
 
 Clone this repository
 *********************
