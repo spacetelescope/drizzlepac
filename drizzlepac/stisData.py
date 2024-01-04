@@ -4,7 +4,7 @@ data.
 
 :Authors: Megan Sosey, Christopher Hanley, Mihai Cara
 
-:License: :doc:`../LICENSE`
+
 
 """
 from stsci.tools import fileutil

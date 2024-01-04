@@ -2,7 +2,7 @@
 
 :Authors: Warren Hack, Mihai Cara
 
-:License: :doc:`../LICENSE`
+
 
 """
 import re

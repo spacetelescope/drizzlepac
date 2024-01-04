@@ -3,9 +3,6 @@ Classes to keep track of all WCS and catalog information.
 Used by ``TweakReg``.
 
 :Authors: Warren Hack, Mihai Cara
-
-:License: :doc:`../LICENSE`
-
 """
 import os
 import sys

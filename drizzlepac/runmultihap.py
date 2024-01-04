@@ -2,7 +2,7 @@
 
 """ runmultihap.py - Module to control processing of multi-visit mosaics
 
-:License: :doc:`../LICENSE`
+
 
 USAGE:
     >>> python drizzlepac/runmultihap [-dl] inputFilename

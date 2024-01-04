@@ -3,7 +3,7 @@
 
 :Authors: Warren Hack, Ivo Busko, Christopher Hanley
 
-:License: :doc:`../LICENSE`
+
 
 """
 import copy
