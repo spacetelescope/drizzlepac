@@ -2,7 +2,7 @@ Drizzlepac Resources
 ====================
 .. _drizzlepac_resources:
 
-Summary:
+Summary: *Coming soon!*
 
 .. toctree:: 
     :maxdepth: 2

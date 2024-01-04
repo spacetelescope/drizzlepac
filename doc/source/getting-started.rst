@@ -4,7 +4,7 @@ Getting Started
 
 
 
-Introduction: (Mitchell)
+Introduction: *Coming soon!*
 
 .. toctree:: 
     :maxdepth: 2
