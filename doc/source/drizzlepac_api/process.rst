@@ -1,8 +1,8 @@
 .. _processinput:
 
-*************
-Process Input
-*************
+*******************************
+Process Input (data validation)
+*******************************
 
 This module supports the interpretation and initial verification of all the
 input files specified by the user. These functions:
