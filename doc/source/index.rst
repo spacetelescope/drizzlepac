@@ -10,7 +10,7 @@ Drizzlepac
 ==========
 .. _drizzlepac:
 
-The Drizzlepac package is a collection packages for aligning and combining astronomical images and coordinate transformations. Drizzlepac includes ``AstroDrizzle``, ``Tweakreg``, and the Hubble Archival Program (HAP) processing pipline, responsible for the creation of Hubble Single Visit Mosaics (SVMs) and Multi Visit Mosaics (MVMs).
+DrizzlePac is a set of software tools maintained by the Space Telescope Science Institute (STScI) that is designed to align and combine astronomical images obtained with the Hubble Space Telescope. DrizzlePac includes core features such as AstroDrizzle, Tweakreg, and the Hubble Archival Program (HAP) data processing pipeline that creates Single Visit and Multi Visit Mosaics (SVMs and MVMs). This readthedocs provides resources for users to run DrizzlePac in order to create custom image mosaics, and documents the procedures used to produce the MAST SVM and MVM data products. Please see the Getting Started guide and DrizzlePac website for additional information.
 
 .. toctree:: 
     :maxdepth: 2
