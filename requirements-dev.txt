@@ -1,6 +1,7 @@
-git+https://github.com/astropy/photutils.git#egg=photutils
-git+https://github.com/spacetelescope/stsci.tools.git#egg=stsci.tools
-git+https://github.com/spacetelescope/stwcs.git#egg=stwcs
+git+https://github.com/astropy/photutils.git
+git+https://github.com/spacetelescope/stsci.tools.git
+git+https://github.com/spacetelescope/stwcs.git
+git+https://github.com/spacetelescope/stregion.git
 #git+https://github.com/astropy/astroquery.git#egg=astroquery
 --extra-index-url https://pypi.anaconda.org/astropy/simple astropy --pre
 
