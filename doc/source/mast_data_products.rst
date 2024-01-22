@@ -8,10 +8,12 @@ Standard Pipeline Data Products
 .. toctree:: 
     :maxdepth: 2
 
-    WCS Corrections (STWCS) <https://stwcs.readthedocs.io/en/latest/wcs_corrections.html>
+    mast_data_products/reproducing_mast_data_products
+    mast_data_products/pipeline-astrometric-calibration-description
+    More information on WCS Corrections (STWCS) <https://stwcs.readthedocs.io/en/latest/wcs_corrections.html>
     mast_data_products/astrometry
     mast_data_products/mdztab
-    mast_data_products/reproducing_mast_data_products
+    
 
 Hubble Advanced Products
 ------------------------
