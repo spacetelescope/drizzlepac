@@ -2,7 +2,7 @@ User Data Reprocessing
 ======================
 .. _user_reprocessing:
 
-Recommended drizzle parameters to your specific data
+Here we provide resources (including Jupyter Notebooks) to aid users in the reprocessing of their data to best suit their individual science cases.
 
 
 .. toctree:: 

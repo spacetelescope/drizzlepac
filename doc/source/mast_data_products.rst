@@ -1,4 +1,4 @@
-Mast Data Products
+MAST Data Products
 ==================
 .. _mast_data_products:
 

@@ -1,7 +1,7 @@
 .. _astrometry:
 
 =========================
-Astrometry and headerlets
+Astrometry and Headerlets
 =========================
 
 The astrometry for any given observation relies upon accurate pointing information from the telescope.   However, HST has evolved over time since it was put into orbit, with the focus changing over time as the telescope desorbs.  The instruments have also changed positions over time relative to the FGS guides, and the coordinates for the guide stars were orginally determined using ground-based information.  All this has limited the calculation of the pointing of any given observation on the sky (absolute astrometry) to no better than 1-2 arc-seconds.
@@ -20,7 +20,7 @@ Pipeline Astrometric Calibration
 
 `Pipeline Astrometric Calibraion <https://hst-docs.stsci.edu/drizzpac/chapter-4-astrometric-information-in-the-header/4-5-absolute-astrometry>`_
 
-WCS solutions
+WCS Solutions
 =============
 
 All calibrated HST products delivered by the Barbara A. Mikulski Archive for Space Telescopes (MAST) contain the best available WCS solutions available at the time the data was last processed.  Unfortunately, only 1 WCS can be used at a time to transform the position in the image to an undistorted position on the sky.  The FITS Standard, however, describes how multiple WCS solutions can be defined for an image in `FITS Paper I (Greisen, E. W., and Calabretta, M. R., Astronomy & Astrophysics, 395, 1061-1075, 2002) <http://adsabs.harvard.edu/cgi-bin/nph-bib_query?bibcode=2002A%26A...395.1061G&db_key=AST&high=3db47576cf06933>`_.
@@ -290,12 +290,12 @@ the sample ACS/WFC exposure after writing it out to a file would then be::
     6       IMAGE       SIPWCS                1                  8
     7       IMAGE       SIPWCS                2                  8
 
-Detailed Description of headerlet
+Detailed Description of Headerlets
 ----------------------------------
-The full details on the headerlet, it's required set of keywords, and how the distortion models get described in the headerlet can be found in the `Technical Report on headerlets <https://stwcs.readthedocs.io/en/latest/headerlet_tsr/source/index.html>`_.
+The full details on the headerlet, it's required set of keywords, and how the distortion models get described in the headerlet can be found in the `Technical Report on Headerlets <https://stwcs.readthedocs.io/en/latest/headerlet_tsr/source/index.html>`_.
 
-Code Interface to headerlets
------------------------------
+Code Interface to Headerlets
+----------------------------
 The `STWCS package <https://stwcs.readthedocs.io/en/latest/>`_ provides the code used to work with headerlets and WCS solutions.
 
 

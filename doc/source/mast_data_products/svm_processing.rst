@@ -41,7 +41,7 @@ in this description can be found in the :ref:`hap-glossary`.
 .. _svm_naming_convention:
 
 =====================
-Single Visit Products
+Single-Visit Products
 =====================
 All files processed as part of a single visit get renamed from the standard
 pipeline filenames into something which describes the data more clearly.  The
@@ -58,7 +58,7 @@ components:
   * **dr[cz].fits** : suffix for drizzled products
   * **fl[ct].fits** : suffix for pipeline-calibrated files
   * **hlet.fits** : suffix for headerlet files containing the WCS solution used to create the final drizzle products/mosaics
-  * **<ipppss>_trl.txt** : single visit processing log files
+  * **<ipppss>_trl.txt** : single-visit processing log files
   * **point-cat.ecsv** : suffix for point (aperture) photometric catalog products
   * **segment-cat.ecsv** : suffix for segment photometric catalog products
 

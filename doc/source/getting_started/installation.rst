@@ -18,7 +18,7 @@ Clone this repository
     cd drizzlepac
 
 
-Build the documentation
+Build the Documentation
 =======================
 
 *Note:* If you intend to use ``drizzlepac``'s embedded help feature from within
@@ -32,7 +32,7 @@ this step.
     make html
 
 
-Install drizzlepac
+Install DrizzlePac
 ==================
 
 .. code-block:: shell

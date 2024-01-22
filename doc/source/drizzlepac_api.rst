@@ -1,4 +1,4 @@
-Drizzlepac Interface
+DrizzlePac Interface
 ====================
 .. _drizzlepac_api:
 
@@ -21,4 +21,3 @@ Index
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
