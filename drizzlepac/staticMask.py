@@ -6,7 +6,7 @@ For ``staticMask``, the user interface function is :py:func:`createMask`.
 
 :Authors: Ivo Busko, Christopher Hanley, Warren Hack, Megan Sosey
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import os

@@ -3,7 +3,7 @@
 """ runastrodriz.py - Module to control operation of astrodrizzle to
         remove distortion and combine HST images in the pipeline.
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 USAGE: runastrodriz.py [-bdahfginv] inputFilename [newpath]
 

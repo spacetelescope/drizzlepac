@@ -3,7 +3,7 @@ This module manages the creation of the output image FITS file.
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import time

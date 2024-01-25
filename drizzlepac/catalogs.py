@@ -1,7 +1,7 @@
 """
 :Authors: Warren Hack
 
-:License: :doc:`../doc/LICENSE`
+:License: :doc:`/LICENSE`
 """
 import os, sys
 import copy

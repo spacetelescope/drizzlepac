@@ -3,7 +3,7 @@ Provides function for manipulating WCS in images.
 
 :Authors: Warren Hack
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import sys, types, os, copy
