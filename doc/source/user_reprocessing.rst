@@ -9,4 +9,4 @@ Here we provide resources (including Jupyter Notebooks) to aid users in the repr
     :maxdepth: 3
 
     DrizzlePac Notebook Tutorials <https://github.com/spacetelescope/notebooks/tree/master/notebooks/DrizzlePac>
-    mast_data_products/user_reprocessing/interactive_image_alignment_tools
+    user_reprocessing/interactive_image_alignment_tools
