@@ -2,7 +2,7 @@
 
 """ runsinglehap.py - Module to control processing of single-visit mosaics
 
-
+:License: :doc:`../LICENSE`
 
 USAGE:
     >>> runsinglehap [-cdl] inputFilename

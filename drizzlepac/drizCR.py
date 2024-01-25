@@ -4,7 +4,7 @@ image and the derivative of the model image.
 
 :Authors: Warren Hack
 
-
+:License: :doc:`../LICENSE`
 
 """
 import os

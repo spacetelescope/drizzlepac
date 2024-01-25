@@ -5,7 +5,7 @@ cosmic-rays.
 
 :Authors: Warren Hack
 
-
+:License: :doc:`../LICENSE`
 
 """
 import os

@@ -5,7 +5,7 @@ of multiple images using the WCS information from the images.
 
 :Authors: Mihai Cara
 
-
+:License: :doc:`../LICENSE`
 
 """
 from astropy.io import fits

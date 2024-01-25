@@ -1,7 +1,7 @@
 """
 :Authors: Warren Hack
 
-
+:License: :doc:`../LICENSE`
 
 """
 import string

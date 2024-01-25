@@ -27,7 +27,7 @@ aspects of each of the processing steps.
 
 :Authors: Warren Hack
 
-
+:License: :doc:`../LICENSE`
 
 """
 import os

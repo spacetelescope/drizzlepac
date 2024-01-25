@@ -1,6 +1,6 @@
 """ Pixreplace -- Replace pixels which have one value with another value
 
-    
+    :License: :doc:`../LICENSE`
 
 """
 

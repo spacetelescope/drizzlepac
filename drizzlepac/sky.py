@@ -6,7 +6,7 @@ input image while recording the subtracted value in the image header.
 :Authors:
     Christopher Hanley, Megan Sosey, Mihai Cara
 
-
+:License: :doc:`../LICENSE`
 
 """
 import os, sys

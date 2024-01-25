@@ -3,7 +3,7 @@ Interfaces to main drizzle functions.
 
 :Authors: Warren Hack
 
-
+:License: :doc:`../LICENSE`
 
 """
 import os
