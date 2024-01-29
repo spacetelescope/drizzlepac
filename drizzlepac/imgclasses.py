@@ -4,7 +4,7 @@ Used by ``TweakReg``.
 
 :Authors: Warren Hack, Mihai Cara
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import os

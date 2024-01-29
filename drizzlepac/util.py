@@ -5,7 +5,7 @@ A library of utility functions
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import logging

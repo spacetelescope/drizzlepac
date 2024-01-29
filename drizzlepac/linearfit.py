@@ -9,7 +9,7 @@
 
 :Authors: Warren Hack, Mihai Cara
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import numpy as np

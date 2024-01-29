@@ -132,7 +132,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'DrizzlePac'
-copyright = u'2021, Warren Hack, Nadia Dencheva, Chris Sontag, Megan Sosey, Michael Droettboom, Mihai Cara, Michael Dulude, Michele De La Pena, Steve Goldman'
+copyright = u'2024, Steve Goldman, Michele De La Pena, Warren Hack, Mihai Cara, Nadia Dencheva'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
