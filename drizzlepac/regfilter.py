@@ -3,7 +3,7 @@
 
 :Authors: Mihai Cara
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 __author__ = 'Mihai Cara'

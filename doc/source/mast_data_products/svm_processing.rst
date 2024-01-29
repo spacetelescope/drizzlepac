@@ -5,7 +5,7 @@ Single-visit Mosaic Processing
 ==============================
 Standard calibration pipeline processing focuses on aligning data taken as
 associations or as single exposures as closely to a standard astrometric coordinate
-frame as possible (see :ref:`runastrodriz-description` for full details).
+frame as possible (see the `DrizzlePac Handbook <https://hst-docs.stsci.edu/drizzpac/chapter-4-astrometric-information-in-the-header/4-5-absolute-astrometry>`_ for full details).
 This involves alignment of very few images all taken under
 as identical conditions as possible; namely, detector, filter, guide stars,
 guiding mode, and so on.  These observations were intended by the user to
@@ -38,45 +38,11 @@ in this description can be found in the :ref:`hap-glossary`.
           <https://mast.stsci.edu/portal/Mashup/Clients/Mast/Portal.html>`_ using the
           search filter ``Project=HAP``.
 
-======================
-Primary User-Interface
-======================
-One task has been written to perform the single-visit processing: ``runsinglehap``.
-It gets used by STScI to generate the single-visit products which
-can be found in the Mikulski Archive for Space Telescopes (MAST) archive. This task
-can also be run from the operating system command-line or from within a
-Python session to reproduce those results, or with modification of the input
-parameters, perhaps improve on the standard archived results.  Full details on
-how to run this task can be found in the description of the task at :ref:`runsinglehap_api`.
-
-Processing Steps
-================
-Single-visit processing performed by ``runsinglehap``
-relies on the results of the standard astrometric
-processing of the individual exposures and associations as the starting point
-for alignment. This processing then follows these steps to create the final products:
-
-  #. Interpret the list of filenames for all exposures taken as part of a single visit and filter out images that
-     cannot and/or should not be processed (e.g., exposure time of zero) from further processing.
-  #. Copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing.
-  #. Rename the input files to conform to the single-visit naming conventions. (This step insures that the original
-     pipeline results remain available in the archive unchanged)
-  #. Define what output products can be generated.
-  #. Align all exposures in a relative sense (all to each other).
-  #. Create a composite source catalog from all aligned input exposures.
-  #. Cross-match and fit this composite catalog to GAIA to determine new WCS solution.
-  #. Update renamed input exposures with results of alignment to GAIA.
-  #. Create each of the output products using the updated WCS solutions.
-
-.. note::
-    It should be noted that processing is performed on a detector-by-detector basis; if a visit contains input data
-    from *n* detectors, steps 5-9 will be executed serially *n* times to process the input images from each detector
-    separately.
-
 .. _svm_naming_convention:
 
-Single Visit Naming Convention
-==============================
+=====================
+Single-Visit Products
+=====================
 All files processed as part of a single visit get renamed from the standard
 pipeline filenames into something which describes the data more clearly.  The
 convention used for the names of these input and output files uses these
@@ -92,7 +58,7 @@ components:
   * **dr[cz].fits** : suffix for drizzled products
   * **fl[ct].fits** : suffix for pipeline-calibrated files
   * **hlet.fits** : suffix for headerlet files containing the WCS solution used to create the final drizzle products/mosaics
-  * **<ipppss>_trl.txt** : single visit processing log files
+  * **<ipppss>_trl.txt** : single-visit processing log files
   * **point-cat.ecsv** : suffix for point (aperture) photometric catalog products
   * **segment-cat.ecsv** : suffix for segment photometric catalog products
 
@@ -168,7 +134,42 @@ created as a result of single-visit processing.
   * - 
     - color preview (thumbnail)
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_<filters>_dr[cz]_thumb.jpg
-    
+
+======================
+Primary User-Interface
+======================
+One task has been written to perform the single-visit processing: ``runsinglehap``.
+It gets used by STScI to generate the single-visit products which
+can be found in the Mikulski Archive for Space Telescopes (MAST) archive. This task
+can also be run from the operating system command-line or from within a
+Python session to reproduce those results, or with modification of the input
+parameters, perhaps improve on the standard archived results.  Full details on
+how to run this task can be found in the description of the task at :ref:`runsinglehap_api`.
+
+Processing Steps
+================
+Single-visit processing performed by ``runsinglehap``
+relies on the results of the standard astrometric
+processing of the individual exposures and associations as the starting point
+for alignment. This processing then follows these steps to create the final products:
+
+  #. Interpret the list of filenames for all exposures taken as part of a single visit and filter out images that
+     cannot and/or should not be processed (e.g., exposure time of zero) from further processing.
+  #. Copy the pipeline-calibrated (FLT/FLC) files to the current directory for processing.
+  #. Rename the input files to conform to the single-visit naming conventions. (This step insures that the original
+     pipeline results remain available in the archive unchanged)
+  #. Define what output products can be generated.
+  #. Align all exposures in a relative sense (all to each other).
+  #. Create a composite source catalog from all aligned input exposures.
+  #. Cross-match and fit this composite catalog to GAIA to determine new WCS solution.
+  #. Update renamed input exposures with results of alignment to GAIA.
+  #. Create each of the output products using the updated WCS solutions.
+
+.. note::
+    It should be noted that processing is performed on a detector-by-detector basis; if a visit contains input data
+    from *n* detectors, steps 5-9 will be executed serially *n* times to process the input images from each detector
+    separately.
+
 
 Processing the Input Data
 =========================

@@ -1,8 +1,8 @@
 .. _mdzhandler:
 
-****************************
-MultiDrizzle Reference Table
-****************************
+***************************
+Pipeline Drizzle Parameters
+***************************
 
 This module supports the interpretation of the ``MDRIZTAB`` for
 processing as used in the pipeline.

@@ -3,7 +3,7 @@ Class used to model IR specific instrument data.
 
 :Authors: Christopher Hanley
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 from .imageObject import imageObject
