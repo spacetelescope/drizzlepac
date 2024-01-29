@@ -20,3 +20,8 @@ coverage.xml
 *.egg-info
 *.swp
 *~
+astrodrizzle.log
+hapcut_utility.log
+headerlet.log
+svm_poller_file.txt
+.vscode/settings.json
