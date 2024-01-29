@@ -5,7 +5,7 @@ IS RETURNED BY :py:func:`quickderiv`.
 
 :Authors: CHRISTOPHER HANLEY
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 #

@@ -3,7 +3,7 @@
 
     :Authors: Warren Hack
 
-    :License: :doc:`LICENSE`
+    :License: :doc:`/LICENSE`
 
     PARAMETERS
     ----------

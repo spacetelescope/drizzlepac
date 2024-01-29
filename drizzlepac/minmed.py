@@ -4,7 +4,7 @@ or median image based up bad pixel identification.
 
 :Authors: Christopher Hanley
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 #   PROGRAM: numcombine.py

@@ -3,7 +3,7 @@ Class used to model NICMOS specific instrument data.
 
 :Authors: Christopher Hanley, David Grumm, Megan Sosey
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import numpy as np

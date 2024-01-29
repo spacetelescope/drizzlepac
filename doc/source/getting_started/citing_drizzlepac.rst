@@ -1,4 +1,4 @@
-Citing Drizzlepac
+Citing DrizzlePac
 -----------------
 
 For the design of AstroDrizzle and the enhancements to the FITS format it has introduced, please reference:

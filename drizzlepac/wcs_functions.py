@@ -2,7 +2,7 @@
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 from astropy.io import fits as pyfits
