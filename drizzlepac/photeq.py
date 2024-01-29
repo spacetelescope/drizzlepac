@@ -5,7 +5,7 @@ by ``AstroDrizzle``.
 
 :Authors: Mihai Cara
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 

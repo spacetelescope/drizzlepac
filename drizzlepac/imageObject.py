@@ -3,7 +3,7 @@ A class which makes image objects for each input filename.
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import copy, os, re, sys

@@ -2,7 +2,7 @@
 
 The MVM processing can be performed using one of two interfaces:
   - command-line interface: :ref:`runmultihap<runmultihap_api>`
-  - Python interface: :doc:`hapmultisequencer<multivisit_api>`
+  - Python interface: :doc:`hapmultisequencer<mvm_api>`
 
 ==========================================
 Command-line Interface for MVM Processing

@@ -11,7 +11,7 @@
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 __docformat__ = 'restructuredtext'
