@@ -8,5 +8,5 @@ Here we provide resources (including Jupyter Notebooks) to aid users in the repr
 .. toctree:: 
     :maxdepth: 3
 
-    DrizzlePac Notebook Tutorials <https://github.com/spacetelescope/notebooks/tree/master/notebooks/DrizzlePac>
+    DrizzlePac Notebook Tutorials <https://spacetelescope.github.io/hst_notebooks/notebooks/DrizzlePac/README.html>
     user_reprocessing/interactive_image_alignment_tools
