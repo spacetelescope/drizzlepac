@@ -997,8 +997,7 @@ or ``AstroDrizzle`` from command line (Python interpreter)
 Examples
 ---------
 
-The ``AstroDrizzle`` task can be run from either the ``TEAL`` GUI or from the
-command-line using ``PyRAF`` or Python. These examples illustrate the various
+The ``AstroDrizzle`` task can be run from either the ``TEAL`` GUI or from Python. These examples illustrate the various
 syntax options available.
 
 **Example 1:**  Drizzle a set of calibrated (``_flt.fits``) images using
@@ -1009,12 +1008,7 @@ ignore pixel flags of 64 and 32 in the DQ array of the (``_flt.fits``)
 images.  Align the final product such that North is
 up, and set the final pixel scale to 0.05 arcseconds/pixel.
 
-1. Run the task from ``PyRAF`` using the ``TEAL`` GUI::
-
-   >>> import drizzlepac
-   >>> epar astrodrizzle
-
-2. Run the task from ``PyRAF`` using the command line. ::
+1. Run the task from python using the command line. ::
 
     >>> import drizzlepac
     >>> from drizzlepac import astrodrizzle
@@ -1022,20 +1016,20 @@ up, and set the final pixel scale to 0.05 arcseconds/pixel.
     ...     wcskey='A', driz_sep_bits='64,32', final_wcs=True,
     ...     final_scale=0.05, final_rot=0)
 
-   Or, run the same task from the PyRAF command line, but specify all
+   Or, run the same task from the python command line, but specify all
    parameters in a config file named ``myparam.cfg``:
 
     >>> astrodrizzle.AstroDrizzle('*flt.fits', configobj='myparam.cfg')
 
-3. Run the task directly from Python:
+2. Run the task directly from Python:
 
     >>> from drizzlepac import astrodrizzle
     >>> astrodrizzle.AstroDrizzle('*flt.fits', output='final',
     ...     wcskey='A', driz_sep_bits='64,32', final_wcs=True,
     ...     final_scale=0.05, final_rot=0)
 
-4. Help can be accessed via the "Help" pulldown menu in the ``TEAL`` GUI.
-   It can also be accessed from the ``PyRAF`` command-line and saved
+3. Help can be accessed via the "Help" pulldown menu in the ``TEAL`` GUI.
+   It can also be accessed from the python command-line and saved
    to a text file:
 
     >>> from drizzlepac import astrodrizzle
@@ -1045,3 +1039,4 @@ up, and set the final pixel scale to 0.05 arcseconds/pixel.
 
     >>> astrodrizzle.help(file='help.txt')
     >>> page help.txt
+    
