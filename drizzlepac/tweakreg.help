@@ -647,7 +647,10 @@ Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``y
 
     >>> from drizzlepac import tweakreg
     >>> tweakreg.help()
+   
+   or
 
+    >>> tweakreg.help(file='help.txt')   
 
 See Also
 --------

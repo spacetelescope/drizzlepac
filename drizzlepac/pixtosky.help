@@ -80,7 +80,7 @@ to run the task in a couple of common modes.
 
 
 1. Convert a single X,Y position (100,100) from an calibrated ACS image
-   (``j8bt06nyq_flt.fits``) into an undistorted sky position (RA,Dec)å:
+   (``j8bt06nyq_flt.fits``) into an undistorted sky position (RA,Dec):
 
    >>> from drizzlepac import pixtosky
    >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", 100, 100)
