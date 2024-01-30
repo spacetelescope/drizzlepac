@@ -1,10 +1,13 @@
+# 2024-01-25
+# Testing of numpy developement packages will resume after drizzlepac's upstream
+# dependencies publish wheels that are compatible with numpy v2.x.
+
 git+https://github.com/astropy/photutils.git
 git+https://github.com/spacetelescope/stsci.tools.git
 git+https://github.com/spacetelescope/stwcs.git
 git+https://github.com/spacetelescope/stregion.git
-#git+https://github.com/astropy/astroquery.git#egg=astroquery
---extra-index-url https://pypi.anaconda.org/astropy/simple astropy --pre
-
---extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
-numpy>=0.0.dev0
+#git+https://github.com/astropy/astroquery.git
+numpy<2.0.dev0
 scipy>=0.0.dev0
+pyerfa>=0.0.dev0
+astropy>=0.0.dev0
