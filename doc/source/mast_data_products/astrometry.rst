@@ -213,7 +213,7 @@ The **only** WCS solution that gets used to perform coordinate transformations o
 
 Dependent Packages
 ^^^^^^^^^^^^^^^^^^^^
-Working with the WCS solutions and headerlets gets performed using `STWCS package <https://stwcs.readthedocs.io/en/latest/>`_.  Examples of how to work with this package will assume that the user has already installed this package into their working Python environment and has started a python shell.  In addition, the following example relies on the Astropy IO package to work with the FITS headers and extensions.
+Working with the WCS solutions and headerlets gets performed using `STWCS package <https://stwcs.readthedocs.io/en/latest/>`_.  Examples of how to work with this package will assume that the user has already installed this package into their working Python environment and has started a Python shell.  In addition, the following example relies on the Astropy IO package to work with the FITS headers and extensions.
 
 Finally, the example described here will rely on additional functionality included in the V3.2.0 or later of the Drizzlepac package.  These new functions support the generation of drizzle combined products which have been aligned to an astrometric standard catalog such as GAIA DR2.
 

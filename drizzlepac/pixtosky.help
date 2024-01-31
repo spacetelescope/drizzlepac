@@ -4,7 +4,7 @@ distortion keywords from the input image header.
 
 :Authors: Warren Hack
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`/LICENSE`
 
 
 Parameters
@@ -75,31 +75,24 @@ stwcs
 
 Examples
 --------
-This task can be run from either the TEAL GUI or from the Python
-command-line. These examples illustrate the syntax that can be used
+These examples illustrate the syntax that can be used
 to run the task in a couple of common modes.
 
-1. Run the task using the TEAL GUI under PyRAF:
 
-   >>> import drizzlepac
-   >>> epar pixtosky
-
-2. Convert a single X,Y position (100,100) from an calibrated ACS image
-   (``j8bt06nyq_flt.fits``) into an undistorted sky position (RA,Dec)
-   without using the TEAL GUI:
+1. Convert a single X,Y position (100,100) from an calibrated ACS image
+   (``j8bt06nyq_flt.fits``) into an undistorted sky position (RA,Dec):
 
    >>> from drizzlepac import pixtosky
    >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", 100, 100)
 
-3. Convert a list of X,Y positions from the file ``'xyfile.dat'`` for a
+2. Convert a list of X,Y positions from the file ``'xyfile.dat'`` for a
    calibrated ACS image (``j8bt06nyq_flt.fits``) into undistorted sky
-   positions and write out the result to the file 'radec.dat'
-   without using the TEAL GUI:
+   positions and write out the result to the file 'radec.dat':
 
    >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", coordfile="xyfile.dat",
    ...       output="radec.dat")
 
-4. The set of X,Y positions from ``'input_flt.fits[sci,1]'`` stored as
+3. The set of X,Y positions from ``'input_flt.fits[sci,1]'`` stored as
    the 3rd and 4th columns from the ASCII file ``'xy_sci1.dat'``
    will be transformed and written out to ``'radec_sci1.dat'`` using:
 
