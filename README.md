@@ -55,7 +55,7 @@ $ cd doc/
 $ make html
 ```
 
-### Install drizzlepac
+### Install DrizzlePac
 
 ```bash
 $ python setup.py install
