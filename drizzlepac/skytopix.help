@@ -4,7 +4,7 @@ distortion keywords contained in the input image header.
 
 :Authors: Warren Hack
 
-:License: `<http://www.stsci.edu/resources/software_hardware/pyraf/LICENSE>`_
+:License: :doc:`/LICENSE`
 
 Parameters
 ----------
@@ -70,16 +70,10 @@ See Also
 
 Examples
 --------
-This task can be run from either the TEAL GUI, or from the Python command-line.
 These examples illustrate the syntax that can be used to run the task in a
 couple of common modes.
 
-1. Run the task using the TEAL GUI under PyRAF:
-
-   >>> import drizzlepac
-   >>> epar skytopix
-
-2. Convert a single sky position (0:22:07.0088,-72:03:05.429)
+1. Convert a single sky position (0:22:07.0088,-72:03:05.429)
     from a calibrated ACS image (j94f05bgq\_flt.fits) into a
     pixel position (X,Y) without using the TEAL GUI:
 
@@ -87,7 +81,7 @@ couple of common modes.
   >>> x,y = skytopix.rd2xy("j8bt06nyq_flt.fits[sci,1]",
   ...                      '0:22:07.0088', '-72:03:05.429')
 
-3. Convert a list of (undistorted) sky positions from the file,
+2. Convert a list of (undistorted) sky positions from the file,
     'radec.dat' for a calibrated ACS image (j8bt06nyq_flt.fits)
      into distorted pixel positions, and write out the result to
      the file 'xypos.dat' without using the TEAL GUI:
