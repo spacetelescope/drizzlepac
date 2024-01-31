@@ -1008,7 +1008,7 @@ ignore pixel flags of 64 and 32 in the DQ array of the (``_flt.fits``)
 images.  Align the final product such that North is
 up, and set the final pixel scale to 0.05 arcseconds/pixel.
 
-Run the task from python using the command line. ::
+Run the task from Python using the command line. ::
 
     >>> import drizzlepac
     >>> from drizzlepac import astrodrizzle
@@ -1016,13 +1016,13 @@ Run the task from python using the command line. ::
     ...     wcskey='A', driz_sep_bits='64,32', final_wcs=True,
     ...     final_scale=0.05, final_rot=0)
 
-   Or, run the same task from the python command line, but specify all
+   Or, run the same task from the Python command line, but specify all
    parameters in a config file named ``myparam.cfg``:
 
     >>> astrodrizzle.AstroDrizzle('*flt.fits', configobj='myparam.cfg')
 
 Help can be accessed via the "Help" pulldown menu in the ``TEAL`` GUI.
-   It can also be accessed from the python command-line and saved
+   It can also be accessed from the Python command-line and saved
    to a text file:
 
     >>> from drizzlepac import astrodrizzle

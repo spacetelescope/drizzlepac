@@ -34,7 +34,7 @@ Parameters
 ----------
 
 input : str or list of str (Default = None)
-    A python list of image filenames, or just a single filename.
+    A Python list of image filenames, or just a single filename.
 
 outExt : str (Default = None)
     The extension of the output image. If the output already exists
@@ -415,7 +415,7 @@ directly altered.
 
 Examples
 --------
-Basic example of how to call sky yourself from a python command line,
+Basic example of how to call sky yourself from a Python command line,
 this example will use the default parameter settings and subtract a sky
 value from each ``*flt.fits`` image in the current directory,
 saving the output file with the extension of "mysky":

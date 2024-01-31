@@ -612,7 +612,7 @@ as:  ``1.5*imstat(image,nclip=3,fields='stddev')``. )
 Set the convolution kernel width to ``~2x`` the value of the PSF FWHM.
 Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``yfit_rms``) to a text file.
 
-1. Run the task from python using the command line while individually
+1. Run the task from Python using the command line while individually
    specifying source finding parameters for the reference image and
    input images:
 
@@ -632,7 +632,7 @@ Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``y
     ...       refimagefindcfg=dict(threshold=400, conv_width=2.5),
     ...       updatehdr=False, shiftfile=True, outshifts='shift.txt')
 
-   Or, run the same task from the python command line, but specify all parameters in
+   Or, run the same task from the Python command line, but specify all parameters in
    a config file named "myparam.cfg":
 
     >>> tweakreg.TweakReg('*flt.fits', configobj='myparam.cfg')
@@ -643,7 +643,7 @@ Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``y
     >>> tweakreg.edit_imagefindpars()
 
 2. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  It can also
-   be accessed from the python command-line and saved to a text file:
+   be accessed from the Python command-line and saved to a text file:
 
     >>> from drizzlepac import tweakreg
     >>> tweakreg.help()
