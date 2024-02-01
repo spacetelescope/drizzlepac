@@ -29,12 +29,6 @@ GUI Usage under Python (Legacy only)
     >>> import wfc3tools
     >>> cfg = teal.teal('runastrodriz')
 
-PyRAF Usage (Legacy only)
-=========================
-
-    >>> epar runastrodriz
-
-
 
 Options
 =======
