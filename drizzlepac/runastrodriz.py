@@ -447,6 +447,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # Add S_REGION keyword to input files regardless of whether DRIZCORR is turned on
     for f in _calfiles+_calfiles_flc:
         processing_utils.compute_sregion(f)
+        processing_utils.add_skycell_to_header(f)
 
     # If we no longer have any valid images to process due to guiding problems,
     # set drizcorr to OMIT and finish processing gracefully.

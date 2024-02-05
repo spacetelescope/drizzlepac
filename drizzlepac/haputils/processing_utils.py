@@ -368,14 +368,18 @@ def add_skycell_to_header(image, extname='SCI'):
 
     for extnum in range(1, numext + 1):
         sciext = (extname, extnum)
-        skycells = get_sky_cells([image])
-        shortened_skycells = [x[8:] for x in list(skycells.keys())]
-        skycell_string = '; '.join(shortened_skycells)
-        hdu[sciext].header.insert(
-            "s_region",
-            ("skycell", skycell_string, "Skycell(s) that this image occupies"),
-            after=True,
-        )
+        if 'skycell' not in hdu[sciext].header:
+            skycells = get_sky_cells([image])
+            # skycells = get_sky_cells(????????????) # pass list of visits for SVM
+            shortened_skycells = [x[8:] for x in list(skycells.keys())]
+            skycell_string = '; '.join(shortened_skycells)
+            hdu[sciext].header.insert(
+                "s_region",
+                ("skycell", skycell_string, "Skycell(s) that this image occupies"),
+                after=True,
+            )
+        else:
+            log.warning("skycell keyword already exists. Not updating.")
         
     # close file if opened by this functions
     if closefits:
