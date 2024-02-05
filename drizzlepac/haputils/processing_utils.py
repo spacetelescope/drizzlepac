@@ -14,7 +14,7 @@ from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 from stwcs import wcsutil
 
-from .cell_utils import SkyFootprint
+from .cell_utils import SkyFootprint, get_sky_cells
 
 LEVEL_DEFS = {1: 'single exposure product', 2: 'filter product', 3: 'total detection product'}
 HAPCOLNAME = 'HAPEXPNAME'
@@ -152,6 +152,9 @@ def refine_product_headers(product, total_obj_list):
 
     # Start by updating the S_REGION keyword.
     compute_sregion(hdu)
+    
+    # Update skycell keyword
+    add_skycell_to_header(hdu)
 
     # Compute numexp as number of exposures NOT chips
     input_exposures = list(set([kw[1].split('[')[0] for kw in phdu['d*data'].items()]))
@@ -341,6 +344,43 @@ def compute_sregion(image, extname='SCI'):
     if closefits:
         hdu.close()
 
+def add_skycell_to_header(image, extname='SCI'):
+    """Determines the skycells for which the image falls within and adds the 
+    information to the header.
+
+    Parameters
+    ----------
+    image : Astropy io.fits  HDUList object
+        Image to update with the skycell keyword in each of the SCI extensions.
+    extname : str, optional
+        EXTNAME value for extension containing the header to be updated
+        
+    Returns
+    -------
+    Nothing; image header has been updated. 
+    """    
+
+    # Open image and determine whether to consequently close it
+    hdu, closefits = _process_input(image)
+
+    # Find all extensions to be updated
+    numext = countExtn(hdu, extname=extname)
+
+    for extnum in range(1, numext + 1):
+        sciext = (extname, extnum)
+        skycells = get_sky_cells([image])
+        shortened_skycells = [x[8:] for x in list(skycells.keys())]
+        skycell_string = '; '.join(shortened_skycells)
+        hdu[sciext].header.insert(
+            "s_region",
+            ("skycell", skycell_string, "Skycell(s) that this image occupies"),
+            after=True,
+        )
+        
+    # close file if opened by this functions
+    if closefits:
+        hdu.close()
+        
 
 def find_footprint(hdu, extname='SCI', extnum=1):
     """Extract the footprints from each input file
