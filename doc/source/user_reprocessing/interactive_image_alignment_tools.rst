@@ -4,5 +4,5 @@ Interactive Image Alignment Tools
 .. toctree:: 
     :maxdepth: 1
     
-    Notebook to inspect or change WCS <https://github.com/spacetelescope/notebooks/tree/master/notebooks/DrizzlePac/using_updated_astrometry_solutions>
+    Notebook to inspect or change WCS <https://spacetelescope.github.io/hst_notebooks/notebooks/DrizzlePac/README.html>
     image_registration
