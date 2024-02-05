@@ -151,7 +151,7 @@ contains all default pipeline parameters and allows users to adjust any/or all o
 overwriting the hard-coded default values stored in /drizzlepac/pars/hap_pars/svm_parameters/. To run the single-visit
 mosaic pipeline using the custom parameter file, users simply need to specify the name of the file with the '-c'
 optional command-line argument when using `~drizzlepac.runsinglehap` or the 'input_custom_pars_file' optional input
-argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` from Python or from another python script.
+argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` from Python or from another Python script.
 
 .. warning::
     Modification of values in the parameter files stored in /drizzlepac/pars/hap_pars/svm_parameters/ is
