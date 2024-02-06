@@ -19,6 +19,7 @@ from spherical_geometry.polygon import SphericalPolygon
 from PIL import Image, ImageDraw
 
 from stwcs.wcsutil import HSTWCS
+from stsci.tools import logutil
 
 from .. import wcs_functions
 
@@ -36,6 +37,7 @@ SKYCELL_OVERLAP = 256
 
 SUPPORTED_SCALES = {'fine': 0.04, 'coarse': 0.12}  # arcseconds/pixel
 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diagnostic_mode=False):
     """Return all sky cells that overlap the exposures in the input.
@@ -104,7 +106,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
     #  such as those with EXPTIME==0
     for filename in expnames:
         fimg = fits.open(filename)
-        print("Validating WCS solutions for {}".format(filename))
+        log.debug("Validating WCS solutions for {}".format(filename))
         if 'wcsname' not in fimg[1].header:
             expnames.remove(filename)
         fimg.close()
@@ -133,12 +135,12 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
     # at this point, we have a dict of visit IDs with a list of all expnames that go with each visit
     sky_cells = {}
     for visit_id, visit_expnames in visit_groups.items():
-        print('Looking for SkyCells that overlap exposures from visit "{}"'.format(visit_id))
+        log.debug('Looking for SkyCells that overlap exposures from visit "{}"'.format(visit_id))
 
         # build reference wcs for combined footprint of all input exposures
         meta_wcs = wcs_functions.make_mosaic_wcs(visit_expnames, rot=0.0, scale=sky_grid.scale)
 
-        print('Visit WCS: \n{}'.format(meta_wcs))
+        log.debug('Visit WCS: \n{}'.format(meta_wcs))
         # For each exposure in the visit,
         # look to see what SkyCell it overlaps
         for expname in visit_expnames:
@@ -800,9 +802,13 @@ class GridDefs(object):
         sky_cells = {}
         for pcell in self.projection_cells:
             pcell.diagnostic_mode = diagnostic_mode
-            sky_cells.update(pcell.find_sky_cells(skyfootprint,
-                                                 nxy=self.sc_nxy,
-                                                 overlap=self.sc_overlap))
+            sky_cells.update(
+                pcell.find_sky_cells(
+                    skyfootprint,
+                    nxy=self.sc_nxy,
+                    overlap=self.sc_overlap,
+                )
+            )
 
         return sky_cells
 
@@ -972,7 +978,7 @@ class ProjectionCell(object):
             self.sc_nxy = nxy
         if overlap:
             self.sc_overlap = overlap
-        print("Looking for sky cells in PROJECTION_CELL {}".format(self.cell_id))
+        log.debug("Looking for sky cells in PROJECTION_CELL {}".format(self.cell_id))
 
         skycell00 = SkyCell(x=0, y=0, projection_cell=self)
         skycells = {}
@@ -991,7 +997,7 @@ class ProjectionCell(object):
         mosaic_xr = [max(1, mosaic_edges_x.min() - 1), min(self.sc_nxy, mosaic_edges_x.max() + 2)]
         mosaic_yr = [max(1, mosaic_edges_y.min() - 1), min(self.sc_nxy, mosaic_edges_y.max() + 2)]
 
-        print("SkyCell Ranges: {}, {}".format(mosaic_xr, mosaic_yr))
+        log.debug("SkyCell Ranges: {}, {}".format(mosaic_xr, mosaic_yr))
         # for each suspected sky cell or neighbor, look for any pixel by pixel
         #    overlap with input mosaic footprint
         for xi in range(mosaic_xr[0], mosaic_xr[1]+1):
@@ -1007,7 +1013,7 @@ class ProjectionCell(object):
 
                 sc_overlap = self.compute_overlap(skycell, mosaic_ra, mosaic_dec)
 
-                print("    Checking SkyCell {},{} for overlap: {}".format(xi, yi, sc_overlap))
+                log.debug("    Checking SkyCell {},{} for overlap: {}".format(xi, yi, sc_overlap))
                 if sc_overlap:
                     # Within this SkyCell, determine which members of the
                     # mosaic overlap with this SkyCell.
@@ -1019,7 +1025,7 @@ class ProjectionCell(object):
                         if member_overlap:
                             skycell.members.append(filename)
                     # We found overlapping pixels from mosaic, so return this SkyCell
-                    print("   Found overlap in SkyCell {}".format(skycell.sky_cell_id))
+                    log.debug("   Found overlap in SkyCell {}".format(skycell.sky_cell_id))
                     skycells[skycell.sky_cell_id] = skycell
 
         return skycells
