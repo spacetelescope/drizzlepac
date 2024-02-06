@@ -154,7 +154,7 @@ def refine_product_headers(product, total_obj_list):
     compute_sregion(hdu)
     
     # Update skycell keyword
-    add_skycell_to_header(hdu)
+    add_skycell_to_header(hdu, total_obj_list)
 
     # Compute numexp as number of exposures NOT chips
     input_exposures = list(set([kw[1].split('[')[0] for kw in phdu['d*data'].items()]))
@@ -344,7 +344,7 @@ def compute_sregion(image, extname='SCI'):
     if closefits:
         hdu.close()
 
-def add_skycell_to_header(image, extname='SCI'):
+def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
     """Determines the skycells for which the image falls within and adds the 
     information to the header.
 
@@ -369,8 +369,10 @@ def add_skycell_to_header(image, extname='SCI'):
     for extnum in range(1, numext + 1):
         sciext = (extname, extnum)
         if 'skycell' not in hdu[sciext].header:
-            skycells = get_sky_cells([image])
-            # skycells = get_sky_cells(????????????) # pass list of visits for SVM
+            if total_obj_list: # for SVMs
+                skycells = get_sky_cells([x.full_filename for x in total_obj_list[0].edp_list])
+            else:
+                skycells = get_sky_cells([image])
             shortened_skycells = [x[8:] for x in list(skycells.keys())]
             skycell_string = '; '.join(shortened_skycells)
             hdu[sciext].header.insert(
