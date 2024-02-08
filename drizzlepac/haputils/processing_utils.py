@@ -346,40 +346,47 @@ def compute_sregion(image, extname='SCI'):
 
 def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
     """Determines the skycells for which the image falls within and adds the 
-    information to the header.
+    information to the science header.
 
     Parameters
     ----------
     image : Astropy io.fits  HDUList object
-        Image to update with the skycell keyword in each of the SCI extensions.
+        Image to update with the skycell keyword in each extname extension.
     extname : str, optional
         EXTNAME value for extension containing the header to be updated
         
     Returns
     -------
-    Nothing; image header has been updated. 
+    Nothing; image header has been updated unless keyword already exists.
     """    
 
     # Open image and determine whether to consequently close it
-    hdu, closefits = _process_input(image)
+    try: 
+        hdu, closefits = _process_input(image)
+    except:
+        log.error(f"Could not open {image} during add_skycell_to_header. Exiting.")
 
     # Find all extensions to be updated
     numext = countExtn(hdu, extname=extname)
-
+    
     for extnum in range(1, numext + 1):
         sciext = (extname, extnum)
+        # only add skycell keyword if it does not already exist
         if 'skycell' not in hdu[sciext].header:
             if total_obj_list: # for SVMs
                 skycells = get_sky_cells([x.full_filename for x in total_obj_list[0].edp_list])
-            else:
+            else: # for pipeline products
                 skycells = get_sky_cells([image])
-            shortened_skycells = [x[8:] for x in list(skycells.keys())]
-            skycell_string = '; '.join(shortened_skycells)
-            hdu[sciext].header.insert(
-                "s_region",
-                ("skycell", skycell_string, "Skycell(s) that this image occupies"),
-                after=True,
-            )
+            if len(skycells) == 0:
+                log.error(f"No skycells found for {image}.")
+            else:
+                shortened_skycells = [x[8:] for x in list(skycells.keys())] # remove 'skycell_' from the keys
+                skycell_string = '; '.join(shortened_skycells) # join the keys into a string
+                hdu[sciext].header.insert(
+                    "s_region",
+                    ("skycell", skycell_string, "Skycell(s) that this image occupies"),
+                    after=True,
+                )
         else:
             log.warning("skycell keyword already exists. Not updating.")
         
