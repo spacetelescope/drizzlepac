@@ -377,9 +377,7 @@ def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
                 skycells = get_sky_cells([x.full_filename for x in total_obj_list[0].edp_list])
             else: # for pipeline products
                 skycells = get_sky_cells([image])
-            if len(skycells) == 0:
-                log.error(f"No skycells found for {image}.")
-            else:
+            if skycells:
                 shortened_skycells = [x[8:] for x in list(skycells.keys())] # remove 'skycell_' from the keys
                 skycell_string = '; '.join(shortened_skycells) # join the keys into a string
                 hdu[sciext].header.insert(
@@ -387,6 +385,8 @@ def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
                     ("skycell", skycell_string, "Skycell(s) that this image occupies"),
                     after=True,
                 )
+            else: 
+                log.error(f"No skycells found for {image}.")
         else:
             log.warning("skycell keyword already exists. Not updating.")
         

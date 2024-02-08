@@ -154,7 +154,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
 
             # Use this footprint to identify overlapping sky cells
             visit_cells = sky_grid.get_sky_cells(footprint, diagnostic_mode=diagnostic_mode)
-            print('Exposure {} from visit {} overlapped SkyCells:\n{}'.format(expname, visit_id, visit_cells))
+            log.debug('Exposure {} from visit {} overlapped SkyCells:\n{}'.format(expname, visit_id, visit_cells))
 
             for scell in visit_cells:
                 if scell not in sky_cells:
