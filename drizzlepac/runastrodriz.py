@@ -444,7 +444,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     if reset_idctab_switch:
         reset_idctab_kw(_calfiles, _calfiles_flc, logfile=_trlfile)
 
-    # Add S_REGION keyword to input files regardless of whether DRIZCORR is turned on
+    # Add S_REGION and SKYCELL keywords to input files regardless of whether DRIZCORR is turned on
     for f in _calfiles+_calfiles_flc:
         processing_utils.compute_sregion(f)
         processing_utils.add_skycell_to_header(f)
