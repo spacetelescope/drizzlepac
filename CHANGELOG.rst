@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.6.3 (unreleased)
 =====================
+- Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
+
 - Reorganized the readthedocs documentation with the help of various STScI staff. [#1717] 
 
 - Added FluxAp1, FluxErrAp1, FluxAp2, and FluxErrAp2 to point sources catalogs 
