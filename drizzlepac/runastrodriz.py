@@ -444,10 +444,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     if reset_idctab_switch:
         reset_idctab_kw(_calfiles, _calfiles_flc, logfile=_trlfile)
 
-    # Add S_REGION and SKYCELL keywords to input files regardless of whether DRIZCORR is turned on
+    # Add S_REGION keyword to input files regardless of whether DRIZCORR is turned on
     for f in _calfiles+_calfiles_flc:
         processing_utils.compute_sregion(f)
-        processing_utils.add_skycell_to_header(f)
 
     # If we no longer have any valid images to process due to guiding problems,
     # set drizcorr to OMIT and finish processing gracefully.
@@ -463,6 +462,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         updatewcs.updatewcs(_calfiles, use_db=False, checkfiles=False)
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
+
+        # adds skycell keyword to science header of all flt(c) and drz(c,w) files. 
+        for f in _calfiles+_calfiles_flc:
+            processing_utils.add_skycell_to_header(f)
 
         # Check to see whether or not guide star failure affected these observations
         # They would show up as images all sources streaked as if taken in SCAN mode or with a GRISM
