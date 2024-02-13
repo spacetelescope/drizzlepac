@@ -1,9 +1,6 @@
 import os
 import pytest
 import shutil
-import tempfile
-import numpy as np
-from astropy.wcs import WCS
 from astropy.io import fits
 from drizzlepac.haputils import processing_utils
 
@@ -17,6 +14,7 @@ abs_path = "drizzlepac/haputils/tests/"
         "sample_ipsoot_flt.fits",
         "sample_svm_flc.fits",
         "sample_svm_flt.fits",
+        "sample_ipsoot_flt_w_skycell.fits"
     ],
 )
 def test_add_skycell_to_header(filename, tmpdir):
@@ -25,3 +23,4 @@ def test_add_skycell_to_header(filename, tmpdir):
     processing_utils.add_skycell_to_header(temp_path)
     hdu = fits.open(temp_path)
     assert hdu[1].header["SKYCELL"] == "p0121x12y16"
+
