@@ -352,6 +352,9 @@ def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
     ----------
     image : Astropy io.fits  HDUList object
         Image to update with the skycell keyword in each extname extension.
+    total_obj_list : list
+        List of TotalProduct objects which are then composed of Filter and Exposure objects; 
+        multiple TotalProduct objects are the result of multiple detoctors. 
     extname : str, optional
         EXTNAME value for extension containing the header to be updated
         
@@ -374,7 +377,8 @@ def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
         # only add skycell keyword if it does not already exist
         if 'skycell' not in hdu[sciext].header:
             if total_obj_list: # for SVMs
-                skycells = get_sky_cells([x.full_filename for x in total_obj_list[0].edp_list])
+                for total_obj in total_obj_list:
+                    skycells = get_sky_cells([x.full_filename for x in total_obj.edp_list])
             else: # for pipeline products
                 skycells = get_sky_cells([image])
             if skycells:
