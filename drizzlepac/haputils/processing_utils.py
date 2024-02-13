@@ -152,9 +152,6 @@ def refine_product_headers(product, total_obj_list):
 
     # Start by updating the S_REGION keyword.
     compute_sregion(hdu)
-    
-    # Update skycell keyword
-    add_skycell_to_header(hdu, total_obj_list)
 
     # Compute numexp as number of exposures NOT chips
     input_exposures = list(set([kw[1].split('[')[0] for kw in phdu['d*data'].items()]))
@@ -344,17 +341,14 @@ def compute_sregion(image, extname='SCI'):
     if closefits:
         hdu.close()
 
-def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
+def add_skycell_to_header(image_filename, extname='SCI'):
     """Determines the skycells for which the image falls within and adds the 
     information to the science header.
 
     Parameters
     ----------
-    image : Astropy io.fits  HDUList object
-        Image to update with the skycell keyword in each extname extension.
-    total_obj_list : list
-        List of TotalProduct objects which are then composed of Filter and Exposure objects; 
-        multiple TotalProduct objects are the result of multiple detoctors. 
+    image : str 
+        Image filename to update with the skycell keyword in each extname extension.
     extname : str, optional
         EXTNAME value for extension containing the header to be updated
         
@@ -365,9 +359,9 @@ def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
 
     # Open image and determine whether to consequently close it
     try: 
-        hdu, closefits = _process_input(image)
+        hdu, closefits = _process_input(image_filename)
     except:
-        log.error(f"Could not open {image} during add_skycell_to_header. Exiting.")
+        log.error(f"Could not open {image_filename} during add_skycell_to_header. Exiting.")
 
     # Find all extensions to be updated
     numext = countExtn(hdu, extname=extname)
@@ -376,11 +370,7 @@ def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
         sciext = (extname, extnum)
         # only add skycell keyword if it does not already exist
         if 'skycell' not in hdu[sciext].header:
-            if total_obj_list: # for SVMs
-                for total_obj in total_obj_list:
-                    skycells = get_sky_cells([x.full_filename for x in total_obj.edp_list])
-            else: # for pipeline products
-                skycells = get_sky_cells([image])
+            skycells = get_sky_cells([image_filename])
             if skycells:
                 shortened_skycells = [x[8:] for x in list(skycells.keys())] # remove 'skycell_' from the keys
                 skycell_string = '; '.join(shortened_skycells) # join the keys into a string
@@ -390,7 +380,7 @@ def add_skycell_to_header(image, total_obj_list=None, extname='SCI'):
                     after=True,
                 )
             else: 
-                log.error(f"No skycells found for {image}.")
+                log.error(f"No skycells found for {image_filename}.")
         else:
             log.warning("skycell keyword already exists. Not updating.")
         
