@@ -24,3 +24,7 @@ def test_add_skycell_to_header(filename, tmpdir):
     hdu = fits.open(temp_path)
     assert hdu[1].header["SKYCELL"] == "p0121x12y16"
 
+def test_add_skycell_to_header_invalid_filename():
+    with pytest.raises(Exception):
+        processing_utils.add_skycell_to_header('invalid_filename.fits')
+
