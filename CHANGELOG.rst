@@ -20,7 +20,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.6.3 (unreleased)
 =====================
+
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
+
+- Github branch "master" renamed to main. [#1725]
 
 - Reorganized the readthedocs documentation with the help of various STScI staff. [#1717] 
 
