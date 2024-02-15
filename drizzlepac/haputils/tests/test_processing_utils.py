@@ -13,7 +13,7 @@ test_path = "drizzlepac/haputils/tests/"
         "sample_ipsoot_flt.fits", # WFC3/IR
         "sample_svm_flc.fits", # WFC3/UVIS SVM file
         "sample_svm_flt.fits", # WFC3/IR SVM file
-        "sample_ipsoot_flt_w_skycell.fits"
+        "sample_ipsoot_flt_w_skycell_header_keyword.fits"
     ],
 )
 def test_add_skycell_to_header(filename, tmpdir):
