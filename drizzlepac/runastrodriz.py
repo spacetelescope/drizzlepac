@@ -533,9 +533,13 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _good_images = [f for f in _calfiles if fits.getval(f, 'exptime') > 0.]
         _good_images = [f for f in _good_images if fits.getval(f, goodpix_name, ext=("SCI", 1)) > 0.]
         if len(_good_images) == 0:
-            _good_images = _calfiles
-            # Turn off alignment to GAIA since there is no valid data in the exposure.
-            align_to_gaia = False
+            if len(_calfiles)==0:
+                print("ERROR: No valid data found in input exposures.")
+                sys.exit(analyze.Ret_code.NO_VIABLE_DATA.value)
+            else:
+                _good_images = _calfiles
+                # Turn off alignment to GAIA since there is no valid data in the exposure.
+                align_to_gaia = False        
 
         if not wfpc2_input:
             adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
