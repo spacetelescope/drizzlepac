@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.6.2rc2 (unreleased)
 =====================
+- Github branch "master" renamed to main. [#1725]
+
 - Reorganized the readthedocs documentation with the help of various STScI staff. [#1717] 
 
 - Added FluxAp1, FluxErrAp1, FluxAp2, and FluxErrAp2 to point sources catalogs 
