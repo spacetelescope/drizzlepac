@@ -1,11 +1,6 @@
 [project]
 name = 'drizzlepac'
-description = """
-    HST image combination using the drizzle algorithm to
-    combine astronomical images, to model image distortion,
-    to remove cosmic rays, and
-    generally to improve the fidelity of data in the final image.
-    """
+description = """ HST image combination using the drizzle algorithm to combine astronomical images, to model image distortion, to remove cosmic rays, and generally to improve the fidelity of data in the final image. """
 readme = { file = 'README.md', content-type = 'text/x-rst' }
 requires-python = '>=3.9'
 license = { file = "LICENSE.txt" }
