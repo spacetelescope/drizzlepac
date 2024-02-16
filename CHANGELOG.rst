@@ -31,6 +31,12 @@ number of the code change for that issue.  These PRs can be viewed at:
   as a part of a bug fix for negative magnitude errors and consequently false 
   positives in the flagging. [#1700]
 
+- Updated the Segmentation catalog so the evaluation of the segmentation image using
+  the RickerWavelet kernel always allows for crowded fields (check_big_island_only = True)
+  because a large fraction of the image will covered by source segments. Changed the ratio
+  of Gaussian vs RickerWavelet "big source" evaluation to use Round 2 computations, and
+  added more log messages for clarification. [#1730]
+
   
 3.6.2 (27-Nov-2023)
 =====================
