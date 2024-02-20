@@ -366,23 +366,25 @@ def add_skycell_to_header(image_filename, extname='SCI'):
     # Find all extensions to be updated
     numext = countExtn(hdu, extname=extname)
     
-    for extnum in range(1, numext + 1):
-        sciext = (extname, extnum)
-        # only add skycell keyword if it does not already exist
-        if 'skycell' not in hdu[sciext].header:
-            skycells = get_sky_cells([image_filename])
-            if skycells:
-                shortened_skycells = [x[8:] for x in list(skycells.keys())] # remove 'skycell_' from the keys
-                skycell_string = '; '.join(shortened_skycells) # join the keys into a string
+    for extver in range(1, numext + 1):
+        sciext = (extname, extver)
+        skycells = get_sky_cells([image_filename])
+        if skycells:
+            shortened_skycells = [x[8:] for x in list(skycells.keys())] # remove 'skycell_' from the keys
+            skycell_string = '; '.join(shortened_skycells) # join the keys into a string
+            # inserts keyword after s_region if it exists, otherwise updates value
+            if 'skycell' not in hdu[sciext].header:
+                log.debug("Adding skycell keyword.")
                 hdu[sciext].header.insert(
                     "s_region",
                     ("skycell", skycell_string, "Skycell(s) that this image occupies"),
                     after=True,
                 )
-            else: 
-                log.error(f"No skycells found for {image_filename}.")
-        else:
-            log.warning("skycell keyword already exists. Not updating.")
+            else:
+                log.debug("Updating skycell keyword.")
+                hdu[sciext].header["skycell"]= (skycell_string, 'Skycell(s) that this image occupies')
+        else: 
+            log.error(f"No skycells found for {image_filename}.")
         
     # close file if opened by this functions
     if closefits:

@@ -624,7 +624,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
                 product_list += [total_item.trl_filename]
             
             # Add skycell header keyword to SVM flt(c) files
-            # iterates for each total object, but passes full total object product list to the function
+            # iterates over all exposure (names) in the total product
             for image in total_item.edp_list:
                 proc_utils.add_skycell_to_header(image.full_filename)
 
