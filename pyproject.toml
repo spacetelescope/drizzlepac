@@ -81,7 +81,7 @@ runmultihap = 'drizzlepac.runmultihap:main'
 requires = ["setuptools>=61",
             "setuptools_scm[toml]>=3.4",
             "wheel",
-            "numpy>=1.18",
+            "numpy>=1.18, <2.0",
             "astropy>=5.0.4",
             "markupsafe<=2.0.1"]
 build-backend = "setuptools.build_meta"
