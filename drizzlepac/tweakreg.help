@@ -601,7 +601,7 @@ to find all the sources *inside* the following regions::
 Examples
 --------
 The tweakreg task can be run from either the TEAL GUI or from the command-line
-using PyRAF or Python.
+using Python.
 These examples illustrate the various syntax options available.
 
 **Example 1:**  Align a set of calibrated (``_flt.fits``) images
@@ -612,12 +612,7 @@ as:  ``1.5*imstat(image,nclip=3,fields='stddev')``. )
 Set the convolution kernel width to ``~2x`` the value of the PSF FWHM.
 Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``yfit_rms``) to a text file.
 
-1. Run the task from PyRAF using the TEAL GUI:
-
-    >>> import drizzlepac
-    >>> epar tweakreg
-
-2. Run the task from PyRAF using the command line while individually
+1. Run the task from Python using the command line while individually
    specifying source finding parameters for the reference image and
    input images:
 
@@ -637,7 +632,7 @@ Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``y
     ...       refimagefindcfg=dict(threshold=400, conv_width=2.5),
     ...       updatehdr=False, shiftfile=True, outshifts='shift.txt')
 
-   Or, run the same task from the PyRAF command line, but specify all parameters in
+   Or, run the same task from the Python command line, but specify all parameters in
    a config file named "myparam.cfg":
 
     >>> tweakreg.TweakReg('*flt.fits', configobj='myparam.cfg')
@@ -647,17 +642,15 @@ Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``y
 
     >>> tweakreg.edit_imagefindpars()
 
-3. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  It can also
-   be accessed from the PyRAF command-line and saved to a text file:
+2. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  It can also
+   be accessed from the Python command-line and saved to a text file:
 
     >>> from drizzlepac import tweakreg
     >>> tweakreg.help()
-
+   
    or
 
-    >>> tweakreg.help(file='help.txt')
-    >>> page help.txt
-
+    >>> tweakreg.help(file='help.txt')   
 
 See Also
 --------

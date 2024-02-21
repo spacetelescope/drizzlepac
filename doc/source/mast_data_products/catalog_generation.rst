@@ -148,10 +148,10 @@ parameter values in the <instrument>_<detector>_catalog_generation_all.json file
 configuration settings is to first utilize `~drizzlepac.haputils.generate_custom_svm_mvm_param_file` to generate a
 custom parameter .json file. This parameter file, which is written to the user's current working directory by default,
 contains all default pipeline parameters and allows users to adjust any/or all of these parameters as they wish without
-overwriting the hard-coded default values stored in /drizzlepac/pars/hap_pars/svm_parameters/. To run the single visit
+overwriting the hard-coded default values stored in /drizzlepac/pars/hap_pars/svm_parameters/. To run the single-visit
 mosaic pipeline using the custom parameter file, users simply need to specify the name of the file with the '-c'
 optional command-line argument when using `~drizzlepac.runsinglehap` or the 'input_custom_pars_file' optional input
-argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` from Python or from another python script.
+argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` from Python or from another Python script.
 
 .. warning::
     Modification of values in the parameter files stored in /drizzlepac/pars/hap_pars/svm_parameters/ is

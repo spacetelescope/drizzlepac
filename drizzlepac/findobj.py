@@ -3,7 +3,7 @@ A suite of functions for finding sources in images.
 
 :Authors: Warren Hack, Mihai Cara
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import sys

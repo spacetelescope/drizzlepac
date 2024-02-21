@@ -1,4 +1,4 @@
-.. _mvmutilities_api:
+.. _mvm_api:
 
 *********************
 API for MVM Utilities

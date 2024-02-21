@@ -8,7 +8,7 @@ such as the DQ array from an HST image, to zero.
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 PARAMETERS
 ----------
