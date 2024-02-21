@@ -42,7 +42,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Reorganized the readthedocs documentation with the help of various STScI
   staff. [#1717] 
 
-- Updates requirements-dev.txt to not install eggs which causes problems
+- Updates requirements-dev.txt to not install eggs that cause problems
   for the regression tests [#1721]
 
 - Regression Testing: allow "dev" jobs to fail [#1718]
