@@ -53,7 +53,6 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.6.2 (27-Nov-2023)
 ===================
 
->>>>>>> 04cf04c1 (HLA-1175: New Readthedocs structure (#1717))
 - At this time pin Astrocut to versions <=0.9 to avoid conflicts with urllib3
   package.  [#1689]
 
