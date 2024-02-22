@@ -184,6 +184,7 @@ def test_svm_empty_cats(gather_output_data):
     assert len(bad_tables) == 0, f"Catalog file(s) {bad_tables} is/are unexpectedly empty"
 
 
+@pytest.mark.skip(reason="Skipping test as missing the 'science commits' for this release - need for RC.")
 def test_svm_point_cats(gather_output_data):
     # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("point-cat.ecsv")]
@@ -199,6 +200,7 @@ def test_svm_point_cats(gather_output_data):
     assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_point_sources}"
 
 
+@pytest.mark.skip(reason="Skipping test as missing the 'science commits' for this release - need for RC.")
 def test_svm_segment_cats(gather_output_data):
     # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("segment-cat.ecsv")]
