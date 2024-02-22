@@ -18,7 +18,7 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.7.0rc0 (21-Feb-2024) Infrastructure Build
+3.7.0rc1 (22-Feb-2024) Infrastructure Build
 ===========================================
 
 - Update project.toml file to specify numpy>=1.18,  <2.0 [#1743]
