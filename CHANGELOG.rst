@@ -18,7 +18,7 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.7.0rc0 (21-Feb-2024) Infrastructure Build
+3.7.0rc1 (22-Feb-2024) Infrastructure Build
 ===========================================
 
 - Update project.toml file to specify numpy>=1.18,  <2.0 [#1743]
@@ -53,7 +53,6 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.6.2 (27-Nov-2023)
 ===================
 
->>>>>>> 04cf04c1 (HLA-1175: New Readthedocs structure (#1717))
 - At this time pin Astrocut to versions <=0.9 to avoid conflicts with urllib3
   package.  [#1689]
 
