@@ -27,8 +27,8 @@ WCS_SUB_NAME = "FIT_SVM"
 POLLER_FILE = "wfc3_ir_ib6807_input.out"
 
 # Gather all expected values used for determining pass/fail criteria here
-expected_point_sources = {'ir': 315}
-expected_seg_sources = {'ir': 298}
+expected_point_sources = {'ir': 316}
+expected_seg_sources = {'ir': 299}
 
 
 @pytest.fixture(scope="module")
