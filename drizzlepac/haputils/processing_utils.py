@@ -343,7 +343,9 @@ def compute_sregion(image, extname='SCI'):
 
 def add_skycell_to_header(image_filename, extname='SCI'):
     """Determines the skycells for which the image falls within and adds the 
-    information to the science header.
+    information to the science header. The SKYCELL value for IPPPSSOOT and SVM 
+    products may be different as the current computation is based upon the WCSNAME 
+    of the input images.
 
     Parameters
     ----------
