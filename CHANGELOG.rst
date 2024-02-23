@@ -18,35 +18,54 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.6.3 (unreleased)
+
+3.7.1 (unreleased)
 =====================
 
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
 
+
+3.7.0rc1 (22-Feb-2024) Infrastructure Build
+===========================================
+
+- Update project.toml file to specify numpy>=1.18,  <2.0 [#1743]
+
+- Update project.toml file to specify python_requires>=3.10 [#1737]
+
 - Github branch "master" renamed to main. [#1725]
 
-- Reorganized the readthedocs documentation with the help of various STScI staff. [#1717] 
+- Clean up spacing in toml file to eliminate improper spacing to
+  avoid decprecation warning [#1731]
 
-- Added FluxAp1, FluxErrAp1, FluxAp2, and FluxErrAp2 to point sources catalogs 
-  as a part of a bug fix for negative magnitude errors and consequently false 
-  positives in the flagging. [#1700]
+- Clean up YAML diagram in of workflows area [#1728]
 
-- Updated the Segmentation catalog so the evaluation of the segmentation image using
-  the RickerWavelet kernel always allows for crowded fields (check_big_island_only = True)
-  because a large fraction of the image will covered by source segments. Changed the ratio
-  of Gaussian vs RickerWavelet "big source" evaluation to use Round 2 computations, and
-  added more log messages for clarification. [#1730]
+- Updated installation instructions and small text changes [#1727]
 
+- Remove outdated references of Pyraf and change to Python [#1726]
+
+- Fix to add "stregion" to the requirements-dev.txt file to fix the build
+  error under Python 3.12. [#1714]
+
+- Reorganized the readthedocs documentation with the help of various STScI
+  staff. [#1717] 
+
+- Updates requirements-dev.txt to not install eggs that cause problems
+  for the regression tests [#1721]
+
+- Regression Testing: allow "dev" jobs to fail [#1718]
   
+- Initial setup for Architectural Design Records used to keep track of top-level
+  thinking behind the code. [#1697]
+
 3.6.2 (27-Nov-2023)
-=====================
+===================
 
 - At this time pin Astrocut to versions <=0.9 to avoid conflicts with urllib3
-  package.  [#1145]
+  package.  [#1689]
 
 - Added functionality to allow the use of a two-column poller file. This is used
   to update the WFPC2 SVM aperture header keywords from the values in the poller 
-  file. [#1683, #1150]
+  file. [#1683]
 
 - Removed the version restriction on matplotlib. [#1649]
 
