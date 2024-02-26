@@ -545,7 +545,12 @@ class SkyFootprint(object):
             fp = np.clip(self.footprint, 0, 1).astype(np.int16)
 
             # simple trick to remove noise and small regions 3x3 or less.
-            scmask = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
+            scmask_dilated_erroded = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
+            
+            # Start by smoothing out the edges of the chips/field
+            # this will remove rough edges up to 3 pixels deep along the image edge
+            scmask = ndimage.gaussian_filter(scmask_dilated_erroded.astype(np.float32) * 100, sigma=2) > 50
+            
             # Label each major contiguous region in the mask
             sclabels, nlabels = ndimage.label(scmask)
             slices = ndimage.find_objects(sclabels)
