@@ -18,6 +18,13 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
+
+3.7.1 (unreleased)
+=====================
+
+- Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
+
+
 3.7.0rc1 (22-Feb-2024) Infrastructure Build
 ===========================================
 
