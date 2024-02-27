@@ -622,6 +622,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
                 log.warning("This Total Data Product only has Grism/Prism data and no direct images: {}".format(total_item.drizzle_filename))
                 log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.")
                 product_list += [total_item.trl_filename]
+            
+            # Add skycell header keyword to SVM flt(c) files
+            # iterates over all exposure (names) in the total product
+            for image in total_item.edp_list:
+                proc_utils.add_skycell_to_header(image.full_filename)
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))

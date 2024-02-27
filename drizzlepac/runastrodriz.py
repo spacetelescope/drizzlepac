@@ -463,6 +463,12 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
 
+        # adds skycell keyword to science header of all flt(c) and drz(c,w) files.
+        # the SKYCELL value for IPPPSSOOT and SVM products may be different as the 
+        # current computation is based upon the WCSNAME of the input images.
+        for filename in _calfiles+_calfiles_flc:
+            processing_utils.add_skycell_to_header(filename)
+
         # Check to see whether or not guide star failure affected these observations
         # They would show up as images all sources streaked as if taken in SCAN mode or with a GRISM
         #
