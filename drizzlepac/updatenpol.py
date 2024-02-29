@@ -23,7 +23,6 @@ import os,sys,shutil
 from astropy.io import fits
 from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
-from stsci.tools import teal
 
 from stwcs import updatewcs
 from . import util
@@ -227,20 +226,6 @@ def find_npolfile(flist,detector,filters):
              (filt1 == filters[0] and filt2 == filters[1]):
                 npolfile = f
     return npolfile
-
-#
-#### Interfaces used by TEAL
-#
-def run(configobj=None,editpars=False):
-    """ Teal interface for running this code.
-    """
-
-    if configobj is None:
-        configobj =teal.teal(__taskname__,loadOnly=(not editpars))
-
-    update(configobj['input'],configobj['refdir'],
-        local=configobj['local'],interactive=configobj['interactive'],
-        wcsupdate=configobj['wcsupdate'])
 
 
 def main():

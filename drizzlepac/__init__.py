@@ -84,14 +84,6 @@ from . import haputils
 from . import align
 from . import runastrodriz
 
-# These lines allow TEAL to print out the names of TEAL-enabled tasks
-# upon importing this package.
-from stsci.tools import teal
-
-
-teal.print_tasknames(__name__, os.path.dirname(__file__),
-                     hidden=['adrizzle','ablot','buildwcs'])
-
 
 def help():
     msg = \

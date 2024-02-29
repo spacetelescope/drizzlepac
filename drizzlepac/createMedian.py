@@ -52,7 +52,6 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
         run(configObj)
 
 
-# this is the function that will be called from TEAL
 def run(configObj):
     imgObjList, outwcs = processInput.setCommonInput(
         configObj,

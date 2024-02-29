@@ -34,13 +34,14 @@ def main() :
 
     # read options
     help = False
-    editpars = False
+    editpars = False # deprecated parameter left over from TEAL
     long_help = False
     for opt, value in optlist:
         if opt == '-h':
             help = True
         elif opt == '-g':
-            editpars = True
+            # editpars = True
+            print('WARNING: -g option is deprecated and will be removed in a future release.')
         elif opt == '-?':
             long_help = True
 
@@ -50,7 +51,7 @@ def main() :
     if help:
         print('Syntax: mdriz.py -[h|g|?] [name=value,...]')
         print('  Options: -h: help')
-        print('           -g: edit parameters with TEAL')
+        # print('           -g: deprecated parameter left over from TEAL')
         print('           -?: extended help message')
         print('  Parameters should be given as "name=value" pairs for all parameters')
         print('      understood by MultiDrizzle. These values will ALWAYS override')

@@ -149,13 +149,6 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
         # close the file with the updated DQ array(s)
         p.close()
 
-#
-#### Interfaces used by TEAL
-#
-def run(configobj=None):
-    """ Teal interface for running this code. """
-    reset_dq_bits(configobj['input'],configobj['bits'],
-                  extver=configobj['extver'],extname=configobj['extname'])
 
 def main():
     import getopt, sys

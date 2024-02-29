@@ -29,11 +29,6 @@ __taskname__ = 'photeq'
 __author__ = 'Mihai Cara'
 
 
-try:
-    from stsci.tools import teal
-except ImportError:
-    teal = None
-
 # LOCAL
 from stsci.skypac import parseat, utils
 from . import util
@@ -133,8 +128,8 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
 
         .. note::
 
-            If specifying multiple secondary photometric keywords in the TEAL
-            interface, use a comma-separated list of keywords.
+            If specifying multiple secondary photometric keywords, 
+            use a comma-separated list of keywords.
 
     search_primary : bool (Default = True)
         Specifies whether to first search the primary header for the
@@ -591,9 +586,6 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
             _log.removeHandler(h)
 
 
-#--------------------------
-# TEAL Interface functions
-#--------------------------
 def run(configObj):
     logfile = configObj['logfile'] if len(configObj['logfile'].strip()) > 0 \
         else None

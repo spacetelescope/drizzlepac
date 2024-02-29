@@ -81,15 +81,12 @@
        ...                      colnames=['c3','c4'], output="radec_sci1.dat")
 
 """
-import os,copy
 import warnings
 import numpy as np
 
-from stsci.tools import fileutil, teal
 from . import util
 from . import wcs_functions
-import stwcs
-from stwcs import distortion, wcsutil
+from stwcs import wcsutil
 from . import __version__
 
 __taskname__ = 'pixtosky'
@@ -183,9 +180,6 @@ def xy2rd(input,x=None,y=None,coords=None, coordfile=None,colnames=None,separato
 
     return ra,dec
 
-#--------------------------
-# TEAL Interface functions
-#--------------------------
 def run(configObj):
 
     if 'coords' in configObj:

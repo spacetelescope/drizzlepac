@@ -6,7 +6,6 @@
 
 """
 import os
-import sys
 import numpy as np
 from copy import copy
 
@@ -69,23 +68,6 @@ def _managePsets(configobj, section_name, task_name, iparsobj=None, input_dict=N
 
     # merge these parameters into full set
     configobj[section_name].merge(iparsobj_cfg)
-
-    # clean up configobj a little to make it easier for later...
-#   if '_RULES_' in configobj:
-#       del configobj['_RULES_']
-
-
-def edit_imagefindpars():
-    """ Allows the user to edit the imagefindpars configObj in a TEAL GUI
-        """
-    teal.teal(imagefindpars.__taskname__, returnAs=None,
-              autoClose=True, loadOnly=False, canExecute=False)
-
-def edit_refimagefindpars():
-    """ Allows the user to edit the refimagefindpars configObj in a TEAL GUI
-        """
-    teal.teal(refimagefindpars.__taskname__, returnAs=None,
-              autoClose=True, loadOnly=False, canExecute=False)
 
 
 @util.with_logging

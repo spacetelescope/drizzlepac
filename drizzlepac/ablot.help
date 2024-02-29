@@ -158,10 +158,3 @@ command line, using the default parameter settings:
 >>> ablot.blot('adriz_aligned_wcs_f814w_med.fits','j8c0d1bwq_flc.fits[sci,1]',
 'aligned_f814w_sci1_blot.fits',configObj=blotobj)
 
-or
-
->>> a = teal.teal('ablot')
-# set data = adriz_aligned_wcs_f814w_med.fits
-# set reference = j8c0d1bwq_flc.fits[sci,1]
-# set outdata = aligned_f814w_sci1_blot.fits
-

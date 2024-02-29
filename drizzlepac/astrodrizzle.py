@@ -87,9 +87,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         configobj['updatewcs'] = input_dict['updatewcs']
         del input_dict['updatewcs']
 
-    # If called from interactive user-interface, configObj will not be
-    # defined yet, so get defaults using EPAR/TEAL.
-    #
+    # gets configObj defaults using EPAR/TEAL.
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     try:
@@ -118,29 +116,9 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
     if not editpars:
         run(configObj, wcsmap=wcsmap)
 
-##############################
-#   Interfaces used by TEAL  #
-##############################
+
 @util.with_logging
 def run(configobj, wcsmap=None):
-    """
-    Initial example by Nadia ran MD with configobj EPAR using:
-    It can be run in one of two ways:
-
-        from stsci.tools import teal
-
-        1. Passing a config object to teal
-
-        teal.teal('drizzlepac/pars/astrodrizzle.cfg')
-
-
-        2. Passing a task  name:
-
-        teal.teal('astrodrizzle')
-
-        The example config files are in drizzlepac/pars
-
-    """
     # turn on logging, redirecting stdout/stderr messages to a log file
     # while also printing them out to stdout as well
     # also, initialize timing of processing steps

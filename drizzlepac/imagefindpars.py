@@ -4,8 +4,6 @@
 :License: :doc:`/LICENSE`
 
 """
-import os, string
-from stsci.tools import teal
 from . import util
 from . import __version__
 

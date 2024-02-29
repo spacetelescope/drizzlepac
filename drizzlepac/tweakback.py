@@ -837,18 +837,6 @@ def update_chip_wcs(chip_wcs, drz_old_wcs, drz_new_wcs,
         chip_wcs.wcs.crder = np.array([xrms,yrms])
 
 
-#### TEAL Interfaces to run this task
-
-
-def run(configobj):
-    # Interpret user-input from TEAL GUI and call function
-    tweakback(configobj['drzfile'], newname = configobj['newname'],
-            input=configobj['input'], origwcs = configobj['origwcs'],
-            wcsname = configobj['wcsname'],
-            extname=configobj['extname'],verbose=configobj['verbose'],
-            force=configobj['force'])
-
-
 #### Utility functions
 #
 def extract_input_filenames(drzfile):

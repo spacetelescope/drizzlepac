@@ -81,7 +81,7 @@ def setCommonInput(configObj, createOutwcs=True):
         configObj = {'input':None,'output':None }
 
     If provided, the configObj should contain the values of all the multidrizzle parameters
-    as set by the user with TEAL. If no configObj is given, it will retrieve
+    as set by the user. If no configObj is given, it will retrieve
     the default values automatically.  In either case, the values from the input_dict
     will be merged in with the configObj before being used by the rest of the
     code.
@@ -301,8 +301,6 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
 
 def getMdriztabPars(input):
     """ High-level function for getting the parameters from MDRIZTAB
-
-    Used primarily for TEAL interface.
     """
     filelist,output,ivmlist,oldasndict=processFilenames(input,None)
 
