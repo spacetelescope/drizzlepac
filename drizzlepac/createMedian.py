@@ -14,9 +14,8 @@ from astropy.io import fits
 
 from stsci.imagestats import ImageStats
 from stsci.image import numcombine
-from stsci.tools import iterfile, teal, logutil
+from stsci.tools import iterfile, logutil
 
-from . import imageObject
 from . import util
 from .minmed import min_med
 from . import processInput
@@ -34,7 +33,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 # this is the user access function
-def median(input=None, configObj=None, editpars=False, **inputDict):
+def user_main(input=None, configObj=None, **inputDict):
     """
     Create a median image from the seperately drizzled images.
     """
@@ -43,27 +42,17 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
     else:
         raise ValueError("Please supply an input image")
 
-    configObj = util.getDefaultConfigObj(__taskname__, configObj, inputDict,
-                                         loadOnly=(not editpars))
+    configObj = util.getDefaultConfigObj(__taskname__, configObj, inputDict)
+    
     if configObj is None:
-        return
+        raise ValueError("No configuration object found.")
 
-    if not editpars:
-        run(configObj)
-
-
-def run(configObj):
-    imgObjList, outwcs = processInput.setCommonInput(
-        configObj,
-        createOutwcs=False
-    )  # outwcs is not needed here
-    createMedian(imgObjList, configObj)
+    imgObjList, outwcs = processInput.setCommonInput(configObj, createOutwcs=False)
+    main(imgObjList, configObj)
 
 
-# ###################################################
-# ## Top-level interface from inside AstroDrizzle  ##
-# ###################################################
-def createMedian(imgObjList, configObj, procSteps=None):
+
+def main(imgObjList, configObj, procSteps=None):
     """ Top-level interface to createMedian step called from top-level
     AstroDrizzle.
 
@@ -471,6 +460,6 @@ def _writeImage(dataArray=None, inputHeader=None):
     return pf
 
 
-median.__doc__ = util._def_help_functions(
+main.__doc__ = util._def_help_functions(
     locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
 )

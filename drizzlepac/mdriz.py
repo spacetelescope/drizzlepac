@@ -41,7 +41,7 @@ def main() :
             help = True
         elif opt == '-g':
             # editpars = True
-            print('WARNING: -g option is deprecated and will be removed in a future release.')
+            raise ValueError('The -g option and TEAL GUI are no longer supported.')
         elif opt == '-?':
             long_help = True
 

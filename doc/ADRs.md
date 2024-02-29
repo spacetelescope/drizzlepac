@@ -32,12 +32,12 @@ Caution must be taken is using variations of the poller file while processing WF
 
 ## Context
 
-The primary modules for drizzlepac have main functions named "run". This comes from the TEAL interface's need to identify modules. 
+The primary modules for drizzlepac have main functions named "run". This comes from the TEAL interface's need to identify modules. There are also a number of cases when the primary function of a module is unclear (e.g. ablot.py)
 
 ## Decision
 
-While the TEAL GUI is deprecated we will keep the naming convention for consistency. 
+The primary function in the drizzlepac modules will be renamed to 'main()'. Any user interface will be renamed to 'user_main()'. 
 
 ## Consequences
 
-Calls of just "run" may be confusing if the function is loaded from any module. This should be avoided within the code to avoid confusion between different run calls. 
+Calls of just "main" may be confusing if the function is loaded from any module. Calls to "main" should be left in their associated namespaces e.g. createMedian.main() not main(). 

@@ -114,11 +114,11 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
     # If 'editpars' was set to True, util.getDefaultConfigObj() will have
     # already called 'run()'.
     if not editpars:
-        run(configObj, wcsmap=wcsmap)
+        main(configObj, wcsmap=wcsmap)
 
 
 @util.with_logging
-def run(configobj, wcsmap=None):
+def main(configobj, wcsmap=None):
     # turn on logging, redirecting stdout/stderr messages to a log file
     # while also printing them out to stdout as well
     # also, initialize timing of processing steps
@@ -198,7 +198,7 @@ def run(configobj, wcsmap=None):
 #       _dbg_dump_virtual_outputs(imgObjList)
 
         # create the median images from the driz sep images
-        createMedian.createMedian(imgObjList, configobj, procSteps=procSteps)
+        createMedian.main(imgObjList, configobj, procSteps=procSteps)
 
         # blot the images back to the original reference frame
         ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap,
