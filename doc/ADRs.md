@@ -36,7 +36,7 @@ The primary modules for drizzlepac have main functions named "run". This comes f
 
 ## Decision
 
-The primary function in the drizzlepac modules will be renamed to 'main()'. Any user interface will be renamed to 'user_main()'. 
+The primary function in the drizzlepac modules will be renamed to 'main()'. Any user interface will be renamed to 'user_main()'. Exceptions are commonly used standalone tools like Tweakback, Tweakreg, and Astrodrizzle. 
 
 ## Consequences
 
