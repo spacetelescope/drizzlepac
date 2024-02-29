@@ -22,6 +22,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.1 (unreleased)
 =====================
 
+- Removed options allowing the TEAL GUI interface. [#1759]
+
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
 
 
