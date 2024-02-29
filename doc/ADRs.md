@@ -26,3 +26,18 @@ The second column of a poller file is now reserved (for WFPC2) for passing the a
 ## Consequences
 
 Caution must be taken is using variations of the poller file while processing WFPC2 data.
+
+
+# Primary Drizzlepac Module run functions 02/29/24
+
+## Context
+
+The primary modules for drizzlepac have main functions named "run". This comes from the TEAL interface's need to identify modules. 
+
+## Decision
+
+While the TEAL GUI is deprecated we will keep the naming convention for consistency. 
+
+## Consequences
+
+Calls of just "run" may be confusing if the function is loaded from any module. This should be avoided within the code to avoid confusion between different run calls. 
