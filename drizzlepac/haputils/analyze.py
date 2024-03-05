@@ -757,10 +757,6 @@ def lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4):
     log.debug(f"Peak number of similar lines: {max_angles} based on a threshold of {alimit}")
     log.debug(f"number of probable sources: {num_sources}")
 
-    #
-    # TODO:  add check against length of lines detected as well
-    #        -- Not sure what stats to use for this check...
-    #
     # Now check to see if enough detected lines have the same (non-90 deg) orientation
     lines_detected = (max_angles > alimit)
     log.info(f"{max_angles} lines were similar, so linear features were detected.")
