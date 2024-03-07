@@ -1286,7 +1286,7 @@ class HAPPointCatalog(HAPCatalogBase):
         final_col_format = {"X-Center": "10.3f", "Y-Center": "10.3f", "RA": "13.7f", "DEC": "13.7f", "ID": "7d",
                             "MagAp1": '7.3f', "MagErrAp1": '7.3f', "FluxAp1": '10.4f', "FluxErrAp1": '10.4f',
                             "MagAp2": '7.3f', "MagErrAp2": '7.3f', "MSkyAp2": '7.3f', "StdevAp2": '7.3f',
-                            "FluxAp2": '10.4f', "FluxErrAp2": '10.4f', "CI": "7.3f", "Flags": "5d"}  # TODO: Standardize precision
+                            "FluxAp2": '10.4f', "FluxErrAp2": '10.4f', "CI": "7.3f", "Flags": "5d"}
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
