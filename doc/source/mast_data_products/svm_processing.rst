@@ -676,7 +676,7 @@ gets used to define the value of this keyword, and can be called directly for an
 
 Skycell Information
 ^^^^^^^^^^^^^^^^^^^
-The pipeline (ipppssoot) and SVM processing both add the SKYCELL keyword to the headers of the input FLT(C) and drizzled DRZ(C) products. This keyword includes all of the skycells that the input exposures overlap, and is used as one of the inputs for MVM processing.
+The pipeline (ipppssoot) and SVM processing both add the SKYCELL keyword to the headers of the input FLT(C) and drizzled DRZ(C) products. This keyword includes all of the skycells that the input exposures overlap.
 
 .. note:: 
   The SKYCELL keyword values can differ between the pipeline and SVM products as the values depend on the WCSNAME of the input exposures.
