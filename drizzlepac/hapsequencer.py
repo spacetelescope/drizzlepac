@@ -870,7 +870,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         drz_root_dir = os.getcwd()
         log.info("Run source list flagging on catalog file {}.".format(catalog_name))
 
-        # TODO: REMOVE BELOW CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
+        # Code for flagging parameters
         write_flag_filter_pickle_file = False
         if write_flag_filter_pickle_file:
             pickle_dict = {"drizzled_image": drizzled_image,
@@ -893,7 +893,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
             pickle.dump(pickle_dict, pickle_out)
             pickle_out.close()
             log.info("Wrote hla_flag_filter param pickle file {} ".format(out_pickle_filename))
-        # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
+
         if catalog_data is not None and len(catalog_data) > 0:
              source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
                                                                    flt_list,
