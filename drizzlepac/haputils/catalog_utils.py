@@ -1286,7 +1286,7 @@ class HAPPointCatalog(HAPCatalogBase):
         final_col_format = {"X-Center": "10.3f", "Y-Center": "10.3f", "RA": "13.7f", "DEC": "13.7f", "ID": "7d",
                             "MagAp1": '7.3f', "MagErrAp1": '7.3f', "FluxAp1": '10.4f', "FluxErrAp1": '10.4f',
                             "MagAp2": '7.3f', "MagErrAp2": '7.3f', "MSkyAp2": '7.3f', "StdevAp2": '7.3f',
-                            "FluxAp2": '10.4f', "FluxErrAp2": '10.4f', "CI": "7.3f", "Flags": "5d"}  # TODO: Standardize precision
+                            "FluxAp2": '10.4f', "FluxErrAp2": '10.4f', "CI": "7.3f", "Flags": "5d"}
         for fcf_key in final_col_format.keys():
             output_photometry_table[fcf_key].format = final_col_format[fcf_key]
 
@@ -1669,12 +1669,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                              rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                              rw2d_source_fraction=self._rw2d_source_fraction)
 
-                # Compute the ratio of big sources/islands using Custom/Gaussian kernel vs Rickerwavelet kernel
-                # This value can be used as a discriminant between overlapping point sources and nebulousity fields
-                ratio_cg2rw_bigsource = 3.0
-                if rw_bs > 0.0:
-                    ratio_cg2rw_bigsource = g_bs / rw_bs
-
                 # Check if the RickerWavelet segmentation image still seems to be problematic
                 if rw_is_big_crowded and rw_segm_img:
 
@@ -1757,6 +1751,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         log.info("")
                         log.info("The segmentation map contains big sources/islands or a large source fraction of segments.")
                         log.info("With alternate background...using RickerWavelet2DKernel to generate an alternate segmentation map.")
+                        log.info("Checking of RickerWavelet2DKernel results using more generous big sources and source fraction limits.")
 
                         # Detect segments and evaluate the detection in terms of big sources/islands or crowded fields
                         # Note the biggest source and source fraction limits are the much larger "deblend" values.
@@ -1770,9 +1765,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                                      rw2d_sigma_for_threshold,
                                                                                                      self.image.bkg_background_ra,
                                                                                                      self.image.bkg_rms_ra,
-                                                                                                     check_big_island_only=False,
+                                                                                                     check_big_island_only=True,
                                                                                                      rw2d_biggest_source=self._bs_deblend_limit,
                                                                                                      rw2d_source_fraction=self._sf_deblend_limit)
+
+                        # Compute the ratio of big sources/islands using Custom/Gaussian vs Rickerwavelet kernel
+                        # This value used as a discriminant between overlapping point sources and nebulousity fields
+                        ratio_cg2rw_bigsource = 3.0
+                        if rw_bs > 0.0:
+                            ratio_cg2rw_bigsource = g_bs / rw_bs
 
                         # Last chance - The larger "deblend" limits were used in this last detection
                         # attempt based upon the the statistics of processing lots of data - looking
@@ -1784,7 +1785,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # quite efficient and successful for the overlapping PSF case.
                         #
                         # Use the Round 2 RickerWavelet segmentation image
-                        if not rw_is_big_crowded or (rw_is_big_crowded and (ratio_cg2rw_bigsource > self._ratio_bigsource_limit)):
+                        log.info("Custom/Gaussian biggest source found: {}  Rickerwavelent biggest source found: {}.".format(g_bs, rw_bs))
+                        log.info("Ratio of big sources found using Custom/Gaussian vs Rickerwavelet kernel: {}.".format(ratio_cg2rw_bigsource))
+
+                        # This is the easy case.
+                        if not rw_is_big_crowded:
+                            self.kernel = rw2d_kernel
+                            segm_img = copy.deepcopy(rw_segm_img)
+                            del rw_segm_img
+                        # The field was found to be crowded, but the biggest source second criterion is deemed OK.
+                        elif (rw_is_big_crowded and (ratio_cg2rw_bigsource > self._ratio_bigsource_limit)):
                             log.info("The Round 2 of segmentation images may still contain big sources/islands.\n"
                                      "However, the ratio between the Custom/Gaussian and Rickerwavelet biggest source is\n"
                                      "indicative of overlapping PSFs vs nebulousity.")
