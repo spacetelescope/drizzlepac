@@ -674,6 +674,12 @@ gets used to define the value of this keyword, and can be called directly for an
     `Harris corner detection algorithm <https://scikit-image.org/docs/0.7.0/auto_examples/plot_harris.html>`_
     used to identify the corners.
 
+Skycell Information
+^^^^^^^^^^^^^^^^^^^
+The pipeline (ipppssoot) and SVM processing both add the SKYCELL keyword to the headers of the input FLT(C) and drizzled DRZ(C) products. This keyword includes all of the skycells that the input exposures overlap.
+
+.. note:: 
+  The SKYCELL keyword values can differ between the pipeline and SVM products as the values depend on the WCSNAME of the input exposures.
 
 Catalog Generation
 -------------------

@@ -292,7 +292,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
         fi.finalize()
 
         # combine user masks with static masks:
-        assert(len(extlist) == fi.count) #TODO: <-- remove after thorough testing
+        assert(len(extlist) == fi.count)
 
         masklist = []
         mextlist = []

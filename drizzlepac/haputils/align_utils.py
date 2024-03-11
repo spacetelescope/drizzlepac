@@ -702,7 +702,6 @@ class HAPImage:
 
             dqmask = self.build_dqmask(chip=chip)
             sciarr = self.imghdu[("SCI", chip)].data.copy()
-            #  TODO: replace detector_pars with dict from OO Config class
             # Turning off 'classify' since same CRs are being removed before segmentation now
             extract_pars = {'classify': False,  # alignment_pars['classify'],
                             'centering_mode': alignment_pars['centering_mode'],
@@ -923,8 +922,6 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
                                 fitgeom=fitgeom, nclip=nclip)
         # Insure the expanded reference catalog has all the information needed
         # to complete processing.
-        # TODO: Work out how to get the 'mag' column from input source catalog
-        #       into this extended reference catalog...
         # reference_catalog = match_relcat
         # reference_catalog['mag'] = np.array([-999.9] * len(reference_catalog),
         #                                    np.float32)
