@@ -328,9 +328,14 @@ update_data(struct driz_param_t* p, const integer_t ii, const integer_t jj,
   if (vc == 0.0) {
     *output_data_ptr(p, ii, jj) = d;
   } else {
-  *output_data_ptr(p, ii, jj) =
-      (*output_data_ptr(p, ii, jj) * vc + dow * d) / (vc_plus_dow);
+    if (vc_plus_dow != 0.0) {
+      *output_data_ptr(p, ii, jj) =
+        (*output_data_ptr(p, ii, jj) * vc + dow * d) / (vc_plus_dow);
+    }
   }
+
+  *output_counts_ptr(p, ii, jj) = vc_plus_dow;
+}
 
 /**
 To calculate area under a line segment within unit square at origin.
