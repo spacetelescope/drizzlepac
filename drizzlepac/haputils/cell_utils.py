@@ -552,6 +552,7 @@ class SkyFootprint(object):
             
             # Start by smoothing out the edges of the chips/field
             # this will remove rough edges up to 3 pixels deep along the image edge
+            # multiplying by 100 to avoid having the threshold as a decimal (0.5) between 0 and 1. 
             scmask = ndimage.gaussian_filter(scmask_dilated_erroded.astype(np.float32) * 100, sigma=2) > 50
             
             # Label each major contiguous region in the mask
