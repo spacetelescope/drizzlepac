@@ -615,7 +615,7 @@ an attempt to perform an *a posteriori* fit to GAIA:
 
         * The naming convention is more fully described on the
           `Drizzlepac Astrometry description
-          <https://drizzlepac.readthedocs.io/en/latest/astrometry.html>`_.
+          <https://drizzlepac.readthedocs.io/en/latest/mast_data_products/astrometry.html>`_.
 
 The result of this lengthy process is a set of WCS objects which have been
 updated with a fit to a GAIA catalog representing an *a posteriori* solution.

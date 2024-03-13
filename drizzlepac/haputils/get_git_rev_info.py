@@ -132,7 +132,7 @@ def get_rev_id(local_repo_path):
         # Even if installed from a release branch, if there is no git information
         # it was installed separate from the source directory, so it is a
         # at least a release branch which is comparable to master.
-        rv = 'master'
+        rv = 'main'
     finally:
         os.chdir(start_path)
     return(rv)

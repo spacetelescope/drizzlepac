@@ -622,6 +622,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
                 log.warning("This Total Data Product only has Grism/Prism data and no direct images: {}".format(total_item.drizzle_filename))
                 log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.")
                 product_list += [total_item.trl_filename]
+            
+            # Add skycell header keyword to SVM flt(c) files
+            # iterates over all exposure (names) in the total product
+            for image in total_item.edp_list:
+                proc_utils.add_skycell_to_header(image.full_filename)
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -865,7 +870,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         drz_root_dir = os.getcwd()
         log.info("Run source list flagging on catalog file {}.".format(catalog_name))
 
-        # TODO: REMOVE BELOW CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
+        # Code for flagging parameters
         write_flag_filter_pickle_file = False
         if write_flag_filter_pickle_file:
             pickle_dict = {"drizzled_image": drizzled_image,
@@ -888,7 +893,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
             pickle.dump(pickle_dict, pickle_out)
             pickle_out.close()
             log.info("Wrote hla_flag_filter param pickle file {} ".format(out_pickle_filename))
-        # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
+
         if catalog_data is not None and len(catalog_data) > 0:
              source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
                                                                    flt_list,

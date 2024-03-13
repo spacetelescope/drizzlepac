@@ -116,17 +116,12 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
 
     if logname is not None:
         logutil.setup_global_logging()
-        # Don't use logging.basicConfig since it can only be called once in a
-        # session
-        # TODO: Would be fine to use logging.config.dictConfig, but it's not
-        # available in Python 2.5
         global _log_file_handler
         root_logger = logging.getLogger()
         if _log_file_handler:
             root_logger.removeHandler(_log_file_handler)
         # Default mode is 'a' which is fine
         _log_file_handler = logging.FileHandler(logname)
-        # TODO: Make the default level configurable in the task parameters
         _log_file_handler.setLevel(level)
 
         # Insure file handler has '.name' set so calling code can get it.

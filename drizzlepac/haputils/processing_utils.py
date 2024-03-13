@@ -14,7 +14,7 @@ from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 from stwcs import wcsutil
 
-from .cell_utils import SkyFootprint
+from .cell_utils import SkyFootprint, get_sky_cells
 
 LEVEL_DEFS = {1: 'single exposure product', 2: 'filter product', 3: 'total detection product'}
 HAPCOLNAME = 'HAPEXPNAME'
@@ -341,6 +341,57 @@ def compute_sregion(image, extname='SCI'):
     if closefits:
         hdu.close()
 
+def add_skycell_to_header(image_filename, extname='SCI'):
+    """Determines the skycells for which the image falls within and adds the 
+    information to the science header. The SKYCELL value for IPPPSSOOT and SVM 
+    products may be different as the current computation is based upon the WCSNAME 
+    of the input images.
+
+    Parameters
+    ----------
+    image : str 
+        Image filename to update with the skycell keyword in each extname extension.
+    extname : str, optional
+        EXTNAME value for extension containing the header to be updated
+        
+    Returns
+    -------
+    Nothing; image header has been updated unless keyword already exists.
+    """    
+
+    # Open image and determine whether to consequently close it
+    try: 
+        hdu, closefits = _process_input(image_filename)
+    except:
+        log.error(f"Could not open {image_filename} during add_skycell_to_header. Exiting.")
+
+    # Find all extensions to be updated
+    numext = countExtn(hdu, extname=extname)
+    
+    for extver in range(1, numext + 1):
+        sciext = (extname, extver)
+        skycells = get_sky_cells([image_filename])
+        if skycells:
+            shortened_skycells = [x[8:] for x in list(skycells.keys())] # remove 'skycell_' from the keys
+            skycell_string = '; '.join(shortened_skycells) # join the keys into a string
+            # inserts keyword after s_region if it exists, otherwise updates value
+            if 'skycell' not in hdu[sciext].header:
+                log.debug("Adding skycell keyword.")
+                hdu[sciext].header.insert(
+                    "s_region",
+                    ("skycell", skycell_string, "Skycell(s) that this image occupies"),
+                    after=True,
+                )
+            else:
+                log.debug("Updating skycell keyword.")
+                hdu[sciext].header["skycell"]= (skycell_string, 'Skycell(s) that this image occupies')
+        else: 
+            log.error(f"No skycells found for {image_filename}.")
+        
+    # close file if opened by this functions
+    if closefits:
+        hdu.close()
+        
 
 def find_footprint(hdu, extname='SCI', extnum=1):
     """Extract the footprints from each input file
