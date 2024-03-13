@@ -22,8 +22,6 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.1 (unreleased)
 =====================
 
-- Reverted PR #1222 allowing pixels to be filled with available data where WHT=0. [#1767]
-
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
 
 
