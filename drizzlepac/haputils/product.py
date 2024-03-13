@@ -835,7 +835,6 @@ class FilterProduct(HAPProduct):
         try:
             shutil.move(self.trl_logname, self.trl_filename)
         except PermissionError:
-            # TODO:  trailer filename should be saved for moving later...
             pass
 
 
