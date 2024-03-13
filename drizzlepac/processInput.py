@@ -204,7 +204,7 @@ def setCommonInput(configObj, createOutwcs=True):
                                             inmemory=virtual)
 
     # Add original file names as "hidden" attributes of imageObject
-    assert(len(original_files) == len(imageObjectList)) #TODO: remove after extensive testing
+    assert(len(original_files) == len(imageObjectList))
     for i in range(len(imageObjectList)):
         imageObjectList[i]._original_file_name = original_files[i]
 
@@ -673,7 +673,7 @@ def buildFileListOrig(input, output=None, ivmlist=None,
     if ivmlist is None:
         ivmlist = len(filelist)*[None]
     else:
-        assert(len(filelist) == len(ivmlist)) #TODO: remove after debugging
+        assert(len(filelist) == len(ivmlist))
     ivmlist = list(zip(ivmlist,filelist))
 
     # Check format of FITS files - convert Waiver/GEIS to MEF if necessary

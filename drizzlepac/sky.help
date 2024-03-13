@@ -326,7 +326,7 @@ Second, two new methods have been introduced: ``'globalmin'`` and
 
     * Footprints are managed by the
       `spherical_geometry.polygon.SphericalPolygon
-      <https://spacetelescope.github.io/spherical_geometry/api/spherical_geometry.polygon.SphericalPolygon.html>`_
+      <https://spherical-geometry.readthedocs.io/en/latest/api/spherical_geometry.polygon.SphericalPolygon.html>`_
       class.
 
     * Both footprints *and* associated exposures (image data, WCS
