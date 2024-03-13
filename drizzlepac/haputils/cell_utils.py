@@ -423,7 +423,8 @@ class SkyFootprint(object):
         # which are particularly noticable for WFC3/IR data.
         # We are hard-coding the number of iterations since it is only
         # intended to improve, not make perfect, the mask shape.
-        total_mask = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
+        
+        total_mask_eroded = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
         self.total_mask = np.bitwise_or(total_mask, total_mask_eroded)
 
         # clean up as quickly as possible
