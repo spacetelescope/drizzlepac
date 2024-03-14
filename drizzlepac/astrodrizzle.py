@@ -57,6 +57,55 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
+def new_AstroDrizzle(input=None, mdriztab=False, configobj=None,
+                 wcsmap=None, **input_dict):
+
+    # check for viable input files
+    if input and not util.is_blank(input):
+        input_dict['input'] = input
+    elif configobj is None:
+        raise TypeError("AstroDrizzle() needs either 'input' or "
+                        "'configobj' arguments")
+    else:
+        raise ValueError("Unknown value for input" + input)
+    
+    
+    # load defaults if configobj is defaults or not provided
+    if isinstance(configobj, (str, bytes)):
+        if configobj == 'defaults':
+            # load "TEAL"-defaults (from ~/.teal/):
+            configobj = teal.load(__taskname__)
+        else:
+            if not os.path.exists(configobj):
+                raise RuntimeError(f'Cannot find .cfg file: {configobj}')
+            configobj = teal.load(configobj, strict=False)
+    elif configobj is None:
+        # load 'astrodrizzle' parameter defaults as described in the docs:
+        configobj = teal.load(__taskname__, defaults=True)
+    else:
+        raise ValueError(
+            "Unknown value for configobj, options are filename as a string"
+            + f"or configobj object: {configobj}"
+        )
+    
+    
+    #verify inputs 
+    util.validateUserPars(configobj, input_dict)
+    # verify_input(input_dict)
+    
+    import ipdb; ipdb.set_trace()
+    
+    # if mdriztab == True:
+
+
+    ## add updatewcs to configobj if it is in input_dict, should work automatcally.     
+    # if 'updatewcs' in input_dict:  # user trying to explicitly turn on updatewcs
+    #     configobj['updatewcs'] = input_dict['updatewcs']
+    #     del input_dict['updatewcs']
+    
+    # add flag to configObj to indicate whether or not to use mdriztab
+    # configObj['mdriztab'] = mdriztab
+
 def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
                  wcsmap=None, **input_dict):
     """ AstroDrizzle command-line interface """
@@ -109,14 +158,10 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         print("Problem with input parameters. Quitting...", file=sys.stderr)
         return
 
-    if not configObj:
-        return
-
+    # add flag to configObj to indicate whether or not to use mdriztab
     configObj['mdriztab'] = mdriztab
-    # If 'editpars' was set to True, util.getDefaultConfigObj() will have
-    # already called 'run()'.
-    if not editpars:
-        run(configObj, wcsmap=wcsmap)
+
+    run(configObj, wcsmap=wcsmap)
 
 ##############################
 #   Interfaces used by TEAL  #
