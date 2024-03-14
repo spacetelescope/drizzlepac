@@ -423,8 +423,9 @@ class SkyFootprint(object):
         # which are particularly noticable for WFC3/IR data.
         # We are hard-coding the number of iterations since it is only
         # intended to improve, not make perfect, the mask shape.
-        total_mask = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
-        self.total_mask = total_mask
+        
+        total_mask_eroded = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
+        self.total_mask = np.bitwise_or(total_mask, total_mask_eroded)
 
         # clean up as quickly as possible
         del arr
@@ -547,7 +548,13 @@ class SkyFootprint(object):
             fp = np.clip(self.footprint, 0, 1).astype(np.int16)
 
             # simple trick to remove noise and small regions 3x3 or less.
-            scmask = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
+            scmask_dilated_erroded = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
+            
+            # Start by smoothing out the edges of the chips/field
+            # this will remove rough edges up to 3 pixels deep along the image edge
+            # multiplying by 100 to avoid having the threshold as a decimal (0.5) between 0 and 1. 
+            scmask = ndimage.gaussian_filter(scmask_dilated_erroded.astype(np.float32) * 100, sigma=2) > 50
+            
             # Label each major contiguous region in the mask
             sclabels, nlabels = ndimage.label(scmask)
             slices = ndimage.find_objects(sclabels)
