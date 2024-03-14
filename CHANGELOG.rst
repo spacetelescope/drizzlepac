@@ -19,18 +19,18 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 
 
-3.7.1 (unreleased)
-=====================
+3.7.0rc2 (22-Mar-2024) Infrastructure Build
+===========================================
+
+- Force the identified bad rows to be removed from the total (aka white light)
+  source catalog before the corresponding bad segments are removed from the
+  segmentation image. [#1771]
 
 - Reverted PR #1222 allowing pixels to be filled with available data where WHT=0. [#1767]
 
 - Improved calculation of S_REGION using dialation and erosion. [#1762]
 
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
-
-
-3.7.0rc1 (22-Feb-2024) Infrastructure Build
-===========================================
 
 - Update project.toml file to specify numpy>=1.18,  <2.0 [#1743]
 
@@ -60,6 +60,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   
 - Initial setup for Architectural Design Records used to keep track of top-level
   thinking behind the code. [#1697]
+
 
 3.6.2 (27-Nov-2023)
 ===================
