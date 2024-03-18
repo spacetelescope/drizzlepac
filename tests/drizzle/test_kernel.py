@@ -147,5 +147,5 @@ def test_zero_input_weight(kernel, kernel_pars):
     # resample
     cdriz_setup.cdriz_call(kernel_pars, kernel)
 
-    # check that orginal bad pixel flux still coming through:
+    # check that original bad pixel flux still coming through:
     assert np.sum(kernel_pars.outsci) > 1e8
