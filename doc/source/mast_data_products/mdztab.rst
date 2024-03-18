@@ -4,8 +4,6 @@
 Pipeline Drizzle Parameters
 ***************************
 
-This module supports the interpretation of the ``MDRIZTAB`` for
-processing as used in the pipeline.
 
 .. moduleauthor:: Warren Hack, Ivo Busko, Christopher Hanley <help@stsci.edu>
 
