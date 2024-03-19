@@ -322,18 +322,16 @@ update_context(struct driz_param_t* p, const integer_t ii, const integer_t jj,
 inline_macro static void
 update_data(struct driz_param_t* p, const integer_t ii, const integer_t jj,
             const float d, const float vc, const float dow) {
-  double vc_plus_dow;
-
-  if (dow == 0.0f) return;
-
-  vc_plus_dow = vc + dow;
+  const double vc_plus_dow = vc + dow;
 
   /* Just a simple calculation without logical tests */
   if (vc == 0.0) {
     *output_data_ptr(p, ii, jj) = d;
   } else {
-    *output_data_ptr(p, ii, jj) =
-      (*output_data_ptr(p, ii, jj) * vc + dow * d) / (vc_plus_dow);
+    if (vc_plus_dow != 0.0) {
+      *output_data_ptr(p, ii, jj) =
+        (*output_data_ptr(p, ii, jj) * vc + dow * d) / (vc_plus_dow);
+    }
   }
 
   *output_counts_ptr(p, ii, jj) = vc_plus_dow;
