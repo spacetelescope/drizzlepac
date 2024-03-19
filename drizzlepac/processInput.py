@@ -59,7 +59,7 @@ if util.can_parallel:
     import multiprocessing
 
 
-def setCommonInput(configObj, createOutwcs=True):
+def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
     """
     The common interface interpreter for MultiDrizzle tasks which not only runs
     'process_input()' but 'createImageObject()' and 'defineOutput()' as well to
@@ -70,10 +70,11 @@ def setCommonInput(configObj, createOutwcs=True):
     ----------
     configObj : object
         configObj instance or simple dictionary of input parameters
-    imageObjectList : list of imageObject objects
-        list of imageObject instances, 1 for each input exposure
-    outwcs : object
-        imageObject instance defining the final output frame
+    createOutwcs : bool
+        whether of not to update the output WCS infomation
+    overwrite_dict: dict
+        dictionary of user input paramters to overwrite in configObj 
+        (needed in particular for using mdriztab=True option)
 
     Notes
     -----
@@ -129,6 +130,11 @@ def setCommonInput(configObj, createOutwcs=True):
 
         # Update configObj with values from mpars
         cfgpars.mergeConfigObj(configObj, mdriztab_dict)
+    
+    if overwrite_dict:
+        # user inputs are removed in above line, we need to add them back
+        # overwrite values in configObj with those from the input_dict
+        cfgpars.mergeConfigObj(configObj, overwrite_dict)
 
     # Convert interpreted list of input files from process_input into a list
     # of imageObject instances for use by the MultiDrizzle tasks.

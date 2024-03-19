@@ -57,55 +57,6 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-def new_AstroDrizzle(input=None, mdriztab=False, configobj=None,
-                 wcsmap=None, **input_dict):
-
-    # check for viable input files
-    if input and not util.is_blank(input):
-        input_dict['input'] = input
-    elif configobj is None:
-        raise TypeError("AstroDrizzle() needs either 'input' or "
-                        "'configobj' arguments")
-    else:
-        raise ValueError("Unknown value for input" + input)
-    
-    
-    # load defaults if configobj is defaults or not provided
-    if isinstance(configobj, (str, bytes)):
-        if configobj == 'defaults':
-            # load "TEAL"-defaults (from ~/.teal/):
-            configobj = teal.load(__taskname__)
-        else:
-            if not os.path.exists(configobj):
-                raise RuntimeError(f'Cannot find .cfg file: {configobj}')
-            configobj = teal.load(configobj, strict=False)
-    elif configobj is None:
-        # load 'astrodrizzle' parameter defaults as described in the docs:
-        configobj = teal.load(__taskname__, defaults=True)
-    else:
-        raise ValueError(
-            "Unknown value for configobj, options are filename as a string"
-            + f"or configobj object: {configobj}"
-        )
-    
-    
-    #verify inputs 
-    util.validateUserPars(configobj, input_dict)
-    # verify_input(input_dict)
-    
-    import ipdb; ipdb.set_trace()
-    
-    # if mdriztab == True:
-
-
-    ## add updatewcs to configobj if it is in input_dict, should work automatcally.     
-    # if 'updatewcs' in input_dict:  # user trying to explicitly turn on updatewcs
-    #     configobj['updatewcs'] = input_dict['updatewcs']
-    #     del input_dict['updatewcs']
-    
-    # add flag to configObj to indicate whether or not to use mdriztab
-    # configObj['mdriztab'] = mdriztab
-
 def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
                  wcsmap=None, **input_dict):
     """ AstroDrizzle command-line interface """
@@ -160,14 +111,14 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
 
     # add flag to configObj to indicate whether or not to use mdriztab
     configObj['mdriztab'] = mdriztab
-
-    run(configObj, wcsmap=wcsmap)
+    
+    run(configObj, wcsmap=wcsmap, input_dict=input_dict)
 
 ##############################
 #   Interfaces used by TEAL  #
 ##############################
 @util.with_logging
-def run(configobj, wcsmap=None):
+def run(configobj, wcsmap=None, input_dict=None):
     """
     Initial example by Nadia ran MD with configobj EPAR using:
     It can be run in one of two ways:
@@ -184,6 +135,8 @@ def run(configobj, wcsmap=None):
         teal.teal('astrodrizzle')
 
         The example config files are in drizzlepac/pars
+        
+    input_dict is a dictionary of user-specified parameters
 
     """
     # turn on logging, redirecting stdout/stderr messages to a log file
@@ -230,8 +183,10 @@ def run(configobj, wcsmap=None):
         # based on input paramters
         imgObjList = None
         procSteps.addStep('Initialization')
-        imgObjList, outwcs = processInput.setCommonInput(configobj)
-        procSteps.endStep('Initialization')
+        imgObjList, outwcs = processInput.setCommonInput(
+            configobj, overwrite_dict=input_dict
+        )
+        procSteps.endStep("Initialization")
 
         if imgObjList is None or not imgObjList:
             errmsg = "No valid images found for processing!\n"
@@ -255,14 +210,14 @@ def run(configobj, wcsmap=None):
         # subtract the sky
         sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
 
-#       _dbg_dump_virtual_outputs(imgObjList)
+        #       _dbg_dump_virtual_outputs(imgObjList)
 
         # drizzle to separate images
         adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                               logfile=logfile,
                               procSteps=procSteps)
 
-#       _dbg_dump_virtual_outputs(imgObjList)
+        #       _dbg_dump_virtual_outputs(imgObjList)
 
         # create the median images from the driz sep images
         createMedian.createMedian(imgObjList, configobj, procSteps=procSteps)
@@ -283,7 +238,6 @@ def run(configobj, wcsmap=None):
         print("AstroDrizzle Version {:s} is finished processing at {:s}.\n"
               .format(__version__, util._ptime()[0]))
         print("", flush=True)
-
 
     except Exception:
         clean = False
