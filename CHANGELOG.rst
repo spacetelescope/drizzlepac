@@ -22,6 +22,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.1 (unreleased)
 =====================
 
+- Updated HAP configuration files to default to an "rshift" fit geometry with at least 
+  10 matches; the "shift" fit geometry has also been removed as an option. [#1767]
+
 - Reverted PR #1222 allowing pixels to be filled with available data where WHT=0. [#1767]
 
 - Improved calculation of S_REGION using dialation and erosion. [#1762]
