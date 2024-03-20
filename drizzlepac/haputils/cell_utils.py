@@ -86,8 +86,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
     # Check that exposures are located in current working directory
     if not os.path.exists(expnames[0]):
         if not input_path:
-            msg = "No exposures found in cwd().  Please specify path to files!"
-            raise (ValueError, msg)
+            raise ValueError("No exposures found in cwd().  Please specify path to files!")
         bad_files = 0
         for file in expnames:
             fullfile = os.path.join(input_path, file)
@@ -98,8 +97,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
                 continue
             shutil.copy(fullfile, file)
         if bad_files:
-            msg = "Could not find {} specified input files".format(bad_files)
-            raise (ValueError, msg)
+            raise ValueError(f"Could not find {bad_files} specified input files")
 
     # Check that all exposures have up-to-date WCS solutions
     #  This will weed out exposures which were not processed by the pipeline
