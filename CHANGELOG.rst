@@ -22,6 +22,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.1 (unreleased)
 =====================
 
+- Bug fix for mdriztab=True option in Astrodrizzle previously overwriting user inputs. [#1774]
+
 - Reverted PR #1222 allowing pixels to be filled with available data where WHT=0. [#1767]
 
 - Improved calculation of S_REGION using dialation and erosion. [#1762]
