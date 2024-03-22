@@ -1,6 +1,5 @@
 """This script contains code to support creation of photometric sourcelists using two techniques:
 aperture photometry and segmentation-map based photometry."""
-
 import copy
 import math
 import sys
@@ -1874,20 +1873,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # the segmentation image too
             good_rows = []
             good_segm_rows_by_label = []
-            bad_segm_rows_by_label = []
             updated_table = None
             for i, old_row in enumerate(total_measurements_table):
                 if np.isfinite(old_row["xcentroid"]):
                     good_rows.append(old_row)
                     good_segm_rows_by_label.append(total_measurements_table['label'][i])
-                else:
-                    bad_segm_rows_by_label.append(total_measurements_table['label'][i])
-            updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
-            if self.diagnostic_mode and bad_segm_rows_by_label:
-                log.info("Bad segments removed from segmentation image for Total detection image {}.".format(self.imgname))
 
-            # Remove the bad segments from the image
-            self.segm_img.remove_labels(bad_segm_rows_by_label, relabel=True)
+            updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
 
             # Need to keep an updated copy of the total image SourceCatalog object for use when
             # making measurements in the filtered images
@@ -1901,7 +1893,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # (create_catalog_products()).  This is the way the independent catalogs of total and filter products
             # process the same segmentation image.
             # BEWARE: self.sources for "segmentation" is a SegmentationImage, but for "point" it is an Astropy table
-            self.sources = copy.deepcopy(self.segm_img)
+            # Keep only the good segments from the image
+            self.segm_img.keep_labels(good_segm_rows_by_label, relabel=True)
+
+            # Make a deep copy of the total "white light" segmentation image
+            self.sources = self.segm_img.copy()
 
             log.info("Done identifying sources in total detection image for the segmentation catalog.")
             log.info("")
