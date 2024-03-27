@@ -101,7 +101,7 @@ class Messages(Enum):
     Define a local classification for OK, Warning, and NoProcess messages
     """
 
-    OK, WARN, NOPROC = 1, -1, -2
+    WARN, NOPROC = -1, -2
 
 
 def mvm_analyze_wrapper(input_filename, log_level=logutil.logging.DEBUG):
