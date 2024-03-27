@@ -21,6 +21,9 @@ runsinglehap.py is the module which controls the SVM processing.
 
 runmultihap.py is the module which controls the MVM processing.
 
+Sucessful code will result in an exit code of 0.  If there is an error, the exit code will be non-zero. 
+An exit code of 55 is for data containing only SBC or HRC data, and an exit code of 65 is for "no viable data".
+
 .. toctree:: 
     :maxdepth: 1
 
