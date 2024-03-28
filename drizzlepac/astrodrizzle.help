@@ -32,10 +32,7 @@ configobj : ConfigObjPars, ConfigObj, dict (Default = None)
     settings. When ``configobj`` is ``defaults``, default parameter values are
     loaded from the user local configuration file usually located in
     ``~/.teal/astrodrizzle.cfg`` or a matching configuration file in the
-    current directory. This configuration file stores most recent
-    settings that an user used when running ``AstroDrizzle`` through the
-    `TEAL <https://stscitools.readthedocs.io/en/latest/teal_guide.html>`_
-    interface. When ``configobj`` is ``None``, ``AstroDrizzle``
+    current directory. When ``configobj`` is ``None``, ``AstroDrizzle``
     parameters not provided explicitly will be initialized with their
     default values as described in the "Other Parameters" section.
 
@@ -44,8 +41,7 @@ input_dict : dict, optional
     be used to override the defaults.
 
     .. note:: This list of parameters **can** include the ``updatewcs``
-       parameter, even though this parameter no longer can be set through
-       the ``TEAL`` GUI.
+       parameter.
 
     .. note:: This list of parameters **can** contain parameters specific
        to the ``AstroDrizzle`` task itself described here in the
@@ -74,8 +70,8 @@ output : str (Default = '')
     will be used for the output file name.
 
 mdriztab : bool (Default = False)
-    This button will immediately update the parameter values in the ``TEAL``
-    GUI based on those provided by the ``MDRIZTAB`` reference table referenced
+    This button will immediately update the parameter values based on those provided 
+    by the ``MDRIZTAB`` reference table referenced
     in the first input image. This requires that the ``MDRIZTAB`` reference
     file be available locally.
 
@@ -1021,8 +1017,7 @@ Run the task from Python using the command line. ::
 
     >>> astrodrizzle.AstroDrizzle('*flt.fits', configobj='myparam.cfg')
 
-Help can be accessed via the "Help" pulldown menu in the ``TEAL`` GUI.
-   It can also be accessed from the Python command-line and saved
+Help can be accessed from the Python command-line and saved
    to a text file:
 
     >>> from drizzlepac import astrodrizzle

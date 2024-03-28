@@ -107,11 +107,6 @@ def replace(input, **pars):
         fimg.close()
 
 
-##############################
-#
-# TEAL Interfaces
-#
-##############################
 def run(configobj):
 
     ext = util.check_blank(configobj['ext'])

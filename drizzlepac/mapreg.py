@@ -1063,9 +1063,6 @@ def _check_FITS_extensions(img, extensions):
     return all_present
 
 
-#--------------------------
-# TEAL Interface functions
-#--------------------------
 def run(configObj):
     MapReg(input_reg   = configObj['input_reg'],
            images      = configObj['images'],

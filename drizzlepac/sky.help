@@ -57,9 +57,7 @@ inputDict : dict, optional
       parameters can be altered on the fly using the ``inputDict``. If ``configObj``
       is set to None and there is no ``inputDict`` information, then the values
       for the parameters will be pulled from the default configuration files
-      for the task. These are the same configuration files that are
-      referenced in the TEAL parameter interface GUI. If you wish to edit
-      these parameters by hand in the GUI, simply set editpars=True.
+      for the task.
 
     Table of optional parameters that should be in ``configobj`` and can also be
     specified in ``inputDict``.

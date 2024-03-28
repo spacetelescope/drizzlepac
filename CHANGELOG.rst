@@ -30,6 +30,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Improved calculation of S_REGION using dialation and erosion. [#1762]
 
+- Removed options allowing the TEAL GUI interface. [#1759]
+
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
 
 - Update project.toml file to specify numpy>=1.18,  <2.0 [#1743]

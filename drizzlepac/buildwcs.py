@@ -32,9 +32,6 @@ user_hstwcs_pars = {'outscale':'pscale','orient':'orientat',
 model_attrs = ['cpdis1','cpdis2','det2im','det2im1','det2im2',
                     'ocx10','ocx11','ocy10','ocy11','sip']
 
-#
-#### User level interface run from TEAL
-#
 
 def buildwcs(outwcs, configObj=None,editpars=False,**input_dict):
     if input_dict is None:
