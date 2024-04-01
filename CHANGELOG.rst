@@ -22,6 +22,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.0rc2 (22-Mar-2024) Infrastructure Build
 ===========================================
 
+- Updated config json to exclude bad pixels in single WFC3/IR SVM processing. [#1783]
+
 - Force the identified bad rows to be removed from the total (aka white light)
   source catalog before the corresponding bad segments are removed from the
   segmentation image. [#1771]
