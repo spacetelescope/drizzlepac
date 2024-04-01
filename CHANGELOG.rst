@@ -21,12 +21,6 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.0rc2 (22-Mar-2024) Infrastructure Build
 ===========================================
 
-- Modified the pyproject.toml file in order to force the use of
-  stsci-imagestats >= 1.8.1.  Version 1.8.1 contains a bug fix which caused
-  drizzlepac to fail in Linux machines.  It was necessary to force this 
-  change as the build sequence is "in progress" and will not allow changes
-  to non-domestic packages until the build sequence is complete.
-
 - Force the identified bad rows to be removed from the total (aka white light)
   source catalog before the corresponding bad segments are removed from the
   segmentation image. [#1771]
