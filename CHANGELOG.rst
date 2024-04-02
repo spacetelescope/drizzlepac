@@ -18,7 +18,7 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.7.0rc2 (22-Mar-2024) Infrastructure Build
+3.7.0 (02-Apr-2024) Infrastructure Build
 ===========================================
 
 - Force the identified bad rows to be removed from the total (aka white light)
