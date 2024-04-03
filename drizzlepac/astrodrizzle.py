@@ -109,20 +109,16 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         print("Problem with input parameters. Quitting...", file=sys.stderr)
         return
 
-    if not configObj:
-        return
-
+    # add flag to configObj to indicate whether or not to use mdriztab
     configObj['mdriztab'] = mdriztab
-    # If 'editpars' was set to True, util.getDefaultConfigObj() will have
-    # already called 'run()'.
-    if not editpars:
-        run(configObj, wcsmap=wcsmap)
+    
+    run(configObj, wcsmap=wcsmap, input_dict=input_dict)
 
 ##############################
 #   Interfaces used by TEAL  #
 ##############################
 @util.with_logging
-def run(configobj, wcsmap=None):
+def run(configobj, wcsmap=None, input_dict=None):
     """
     Initial example by Nadia ran MD with configobj EPAR using:
     It can be run in one of two ways:
@@ -139,6 +135,8 @@ def run(configobj, wcsmap=None):
         teal.teal('astrodrizzle')
 
         The example config files are in drizzlepac/pars
+        
+    input_dict is a dictionary of user-specified parameters
 
     """
     # turn on logging, redirecting stdout/stderr messages to a log file
@@ -185,8 +183,10 @@ def run(configobj, wcsmap=None):
         # based on input paramters
         imgObjList = None
         procSteps.addStep('Initialization')
-        imgObjList, outwcs = processInput.setCommonInput(configobj)
-        procSteps.endStep('Initialization')
+        imgObjList, outwcs = processInput.setCommonInput(
+            configobj, overwrite_dict=input_dict
+        )
+        procSteps.endStep("Initialization")
 
         if imgObjList is None or not imgObjList:
             errmsg = "No valid images found for processing!\n"
@@ -210,14 +210,14 @@ def run(configobj, wcsmap=None):
         # subtract the sky
         sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
 
-#       _dbg_dump_virtual_outputs(imgObjList)
+        #       _dbg_dump_virtual_outputs(imgObjList)
 
         # drizzle to separate images
         adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                               logfile=logfile,
                               procSteps=procSteps)
 
-#       _dbg_dump_virtual_outputs(imgObjList)
+        #       _dbg_dump_virtual_outputs(imgObjList)
 
         # create the median images from the driz sep images
         createMedian.createMedian(imgObjList, configobj, procSteps=procSteps)
@@ -238,7 +238,6 @@ def run(configobj, wcsmap=None):
         print("AstroDrizzle Version {:s} is finished processing at {:s}.\n"
               .format(__version__, util._ptime()[0]))
         print("", flush=True)
-
 
     except Exception:
         clean = False
