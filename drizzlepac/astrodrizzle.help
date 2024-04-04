@@ -22,6 +22,12 @@ input : str or list of str (Default = ``'*flt.fits'``)
        will automatically generate the ``IVM`` files itself for each input
        exposure.
 
+mdriztab : bool (Default = False)
+    This button will immediately update the parameter values in the ``TEAL``
+    GUI based on those provided by the ``MDRIZTAB`` reference table referenced
+    in the first input image. This requires that the ``MDRIZTAB`` reference
+    file be available locally.
+
 editpars : bool (Default = False)
     A parameter that allows user to edit input parameters by hand in the GUI.
     ``True`` to use the GUI to edit parameters.
@@ -38,6 +44,12 @@ configobj : ConfigObjPars, ConfigObj, dict (Default = None)
     interface. When ``configobj`` is ``None``, ``AstroDrizzle``
     parameters not provided explicitly will be initialized with their
     default values as described in the "Other Parameters" section.
+
+wcsmap : wcs_functions.WCSMap, None (Default = None)
+    An instance of ``wcs_functions.WCSMap`` which can be used to override the
+    default ``WCS`` mapping for the input images. This parameter is used to
+    specify the mapping between the input images and the output frame. If
+    ``None`` is provided, then the default ``WCS`` mapping will be used.
 
 input_dict : dict, optional
     An optional list of parameters specified by the user, which can also
@@ -72,12 +84,6 @@ output : str (Default = '')
     on the input rootname. If no value is provided when a filelist or
     wild-card specification is given as input, then a rootname of ``'final'``
     will be used for the output file name.
-
-mdriztab : bool (Default = False)
-    This button will immediately update the parameter values in the ``TEAL``
-    GUI based on those provided by the ``MDRIZTAB`` reference table referenced
-    in the first input image. This requires that the ``MDRIZTAB`` reference
-    file be available locally.
 
 runfile : str (Default = 'astrodrizzle.log')
    This log file will contain all the output messages generated during
