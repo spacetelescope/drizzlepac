@@ -1108,6 +1108,20 @@ def do_driz(insci, input_wcs, inwht,
     if insci.dtype > np.float32:
         # WARNING: Input array recast as a float32 array
         insci = insci.astype(np.float32)
+        
+    # add warnings for kernels that may not work as intended
+    kernels_w_warnings = ['lancosz', 'tophat', 'gaussian']
+    if kernel in kernels_w_warnings:
+        if kernel == 'tophat':
+            log.warning(f'It was found that kernel "{kernel}" does not work as intended.')
+            log.warning('It has been removed as a option.')
+            log.warning('Using kernel "square" instead.')
+            kernel='square'
+        else:
+            log.warning(f'We cannot guarantee that kernel "{kernel}" is properly conserving flux.')
+            log.warning(f'Make sure you understand the effects of using this kernel,')
+            log.warning('or use one of other available options: "square", "point", or "turbo".')
+        
 
     _vers, nmiss, nskip = cdriz.tdriz(insci, inwht, outsci, outwht,
         outctx, uniqid, ystart, 1, 1, _dny,
