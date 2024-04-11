@@ -419,7 +419,7 @@ driz_separate : bool (Default = Yes)
     ``WCS`` as the final combined output frame. These images are used to create
     the median image, needed for cosmic ray rejection.
 
-driz_sep_kernel : str {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'} (Default = 'turbo')
+driz_sep_kernel : str {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'turbo')
     Used for the initial separate drizzling operation only, this parameter
     specifies the form of the kernel function used to distribute flux onto
     the separate output images. The current options are:
@@ -430,17 +430,13 @@ driz_sep_kernel : str {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczo
         contribute to the single pixel that is closest to the output position.
         It is equivalent to the limit as ``pixfrac->0``, and is very fast.
 
-      * ``'gaussian'``: this kernel is a circular gaussian with a FWHM
-        equal to the value of pixfrac, measured in input pixels.
-
       * ``'turbo'``: this is similar to ``kernel='square'`` but the box is
         always the same shape and size on the output grid, and is always
         aligned with the X and Y axes. This may result in a significant speed
         increase.
 
-      * ``'tophat'``: this kernel is a circular "top hat" shape of width
-        ``pixfrac``. It effects only output pixels within a radius of
-        ``pixfrac/2`` from the output position.
+      * ``'gaussian'``: this kernel is a circular gaussian with a FWHM
+        equal to the value of pixfrac, measured in input pixels.
 
       * ``'lanczos3'``: a Lanczos style kernel, extending a radius
         of 3 pixels from the center of the detection. The Lanczos kernel is
@@ -448,6 +444,15 @@ driz_sep_kernel : str {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczo
         effective for resampling single images when ``scale=pixfrac=1``.
         It leads to less resolution loss than other kernels, and typically
         results in reduced correlated noise in outputs.
+
+      * ``'tophat'``: (former option) this kernel is a circular "top hat" shape of 
+        width ``pixfrac``. It effects only output pixels within a radius of
+        ``pixfrac/2`` from the output position. This kernel has been removed
+        as it was found to be ineffective at reproducing results. 
+
+        .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
+        produce reasonable results, we cannot guarantee that they will properly 
+        conserve flux; understand the effects of these kernels before using them. 
 
         .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
            processing as compared to other kernel options. This option should
@@ -776,7 +781,7 @@ final_wht_type : {'EXP', 'ERR', 'IVM'} (Default = 'EXP')
           computed dark value from the image header to automatically generate
           an ``IVM`` file specific to each exposure.
 
-final_kernel : {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'} (Default = 'square')
+final_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'square')
     This parameter specifies the form of the kernel function used to distribute
     flux onto the separate output images, for the initial separate drizzling
     operation only. The value options for this parameter include:
@@ -796,9 +801,10 @@ final_kernel : {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'} (D
           and is always aligned with the ``X`` and ``Y`` axes. This may result
           in a significant speed increase.
 
-        * ``'tophat'``: this kernel is a circular "top hat" shape of width
+        * ``'tophat'``: (no longer available) this kernel is a circular "top hat" shape of width
           ``pixfrac``. It effects only output pixels within a radius of
-          ``pixfrac/2`` from the output position.
+          ``pixfrac/2`` from the output position. This kernel has been removed
+        as it was found to be ineffective at reproducing results. 
 
         * ``'lanczos3'``: a Lanczos style kernel, extending a radius of
           3 pixels from the center of the detection. The Lanczos kernel is
