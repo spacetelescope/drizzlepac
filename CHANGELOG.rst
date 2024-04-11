@@ -22,6 +22,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.0rc2 (22-Mar-2024) Infrastructure Build
 ===========================================
 
+- Removed "tophat" as a kernel option, added warnings for "gaussian" and "lanczos3" 
+  that they may not be conserving flux. [#1786]
+
 - Force the identified bad rows to be removed from the total (aka white light)
   source catalog before the corresponding bad segments are removed from the
   segmentation image. [#1771]
