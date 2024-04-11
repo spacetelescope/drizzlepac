@@ -12,7 +12,6 @@ This PR addresses ...
 - [ ] added entry in `CHANGELOG.rst` within the relevant release section
 - [ ] updated or added relevant tests
 - [ ] updated relevant documentation
-- [ ] added relevant milestone
 - [ ] added relevant label(s)
 - [ ] ran regression tests, post a link to the Jenkins job below.
       [How to run regression tests on a PR](https://github.com/spacetelescope/jwst/wiki/Running-Regression-Tests-Against-PR-Branches)
