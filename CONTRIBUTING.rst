@@ -225,7 +225,7 @@ Now, you can open a pull request on the main branch of the upstream
    -  You will need to add a change log entry in CHANGES.rst if your
       contribution is a new feature or bug fix. An entry is not required
       for small fixes like typos.
-   -  Your PR will need to be reviewed and approved by at least two
+   -  Your PR will need to be reviewed and approved by at least one
       maintainers. They may require changes from you before your code
       can be merged, in which case you will need to go back and make
       these changes and push them (they will automatically appear in the
@@ -277,11 +277,10 @@ Writing and building documentation
 to generate documentation, which is then hosted online on
 `readthedocs <https://readthedocs.org/>`__.
 
-You can access two versions of the documentation on the `DrizzlePac
+You can access the documentation on the `DrizzlePac
 readthedocs
 website <https://readthedocs.org/projects/drizzlepac-pipeline/>`__ - the
-'latest' version is whatever is currently on the main branch, and the
-'stable' version is the last released version. If you successfully merge
+'latest' version is whatever is currently on the main branch. If you successfully merge
 a PR with documentation changes, they will only appear on 'latest' until
 the next DrizzlePac release.
 
@@ -329,11 +328,11 @@ so it is good practice to build the docs frequently when editing them.
 Writing and running unit tests
 ------------------------------
 
-Unit tests are located in each module in ``drizzlepac`` in a ``tests``
-subdirectory (for example,
-``drizzlepac/drizzlepac/ramp_fitting/tests``). These tests run the code
+Unit tests are located in the ``tests`` directory and are separated by instrument,
+with additional separate directories for Hubble Advanced Products (HAP) and the 
+drizzle algorithm. These tests run the code
 on simplified datasets to make sure there are no breaking changes
-introduced. Most lines of ``drizzlepac`` should be covered by a unit
+introduced. We aim to cover most lines of ``drizzlepac`` with unit
 test, so when adding code you will often need to write a new test or add
 to an existing test to ensure adequate coverage.
 
@@ -370,20 +369,21 @@ called 'test' or .py files with the word 'test' in the name. Functions
 in these files will be executed.
 
 To run all of the ``drizzlepac`` unit tests, while in the
-``drizzlepac/drizzlepac`` level directory, simply run the command:
+``drizzlepac/`` level directory, simply run the command:
 
 ::
 
    >> pytest
 
-If you want to run all the tests for a single module, for example
-``ramp_fitting``, you can run this from either the
-'drizzlepac/drizzlepac/ramp_fitting' OR the
-'drizzlepac/drizzlepac/ramp_fitting/tests' directory/.
+If you want to run all the tests for a single instrument/directory, for example
+``WFC3``, you can run this from 'drizzlepac/wfc3'.
 
 To run all tests within a single test file (for example, all tests in
-``drizzlepac/drizzlepac/jump/test_detect_jumps.py``). >> pytest
-test_detect_jumps.py
+``test_wfc3``). 
+
+::
+   
+   >> pytest drizzlepac/wfc3/test_wfc3.py
 
 Configuring pytest for unit tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -418,7 +418,7 @@ sets of input parameters 2. @pytest.skip can be used to skip tests
 altogether, or under specific conditions (for example, only when being
 run by the CI) 3. @pytest.fixture to declare a
 `fixture <https://docs.pytest.org/en/7.1.x/explanation/fixtures.html>`__
-4. @pytest.mark.xfail will make a test pass only if it fails.
+1. @pytest.mark.xfail will make a test pass only if it fails.
 
 Simultaneously developing ``drizzlepac`` and one of its dependencies
 --------------------------------------------------------------------
@@ -449,7 +449,7 @@ version of ``stcal``, and stcal points to the last version of
 is modify the ``pyproject.toml`` files in both packages to point to the
 other to demonstrate that CI tests pass (and make a comment noting this
 in your PR), and then change it back before the PR is merge so that
-changes to ``pyproject.toml`` are not merged into main/main. In your
+changes to ``pyproject.toml`` are not merged into main. In your
 ``drizzlepac`` branch, to point to your branch in the dependent package
 (in this example ``stcal``), change the required ``stcal`` version in
 ``pyproject.toml`` to:
