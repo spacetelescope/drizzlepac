@@ -18,24 +18,27 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-
-3.7.0rc2 (22-Mar-2024) Infrastructure Build
-===========================================
+3.7.1 (unreleased)
+======================
 
 - Removed "tophat" as a kernel option, added warnings for "gaussian" and "lanczos3" 
   that they may not be conserving flux. [#1786]
-
-- Force the identified bad rows to be removed from the total (aka white light)
-  source catalog before the corresponding bad segments are removed from the
-  segmentation image. [#1771]
 
 - Bug fix for mdriztab=True option in Astrodrizzle previously overwriting user inputs. [#1774]
 
 - Reverted PR #1222 allowing pixels to be filled with available data where WHT=0. [#1767]
 
+- Force the identified bad rows to be removed from the total (aka white light)
+  source catalog before the corresponding bad segments are removed from the
+  segmentation image. [#1771]
+
 - Improved calculation of S_REGION using dialation and erosion. [#1762]
 
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
+  
+
+3.7.0 (02-Apr-2024)
+===================
 
 - Update project.toml file to specify numpy>=1.18,  <2.0 [#1743]
 
