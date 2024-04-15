@@ -63,10 +63,19 @@ pull request to the ''main'' branch of ``spacetelescope/drizzlepac``.
    area on your file system and use the ``git clone`` command to dowload
    your remote fork on to your machine.
 
+If you are using an SSH key to authenticate.
+
    ::
 
        >> cd directory
        >> git clone git@github.com:<your_username>/drizzlepac.git
+
+Otherwise use the following. 
+
+   ::
+
+       >> cd directory
+       >> git clone https://github.com/<your_username>/drizzlepac.git
 
 3. Make sure that your references to 'origin' and 'upstream' are set
    correctly - you will need this to keep everything in sync and push
