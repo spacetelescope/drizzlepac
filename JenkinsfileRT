@@ -1,6 +1,12 @@
 // Obtain files from source control system.
 if (utils.scm_checkout()) return
 
+// Select a tree on Artifactory to provide input and truth data
+artifactory_env = "dev"
+if (env.ARTIFACTORY_ENV) {
+    artifactory_env = env.ARTIFACTORY_ENV
+}
+
 // Allow modification of the job configuration, affects all relevant
 // build configs.
 // Pass this object in the argument list to the`run()` function below
@@ -25,7 +31,7 @@ bc1.conda_packages = ['python=3.9']
 bc1.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata",
+bc1.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata",
                 "codecov"]
 bc1.test_configs = [data_config]
 bc1.failedFailureThresh = 0
@@ -38,7 +44,7 @@ bc2.conda_packages = ['python=3.9']
 bc2.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson || true",
                  "pip install -r requirements-dev.txt --upgrade -e '.[test]' || true",
                  "pip freeze || true"]
-bc1.test_cmds = ["pytest --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata || true",
+bc1.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata || true",
                 "codecov || true"]
 bc1.test_configs = [data_config]
 // Apply a large failure threshold to prevent marking the pipeline job failed
