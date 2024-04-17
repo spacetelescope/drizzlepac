@@ -796,11 +796,6 @@ final_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = '
           and is always aligned with the ``X`` and ``Y`` axes. This may result
           in a significant speed increase.
 
-        * ``'tophat'``: (no longer available) this kernel is a circular "top hat" shape of width
-          ``pixfrac``. It effects only output pixels within a radius of
-          ``pixfrac/2`` from the output position. This kernel has been removed
-            as it was found to produce poor results. 
-
         * ``'lanczos3'``: a Lanczos style kernel, extending a radius of
           3 pixels from the center of the detection. The Lanczos kernel is
           a damped and bounded form of the "sinc" interpolator, and is very
