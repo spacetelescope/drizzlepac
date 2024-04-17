@@ -445,11 +445,6 @@ driz_sep_kernel : str {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Defa
         It leads to less resolution loss than other kernels, and typically
         results in reduced correlated noise in outputs.
 
-      * ``'tophat'``: (former option) this kernel is a circular "top hat" shape of 
-        width ``pixfrac``. It effects only output pixels within a radius of
-        ``pixfrac/2`` from the output position. This kernel has been removed
-        as it does not conserve flux. 
-
         .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
         produce reasonable results and can be useful in certain cases, they do not 
         conserve flux; understand the effects of these kernels before using them. 

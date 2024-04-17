@@ -54,10 +54,6 @@ driz_sep_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default 
         when ``scale``\ =\ ``pixfrac``\ =1. It leads to less resolution loss
         than other kernels, and typically results in reduced correlated
         noise in outputs.
-      * **tophat**: (no longer available) this kernel is a circular "top hat" shape of
-        width ``pixfrac``. It effects only output pixels within a radius
-        of ``pixfrac``/2 from the output position. This kernel has been removed
-        as it was found to produce poor results. 
 
         .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
             produce reasonable results, we cannot guarantee that they will properly 
