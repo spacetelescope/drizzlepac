@@ -143,7 +143,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
                 overwrite_dict[kernel_param] = "square"
             else:
                 log.warning(
-                    f'WARNING: We cannot guarantee that kernel "{overwrite_dict[kernel_param]}" is properly conserving flux.'
+                    f'WARNING: Kernel "{overwrite_dict[kernel_param]}" does not conserve flux.'
                     + "Make sure you understand the effects of using this kernel, "
                     + 'or use one of other available options: "square", "point", or "turbo".'
                 )
