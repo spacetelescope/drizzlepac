@@ -107,7 +107,7 @@ to enter your password every time you fetch/push
 
 ::
 
-   >> git remote add upstream https://github.com/spacetelescope/drizzlepac
+   >> git remote add upstream https://github.com/spacetelescope/drizzlepac.git
 
 If you ever want to reset these URLs, add references to other remote
 forks of ``drizzlepac`` for collaboration, or change from URL to SSH,
