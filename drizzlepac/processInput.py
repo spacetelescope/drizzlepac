@@ -138,9 +138,9 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
             if overwrite_dict[kernel_param] == "tophat":
                 log.warning(
                     f'WARNING: It was found that kernel "{overwrite_dict[kernel_param]}" does not work as intended. '
-                    + f'It has been removed as a option. Using kernel "square" instead for {kernel_param}.'
+                    + f'It has been removed as a option. Using kernel "turbo" instead for {kernel_param}.'
                 )
-                overwrite_dict[kernel_param] = "square"
+                overwrite_dict[kernel_param] = "turbo"
             else:
                 log.warning(
                     f'WARNING: Kernel "{overwrite_dict[kernel_param]}" does not conserve flux.'
