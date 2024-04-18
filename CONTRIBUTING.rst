@@ -345,12 +345,9 @@ introduced. We aim to cover most lines of ``drizzlepac`` with unit
 test, so when adding code you will often need to write a new test or add
 to an existing test to ensure adequate coverage.
 
-Take a look around at the existing tests for a template - a majority of
-these tests use a @pytest.fixture to set up a common dataset (usually a
-very simple ``datamodel`` with some observational parameters and
-simplified data/dq arrays) for tests in that file, and the test
-functions themselves set up a scenario to run a pipeline/step under
-certain conditions, and culminate in a set of assertions that need to
+Take a look around at the existing tests - many tests use a @pytest.fixture to 
+set up a common dataset. The test functions themselves set up a scenario to run a 
+function under certain conditions, and culminate in a set of assertions that need to
 pass (or fail if the test is marked as ``xfail``).
 
 The CI will run the unit tests on your branch when you open a pull
@@ -385,14 +382,14 @@ To run all of the ``drizzlepac`` unit tests, while in the
    >> pytest
 
 If you want to run all the tests for a single instrument/directory, for example
-``WFC3``, you can run this from 'drizzlepac/wfc3'.
+``WFC3``, you can run this from 'drizzlepac/tests/wfc3'.
 
 To run all tests within a single test file (for example, all tests in
 ``test_wfc3``). 
 
 ::
    
-   >> pytest drizzlepac/wfc3/test_wfc3.py
+   >> pytest drizzlepac/tests/wfc3/test_wfc3.py
 
 Configuring pytest for unit tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -434,14 +431,14 @@ Simultaneously developing ``drizzlepac`` and one of its dependencies
 
 If you encounter the scenario where you wish to simultaneously make
 changes in ``drizzlepac`` and also in one of its dependencies like
-``stcal`` or ``stpipe``, we recommend that you create a new environment
+``fitsblender`` or ``stsci.tools``, we recommend that you create a new environment
 with development versions of both of these packages. To do this, you can
 follow the same workflow outlined in the 'Contributing code' section of
 this guide. To summarize, you will want to create a new Python
-environment (called, for example, drizzlepac_stcal_dev), fork and clone
+environment (called, for example, drizzlepac_fitsblender_dev), fork and clone
 a local copy of ``drizzlepac`` if you haven't already and install this
 (doing ``pip install -e .`` in the top level directory of
-``drizzlepac``), and then fork and clone ``stcal`` and install it in
+``drizzlepac``), and then fork and clone ``fitsblender`` and install it in
 this environment in the same way. To double check that you have the
 correct dev versions of these packages in your environment, you can
 check their versions by doing:
@@ -453,21 +450,21 @@ check their versions by doing:
 When opening up two dependent pull requests in ``drizzlepac`` and one of
 its dependency packages, unit tests will not pass on the CI because the
 ``pyproject.toml`` file in ``drizzlepac`` points to the last released
-version of ``stcal``, and stcal points to the last version of
+version of ``fitsblender``, and fitsblender points to the last version of
 ``drizzlepac``, so the issue becomes circular. What you will need to do
 is modify the ``pyproject.toml`` files in both packages to point to the
 other to demonstrate that CI tests pass (and make a comment noting this
 in your PR), and then change it back before the PR is merge so that
 changes to ``pyproject.toml`` are not merged into main. In your
 ``drizzlepac`` branch, to point to your branch in the dependent package
-(in this example ``stcal``), change the required ``stcal`` version in
+(in this example ``fitsblender``), change the required ``fitsblender`` version in
 ``pyproject.toml`` to:
 
 ::
 
-   >> stcal @  git+https://github.com/<your_username>/stcal.git@<your_branch>
+   >> fitsblender @  git+https://github.com/<your_username>/fitsblender.git@<your_branch>
 
-And similarly, in ``stcal``, change the required ``drizzlepac`` version
+And similarly, in ``fitsblender``, change the required ``drizzlepac`` version
 to:
 
 ::
