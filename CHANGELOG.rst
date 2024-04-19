@@ -24,6 +24,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Removed "tophat" as a kernel option, added warnings for "gaussian" and "lanczos3" 
   that they may not be conserving flux. [#1786]
 
+- Updated config json to exclude bad pixels in single WFC3/IR SVM processing. [#1783]
+
 - Bug fix for mdriztab=True option in Astrodrizzle previously overwriting user inputs. [#1774]
 
 - Reverted PR #1222 allowing pixels to be filled with available data where WHT=0. [#1767]
