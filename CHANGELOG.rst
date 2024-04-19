@@ -18,9 +18,11 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-
 3.7.1 (unreleased)
 ======================
+
+- Removed "tophat" as a kernel option, added warnings for "gaussian" and "lanczos3" 
+  that they may not be conserving flux. [#1786]
 
 - Updated config json to exclude bad pixels in single WFC3/IR SVM processing. [#1783]
 

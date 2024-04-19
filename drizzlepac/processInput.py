@@ -130,7 +130,24 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
 
         # Update configObj with values from mpars
         cfgpars.mergeConfigObj(configObj, mdriztab_dict)
-    
+
+    # add warnings for kernels that may not work as intended
+    kernels_w_warnings = ["gaussian", "lanczos3", "tophat"]
+    for kernel_param in overwrite_dict:
+        if overwrite_dict[kernel_param] in kernels_w_warnings:
+            if overwrite_dict[kernel_param] == "tophat":
+                raise ValueError(
+                    f'WARNING: It was found that kernel "tophat" does not work as intended.'
+                    + 'It has been removed as a option. Please instead use kernel "square", "point"'
+                    + f' or, "turbo" for {kernel_param}.'
+                )
+            else:
+                log.warning(
+                    f'WARNING: Kernel "{overwrite_dict[kernel_param]}" does not conserve flux.'
+                    + "Make sure you understand the effects of using this kernel, "
+                    + 'or use one of other available options: "square", "point", or "turbo".'
+                )
+
     if overwrite_dict:
         # user inputs are removed in above line, we need to add them back
         # overwrite values in configObj with those from the input_dict
@@ -194,7 +211,6 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
         'Please check the filename specified in the "refimage" parameter.'
         print(textutil.textbox(msg))
         return None,None
-
 
     # Build imageObject list for all the valid, shift-updated input files
     log.info('-Creating imageObject List as input for processing steps.')

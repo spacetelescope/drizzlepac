@@ -19,7 +19,6 @@ class TestAcsKernels(BaseACS):
     params = {
         'test_kernels' : [dict(output='acs_square', kernel='square'),
                           dict(output='acs_turbo', kernel='turbo'),
-                          dict(output='acs_tophat', kernel='tophat'),
                           dict(output='acs_point', kernel='point'),
                           dict(output='acs_lanczos3', kernel='lanczos3'),
                           dict(output='acs_gaussian', kernel='gaussian'),],
