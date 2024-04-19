@@ -152,8 +152,8 @@ driz_separate : bool (*default=False*)
 driz_sep_bits: int (*default="16"*)
     Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of ``AstroDrizzle``, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the ``Bits`` Parameter for a more detailed discussion.
 
-driz_sep_kernel: str (*default="square"*)
-    Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are: 'square', 'point', 'gaussian', 'turbo', 'tophat', and 'lanczos3'. See adrizzle.help for more details. 
+driz_sep_kernel: str (*default="turbo"*)
+    Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are: 'square', 'point', 'turbo', 'gaussian', and 'lanczos3'. The latter two options ('gaussian' and 'lanczos3') are not guaranteed to conserve flux, but may produce reasonable results; understand the effects of these kernels before using them. A former option 'tophat' has been removed as it was found to produce poor results. See adrizzle.help for more details. 
 
 driz_sep_wt_scl: float (*default=exposure time (from image header)*)
     This parameter specifies the weighting factor for input image. If ``driz_sep_wt_scl``\ =\ ``exptime``, then the scaling value will be set equal to the exposure time found in the image header. The use of the default value is recommended for producing optimal behavior for most scenarious. It is possible to set ``wt_scl``\ =\ 'expsq' for weighting by the square of the exposure time, which is optimal for read-noise dominated images.
