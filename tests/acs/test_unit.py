@@ -219,7 +219,7 @@ class TestDriz(BaseUnit):
         assert(med_diff < 1.0e-6)
         assert(max_diff < 1.0e-5)
 
-    pytest.mark.skip(reason='Point kernel no longer supported')
+    pytest.mark.skip(reason='Tophat kernel no longer supported')
     def test_tophat_with_grid(self):
         """
         Test do_driz tophat kernel with grid
