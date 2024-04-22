@@ -426,6 +426,25 @@ run by the CI) 3. @pytest.fixture to declare a
 `fixture <https://docs.pytest.org/en/7.1.x/explanation/fixtures.html>`__
 1. @pytest.mark.xfail will make a test pass only if it fails.
 
+
+STScI Regression Tests
+~~~~~~~~~~~~~~~~~~~~~~
+
+In addition to unit tests, ``drizzlepac`` has a set of regression tests. 
+Many of tests must be run on the STScI system and are not available to the 
+public. These internal tests can be run using the following command, and as the
+names suggest, require storage space (~8 GB) and time (~3-4 hours) to run.  
+
+::
+
+   >> pytest --bigdata --slow
+
+
+Running the pytests without these options will result in a number of tests being 
+skipped and labeled as expected failures (xfails).
+
+
+
 Simultaneously developing ``drizzlepac`` and one of its dependencies
 --------------------------------------------------------------------
 
