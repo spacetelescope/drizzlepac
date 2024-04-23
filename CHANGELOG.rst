@@ -21,6 +21,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.1 (unreleased)
 ======================
 
+- Added contributors guide to readthedocs. [#1787]
+
 - Removed "tophat" as a kernel option, added warnings for "gaussian" and "lanczos3" 
   that they may not be conserving flux. [#1786]
 
