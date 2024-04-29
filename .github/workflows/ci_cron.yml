@@ -20,7 +20,11 @@ jobs:
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
       cache-path: /tmp/data/crds_cache/
       cache-key: ${{ needs.crds_contexts.outputs.hst }}
+      libraries: |
+        brew:
+          - hdf5
       envs: |
         - macos: py310-xdist
         - macos: py311-xdist
         - linux: py3-devdeps-xdist
+        - macos: py3-devdeps-xdist
