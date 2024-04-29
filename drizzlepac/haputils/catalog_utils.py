@@ -7,7 +7,7 @@ from collections import OrderedDict
 from packaging.version import Version
 
 from astropy.io import fits as fits
-from astropy.stats import sigma_clipped_stats
+from astropy.stats import sigma_clipped_stats, gaussian_fwhm_to_sigma
 from astropy.table import Column, MaskedColumn, Table, join, vstack
 from astropy.convolution import RickerWavelet2DKernel, convolve
 from astropy.coordinates import SkyCoord
@@ -1624,6 +1624,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Round 1
             ncount = 0
             log.info("")
+            log.info("ROUND 1")
             log.info("Using Custom kernel or Gaussian to generate a segmentation map.")
             g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                      g2d_kernel,
@@ -1645,14 +1646,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 log.info("")
                 log.info("The segmentation map contains big sources/islands or a large source fraction of segments.")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
-                rw2dk = RickerWavelet2DKernel(self.image.kernel_fwhm,
-                                                    x_size=self._rw2d_size,
-                                                    y_size=self._rw2d_size)
-                rw2dk.normalize()
+
+                # Convert the FWHM into a sigma value
+                rw_sigma = self.image.kernel_fwhm * gaussian_fwhm_to_sigma
+                rw2dk = self.ricker_matched_kernel(rw_sigma,
+                                                   x_size=self._rw2d_size,
+                                                   y_size=self._rw2d_size)
+
                 # Only pass along the array to be consistent with the g2d_kernel object
                 rw2d_kernel = rw2dk.array
-
-                log.debug("IMG stats AFTER G2D iteration 1: min/max: {}, {}".format(imgarr.min(), imgarr.max()))
 
                 # Detect segments and evaluate the detection in terms of big sources/islands or crowded fields
                 # Round 1
@@ -1708,17 +1710,18 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # kernel when the background type changes
                         g2d_kernel = self.image.kernel
 
-                        rw2dk = RickerWavelet2DKernel(self.image.kernel_fwhm,
-                                                            x_size=self._rw2d_size,
-                                                            y_size=self._rw2d_size)
-                        rw2dk.normalize()
+                        rw_sigma = self.image.kernel_fwhm * gaussian_fwhm_to_sigma
+                        rw2dk = self.ricker_matched_kernel(rw_sigma,
+                                                           x_size=self._rw2d_size,
+                                                           y_size=self._rw2d_size)
+
                         rw2d_kernel = rw2dk.array
                         sigma_for_threshold = self._nsigma
                         rw2d_sigma_for_threshold = self._rw2d_nsigma
 
                     # Re-compute a background2D with a higher threshold by increasing the nsigma used
                     elif (self.image.bkg_type.lower().startswith('twod')):
-                        log.info("Increasing the threshold image (bkg + nsigma * 2.0) for improved source detection.")
+                        log.info("Increasing the threshold by nsigma * 2.0 for improved source detection.")
                         sigma_for_threshold = self._nsigma * 2.0
                         rw2d_sigma_for_threshold = self._rw2d_nsigma * 2.0
 
@@ -1732,6 +1735,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     # Round 2
                     ncount += 1
                     log.info("")
+                    log.info("ROUND 2")
                     log.info("With alternate background...using Custom/Gaussian kernel to generate a segmentation map.")
                     del g_segm_img
                     g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
@@ -1937,6 +1941,40 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    def ricker_matched_kernel(self, sigma, sigma_factor=1.5, **kw):
+        """Return normalized RickerWavelet2D kernel matched to Gaussian width
+
+        The sigma is increased by a factor sigma_factor=1.5 to match the Gaussian
+        core width, and the normalization matches the RickerWavelet peak to the Gaussian
+        peak.  This kernel should be applied using the 'normalize_kernel=False' parameter
+        to astropy.convolution.convolve().
+
+        Routine contributed by Rick L. White.
+
+        Parameters
+        ----------
+        sigma : float
+            Sigma of the RickerWavelet kernel
+
+        sigma_factor : float
+            Factor to match the Gaussian core width
+
+        kw : int
+            x_size : Size in the x-direction 
+            y_size : Size in the y-direction 
+
+        Returns
+        -------
+        RickerWavelenket2DKernel : ˜astropy.convolution.RickerWavelet2DKernel
+            Normalized RickerWavelent2DKernel
+        """
+
+        rsigma = sigma_factor*sigma
+        rnorm = 0.5 * sigma_factor**4 * sigma**2
+        return rnorm*RickerWavelet2DKernel(rsigma, **kw)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     def detect_and_eval_segments(self, imgarr, kernel, ncount, size_source_box, nsigma_above_bkg, background_img, background_rms, check_big_island_only=False, rw2d_biggest_source=0.015, rw2d_source_fraction=0.075):
 
             # Compute the threshold to use for source detection
@@ -2074,7 +2112,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
         segm_img = None
-        self.convolved_img = convolve(img_bkg_sub, filter_kernel)
+        self.convolved_img = convolve(img_bkg_sub, filter_kernel, normalize_kernel=False)
         segm_img = detect_sources(self.convolved_img,
                                   thresh0,
                                   npixels=source_box,
