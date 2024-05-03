@@ -2111,7 +2111,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self.convolved_img = convolve(imgarr-background_img, filter_kernel, normalize_kernel=False)
 
         # The threshold should not include the background.
-        segm_img = None
         segm_img = detect_sources(self.convolved_img,
                                   threshold,
                                   npixels=source_box,
@@ -2778,6 +2777,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("Number of sources from segmentation map: %d", nbins)
 
         # Compute the biggest source identified 
+        # The clip eliminates zero-divides when there are no good pixels in the image
         real_pixels = (np.isfinite(image_data) & (image_data != 0)).sum().clip(min=1)
         biggest_source = segm_img.areas.max()/real_pixels
         log.info("Biggest_source in pixels: %d", segm_img.areas.max())
