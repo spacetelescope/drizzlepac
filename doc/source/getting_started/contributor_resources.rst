@@ -2,11 +2,11 @@ Contributor Resources
 =====================
 .. _contributor_resources:
 
-Summary:
-
 .. toctree:: 
-    :maxdepth: 2
+    :maxdepth: 1
 
-    ../../../LICENSE
-    ../../../DEPENDENCIES
-    ../../../CHANGELOG
+    ../CONTRIBUTING
+    ../CODE_OF_CONDUCT
+    ../LICENSE
+    ../DEPENDENCIES
+    ../CHANGELOG
