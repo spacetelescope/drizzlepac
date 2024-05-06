@@ -367,7 +367,7 @@ def add_skycell_to_header(image_filename, extname='SCI'):
 
     # Find all extensions to be updated
     numext = countExtn(hdu, extname=extname)
-    
+
     for extver in range(1, numext + 1):
         sciext = (extname, extver)
         skycells = get_sky_cells([image_filename])
@@ -387,15 +387,49 @@ def add_skycell_to_header(image_filename, extname='SCI'):
                 hdu[sciext].header["skycell"]= (skycell_string, 'Skycell(s) that this image occupies')
         else: 
             log.error(f"No skycells found for {image_filename}.")
-        
+
     # close file if opened by this functions
     if closefits:
         hdu.close()
-        
 
-def add_svm_inputs_to_mvm_header():
-    pass
+
+def add_svm_inputs_to_mvm_header(total_obj_list, product_list):
+    """ Adds the SVM input list to the MVM drizzled product header.
+
+    Parameters
+    ----------
+    total_obj_list : object
+        total object list created using poller_utils.interpret_mvm_input
+    product_list : list
+        list of drizzled products including FLC/Ts and trl files. 
         
+    Returns:
+    --------
+    Nothing; drizzled product headers have been updated unless keyword already exists.
+        
+    """
+
+    svm_inputs_list = ", ".join(total_obj_list[0].all_mvm_exposures)
+   
+    # excludes flt/flc files
+    mvm_drizzled_product_list = [x for x in product_list if "_dr" in x]
+   
+   
+    for image_filename in mvm_drizzled_product_list:
+        # Open image and determine whether to consequently close it
+        try: 
+            hdu, closefits = _process_input(image_filename)
+        except:
+            log.error(f"Could not open {image_filename} during add_svm_inputs_to_mvm_header. Exiting.")
+        hdu[0].header.insert(
+            "ROOTNAME",
+            ("SVMINPUT", svm_inputs_list, "SVM files used"),
+            after=True,
+        )
+
+    # close file if opened by this functions
+    if closefits:
+        hdu.close()
 
 def find_footprint(hdu, extname='SCI', extnum=1):
     """Extract the footprints from each input file

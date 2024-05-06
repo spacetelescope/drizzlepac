@@ -417,9 +417,9 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
         driz_list = create_drizzle_products(total_obj_list, custom_limits=custom_limits)
         product_list += driz_list
-        
+                
         # add input svm products to header
-        proc_utils.add_svm_inputs_to_mvm_header(total_obj_list)
+        proc_utils.add_svm_inputs_to_mvm_header(total_obj_list, product_list)
 
         # Store total_obj_list to a pickle file to speed up development
         if False:
