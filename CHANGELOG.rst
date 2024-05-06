@@ -20,6 +20,24 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ======================
+- Implemented a series of bug fixes for the segmentation catalog [#1793]
+- Define the threshold image to be (nsigma * background_rms).
+- Fixed bug in the generation of the threshold image - ensure the final
+  threshold is built up properly by using the weight mask for the region
+  in question.
+- Pass the background image to detect_segments() so the convolved image can be
+  background subtracted.
+- For the detection of sources, background subtract the input image for both the
+  Gaussian and RickerWavelet kernels.  Do not do any clipping on the background
+  subtracted image.
+- Update configuration files for the RickerWavelet2DKernel: source_box is now 6
+  and rw2d_nsigma is now 3.
+- Fixed a bug in the computation of the "biggest source".
+
+- Created a new method, ricker_matched_kernel(), to generate the RickerWavelet2DKernel
+  properly. Sigma is now provided, versus the FWHM, to the RickerWavelet2dKernel
+  constructor, and the normalization is handled by the new method where the 
+  normalization causes the RickerWavelet core to match the Gaussian core.  [#1791]
 
 - Added contributors guide to readthedocs. [#1787]
 
