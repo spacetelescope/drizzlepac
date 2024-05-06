@@ -393,10 +393,6 @@ def add_skycell_to_header(image_filename, extname='SCI'):
         hdu.close()
         
 
-def add_svm_inputs_to_mvm_header():
-    pass
-        
-
 def find_footprint(hdu, extname='SCI', extnum=1):
     """Extract the footprints from each input file
 
