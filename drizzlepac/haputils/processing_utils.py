@@ -443,9 +443,7 @@ def add_svm_inputs_to_mvm_header(filter_product):
         ("SVMINPUT", ", ".join(svm_inputs_list), "SVM files used"),
         after=True,
     )
-    
-    import ipdb; ipdb.set_trace()
-    
+        
     # close file if opened by this functions
     if closefits:
         hdu.close()
