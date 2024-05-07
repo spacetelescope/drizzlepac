@@ -419,8 +419,12 @@ def add_svm_inputs_to_mvm_header(total_obj_list, product_list):
             hdu, closefits = _process_input(svm_filename)
         except:
             log.error(f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
-        svm_gen_dates.append(hdu[0].header['DATE'])
-    
+        try:
+            svm_gen_dates.append(hdu[0].header['DATE'])
+        except:
+            log.warning(f"Could not read DATE keyword from {svm_filename}. Inserting empty string.")
+            svm_gen_dates.append('')
+            
     # get list of MVM drz/drc filenames without flt/flcs
     mvm_drizzled_product_list = [x for x in product_list if "_dr" in x]
    
@@ -431,13 +435,18 @@ def add_svm_inputs_to_mvm_header(total_obj_list, product_list):
             hdu, closefits = _process_input(mvm_filename)
         except:
             log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
+        
+        hdu[0].header.insert(
+            "ROOTNAME",
+            ("DATE-SVM", ", ".join(svm_gen_dates), "SVM creation dates"),
+            after=True,
+        )
         hdu[0].header.insert(
             "ROOTNAME",
             ("SVMINPUT", ", ".join(svm_inputs_list), "SVM files used"),
             after=True,
         )
-        print(f"\n\n\n{svm_gen_dates}\n\n\n")
-
+        
     # close file if opened by this functions
     if closefits:
         hdu.close()
