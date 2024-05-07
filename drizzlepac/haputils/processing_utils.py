@@ -411,14 +411,14 @@ def add_svm_inputs_to_mvm_header(total_obj_list, product_list):
     """
 
     svm_gen_dates = []
-    svm_inputs_list = ", ".join(total_obj_list[0].all_mvm_exposures)
+    svm_inputs_list = total_obj_list[0].all_mvm_exposures
     
     # read gendate of SVM images and append to svm_gen_dates list
     for svm_filename in svm_inputs_list:
         try: 
-            hdu, closefits = _process_input(svm_file)
+            hdu, closefits = _process_input(svm_filename)
         except:
-            log.error(f"Could not open {svm_file} during add_svm_inputs_to_mvm_header. Exiting.")
+            log.error(f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
         svm_gen_dates.append(hdu[0].header['DATE'])
     
     # get list of MVM drz/drc filenames without flt/flcs
@@ -433,9 +433,10 @@ def add_svm_inputs_to_mvm_header(total_obj_list, product_list):
             log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
         hdu[0].header.insert(
             "ROOTNAME",
-            ("SVMINPUT", svm_inputs_list, "SVM files used"),
+            ("SVMINPUT", ", ".join(svm_inputs_list), "SVM files used"),
             after=True,
         )
+        print(f"\n\n\n{svm_gen_dates}\n\n\n")
 
     # close file if opened by this functions
     if closefits:
