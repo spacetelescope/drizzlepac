@@ -419,7 +419,8 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         product_list += driz_list
                 
         # add input svm products to header
-        proc_utils.add_svm_inputs_to_mvm_header(total_obj_list, product_list)
+        for filter_product in total_obj_list:
+            proc_utils.add_svm_inputs_to_mvm_header(filter_product, product_list)
 
         # Store total_obj_list to a pickle file to speed up development
         if False:

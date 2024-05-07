@@ -393,13 +393,13 @@ def add_skycell_to_header(image_filename, extname='SCI'):
         hdu.close()
 
 
-def add_svm_inputs_to_mvm_header(total_obj_list, product_list):
+def add_svm_inputs_to_mvm_header(filter_product, product_list):
     """ Adds the SVM input list and generation date to the MVM 
     drizzled product header.
 
     Parameters
     ----------
-    total_obj_list : object
+    filter_product : object
         total object list created using poller_utils.interpret_mvm_input
     product_list : list
         list of drizzled products including FLC/Ts and trl files. 
@@ -411,7 +411,7 @@ def add_svm_inputs_to_mvm_header(total_obj_list, product_list):
     """
 
     svm_gen_dates = []
-    svm_inputs_list = total_obj_list[0].all_mvm_exposures
+    svm_inputs_list = filter_product.all_mvm_exposures
     
     # read gendate of SVM images and append to svm_gen_dates list
     for svm_filename in svm_inputs_list:
@@ -425,28 +425,29 @@ def add_svm_inputs_to_mvm_header(total_obj_list, product_list):
             log.warning(f"Could not read DATE keyword from {svm_filename}. Inserting empty string.")
             svm_gen_dates.append('')
             
-    # get list of MVM drz/drc filenames without flt/flcs
-    mvm_drizzled_product_list = [x for x in product_list if "_dr" in x]
-   
-   
-    for mvm_filename in mvm_drizzled_product_list:
-        # Open image and determine whether to consequently close it
-        try: 
-            hdu, closefits = _process_input(mvm_filename)
-        except:
-            log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
-        
-        hdu[0].header.insert(
-            "ROOTNAME",
-            ("DATE-SVM", ", ".join(svm_gen_dates), "SVM creation dates"),
-            after=True,
-        )
-        hdu[0].header.insert(
-            "ROOTNAME",
-            ("SVMINPUT", ", ".join(svm_inputs_list), "SVM files used"),
-            after=True,
-        )
-        
+    
+    # file to which we are updating the header
+    mvm_filename = filter_product.drizzle_filename
+    
+    # Open image and determine whether to consequently close it
+    try: 
+        hdu, closefits = _process_input(mvm_filename)
+    except:
+        log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
+    
+    hdu[0].header.insert(
+        "ROOTNAME",
+        ("DATE-SVM", ", ".join(svm_gen_dates), "SVM creation dates"),
+        after=True,
+    )
+    hdu[0].header.insert(
+        "ROOTNAME",
+        ("SVMINPUT", ", ".join(svm_inputs_list), "SVM files used"),
+        after=True,
+    )
+    
+    import ipdb; ipdb.set_trace()
+    
     # close file if opened by this functions
     if closefits:
         hdu.close()
