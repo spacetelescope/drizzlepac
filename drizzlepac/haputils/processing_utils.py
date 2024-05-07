@@ -393,7 +393,7 @@ def add_skycell_to_header(image_filename, extname='SCI'):
         hdu.close()
 
 
-def add_svm_inputs_to_mvm_header(filter_product, product_list):
+def add_svm_inputs_to_mvm_header(filter_product):
     """ Adds the SVM input list and generation date to the MVM 
     drizzled product header.
 
@@ -401,8 +401,6 @@ def add_svm_inputs_to_mvm_header(filter_product, product_list):
     ----------
     filter_product : object
         total object list created using poller_utils.interpret_mvm_input
-    product_list : list
-        list of drizzled products including FLC/Ts and trl files. 
         
     Returns:
     --------
