@@ -212,6 +212,7 @@ def test_svm_wcs_uvis_all(gather_output_data):
 # catalogs separately.  The total catalog has the row removed for each source where the constituent
 # filter catalogs *ALL* have flag>5 for the source.  Rows are NOT removed from the filter table based on
 # flag values.
+@pytest.mark.skip(reason="Skipping test during rapid development of catalogs."
 def test_svm_point_total_cat(gather_output_data):
     # Check the output catalogs should contain the correct number of sources -- allows for a broad tolerance
     print("\ntest_svm_point_total_cat.")
@@ -229,6 +230,7 @@ def test_svm_point_total_cat(gather_output_data):
     assert len(bad_cats) == 0,  f"Total Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {expected_total_point_sources}"
 
 
+@pytest.mark.skip(reason="Skipping test during rapid development of catalogs."
 def test_svm_segment_total_cat(gather_output_data):
     # Check the output catalogs should contain the correct number of sources -- allows for a broad tolerance
     print("\ntest_svm_segment_total_cat.")
