@@ -401,10 +401,15 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
     ----------
     filter_product : object
         total object list created using poller_utils.interpret_mvm_input
+    
+    return_hdu : bool, optional
+        returns hdu object if True, otherwise None
         
     Returns:
     --------
     Nothing; drizzled product headers have been updated unless keyword already exists.
+    That is unless return_hdu is turned on (e.g. for the unit test), in which case, 
+    the function will return the updated hdu object.
         
     """
 
