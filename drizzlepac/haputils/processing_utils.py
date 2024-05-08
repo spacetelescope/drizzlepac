@@ -393,7 +393,7 @@ def add_skycell_to_header(image_filename, extname='SCI'):
         hdu.close()
 
 
-def add_svm_inputs_to_mvm_header(filter_product):
+def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
     """ Adds the SVM input list and generation date to the MVM 
     drizzled product header.
 
@@ -447,7 +447,10 @@ def add_svm_inputs_to_mvm_header(filter_product):
     # close file if opened by this functions
     if closefits:
         hdu.close()
-
+        
+    if return_hdu:
+        return hdu
+    
 def find_footprint(hdu, extname='SCI', extnum=1):
     """Extract the footprints from each input file
 

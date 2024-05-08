@@ -3,7 +3,7 @@ import pytest
 import shutil
 from astropy.io import fits
 from drizzlepac.haputils import processing_utils
-
+from unittest import mock
 test_path = "tests/hap/"
 
 @pytest.mark.parametrize(
@@ -28,3 +28,38 @@ def test_add_skycell_to_header_invalid_filename():
     with pytest.raises(Exception):
         processing_utils.add_skycell_to_header('invalid_filename.fits')
 
+
+@mock.patch("drizzlepac.hapmultisequencer.run_mvm_processing")
+def test_add_svm_inputs_to_mvm_header(mock_filter_product, tmpdir):
+    # only reads the sample_flc headers
+    sample_flcs = [
+        "sample_svm_flc.fits",
+        "sample_svm_flt.fits",
+    ]
+    
+    path_to_temp_flcs= []
+    for filename in sample_flcs:
+        temp_path = os.path.join(tmpdir, f"{filename}")
+        # creating copy as to not alter the sample file. 
+        shutil.copy2(test_path+filename, temp_path)
+        path_to_temp_flcs.append(temp_path)
+    
+    # file to update; using input file as output file
+    file_to_updpate = path_to_temp_flcs[0] 
+    
+    # mock the filter product
+    mock_filter_product = mock.Mock(
+        name="add_svm_inputs_to_mvm_header",
+        **{
+            "all_mvm_exposures": path_to_temp_flcs, # files to read for inputs
+            "drizzle_filename": file_to_updpate,
+        },
+    )
+    
+    hdu = processing_utils.add_svm_inputs_to_mvm_header(
+        mock_filter_product, return_hdu=True
+    )
+    
+    header_keyword_without_temp_path = [x[-19:] for x in hdu[0].header["SVMINPUT"].split(',')]
+    assert header_keyword_without_temp_path == sample_flcs
+    assert hdu[0].header["DATE-SVM"] == "2023-12-15, 2023-12-15"
