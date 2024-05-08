@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ======================
+- Added new keywords to MVM headers including the input SVM filenames and 
+  SVM generation dates [#1796]
 - Implemented a series of bug fixes for the segmentation catalog [#1793]
 - Define the threshold image to be (nsigma * background_rms).
 - Fixed bug in the generation of the threshold image - ensure the final
