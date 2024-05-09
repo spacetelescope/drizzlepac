@@ -22,7 +22,7 @@ dependencies = [
     'scipy',
     'matplotlib',
     'stsci.tools>=4.0',
-    'stsci.image>=2.3.4',
+    'stsci.image>=2.3.7',
     'stsci.imagestats',
     'stsci.skypac>=1.0.9',
     'stsci.stimage',
