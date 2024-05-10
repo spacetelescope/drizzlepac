@@ -22,7 +22,7 @@ dependencies = [
     'scipy',
     'matplotlib',
     'stsci.tools>=4.0',
-    'stsci.image>=2.3.4',
+    'stsci.image>=2.3.7',
     'stsci.imagestats',
     'stsci.skypac>=1.0.9',
     'stsci.stimage',
@@ -87,6 +87,7 @@ requires = ["setuptools>=61",
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
+version_file = "drizzlepac/version.py"
 
 [tool.setuptools]
 zip-safe = false
