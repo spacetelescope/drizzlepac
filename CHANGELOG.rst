@@ -22,7 +22,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 ======================
 - Exclude single filter images from the generation of the total detection
   image to minimize cosmic ray contamination, unless there are only single
-  filter images in the visit. [#nnnn]
+  filter images in the visit. [#1797]
 
 - Implemented a series of bug fixes for the segmentation catalog [#1793]
 - Define the threshold image to be (nsigma * background_rms).
