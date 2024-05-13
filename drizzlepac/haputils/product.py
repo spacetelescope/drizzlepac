@@ -662,17 +662,10 @@ class TotalProduct(HAPProduct):
         # should NOT be used in the computation of the total detection image in
         # order to minimize cosmic ray contamination
         #
-        # Determine the unique filters in the total product and create a
-        # dictionary to hold the filter name and the number of exposures per filter
-        set_of_filters = set([element.filters for element in self.edp_list])
-        count_dict = {key: [] for key in set_of_filters}
-
         # Loop over the exposure objects to collect the exposures for each filter
+        count_dict = {}
         for expo in self.edp_list:
-            for key in count_dict:
-                if key == expo.filters:
-                    count_dict[key].append(expo.full_filename)
-                    break
+            count_dict.setdefault(expo.filters, []).append(expo.full_filename)
 
         # Accumulate the exposure file names for only the filters which have
         # more than one exposure
@@ -689,6 +682,7 @@ class TotalProduct(HAPProduct):
         if not edp_filenames:
             for value in count_dict.values():
                 edp_filenames += value
+            log.info("All filters are single exposures, so all exposures are included.")
         else:
             for entry in exclude_string:
                 log.info(entry)
