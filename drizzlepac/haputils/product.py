@@ -632,6 +632,7 @@ class TotalProduct(HAPProduct):
 
         .. note:: Cosmic-ray identification is NOT performed when creating the total detection image.
         """
+
         # This insures that keywords related to the footprint are generated for this
         # specific object to use in updating the output drizzle product.
         self.meta_wcs = meta_wcs
@@ -657,7 +658,35 @@ class TotalProduct(HAPProduct):
             )
         )
 
-        edp_filenames = [element.full_filename for element in self.edp_list]
+        # Determine if there are any single exposure filter images which 
+        # should NOT be used in the computation of the total detection image in
+        # order to minimize cosmic ray contamination
+        #
+        # Loop over the exposure objects to collect the exposures for each filter
+        count_dict = {}
+        for expo in self.edp_list:
+            count_dict.setdefault(expo.filters, []).append(expo.full_filename)
+
+        # Accumulate the exposure file names for only the filters which have
+        # more than one exposure
+        exclude_string = []
+        edp_filenames = []
+        for key, value in count_dict.items():
+            if len(value) > 1:
+                edp_filenames += value
+            else:
+                exclude_string.append("Excluding single exposure filter image {} for {}.".format(value, key))
+
+        # However, if all the filters only have one exposure, just use all
+        # the exposures
+        if not edp_filenames:
+            for value in count_dict.values():
+                edp_filenames += value
+            log.info("All filters are single exposures, so all exposures are included.")
+        else:
+            for entry in exclude_string:
+                log.info(entry)
+
         astrodrizzle.AstroDrizzle(
             input=edp_filenames, output=self.drizzle_filename, **drizzle_pars
         )
@@ -803,7 +832,7 @@ class FilterProduct(HAPProduct):
         )
 
         edp_filenames = [element.full_filename for element in self.edp_list]
-
+    
         if len(edp_filenames) == 1:
             drizzle_pars["resetbits"] = "0"  # Use any pixels already flagged as CRs
 
