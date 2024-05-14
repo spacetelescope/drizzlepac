@@ -865,7 +865,7 @@ def find_fwhm(psf, default_fwhm):
         Value of the computed Gaussian FWHM for the PSF
 
     """
-    daogroup = SourceGrouper(crit_separation=8)
+    daogroup = SourceGrouper(min_separation=8)
     mmm_bkg = MMMBackground()
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
     fitter = LevMarLSQFitter()
