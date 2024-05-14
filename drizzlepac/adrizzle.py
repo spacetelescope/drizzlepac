@@ -242,7 +242,7 @@ def run(configObj, wcsmap=None):
             fillval=scale_pars['fillval'], stepsize=configObj['stepsize'],
             wcsmap=None)
 
-    out_sci_handle, outextn = create_output(configObj['outdata'])
+    out_sci_handle, outextn = create_output(outname, configObj['outdata'])
     if not output_exists:
         # Also, define default header based on input image Primary header
         out_sci_handle[outextn].header = in_sci_phdr.copy()
@@ -309,13 +309,13 @@ def run(configObj, wcsmap=None):
     out_sci_handle.close()
 
     if not util.is_blank(configObj['outweight']):
-        out_wht_handle, outwhtext = create_output(configObj['outweight'])
+        out_wht_handle, outwhtext = create_output(outname, configObj['outweight'])
         out_wht_handle[outwhtext].header = out_sci_handle[outextn].header.copy()
         out_wht_handle[outwhtext].data = outwht
         out_wht_handle.close()
 
     if keep_con:
-        out_con_handle, outconext = create_output(configObj['outcontext'])
+        out_con_handle, outconext = create_output(outname, configObj['outcontext'])
         out_con_handle[outconext].data = outcon
         out_con_handle.close()
 
