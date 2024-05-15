@@ -867,7 +867,7 @@ if __name__ == '__main__':
     source_list_dict = {}
     for cooname in args:
         source_list_dict[cooname] = len(open(cooname).readlines())
-    matched=run(source_list_dict, log_level=0, xref=xref, yref=yref)
+    matched=run(source_list_dict, log_level=20, xref=xref, yref=yref)
     # print >> msgunit, 'matched keys'
     # print >> msgunit, matched.keys()
     # print "x1 y1 x2 y2"
