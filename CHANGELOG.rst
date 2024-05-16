@@ -20,6 +20,11 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ======================
+- Added the modest and smaller sized segments (segments < kernel size) to
+  the list of segments to be deblended.  These segments were inadvertently
+  left off the deblending list when the code was updated to handle enormously
+  large segments. [#]
+
 - Exclude single filter images from the generation of the total detection
   image to minimize cosmic ray contamination, unless there are only single
   filter images in the visit. [#1797]

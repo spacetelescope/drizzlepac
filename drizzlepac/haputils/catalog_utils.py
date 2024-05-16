@@ -2794,6 +2794,10 @@ class HAPSegmentCatalog(HAPCatalogBase):
         segm_img.big_segments = None
         big_segments = np.where(segm_img.areas >= deb_limit)[0] + 1  # Segment labels are 1-based
 
+        # Get the labels of the modest sized segments as these should also be
+        # deblended as necessary
+        modest_segments = np.where(segm_img.areas < deb_limit)[0] + 1
+
         # The biggest_source may be > max_biggest_source indicating there are "big islands"
         # and is_poor_quality should be set to True.  The is_poor_quality is only an indicator that
         # a different kernel type or background computation could be tried for improved results.
@@ -2841,9 +2845,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 segm_img.big_segments = big_segments
             else:
                 segm_img.big_segments = None
-            log.info("Total number of sources suitable for deblending: {}".format(len(big_segments)))
+            log.info("Total number of big sources suitable for deblending: {}".format(len(big_segments)))
         else:
             log.info("There are no big segments larger than the deblending limit.")
+
+        # Add the modest sized segments to the deblending array
+        if modest_segments.size > 0 and segm_img.big_segments is not None:
+            segm_img.big_segments = np.concatenate((segm_img.big_segments, modest_segments))
+        elif modest_segments.size > 0:
+            segm_img.big_segments =  modest_segments
+        log.info("Total number of all sources suitable for deblending: {}".format(len(segm_img.big_segments)))
 
         # Always compute the source_fraction so the value can be reported.  Setting the
         # big_island_only parameter allows control over whether the source_fraction should
