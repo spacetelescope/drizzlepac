@@ -714,7 +714,6 @@ class HAPImage:
                                                                  outroot=outroot,
                                                                  kernel=self.kernel,
                                                                  segment_threshold=self.threshold[chip],
-                                                                 dao_threshold=self.bkg_rms_mean[chip],
                                                                  fwhm=self.kernel_fwhm,
                                                                  **extract_pars)
             if crclean and crmap is not None:
