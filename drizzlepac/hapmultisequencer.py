@@ -563,7 +563,10 @@ def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logg
     #  - migrate updated WCS solutions to exp_obj instances, if necessary (probably not?)
     #  - re-run tot_obj.generate_metawcs() method to recompute total object meta_wcs based on updated
     #    input exposure's WCSs
-    catalog_list = [gaia_obj.configobj_pars.pars['alignment'].pars_multidict['all']['run_align']['catalog_list'][0]]  # For now, just pass in a single catalog name as list
+    if gaia_obj.configobj_pars is not None:
+        catalog_list = [gaia_obj.configobj_pars.pars['alignment'].pars_multidict['all']['run_align']['catalog_list'][0]]  # For now, just pass in a single catalog name as list
+    else:
+        catalog_list = []
     align_table, filt_exposures = gaia_obj.align_to_gaia(catalog_list=catalog_list,
                                                          output=diagnostic_mode,
                                                          fit_label='MVM')

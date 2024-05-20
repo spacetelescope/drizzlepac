@@ -606,7 +606,7 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     serviceUrl = "{}/{}?{}".format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl)
     if not rawcat.ok:
-        log.info("Problem accessing service with:\n{{}".format(serviceUrl))
+        log.info(f"Problem accessing service with:\n{serviceUrl}")
         raise ValueError
 
     delta_ra = delta_dec = None
