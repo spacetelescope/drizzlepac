@@ -56,6 +56,7 @@ def pytest_generate_tests(metafunc):
 @pytest.mark.bigdata
 @pytest.mark.slow
 @pytest.mark.unit
+@pytest.mark.skip(reason="Test designed to run *large* numbers of datasets for alignment statistics.")
 def test_alignpipe_randomlist(tmpdir, dataset):
     """ Tests which validate whether mosaics can be aligned to an astrometric standard.
 
