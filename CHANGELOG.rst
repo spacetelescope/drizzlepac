@@ -22,7 +22,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 ======================
 - Addressed bugs caught by SonarQube static code analysis.  Interface
   changes listed here: Removed the deprecated parameter, dao_threshold, from 
-  astrometric_utils.py/extract_sources(). [#nnnn]
+  astrometric_utils.py/extract_sources(). [#1802]
 
 - Exclude single filter images from the generation of the total detection
   image to minimize cosmic ray contamination, unless there are only single

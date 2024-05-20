@@ -199,7 +199,6 @@ class HAPProduct:
 
         exposure_filenames = []
         headerlet_filenames = {}
-        align_table = None
         crclean = []
 
         # If no catalog list has been provided, use the list defined in the configuration file
