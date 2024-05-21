@@ -533,7 +533,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
     return filelist, output, ivmlist, oldasndict
 
 
-def process_input(input, output=None, ivmlist=None, updatewcs=True,
+def process_input(input, output=None, updatewcs=True,
                   prodonly=False,  wcskey=None, **workinplace):
     """
     Create the full input list of filenames after verifying and converting
@@ -541,7 +541,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     """
 
     newfilelist, ivmlist, output, oldasndict, origflist = buildFileListOrig(
-            input, output=output, ivmlist=ivmlist, wcskey=wcskey,
+            input, output=output, wcskey=wcskey,
             updatewcs=updatewcs, **workinplace)
 
     if not newfilelist:
@@ -655,19 +655,19 @@ def _process_input_wcs_single(fname, wcskey, updatewcs):
         wcscorr.init_wcscorr(fname)
 
 
-def buildFileList(input, output=None, ivmlist=None,
+def buildFileList(input, output=None, 
                 wcskey=None, updatewcs=True, **workinplace):
     """
     Builds a file list which has undergone various instrument-specific
     checks for input to MultiDrizzle, including splitting STIS associations.
     """
     newfilelist, ivmlist, output, oldasndict, filelist = \
-        buildFileListOrig(input=input, output=output, ivmlist=ivmlist,
+        buildFileListOrig(input=input, output=output, 
                     wcskey=wcskey, updatewcs=updatewcs, **workinplace)
     return newfilelist, ivmlist, output, oldasndict
 
 
-def buildFileListOrig(input, output=None, ivmlist=None,
+def buildFileListOrig(input, output=None,
                 wcskey=None, updatewcs=True, **workinplace):
     """
     Builds a file list which has undergone various instrument-specific
