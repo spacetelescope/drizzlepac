@@ -423,10 +423,10 @@ def fromcalfile(filename):
     hdulist = fileutil.openImage(filename)
 
     if 'TEMPFILE' in hdulist[0].header:
+        tddfile = hdulist[0].header['TEMPFILE']
         if tddfile == 'N/A':
             return None
         else:
-            tddfile = hdulist[0].header['TEMPFILE']
             tddhdulist = fileutil.openImage(tddfile)
             return darkobject(tddhdulist)
     else:
