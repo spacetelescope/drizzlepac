@@ -69,20 +69,20 @@ def check_sphinx_version(expected_version):
 
 # Configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'python': ('http://docs.python.org/3/', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-    'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
-    'matplotlib': ('http://matplotlib.org/', None),
-    'astropy': ('http://docs.astropy.org/en/stable/', None),
+    'python': ('https://docs.python.org/3/', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
+    'matplotlib': ('https://matplotlib.org/', None),
+    'astropy': ('https://docs.astropy.org/en/stable/', None),
     'tweakwcs': ('https://tweakwcs.readthedocs.io/en/latest/', None),
     'stsci.skypac': ('https://stsci-skypac.readthedocs.io/en/latest/', None),
     'stwcs': ('https://stwcs.readthedocs.io/en/latest/', None),
 }
 
 if sys.version_info[0] == 2:
-    intersphinx_mapping['python'] = ('http://docs.python.org/2/', None)
+    intersphinx_mapping['python'] = ('https://docs.python.org/2/', None)
     # intersphinx_mapping['pythonloc'] = (
-        # 'http://docs.python.org/',
+        # 'https://docs.python.org/',
         # os.path.abspath(os.path.join(os.path.dirname(__file__),
                                      # 'local/python2_local_links.inv')))
 
