@@ -138,9 +138,12 @@ class CatalogImage:
 
         # Build a Gaussian2DKernel - the use of a custom kernel based upon a PSF
         # of the input image is no longer used here as it could be asymmetric and
-        # lead to smeared segments (i.e., centroid coordinates offset from actual source)
+        # lead to smeared segments (i.e., centroid coordinates offset from actual source).
+        # The value of 11 for the Gaussian kernel is big enough for all detectors. This
+        # value is hard-coded here in contrast to being in the configuration files like 
+        # the RickerWavelet2DKernel.
         self.kernel_fwhm = fwhmpsf / self.imgwcs.pscale
-        self.kernel = astrometric_utils.build_gaussian_kernel(self.kernel_fwhm, npixels=7)
+        self.kernel = astrometric_utils.build_gaussian_kernel(self.kernel_fwhm, npixels=11)
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
@@ -1651,7 +1654,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
                 # Write out diagnostic data
                 if self.diagnostic_mode:
-                    # filter kernel as well
                     outname = self.imgname.replace(".fits", "_rwkernel.fits")
                     fits.PrimaryHDU(data=rw2d_kernel).writeto(outname)
 
@@ -1787,7 +1789,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # quite efficient and successful for the overlapping PSF case.
                         #
                         # Use the Round 2 RickerWavelet segmentation image
-                        log.info("Gaussian biggest source found: {}  Rickerwavelent biggest source found: {}.".format(g_bs, rw_bs))
+                        log.info("Gaussian biggest source found: {}  Rickerwavelet biggest source found: {}.".format(g_bs, rw_bs))
                         log.info("Ratio of big sources found using Gaussian vs Rickerwavelet kernel: {}.".format(ratio_cg2rw_bigsource))
 
                         # This is the easy case.
