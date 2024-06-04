@@ -160,14 +160,17 @@ argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` f
 
 1.4: Image Kernel
 -----------------
-In an attempt to optimize the source detection for the specific image being processed,
-the software attempts to derive a custom image kernel based upon the data.
-The multi-filter detection image is analyzed to find an isolated, non-saturated
-point source away from the edge of the image to use as a template for a source detection kernel.
-If no suitable source is found, the algorithm falls back to the use of a two-dimensional Gaussian
-kernel based upon the supplied FWHM and the
+By default, the software uses a 
+two-dimensional Gaussian smoothing kernel on the multi-filter detection image
+in an effort to identify sources.  The kernel is based upon the FWHM 
+information provided in the detector-dependent catalog configuration files and the
 `astropy.convolution.Gaussian2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.Gaussian2DKernel.html>`_
-Astropy tool.
+Astropy tool.  In extreme cases, a large number of candidate sources may be 
+blended together and are mistakenly identified as a single source covering a 
+large percentage of the image.  To address this situation, an alternative kernel 
+is derived using the
+`astropy.convolution.RickerWavelet2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.RickerWavelet2DKernel.html>`_
+Astropy tool. 
 
 2: Point (Aperture) Photometric Catalog Generation
 ==================================================
@@ -652,7 +655,7 @@ all identified by a numeric label and are considered part of the same source.
 The segmentation map gets evaluated to determine the fraction of sources which are larger than a
 user-specified fraction of the image ("large" segments) and the total fraction of the image covered by segments.
 If either of these two scenarios is true, this is a strong indication the detection image is a
-crowded astronomical field. In such a crowded field, either the custom kernel or the Gaussian kernel
+crowded astronomical field. In such a crowded field, the Gaussian kernel
 (discussed in Section 1.4) can blend objects in close proximity together, making it difficult to
 differentiate between the independent objects.  In extreme cases, a large number of astronomical objects
 are blended together and are mistakenly identified as a single segment covering a large percent of the image.
