@@ -20,6 +20,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ======================
+
+- Added new HRDTAB entries to MVM drizzled products including the input SVM filenames and 
+  SVM generation dates [#1796]
+
 - Removed the use of a custom smoothing kernel based upon actual image
   data as a poorly determined kernel can ultimately cause poor source
   position determination.  The default kernel has been set to a
