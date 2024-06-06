@@ -34,7 +34,6 @@ bc_unit.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson",
                  "pip freeze"]
 bc_unit.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml",
                  "codecov"]
-bc_unit.test_configs = [data_config]
 bc_unit.failedFailureThresh = 0
 
 // Unit testing (dev) config
@@ -50,6 +49,7 @@ bc_unit_dev.failedFailureThresh = 1000
 bc_rt = utils.copy(bc_unit)
 bc_rt.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --slow --bigdata",
                  "codecov"]
+bc_rt.test_configs = [data_config]
 
 
 // Linux
