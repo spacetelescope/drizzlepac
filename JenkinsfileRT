@@ -73,33 +73,42 @@ bc4.nodetype = 'linux'
 bc4.name = '3.12-dev'
 bc4.conda_packages = ['python=3.12']
 
-// Mac OS
-bc5 = utils.copy(bc_unit)
-bc5.nodetype = 'macos_x86_64'
-bc5.name = '3.11-unit'
+// Linux regression tests
+bc5 = utils.copy(bc_rt)
+bc5.nodetype = 'linux'
+bc5.name = '3.11-rt'
 bc5.conda_packages = ['python=3.11']
 
-bc6 = utils.copy(bc_unit_dev)
+
+// Mac OS unit tests
+bc6 = utils.copy(bc_unit)
 bc6.nodetype = 'macos_x86_64'
-bc6.name = '3.11-unit-dev'
+bc6.name = '3.11-unit'
 bc6.conda_packages = ['python=3.11']
 
-bc7 = utils.copy(bc_unit)
+bc7 = utils.copy(bc_unit_dev)
 bc7.nodetype = 'macos_x86_64'
-bc7.name = '3.12-unit'
-bc7.conda_packages = ['python=3.12']
+bc7.name = '3.11-unit-dev'
+bc7.conda_packages = ['python=3.11']
 
-bc8 = utils.copy(bc_unit_dev)
-bc8.nodetype = 'macos_x86_64'
-bc8.name = '3.12-unit-dev'
-bc8.conda_packages = ['python=3.12']
-
-bc9 = utils.copy(bc_rt)
+bc9 = utils.copy(bc_unit)
 bc9.nodetype = 'macos_x86_64'
-bc9.name = '3.12-rt'
+bc9.name = '3.12-unit'
 bc9.conda_packages = ['python=3.12']
+
+bc10 = utils.copy(bc_unit_dev)
+bc10.nodetype = 'macos_x86_64'
+bc10.name = '3.12-unit-dev'
+bc10.conda_packages = ['python=3.12']
+
+// Mac OS regression tests
+bc11 = utils.copy(bc_rt)
+bc11.nodetype = 'macos_x86_64'
+bc11.name = '3.11-rt'
+bc11.conda_packages = ['python=3.11']
+
 
 // Iterate over configurations that define the (distributed) build matrix.
 // Spawn a host (or workdir) for each combination and run in parallel.
 // Also apply the job configuration defined in `jobconfig` above.
-utils.run([bc1, bc2, bc3, bc4, bc5, bc6, bc7, bc8, bc9, jobconfig])
+utils.run([bc1, bc2, bc3, bc4, bc5, bc6, bc7, bc8, bc9, bc10, bc11, jobconfig])
