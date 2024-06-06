@@ -606,7 +606,7 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     serviceUrl = "{}/{}?{}".format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl)
     if not rawcat.ok:
-        log.info("Problem accessing service with:\n{{}".format(serviceUrl))
+        log.info(f"Problem accessing service with:\n{serviceUrl}")
         raise ValueError
 
     delta_ra = delta_dec = None
@@ -958,8 +958,7 @@ def build_gaussian_kernel(fwhm, npixels):
 
 
 def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
-                    segment_threshold=None, dao_threshold=None,
-                    dao_nsigma=3.0, source_box=7,
+                    segment_threshold=None, dao_nsigma=3.0, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
                     outroot=None, plot=False, vmax=None, deblend=False,
                     log_level=logutil.logging.INFO):
@@ -988,10 +987,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     segment_threshold : ndarray or None
         Value from the image which serves as the limit for determining sources.
         If None, compute a default value of (background+5*rms(background)).
-    dao_threshold : float, optional
-        [Deprecated] This parameter is not used.  In fact, it now gets computed
-        internally using the ``sigma_clipped_bkg()`` function which uses the
-        ``dao_nsigma`` parameter.
     dao_nsigma : float
         This number gets used to determine the threshold for detection of point
         sources.  The threshold gets computed using a simple ``mean + dao_nsigma * rms``,
@@ -1456,7 +1451,6 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
 
         bkg_ra, bkg_median, bkg_rms_ra, bkg_rms_median = compute_2d_background(imgarr, box_size, win_size)
         threshold = nsigma * bkg_rms_ra
-        dao_threshold = nsigma * bkg_rms_median
 
         (kernel, kernel_psf), kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr,
                                                               threshold=threshold,
@@ -1470,7 +1464,6 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
                                                  outroot=outroot, kernel=kernel,
                                                  photmode=photmode,
                                                  segment_threshold=threshold,
-                                                 dao_threshold=dao_threshold,
                                                  fwhm=kernel_fwhm, **detector_pars)
         del crmap
         source_cats[chip] = seg_tab

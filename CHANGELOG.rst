@@ -20,8 +20,24 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ======================
-- Added new keywords to MVM headers including the input SVM filenames and 
-  SVM generation dates [#1796]
+- Removed the use of a custom smoothing kernel based upon actual image
+  data as a poorly determined kernel can ultimately cause poor source
+  position determination.  The default kernel has been set to a
+  Gaussian with default dimensions of 11 x 11 pixels. [#1805]
+
+- Addressed bugs caught by SonarQube static code analysis.  Interface
+  changes listed here: Added missing input data parameter to the create_output
+  calls, Added missing log level to run function, Removed the deprecated 
+  parameter, dao_threshold, from astrometric_utils.py/extract_sources, removed 
+  "ivmlist" parameter from the interface of multiple functions in processInput.py 
+  as it is an output parameter (buildFileListOrig, buildFileList, checkMultipleFiles,
+  and process_input), and addressed missing parameters in the calls to
+  get_ci_info and get_ci_from_file.. [#1802]
+
+- Exclude single filter images from the generation of the total detection
+  image to minimize cosmic ray contamination, unless there are only single
+  filter images in the visit. [#1797]
+
 - Implemented a series of bug fixes for the segmentation catalog [#1793]
 - Define the threshold image to be (nsigma * background_rms).
 - Fixed bug in the generation of the threshold image - ensure the final

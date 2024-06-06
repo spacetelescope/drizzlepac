@@ -207,10 +207,10 @@ def get_ci_from_file(drzfile, ci_lookup_file_path, log_level, **kw):
     inst, detect, filt = parse_file(drzfile)
     return get_ci_info(inst, detect, filt, ci_lookup_file_path, **kw)
 
-
 if __name__ == '__main__':
+    ci_lookup_file_path = 'svm_parameters/any'
     inst, detect, filt = ('wfc3', 'uvis', 'f606w')
-    ciap_dict = get_ci_info(inst, detect, filt)
+    ciap_dict = get_ci_info(inst, detect, filt, ci_lookup_file_path)
     log.info("configuration:  {}".format(inst, detect, filt))
     log.info("eff_wave:       {}".format(ciap_dict['eff_wave']))
     log.info("ci_lower:       {}".format(ciap_dict['ci_lower_limit']))
@@ -220,7 +220,7 @@ if __name__ == '__main__':
 
     drizzled_image = 'hst_12311_03_wfc3_uvis_f275w_drz.fits'
     inst, detect, filt = parse_file(drizzled_image)
-    ciap_dict = get_ci_from_file(drizzled_image)
+    ciap_dict = get_ci_from_file(drizzled_image, ci_lookup_file_path, logutil.logging.INFO)
     log.info("drizzled image: {}".format(drizzled_image))
     log.info("configuration:  {}".format(inst, detect, filt))
     log.info("eff_wave:       {}".format(ciap_dict['eff_wave']))
@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
     drizzled_image = 'hst_11969_04_wfpc2_f606w_pc_drz.fits'
     inst, detect, filt = parse_file(drizzled_image)
-    ciap_dict = get_ci_from_file(drizzled_image)
+    ciap_dict = get_ci_from_file(drizzled_image, ci_lookup_file_path, logutil.logging.INFO)
     log.info("drizzled image: {}".format(drizzled_image))
     log.info("configuration:  {}".format(inst, detect, filt))
     log.info("eff_wave:       {}".format(ciap_dict['eff_wave']))
