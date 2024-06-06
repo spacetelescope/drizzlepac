@@ -439,9 +439,24 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
     except:
         log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
 
+    # temprary table for adding columns
     temp_table = Table(hdu[4].data)
-    temp_table.add_column([", ".join(svm_gen_dates)]*len(temp_table), name="GENDATE", index=1)
-    temp_table.add_column([", ".join(svm_inputs_list)]*len(temp_table), name="SVMROOTNAME", index=1)
+    
+    # adds single entry for gendate if all SVM images have the same gendate
+    unique_gendates = np.unique(svm_gen_dates)
+
+    if len(unique_gendates) == 0:
+        raise ValueError("No SVM input files found.")
+    elif len(unique_gendates) == 1:
+        temp_table.add_column([[unique_gendates][0][0]]*len(temp_table), name="GENDATE", index=1)
+    else:
+        temp_table.add_column([", ".join(svm_gen_dates)]*len(temp_table), name="GENDATE", index=1)
+    
+    if len(np.unique(svm_inputs_list))==0:
+        raise ValueError("No SVM input files found.")
+    else:
+        temp_table.add_column([", ".join(svm_inputs_list)]*len(temp_table), name="SVMROOTNAME", index=1)
+    
     hdu[4].data=temp_table.as_array()
     
     # close file if opened by this functions

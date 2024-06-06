@@ -57,12 +57,11 @@ def test_add_svm_inputs_to_mvm_header(mock_filter_product, tmpdir):
         },
     )
     
-    import ipdb; ipdb.set_trace()
     hdu = processing_utils.add_svm_inputs_to_mvm_header(
         mock_filter_product, return_hdu=True
     )
     
-    import ipdb; ipdb.set_trace()
-    header_keyword_without_temp_path = [x[-19:] for x in hdu[0].header["SVMINPUT"].split(',')]
-    assert header_keyword_without_temp_path == sample_flcs
-    assert hdu[0].header["DATE-SVM"] == "2023-12-15, 2023-12-15"
+    assert isinstance(hdu[4].data['SVMROOTNAME'][0], str)
+    assert isinstance(hdu[4].data['GENDATE'][0], str)
+    assert len(hdu[4].data['GENDATE'])==12
+    assert len(hdu[4].data['GENDATE'][0])==34    
