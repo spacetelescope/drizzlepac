@@ -10,6 +10,7 @@ import numpy as np
 from astropy.io import fits as fits
 from astropy.io.fits import Column
 from astropy.time import Time
+from astropy.table import Table
 from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 from stwcs import wcsutil
@@ -437,18 +438,12 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
         hdu, closefits = _process_input(mvm_filename)
     except:
         log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
+
+    temp_table = Table(hdu[4].data)
+    temp_table.add_column([", ".join(svm_gen_dates)]*len(temp_table), name="GENDATE", index=1)
+    temp_table.add_column([", ".join(svm_inputs_list)]*len(temp_table), name="SVMROOTNAME", index=1)
+    hdu[4].data=temp_table.as_array()
     
-    hdu[0].header.insert(
-        "ROOTNAME",
-        ("DATE-SVM", ", ".join(svm_gen_dates), "SVM creation dates"),
-        after=True,
-    )
-    hdu[0].header.insert(
-        "ROOTNAME",
-        ("SVMINPUT", ", ".join(svm_inputs_list), "SVM files used"),
-        after=True,
-    )
-        
     # close file if opened by this functions
     if closefits:
         hdu.close()

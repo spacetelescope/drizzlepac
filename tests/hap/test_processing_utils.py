@@ -35,6 +35,7 @@ def test_add_svm_inputs_to_mvm_header(mock_filter_product, tmpdir):
     sample_flcs = [
         "sample_svm_flc.fits",
         "sample_svm_flt.fits",
+        "sample_mvm_drc.fits",
     ]
     
     path_to_temp_flcs= []
@@ -45,7 +46,7 @@ def test_add_svm_inputs_to_mvm_header(mock_filter_product, tmpdir):
         path_to_temp_flcs.append(temp_path)
     
     # file to update; using input file as output file
-    file_to_updpate = path_to_temp_flcs[0] 
+    file_to_updpate = path_to_temp_flcs[-1] 
     
     # mock the filter product
     mock_filter_product = mock.Mock(
@@ -56,10 +57,12 @@ def test_add_svm_inputs_to_mvm_header(mock_filter_product, tmpdir):
         },
     )
     
+    import ipdb; ipdb.set_trace()
     hdu = processing_utils.add_svm_inputs_to_mvm_header(
         mock_filter_product, return_hdu=True
     )
     
+    import ipdb; ipdb.set_trace()
     header_keyword_without_temp_path = [x[-19:] for x in hdu[0].header["SVMINPUT"].split(',')]
     assert header_keyword_without_temp_path == sample_flcs
     assert hdu[0].header["DATE-SVM"] == "2023-12-15, 2023-12-15"
