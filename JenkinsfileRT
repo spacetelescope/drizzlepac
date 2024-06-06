@@ -25,50 +25,81 @@ data_config.server_id = 'bytesalad'
 data_config.root = 'clone/tests_output'
 data_config.match_prefix = '(.*)_result' // .json is appended automatically
 
-// Test 1 ///////////////////////////
-bc1 = new BuildConfig()
-bc1.nodetype = 'linux'
-bc1.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
-bc1.name = '3.10'
-bc1.conda_packages = ['python=3.10']
-bc1.build_cmds = ["pip install numpy astropy pytest-cov ci-watson",
-                "pip install --upgrade -e '.[test]'",
-                "pip freeze"]
-bc1.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata",
-                 "${codecov_install}",
-                 "./codecov"]
-bc1.test_configs = [data_config]
-bc1.failedFailureThresh = 0
+// Unit testing config
+bc_unit = new BuildConfig()
+bc_unit.runtime.add('CFLAGS=-std=gnu99')
+bc_unit.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
+bc_unit.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson",
+		 "pip install --upgrade -e '.[test]'",
+                 "pip freeze"]
+bc_unit.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml",
+                 "codecov"]
+bc_unit.test_configs = [data_config]
+bc_unit.failedFailureThresh = 0
 
-// Test 2 ///////////////////////////
-bc2 = utils.copy(bc1)
-bc2.name = '3.11'
+// Unit testing (dev) config
+bc_unit_dev = utils.copy(bc_unit)
+bc_unit_dev.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson || true",
+                 "pip install -r requirements-dev.txt --upgrade -e '.[test]' || true",
+                 "pip freeze || true"]
+bc_unit_dev.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml",
+                "codecov"]
+bc_unit_dev.failedFailureThresh = 1000
+
+// Regression testing config
+bc_rt = utils.copy(bc_unit)
+bc_rt.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --slow --bigdata",
+                 "codecov"]
+
+
+// Linux
+bc1 = utils.copy(bc_unit)
+bc1.nodetype = 'linux'
+bc1.name = '3.11-unit'
+bc1.conda_packages = ['python=3.11']
+
+bc2 = utils.copy(bc_unit_dev)
+bc2.name = '3.11-dev'
+bc2.nodetype = 'linux'
 bc2.conda_packages = ['python=3.11']
 
-// Test 3 ///////////////////////////
-bc3 = utils.copy(bc1)
-bc3.name = '3.12'
+bc3 = utils.copy(bc_unit)
+bc3.nodetype = 'linux'
+bc3.name = '3.12-unit'
 bc3.conda_packages = ['python=3.12']
 
-// Test 4 ///////////////////////////
-bc4 = new BuildConfig()
+bc4 = utils.copy(bc_unit_dev)
 bc4.nodetype = 'linux'
-bc4.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
-bc4.name = '3.11-dev'
-bc4.conda_packages = ['python=3.11']
-bc4.build_cmds = ["pip install numpy astropy pytest-cov ci-watson || true",
-                "pip install --upgrade -e '.[test]' || true",
-                "pip install -r requirements-dev.txt || true",
-                "pip freeze || true"]
-bc4.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata || true",
-                 "${codecov_install}",
-                 "./codecov || true"]
-bc4.test_configs = [data_config]
-// Apply a large failure threshold to prevent marking the pipeline job failed
-// when xunit ingests any test results
-bc4.failedFailureThresh = 1000
+bc4.name = '3.12-dev'
+bc4.conda_packages = ['python=3.12']
+
+// Mac OS
+bc5 = utils.copy(bc_unit)
+bc5.nodetype = 'macos_x86_64'
+bc5.name = '3.11-unit'
+bc5.conda_packages = ['python=3.11']
+
+bc6 = utils.copy(bc_unit_dev)
+bc6.nodetype = 'macos_x86_64'
+bc6.name = '3.11-unit-dev'
+bc6.conda_packages = ['python=3.11']
+
+bc7 = utils.copy(bc_unit)
+bc7.nodetype = 'macos_x86_64'
+bc7.name = '3.12-unit'
+bc7.conda_packages = ['python=3.12']
+
+bc8 = utils.copy(bc_unit_dev)
+bc8.nodetype = 'macos_x86_64'
+bc8.name = '3.12-unit-dev'
+bc8.conda_packages = ['python=3.12']
+
+bc9 = utils.copy(bc_rt)
+bc9.nodetype = 'macos_x86_64'
+bc9.name = '3.12-rt'
+bc9.conda_packages = ['python=3.12']
 
 // Iterate over configurations that define the (distributed) build matrix.
 // Spawn a host (or workdir) for each combination and run in parallel.
 // Also apply the job configuration defined in `jobconfig` above.
-utils.run([bc1, bc2, bc3, bc4, jobconfig])
+utils.run([bc1, bc2, bc3, bc4, bc5, bc6, bc7, bc8, bc9, jobconfig])
