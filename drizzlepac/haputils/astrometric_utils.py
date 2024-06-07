@@ -61,8 +61,8 @@ from photutils.detection import DAOStarFinder, find_peaks
 
 from photutils.background import (Background2D, MMMBackground,
                                   SExtractorBackground, StdBackgroundRMS)
-from photutils.psf import (IntegratedGaussianPRF, DAOGroup,
-                           IterativelySubtractedPSFPhotometry)
+from photutils.psf import (IntegratedGaussianPRF, SourceGrouper,
+                           IterativePSFPhotometry)
 
 from tweakwcs.correctors import FITSWCSCorrector
 from stwcs.distortion import utils
@@ -847,8 +847,8 @@ def find_fwhm(psf, default_fwhm):
     """Determine FWHM for auto-kernel PSF
 
     This function iteratively fits a Gaussian model to the extracted PSF
-    using `photutils.psf.IterativelySubtractedPSFPhotometry
-    <https://photutils.readthedocs.io/en/stable/api/photutils.psf.IterativelySubtractedPSFPhotometry.html>`_
+    using `photutils.psf.IterativePSFPhotometry
+    <https://photutils.readthedocs.io/en/stable/api/photutils.psf.IterativePSFPhotometry.html>`_
     to determine the FWHM of the PSF.
 
     Parameters
@@ -865,7 +865,7 @@ def find_fwhm(psf, default_fwhm):
         Value of the computed Gaussian FWHM for the PSF
 
     """
-    daogroup = DAOGroup(crit_separation=8)
+    daogroup = SourceGrouper(min_separation=8)
     mmm_bkg = MMMBackground()
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
     fitter = LevMarLSQFitter()
@@ -873,13 +873,13 @@ def find_fwhm(psf, default_fwhm):
     gaussian_prf = IntegratedGaussianPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
     try:
-        itr_phot_obj = IterativelySubtractedPSFPhotometry(finder=iraffind,
-                                                          group_maker=daogroup,
-                                                          bkg_estimator=mmm_bkg,
-                                                          psf_model=gaussian_prf,
-                                                          fitter=fitter,
-                                                          fitshape=(11, 11),
-                                                          niters=2)
+        itr_phot_obj = IterativePSFPhotometry(finder=iraffind,
+                                              group_maker=daogroup,
+                                              bkg_estimator=mmm_bkg,
+                                              psf_model=gaussian_prf,
+                                              fitter=fitter,
+                                              fitshape=(11, 11),
+                                              niters=2)
         phot_results = itr_phot_obj(psf)
     except Exception:
         log.error("The find_fwhm() failed due to problem with fitting.")
