@@ -19,7 +19,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 
 3.7.1 (unreleased)
-======================
+==================
+
 - Removed the use of a custom smoothing kernel based upon actual image
   data as a poorly determined kernel can ultimately cause poor source
   position determination.  The default kernel has been set to a
@@ -76,8 +77,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
 
-- resolved `AstropyDeprecationWarning`s [#1798]
-  
+- resolved ``AstropyDeprecationWarning`` s [#1798]
 
 3.7.0 (02-Apr-2024)
 ===================
