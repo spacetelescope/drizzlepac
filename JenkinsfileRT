@@ -47,6 +47,7 @@ bc_unit_dev.failedFailureThresh = 1000
 
 // Regression testing config
 bc_rt = utils.copy(bc_unit)
+bc_rt.env_vars += ["crrefer=/grp/crds/cache/references/hst"]
 bc_rt.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --slow --bigdata",
                  "codecov"]
 bc_rt.test_configs = [data_config]
