@@ -1,89 +1,107 @@
 [project]
-name = 'drizzlepac'
-description = """ HST image combination using the drizzle algorithm to combine astronomical images, to model image distortion, to remove cosmic rays, and generally to improve the fidelity of data in the final image. """
-readme = { file = 'README.md', content-type = 'text/x-rst' }
-requires-python = '>=3.10'
-license = { file = "LICENSE.txt" }
-authors = [{ name = 'Megan Sosey' }, { name = 'Warren Hack' }, { name = 'Christopher Hanley' }, { name = 'Chris Sontag' }, { name = 'Mihai Cara' }, { name = 'Michael Dulude' }, { name = 'Michele De La Pena' }, { name = 'Steven Goldman' }]
+name = "drizzlepac"
+description = " HST image combination using the drizzle algorithm to combine astronomical images, to model image distortion, to remove cosmic rays, and generally to improve the fidelity of data in the final image. "
+requires-python = ">=3.10"
+authors = [
+    { name = "Megan Sosey" },
+    { name = "Warren Hack" },
+    { name = "Christopher Hanley" },
+    { name = "Chris Sontag" },
+    { name = "Mihai Cara" },
+    { name = "Michael Dulude" },
+    { name = "Michele De La Pena" },
+    { name = "Steven Goldman" },
+]
 classifiers = [
-    'Intended Audience :: Science/Research',
+    "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Astronomy",
-    'License :: OSI Approved :: BSD License',
-    'Operating System :: MacOS :: MacOS X',
-    'Operating System :: POSIX',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9'
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
 ]
 dependencies = [
-    'astropy>=5.0.4',
-    'fitsblender>=0.4.2',
-    'scipy',
-    'matplotlib',
-    'stsci.tools>=4.0',
-    'stsci.image>=2.3.7',
-    'stsci.imagestats',
-    'stsci.skypac>=1.0.9',
-    'stsci.stimage',
-    'stwcs>=1.5.3',
-    'tweakwcs>=0.8.2',
-    'stregion>=1.1.7',
-    'requests',
-    'scikit-learn>=0.20',
-    'bokeh',
-    'pandas',
-    'spherical_geometry>=1.2.22',
-    'astroquery>=0.4',
-    'astrocut<=0.9',
-    'photutils>1.5.0',
-    'lxml',
-    'PyPDF2',
-    'scikit-image>=0.14.2',
-    'tables',
-    'typing_extensions>4.0',
-    'markupsafe<=2.0.1',
+    "astropy>=5.0.4",
+    "fitsblender>=0.4.2",
+    "scipy",
+    "matplotlib",
+    "stsci.tools>=4.0",
+    "stsci.image>=2.3.7",
+    "stsci.imagestats>=1.8.2",
+    "stsci.skypac>=1.0.9",
+    "stsci.stimage",
+    "stwcs>=1.5.3",
+    "tweakwcs>=0.8.7",
+    "stregion>=1.1.7",
+    "requests",
+    "scikit-learn>=0.20",
+    "bokeh",
+    "pandas",
+    "spherical_geometry>=1.2.22",
+    "astroquery>=0.4",
+    "astrocut<=0.9",
+    "photutils>1.5.0",
+    "lxml",
+    "PyPDF2",
+    "scikit-image>=0.14.2",
+    "tables",
+    "typing_extensions>4.0",
+    "markupsafe<=2.0.1",
 ]
-dynamic = ['version']
+dynamic = [
+    "version",
+]
+
+[project.readme]
+file = "README.md"
+content-type = "text/x-rst"
+
+[project.license]
+file = "LICENSE.txt"
 
 [project.optional-dependencies]
 docs = [
-    'sphinx',
-    'stsci_rtd_theme',
-    'packaging',
-    'tomli',
-    'numpydoc',
-    'sphinx_automodapi',
-    'graphviz',
-    'astrocut',
+    "sphinx",
+    "stsci_rtd_theme",
+    "packaging",
+    "tomli",
+    "numpydoc",
+    "sphinx_automodapi",
+    "graphviz",
+    "astrocut",
 ]
 test = [
-    'ci_watson',
-    'crds',
-    'pytest',
-    'pytest-remotedata',
+    "ci_watson",
+    "crds",
+    "pytest",
+    "pytest-remotedata",
 ]
 
 [project.urls]
-tracker = 'https://github.com/spacetelescope/drizzlepac/issues'
-documentation = 'https://drizzlepac.readthedocs.io/en/latest'
-source = 'https://github.com/spacetelescope/drizzlepac'
+tracker = "https://github.com/spacetelescope/drizzlepac/issues"
+documentation = "https://drizzlepac.readthedocs.io/en/latest"
+source = "https://github.com/spacetelescope/drizzlepac"
 
 [project.scripts]
-mdriz = 'drizzlepac.mdriz:main'
-resetbits = 'drizzlepac.resetbits:main'
-updatenpol = 'drizzlepac.updatenpol:main'
-runastrodriz = 'drizzlepac.runastrodriz:main'
-runsinglehap = 'drizzlepac.runsinglehap:main'
-runmultihap = 'drizzlepac.runmultihap:main'
+mdriz = "drizzlepac.mdriz:main"
+resetbits = "drizzlepac.resetbits:main"
+updatenpol = "drizzlepac.updatenpol:main"
+runastrodriz = "drizzlepac.runastrodriz:main"
+runsinglehap = "drizzlepac.runsinglehap:main"
+runmultihap = "drizzlepac.runmultihap:main"
 
 [build-system]
-requires = ["setuptools>=61",
-            "setuptools_scm[toml]>=3.4",
-            "wheel",
-            "numpy>=1.18, <2.0",
-            "astropy>=5.0.4",
-            "markupsafe<=2.0.1"]
+requires = [
+    "setuptools>=61",
+    "setuptools_scm[toml]>=3.4",
+    "wheel",
+    "numpy>=2.0.0rc2",
+    "astropy>=5.0.4",
+    "markupsafe<=2.0.1",
+]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
@@ -95,90 +113,88 @@ zip-safe = false
 [tool.setuptools.packages.find]
 
 [tool.setuptools.package-data]
-# package_data values are glob patterns relative to each specific subpackage.
 drizzlepac = [
-    'README.md',
-    'LICENSE.txt',
-    'pars/*',
-    'pars/hap_pars/*',
-    'pars/hap_pars/mvm_parameters/*',
-    'pars/hap_pars/mvm_parameters/acs/hrc/*',
-    'pars/hap_pars/mvm_parameters/acs/sbc/*',
-    'pars/hap_pars/mvm_parameters/acs/wfc/*',
-    'pars/hap_pars/mvm_parameters/any/*',
-    'pars/hap_pars/mvm_parameters/wfc3/ir/*',
-    'pars/hap_pars/mvm_parameters/wfc3/uvis/*',
-    'pars/hap_pars/mvm_parameters/wfpc2/wf/*',
-    'pars/hap_pars/mvm_parameters/wfpc2/pc/*',
-    'pars/hap_pars/svm_parameters/*',
-    'pars/hap_pars/svm_parameters/acs/hrc/*',
-    'pars/hap_pars/svm_parameters/acs/sbc/*',
-    'pars/hap_pars/svm_parameters/acs/wfc/*',
-    'pars/hap_pars/svm_parameters/any/*',
-    'pars/hap_pars/svm_parameters/wfc3/ir/*',
-    'pars/hap_pars/svm_parameters/wfc3/uvis/*',
-    'pars/hap_pars/svm_parameters/wfpc2/wf/*',
-    'pars/hap_pars/svm_parameters/wfpc2/pc/*',
-    'pars/psfs/*',
-    'pars/psfs/acs/hrc/*',
-    'pars/psfs/acs/sbc/*',
-    'pars/psfs/acs/wfc/*',
-    'pars/psfs/wfc3/ir/*',
-    'pars/psfs/wfc3/uvis/*',
-    '*.help',
-    'htmlhelp/*',
-    'htmlhelp/_*/*',
-    'htmlhelp/_*/*/*',
+    "README.md",
+    "LICENSE.txt",
+    "pars/*",
+    "pars/hap_pars/*",
+    "pars/hap_pars/mvm_parameters/*",
+    "pars/hap_pars/mvm_parameters/acs/hrc/*",
+    "pars/hap_pars/mvm_parameters/acs/sbc/*",
+    "pars/hap_pars/mvm_parameters/acs/wfc/*",
+    "pars/hap_pars/mvm_parameters/any/*",
+    "pars/hap_pars/mvm_parameters/wfc3/ir/*",
+    "pars/hap_pars/mvm_parameters/wfc3/uvis/*",
+    "pars/hap_pars/mvm_parameters/wfpc2/wf/*",
+    "pars/hap_pars/mvm_parameters/wfpc2/pc/*",
+    "pars/hap_pars/svm_parameters/*",
+    "pars/hap_pars/svm_parameters/acs/hrc/*",
+    "pars/hap_pars/svm_parameters/acs/sbc/*",
+    "pars/hap_pars/svm_parameters/acs/wfc/*",
+    "pars/hap_pars/svm_parameters/any/*",
+    "pars/hap_pars/svm_parameters/wfc3/ir/*",
+    "pars/hap_pars/svm_parameters/wfc3/uvis/*",
+    "pars/hap_pars/svm_parameters/wfpc2/wf/*",
+    "pars/hap_pars/svm_parameters/wfpc2/pc/*",
+    "pars/psfs/*",
+    "pars/psfs/acs/hrc/*",
+    "pars/psfs/acs/sbc/*",
+    "pars/psfs/acs/wfc/*",
+    "pars/psfs/wfc3/ir/*",
+    "pars/psfs/wfc3/uvis/*",
+    "*.help",
+    "htmlhelp/*",
+    "htmlhelp/_*/*",
+    "htmlhelp/_*/*/*",
 ]
 
 [tool.build_sphinx]
-builder = 'html'
-configuration = 'docs/source/conf.py'
+builder = "html"
+configuration = "docs/source/conf.py"
 fail_on_warning = false
-
 
 [tool.pytest.ini_options]
 minversion = 5
 norecursedirs = [
-    '.eggs',
-    'build',
-    '.tox',
-    'doc/build',
-    'doc/exts'
+    ".eggs",
+    "build",
+    ".tox",
+    "doc/build",
+    "doc/exts",
 ]
-junit_family = 'xunit2'
-inputs_root = 'drizzlepac'
-results_root = 'drizzlepac-results'
+junit_family = "xunit2"
+inputs_root = "drizzlepac"
+results_root = "drizzlepac-results"
 
 [tool.ruff]
 extend-exclude = [
-    '.git',
-    '__pycache__',
-    'build',
-    'dist',
-    '.eggs',
-    '.tox',
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".eggs",
+    ".tox",
 ]
 ignore = [
-    'E401', # Multiple imports not allowed on single line
-    'E402', # Module level import not at top of file
-    'E501', # Line too long
-    'E701', # Multiple-statements on one line (colon) NEEDS TO BE FIXED
-    'E711', # Comparison to `None` should be `cond is None`
-    'E712', # Comparison to `True` should be `cond is True`
-    'E713', # Test for membership should be `not in`
-    'E714', # Test for object identity should be `is not`
-    'E721', # Do not compare types, use `isinstance()`
-    'E722', # Do not use bare `except`
-    'E741', # Ambiguous variable name
-    'F401', # imported but unused
-    'F521', # '...'.format(...) has invalid format string: Single '}' encountered in format string
-    'F523', # '...'.format(...) has unused arguments at position(s): 0, 1
-    'F541', # f-string without any placeholders
-    'F632', # Use `==` and `!=` to compare constant literals
-    'F633', # Use of `>>` is invalid with `print` function
-    'F811', # Redefinition of unused
-    'F821', # Undefined name
-    'F822', # Undefined name `getHelpAsString` in `__all__`
-    'F841', # Local variable is assigned to but never used
+    "E401", # Multiple imports not allowed on single line
+    "E402", # Module level import not at top of file
+    "E501", # Line too long
+    "E701", # Multiple-statements on one line (colon) NEEDS TO BE FIXED
+    "E711", # Comparison to `None` should be `cond is None`
+    "E712", # Comparison to `True` should be `cond is True`
+    "E713", # Test for membership should be `not in`
+    "E714", # Test for object identity should be `is not`
+    "E721", # Do not compare types, use `isinstance()`
+    "E722", # Do not use bare `except`
+    "E741", # Ambiguous variable name
+    "F401", # imported but unused
+    "F521", # '...'.format(...) has invalid format string: Single '}' encountered in format string
+    "F523", # '...'.format(...) has unused arguments at position(s): 0, 1
+    "F541", # f-string without any placeholders
+    "F632", # Use `==` and `!=` to compare constant literals
+    "F633", # Use of `>>` is invalid with `print` function
+    "F811", # Redefinition of unused
+    "F821", # Undefined name
+    "F822", # Undefined name `getHelpAsString` in `__all__`
+    "F841", # Local variable is assigned to but never used
 ]

@@ -20,6 +20,11 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ======================
+- Removed the use of a custom smoothing kernel based upon actual image
+  data as a poorly determined kernel can ultimately cause poor source
+  position determination.  The default kernel has been set to a
+  Gaussian with default dimensions of 11 x 11 pixels. [#1805]
+
 - Addressed bugs caught by SonarQube static code analysis.  Interface
   changes listed here: Added missing input data parameter to the create_output
   calls, Added missing log level to run function, Removed the deprecated 
