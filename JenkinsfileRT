@@ -46,20 +46,19 @@ bc_unit_dev.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=te
 bc_unit_dev.failedFailureThresh = 1000
 
 // Regression testing config
-crrefer_root = "/grp/crds/cache/references/hst"
 bc_rt = utils.copy(bc_unit)
 bc_rt.env_vars += [
-    "crrefer=${crrefer_root}",
-    "iref=${crrefer_root}",
-    "jref=${crrefer_root}",
-    "jtab=${crrefer_root}",
-    "lref=${crrefer_root}",
-    "mtab=${crrefer_root}",
-    "nref=${crrefer_root}",
-    "ntab=${crrefer_root}",
-    "oref=${crrefer_root}",
-    "otab=${crrefer_root}",
-    "uref=${crrefer_root}"]
+    'crrefer=/grp/crds/cache/references/hst',
+    'iref=${crrefer}/',
+    'jref=${crrefer}/',
+    'jtab=${crrefer}/',
+    'lref=${crrefer}/',
+    'mtab=${crrefer}/',
+    'nref=${crrefer}/',
+    'ntab=${crrefer}/',
+    'oref=${crrefer}/',
+    'otab=${crrefer}/',
+    'uref=${crrefer}/']
 bc_rt.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --slow --bigdata",
                  "codecov"]
 bc_rt.test_configs = [data_config]
