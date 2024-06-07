@@ -136,15 +136,14 @@ class CatalogImage:
                                     nsigma_clip=nsigma_clip,
                                     maxiters=maxiters)
 
-        log.info("Attempt to determine FWHM based upon input data within a good FWHM range of {:.2f} to {:.2f}.".format(good_fwhm[0], good_fwhm[1]))
-        log.info("If no good FWHM candidate is identified, a value of {:.2f} will be used instead.".format(fwhmpsf / self.imgwcs.pscale))
-        k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
-                                                                  self.wht_image,
-                                                                  good_fwhm=good_fwhm,
-                                                                  num_fwhm=50,
-                                                                  threshold=self.bkg_rms_ra,
-                                                                  fwhm=fwhmpsf / self.imgwcs.pscale)
-        (self.kernel, self.kernel_psf) = k
+        # Build a Gaussian2DKernel - the use of a custom kernel based upon a PSF
+        # of the input image is no longer used here as it could be asymmetric and
+        # lead to smeared segments (i.e., centroid coordinates offset from actual source).
+        # The value of 11 for the Gaussian kernel is big enough for all detectors. This
+        # value is hard-coded here in contrast to being in the configuration files like 
+        # the RickerWavelet2DKernel.
+        self.kernel_fwhm = fwhmpsf / self.imgwcs.pscale
+        self.kernel = astrometric_utils.build_gaussian_kernel(self.kernel_fwhm, npixels=11)
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
@@ -1545,8 +1544,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Defined in measure_sources
         self.subset_filter_source_cat = None
 
-        # Default kernel which may be the custom kernel based upon the actual image
-        # data or a Gaussian 2D kernel. This may be over-ridden in identify_sources().
+        # Default kernel is a Gaussian 2D kernel. This may be over-ridden in identify_sources().
         self.kernel = copy.deepcopy(self.image.kernel)
 
         # Attribute computed when generating the segmentation image.  If the segmentation image
@@ -1603,7 +1601,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
             log.debug("IMG stats: min/max: {}, {}".format(imgarr.min(), imgarr.max()))
-            # Custom or Gaussian kernel depending upon the results of CatalogImage build_kernel()
+            # Gaussian kernel
             g2d_kernel = self.image.kernel
 
             # Write out diagnostic data
@@ -1625,7 +1623,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             ncount = 0
             log.info("")
             log.info("ROUND 1")
-            log.info("Using Custom kernel or Gaussian to generate a segmentation map.")
+            log.info("Using Gaussian kernel to generate a segmentation map.")
             g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                      g2d_kernel,
                                                                                      ncount,
@@ -1639,9 +1637,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             segm_img_orig = copy.deepcopy(g_segm_img)
 
             # If the science field via the segmentation map is deemed crowded or has big sources/islands, compute the
-            # RickerWavelet2DKernel and call detect_and_eval_segments() again. Still use the custom fwhm as it
-            # should be better than a generic fwhm as it is based upon the data.
-            # Note: the fwhm might be a default if the custom algorithm had to fall back to a Gaussian.
+            # RickerWavelet2DKernel and call detect_and_eval_segments() again.
             if g_is_big_crowded and g_segm_img:
                 log.info("")
                 log.info("The segmentation map contains big sources/islands or a large source fraction of segments.")
@@ -1655,6 +1651,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
                 # Only pass along the array to be consistent with the g2d_kernel object
                 rw2d_kernel = rw2dk.array
+
+                # Write out diagnostic data
+                if self.diagnostic_mode:
+                    outname = self.imgname.replace(".fits", "_rwkernel.fits")
+                    fits.PrimaryHDU(data=rw2d_kernel).writeto(outname)
 
                 # Detect segments and evaluate the detection in terms of big sources/islands or crowded fields
                 # Round 1
@@ -1706,7 +1707,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                 self.param_dict['bkg_filter_size'],
                                                 self.param_dict['dao']['TWEAK_FWHMPSF'])
 
-                        # Reset the local version of the Custom/Gaussian kernel and the RickerWavelet
+                        # Reset the local version of the Gaussian kernel and the RickerWavelet
                         # kernel when the background type changes
                         g2d_kernel = self.image.kernel
 
@@ -1736,7 +1737,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     ncount += 1
                     log.info("")
                     log.info("ROUND 2")
-                    log.info("With alternate background...using Custom/Gaussian kernel to generate a segmentation map.")
+                    log.info("With alternate background...using Gaussian kernel to generate a segmentation map.")
                     del g_segm_img
                     g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                              g2d_kernel,
@@ -1772,7 +1773,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                                      rw2d_biggest_source=self._bs_deblend_limit,
                                                                                                      rw2d_source_fraction=self._sf_deblend_limit)
 
-                        # Compute the ratio of big sources/islands using Custom/Gaussian vs Rickerwavelet kernel
+                        # Compute the ratio of big sources/islands using Gaussian vs Rickerwavelet kernel
                         # This value used as a discriminant between overlapping point sources and nebulousity fields
                         ratio_cg2rw_bigsource = 3.0
                         if rw_bs > 0.0:
@@ -1788,8 +1789,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # quite efficient and successful for the overlapping PSF case.
                         #
                         # Use the Round 2 RickerWavelet segmentation image
-                        log.info("Custom/Gaussian biggest source found: {}  Rickerwavelent biggest source found: {}.".format(g_bs, rw_bs))
-                        log.info("Ratio of big sources found using Custom/Gaussian vs Rickerwavelet kernel: {}.".format(ratio_cg2rw_bigsource))
+                        log.info("Gaussian biggest source found: {}  Rickerwavelet biggest source found: {}.".format(g_bs, rw_bs))
+                        log.info("Ratio of big sources found using Gaussian vs Rickerwavelet kernel: {}.".format(ratio_cg2rw_bigsource))
 
                         # This is the easy case.
                         if not rw_is_big_crowded:
@@ -1799,7 +1800,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # The field was found to be crowded, but the biggest source second criterion is deemed OK.
                         elif (rw_is_big_crowded and (ratio_cg2rw_bigsource > self._ratio_bigsource_limit)):
                             log.info("The Round 2 of segmentation images may still contain big sources/islands.\n"
-                                     "However, the ratio between the Custom/Gaussian and Rickerwavelet biggest source is\n"
+                                     "However, the ratio between the Gaussian and Rickerwavelet biggest source is\n"
                                      "indicative of overlapping PSFs vs nebulousity.")
                             log.info("Proceeding as the time to deblend should be nominal.")
                             self.kernel = rw2d_kernel
@@ -1817,7 +1818,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             del rw_segm_img
                             return
 
-                    # Use the second round custom/Gaussian segmentation image
+                    # Use the second round Gaussian segmentation image
                     else:
                         self.kernel = g2d_kernel
                         segm_img = copy.deepcopy(g_segm_img)
@@ -1836,7 +1837,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     self._define_empty_table(rw_segm_img)
                     return
 
-            # The first round custom/Gaussian segmentation image is good, continue with the processing
+            # The first round Gaussian segmentation image is good, continue with the processing
             elif not g_is_big_crowded and g_segm_img:
                 self.kernel = g2d_kernel
                 segm_img = copy.deepcopy(g_segm_img)
@@ -1965,8 +1966,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         Returns
         -------
-        RickerWavelenket2DKernel : ˜astropy.convolution.RickerWavelet2DKernel
-            Normalized RickerWavelent2DKernel
+        RickerWavelet2DKernel : ˜astropy.convolution.RickerWavelet2DKernel
+            Normalized RickerWavelet2DKernel
         """
 
         rsigma = sigma_factor*sigma
@@ -1986,9 +1987,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 fits.PrimaryHDU(data=threshold).writeto(outname)
 
             # Generate the segmentation map by detecting "sources" using the nominal settings.
-            # Use all the parameters here developed for the "custom kernel".  Note: if the
-            # "custom kernel" did not work out, build_auto_kernel() drops back to a Gaussian.
-            # log.info('Kernel shape: {}    source_box: {}'.format(g2d.shape, self._size_source_box))
             segm_img = self.detect_segments(imgarr,
                                             threshold,
                                             background_img,
@@ -1997,7 +1995,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                             source_box=size_source_box,
                                             mask=self.image.inv_footprint_mask)
 
-            # Check if custom_segm_image is None indicating there are no detectable sources in this
+            # Check if segm_image is None indicating there are no detectable sources in this
             # total detection image.  If value is None, a warning has already been issued.  Issue
             # a final message for this particular total detection product and return.
             if segm_img is None:
