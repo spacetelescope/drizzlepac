@@ -72,7 +72,7 @@ bc_rt.env_vars += [
     'uref=${crrefer}/'
 ]
 bc_rt.test_cmds = [
-    "pip install ${common_test_deps}"
+    "pip install ${common_test_deps}",
     "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --slow --bigdata",
     "codecov"
 ]
