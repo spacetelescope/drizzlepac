@@ -49,7 +49,7 @@ bc_unit_dev.build_cmds = [
     "pip freeze || true"
 ]
 bc_unit_dev.test_cmds = [
-    "pip install ${common_test_deps}"
+    "pip install ${common_test_deps}",
     "pip install -r requirements-dev.txt --upgrade -e '.[test]' || true",
     "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml",
     "codecov"
