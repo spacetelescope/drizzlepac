@@ -18,7 +18,7 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.7.1 (unreleased)
+3.7.1 (2024-06-12)
 ==================
 
 - Removed the use of a custom smoothing kernel based upon actual image
@@ -78,6 +78,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
 
 - resolved ``AstropyDeprecationWarning`` s [#1798]
+
+- build wheels with Numpy 2.0 release candidate ahead of Numpy 2.0 release [#1806]
 
 3.7.0 (02-Apr-2024)
 ===================
