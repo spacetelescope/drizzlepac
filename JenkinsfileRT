@@ -44,17 +44,17 @@ bc2.conda_packages = ['python=3.10']
 bc2.build_cmds = ["pip install numpy astropy codecov pytest-cov ci-watson || true",
                  "pip install -r requirements-dev.txt --upgrade -e '.[test]' || true",
                  "pip freeze || true"]
-bc1.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata || true",
+bc2.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata || true",
                 "codecov || true"]
-bc1.test_configs = [data_config]
+bc2.test_configs = [data_config]
 // Apply a large failure threshold to prevent marking the pipeline job failed
 // when xunit ingests any test results
-bc1.failedFailureThresh = 1000
+bc2.failedFailureThresh = 1000
 
 bc3 = new BuildConfig()
-bc3.runtime.add('CFLAGS=-std=gnu99')
 bc3.nodetype = 'linux'
-bc3.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
+bc3.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory',
+                'CFLAGS=-std=gnu99']
 bc3.name = '3.11'
 bc3.conda_packages = ['python=3.11']
 bc3.build_cmds = ["pip install numpy astropy ci-watson",
