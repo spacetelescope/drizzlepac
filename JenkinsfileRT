@@ -28,8 +28,10 @@ data_config.match_prefix = '(.*)_result' // .json is appended automatically
 
 // Unit testing config
 bc_unit = new BuildConfig()
-bc_unit.runtime.add('CFLAGS=-std=gnu99')
-bc_unit.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
+bc_unit.env_vars = [
+    'TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory',
+    'CFLAGS=-std=gnu99'
+]
 bc_unit.build_cmds = [
     "pip install .",
     "pip freeze"
