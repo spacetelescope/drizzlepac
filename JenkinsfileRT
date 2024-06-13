@@ -64,7 +64,7 @@ bc3.conda_packages = ['python=3.11']
 bc3.build_cmds = ["pip install numpy astropy ci-watson",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
-bc2.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata",
+bc3.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata",
                  "${codecov_install}",
                  "./codecov"]
 bc3.test_configs = [data_config]
