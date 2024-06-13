@@ -21,7 +21,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.1 (unreleased)
 ==================
 - Modify the dependencies portion of the project.toml file to specify
-  numpy<2.0 [#nnnn]
+  numpy<2.0 [#1813]
 
 - Removed the use of a custom smoothing kernel based upon actual image
   data as a poorly determined kernel can ultimately cause poor source
