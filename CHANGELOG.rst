@@ -17,6 +17,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
+3.7.0.1 (13-Jun-2024)
+=====================
+
+- build wheels with Numpy 2.0 release candidate ahead of Numpy 2.0 release [#1806]
 
 3.7.0 (02-Apr-2024) Infrastructure Build
 ===========================================
