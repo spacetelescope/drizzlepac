@@ -13,7 +13,6 @@ import pytest
 
 from astropy.io import ascii
 from drizzlepac import runsinglehap
-from astropy.table import Table
 from drizzlepac.haputils import astroquery_utils as aqutils
 
 
@@ -33,9 +32,10 @@ def pytest_generate_tests(metafunc):
             # Copy the file
             shutil.copy2(default_file, os.getcwd())
 
-    # Read the svm_list to get the poller filenames
-    table = Table.read(svm_list, format="ascii.fast_no_header")
-    poller_file_list = table["col1"].tolist()
+    # Read the svm_list to get the poller filenames - the list is typically
+    # not very long, so it should be fine to read the entire file
+    with open(svm_list) as file:
+        poller_file_list = [line.rstrip() for line in file]
 
     print("Input file: {}".format(svm_list))
     print("List of poller files: {}".format(poller_file_list))
