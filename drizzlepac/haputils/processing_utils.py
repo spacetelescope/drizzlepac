@@ -10,6 +10,7 @@ import numpy as np
 from astropy.io import fits as fits
 from astropy.io.fits import Column
 from astropy.time import Time
+from astropy.table import Table
 from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 from stwcs import wcsutil
@@ -367,7 +368,7 @@ def add_skycell_to_header(image_filename, extname='SCI'):
 
     # Find all extensions to be updated
     numext = countExtn(hdu, extname=extname)
-    
+
     for extver in range(1, numext + 1):
         sciext = (extname, extver)
         skycells = get_sky_cells([image_filename])
@@ -387,12 +388,84 @@ def add_skycell_to_header(image_filename, extname='SCI'):
                 hdu[sciext].header["skycell"]= (skycell_string, 'Skycell(s) that this image occupies')
         else: 
             log.error(f"No skycells found for {image_filename}.")
+
+    # close file if opened by this functions
+    if closefits:
+        hdu.close()
+
+
+def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
+    """ Adds the SVM input list and generation date to the MVM 
+    drizzled product header.
+
+    Parameters
+    ----------
+    filter_product : object
+        total object list created using poller_utils.interpret_mvm_input
+    
+    return_hdu : bool, optional
+        returns hdu object if True, otherwise None
         
+    Returns:
+    --------
+    Nothing; drizzled product headers have been updated unless keyword already exists.
+    That is unless return_hdu is turned on (e.g. for the unit test), in which case, 
+    the function will return the updated hdu object.
+        
+    """
+
+    svm_gen_dates = []
+    svm_inputs_list = filter_product.all_mvm_exposures
+    
+    # read gendate of SVM images and append to svm_gen_dates list
+    for svm_filename in svm_inputs_list:
+        try: 
+            hdu, closefits = _process_input(svm_filename)
+        except:
+            log.error(f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
+        try:
+            svm_gen_dates.append(hdu[0].header['DATE'])
+        except:
+            log.warning(f"Could not read DATE keyword from {svm_filename}. Inserting empty string.")
+            svm_gen_dates.append('')
+            
+    
+    # file to which we are updating the header
+    mvm_filename = filter_product.drizzle_filename
+    
+    # Open image and determine whether to consequently close it
+    try: 
+        hdu, closefits = _process_input(mvm_filename)
+    except:
+        log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
+
+    # temprary table for adding columns
+    temp_table = Table(hdu[4].data)
+    
+    # adds single entry for gendate if all SVM images have the same gendate
+    unique_gendates = np.unique(svm_gen_dates)
+
+    if len(unique_gendates) == 0:
+        raise ValueError("No SVM input files found.")
+    elif len(unique_gendates) == 1:
+        temp_table.add_column([[unique_gendates][0][0]]*len(temp_table), name="GENDATE", index=1)
+    else:
+        temp_table.add_column([", ".join(svm_gen_dates)]*len(temp_table), name="GENDATE", index=1)
+    
+    if len(np.unique(svm_inputs_list))==0:
+        raise ValueError("No SVM input files found.")
+    else:
+        temp_table.add_column([", ".join(svm_inputs_list)]*len(temp_table), name="SVMROOTNAME", index=1)
+    
+    hdu[4].data=temp_table.as_array()
+    
     # close file if opened by this functions
     if closefits:
         hdu.close()
         
-
+    if return_hdu:
+        return hdu
+    
 def find_footprint(hdu, extname='SCI', extnum=1):
     """Extract the footprints from each input file
 
