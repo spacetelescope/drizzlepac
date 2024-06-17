@@ -1244,7 +1244,11 @@ def hla_nexp_flags(drizzled_image, flt_list, param_dict, plate_scale, catalog_na
     nexp_array = numpy.zeros((nx, ny), dtype=numpy.int32)
 
     for comp_drz_img in component_drz_img_list:
-        comp_drz_data = (fits.getdata(comp_drz_img) != 0).astype(numpy.int32)
+        log.info("************* hla_nexp_flags. comp_drz_img")
+        imdata = fits.getdata(comp_drz_img)
+        comp_drz_data = (numpy.isfinite(imdata) & (imdata != 0)).astype(numpy.int32)
+        #MDD
+        #comp_drz_data = (fits.getdata(comp_drz_img) != 0).astype(numpy.int32)
         try:
             nexp_array += comp_drz_data
         except ValueError:
@@ -1632,7 +1636,11 @@ def make_mask_array(drz_image):
     mask : numpy.ndarray object
         mask array
     """
-    mask = fits.open(drz_image)[1].data != 0
+    #mask = fits.open(drz_image)[1].data != 0
+    #MDD
+    log.info("************* make_mask_array")
+    with fits.open(drz_image) as fh:
+        mask = numpy.isfinite(fh[1].data) & (fh[1].data != 0)
     dilate = scipy.ndimage.morphology.binary_dilation
     erode = scipy.ndimage.morphology.binary_erosion
     kernel1 = numpy.ones((25, 25), dtype=int)
