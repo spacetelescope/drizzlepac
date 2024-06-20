@@ -61,7 +61,7 @@ bc3.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory',
                 'CFLAGS=-std=gnu99']
 bc3.name = '3.11'
 bc3.conda_packages = ['python=3.11']
-bc3.build_cmds = ["pip install numpy astropy ci-watson",
+bc3.build_cmds = ["pip install numpy astropy pytest-cov ci-watson",
 		 "pip install --upgrade -e '.[test]'",
                  "pip freeze"]
 bc3.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata",
