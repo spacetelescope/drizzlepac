@@ -22,7 +22,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 ==================
 - Corrected the way that the number of constituent images are accumulated
   per pixel by ensuring each contributing pixel has a finite value and 
-  is not zero.
+  is not zero. [#1820]
 
 - Removed the use of a custom smoothing kernel based upon actual image
   data as a poorly determined kernel can ultimately cause poor source
