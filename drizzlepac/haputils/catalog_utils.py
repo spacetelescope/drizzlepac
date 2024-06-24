@@ -1,6 +1,5 @@
 """This script contains code to support creation of photometric sourcelists using two techniques:
 aperture photometry and segmentation-map based photometry."""
-import pdb
 import copy
 import math
 import sys
@@ -1886,7 +1885,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     good_segm_rows_by_label.append(total_measurements_table['label'][i])
 
             updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
-            #pdb.set_trace()
 
             # Need to keep an updated copy of the total image SourceCatalog object for use when
             # making measurements in the filtered images

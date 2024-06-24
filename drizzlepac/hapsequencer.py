@@ -45,7 +45,6 @@
     locally stored HLA classic files. The relevant HLA classic imagery and sourcelist files
     must be placed in a subdirectory of the current working directory called 'hla_classic'.
 """
-import pdb
 import datetime
 import fnmatch
 import logging
@@ -205,7 +204,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 filter_name = filter_product_obj.filters
                 filter_product_catalogs.measure(filter_name)
                 log.info("Flagging sources in filter product catalog")
-                #pdb.set_trace()
                 filter_product_catalogs = run_sourcelist_flagging(filter_product_obj,
                                                                   filter_product_catalogs,
                                                                   log_level,
