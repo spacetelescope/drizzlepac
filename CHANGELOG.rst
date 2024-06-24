@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ==================
+- Corrected parameters being sent to InteractivePSFPhotometry() as the 
+  original update [#1798] passed deprecated arguments. 
+
 - Corrected the way that the number of constituent images are accumulated
   per pixel by ensuring each contributing pixel has a finite value and 
   is not zero. [#1820]

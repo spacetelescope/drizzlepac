@@ -874,12 +874,12 @@ def find_fwhm(psf, default_fwhm):
     gaussian_prf.sigma.fixed = False
     try:
         itr_phot_obj = IterativePSFPhotometry(finder=iraffind,
-                                              group_maker=daogroup,
-                                              bkg_estimator=mmm_bkg,
+                                              grouper=daogroup,
+                                              localbkg_estimator=mmm_bkg,
                                               psf_model=gaussian_prf,
                                               fitter=fitter,
-                                              fitshape=(11, 11),
-                                              niters=2)
+                                              fit_shape=(11, 11),
+                                              maxiters=2)
         phot_results = itr_phot_obj(psf)
     except Exception:
         log.error("The find_fwhm() failed due to problem with fitting.")
