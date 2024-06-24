@@ -21,6 +21,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.1 (unreleased)
 ==================
 
+- Changed HAP configuration files to use "rshift" as opposed to "rscale",
+  increased the minimum number of matches from 6 to 10, and removed "shift"
+  as a fit geometry option. [#1823].
+
 - Removed the use of a custom smoothing kernel based upon actual image
   data as a poorly determined kernel can ultimately cause poor source
   position determination.  The default kernel has been set to a
