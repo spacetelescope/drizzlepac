@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ==================
+- Corrected the way that the number of constituent images are accumulated
+  per pixel by ensuring each contributing pixel has a finite value and 
+  is not zero. [#1820]
 
 - Changed HAP configuration files to use "rshift" as opposed to "rscale",
   increased the minimum number of matches from 6 to 10, and removed "shift"
