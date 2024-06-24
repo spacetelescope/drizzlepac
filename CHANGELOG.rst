@@ -23,6 +23,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Modify the dependencies portion of the project.toml file to specify
   numpy<2.0 [#1813]
 
+- Corrected the way that the number of constituent images are accumulated
+  per pixel by ensuring each contributing pixel has a finite value and 
+  is not zero. [#1820]
+
 - Removed the use of a custom smoothing kernel based upon actual image
   data as a poorly determined kernel can ultimately cause poor source
   position determination.  The default kernel has been set to a
