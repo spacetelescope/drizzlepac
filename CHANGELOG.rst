@@ -79,8 +79,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Improved calculation of S_REGION using dialation and erosion. [#1762]
 
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
-
-- resolved ``AstropyDeprecationWarning`` s [#1798]
+  
 
 3.7.0 (02-Apr-2024)
 ===================
