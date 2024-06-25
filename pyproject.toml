@@ -78,6 +78,7 @@ test = [
     "ci_watson",
     "crds",
     "pytest",
+    "pytest-cov",
     "pytest-remotedata",
 ]
 
