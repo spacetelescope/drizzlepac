@@ -341,3 +341,146 @@ final_crpix1: ??? (*default=null*)
 
 final_crpix2: ??? (*default=null*)
     Reference pixel Y position on output (CRPIX2)
+
+
+Alignment
+^^^^^^^^^
+
+General
+"""""""
+
+MIN_FIT_MATCHES: int (*default=4*)
+    Not currently in use. Added to alignment_pars but not used. 
+
+MAX_FIT_RMS: int (*default=20*)
+    Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done. 
+
+MAX_SOURCES_PER_CHIP: int (*default=250)
+    Not currently in use. Maximum number of brightest sources per chip which will be used for cross-matching and fitting. If set to None, all sources will be used.
+
+run_align (*primarily in align.py*)
+"""""""""""""""""""""""""""""""""
+
+update_hdr_wcs: bool (*default=True*)
+    Not currently in use. Write newly computed WCS information to image image headers?
+
+catalog_list: list of strings (*default = ["GAIAeDR3", "GSC242", "2MASS"]*)
+    Not currently in use. Set of astrometric catalogs which should be used as references for fitting the input images.  A
+    separate fit will be performed for each catalog specified. The catalog name will also be used
+    as part of the output ``WCSNAME`` value for the fit determined from that catalog.
+
+fit_algorithm_list_ngt1: list of strings (*default=["match_relative_fit", "match_2dhist_fit", "match_default_fit"]*)
+    Not currently in use.
+
+fit_algorithm_list_ng1: list of strings (*default=["match_2dhist_fit", "match_default_fit"]*)
+    Not currently in use.
+
+MIN_CATALOG_THRESHOLD: int (*default=3*)
+    Not currently in use. The minimum number of catalog sources required to continue fitting. If below this threshold, the code will return a fit_quality=5 and try with another catalog. 
+
+MIN_OBSERVABLE_THRESHOLD: int (*default=10*)
+    Not currently in use. The minimum number of observed sources required to continue fitting. If below this threshold, the code will return a status=1 and try with another catalog. 
+
+MAX_FIT_LIMIT: int (*default=150*)
+    Not currently in use.
+
+mosaic_catalog_list: list of strings (*default=["GAIAeDR3", "GSC242", "2MASS"]*)
+    List of available catalogs for aligning for both pipeline and SVM products. The code will go through each catalog in this order. 
+
+mosaic_fit_list: list of strings (*default=["match_relative_fit", "match_2dhist_fit", "match_default_fit"]*)
+    List of available fit algorithms for aligning for both pipeline and SVM products; match_default_fit relative alignment without using 2dhist and different throusholds (see json configuration files).
+
+mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 6, "general": 6}*)
+    The different fit geometries tried in alignment as well as their minobj value, which specifies the number of fits required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of "rshift". 
+    This is specficed as a default for perform_fit() function in align_utils. The value for minobj, however, is used. 
+
+run_align additional related parameters
+"""""""""""""""""""""""""""""""""""""""
+
+fit quality category:
+    1 = valid solution with rms < 10 mas
+    2 = Valid but compromised solution with rms < 10 mas
+    3 = Valid solution with RMS >= 10 mas
+    4 = Valid but compromised solution with RMS >= 10 mas
+    5 = Not valid solution
+
+
+generate_source_catalogs
+""""""""""""""""""""""""
+
+box_size: int (*default = 13*)
+    s
+
+win_size: int (*default = 3*)
+    s
+
+nsigma: float (*default = 3.0*)
+    s
+
+centering_mode: str (*default = "starfind"*)
+    s
+
+bkg_estimator: str (*default = "MedianBackground"*)
+    s
+
+rms_estimator: str (*default = "StdBackgroundRMS"*)
+    s
+
+num_sources: int (*default = 250*)
+    s
+
+deblend: bool (*default = false*)
+    s
+
+fwhmpsf: float (*default = 0.13*)
+    s
+
+classify: bool (*default = false*)
+    s
+
+threshold: float (*default = -1.1*)
+    s
+
+
+
+generate_astrometric_catalog
+""""""""""""""""""""""""""""
+
+gaia_only: bool (*default=false*)
+    s
+
+existing_wcs: bool (*default=null*)
+    s
+
+
+perform_fit
+"""""""""
+For match_relative_fit, match_default_fit, and match_2dhist_fit, the following parameters are used:
+
+fitgeom": "rshift",
+    as stated above, this is ignored for pipeline products. 
+
+searchrad: int (*default= 125*)
+    s
+separation: float (*default= 4.0*)
+    s
+tolerance: float (*default= 2.0*)
+    s
+use2dhist: bool(*default= true*)
+    s
+
+
+determine_fit_quality
+"""""""""""""""""""""
+
+"MIN_CATALOG_THRESHOLD": 3,
+"MIN_OBSERVABLE_THRESHOLD": 4,
+    in use, if below, ends alignment and differs to a priori solution
+
+"MIN_CROSS_MATCHES": 3,
+"MIN_FIT_MATCHES": 4,
+"MAX_FIT_RMS": 20,
+"MAX_FIT_LIMIT": 150,
+"MAX_SOURCES_PER_CHIP": 250,
+"MAS_TO_ARCSEC": 1000,
+"GOOD_FIT_QUALITY_VALUES": [1, 2, 3, 4]
