@@ -26,23 +26,44 @@ data_config.server_id = 'bytesalad'
 data_config.root = 'clone/tests_output'
 data_config.match_prefix = '(.*)_result' // .json is appended automatically
 
-// Unit testing config
-bc_unit = new BuildConfig()
-bc_unit.env_vars = [
+// Regression testing config
+bc_rt = new BuildConfig()
+bc_rt.env_vars += [
     'TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory',
     'CFLAGS=-std=gnu99'
+    'crrefer=/grp/crds/cache/references/hst',
+    'iref=${crrefer}/',
+    'jref=${crrefer}/',
+    'jtab=${crrefer}/',
+    'lref=${crrefer}/',
+    'mtab=${crrefer}/',
+    'nref=${crrefer}/',
+    'ntab=${crrefer}/',
+    'oref=${crrefer}/',
+    'otab=${crrefer}/',
+    'uref=${crrefer}/'
 ]
 bc_unit.build_cmds = [
     "pip install .",
     "pip freeze"
 ]
+bc_rt.test_cmds = [
+    "pip install ${common_test_deps}",
+    "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --slow --bigdata",
+    "codecov"
+]
+bc_rt.test_configs = [data_config]
+bc_rt.failedFailureThresh = 0
+
+// Unit testing config
+bc_unit = utils.copy(bc_rt)
 bc_unit.test_cmds = [
     "pip install ${common_test_deps}",
     "pip install -e '.[test]'",
     "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml",
     "codecov"
 ]
-bc_unit.failedFailureThresh = 0
+bc_unit.test_configs = []
 
 // Unit testing (dev) config
 bc_unit_dev = utils.copy(bc_unit)
@@ -58,83 +79,61 @@ bc_unit_dev.test_cmds = [
 ]
 bc_unit_dev.failedFailureThresh = 1000
 
-// Regression testing config
-bc_rt = utils.copy(bc_unit)
-bc_rt.env_vars += [
-    'crrefer=/grp/crds/cache/references/hst',
-    'iref=${crrefer}/',
-    'jref=${crrefer}/',
-    'jtab=${crrefer}/',
-    'lref=${crrefer}/',
-    'mtab=${crrefer}/',
-    'nref=${crrefer}/',
-    'ntab=${crrefer}/',
-    'oref=${crrefer}/',
-    'otab=${crrefer}/',
-    'uref=${crrefer}/'
-]
-bc_rt.test_cmds = [
-    "pip install ${common_test_deps}",
-    "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --slow --bigdata",
-    "codecov"
-]
-bc_rt.test_configs = [data_config]
-
-
-// Linux
-bc1 = utils.copy(bc_unit)
-bc1.nodetype = 'linux'
-bc1.name = '3.11-unit'
-bc1.conda_packages = ['python=3.11']
-
-bc2 = utils.copy(bc_unit_dev)
-bc2.name = '3.11-unit-dev'
-bc2.nodetype = 'linux'
-bc2.conda_packages = ['python=3.11']
-
-bc3 = utils.copy(bc_unit)
-bc3.nodetype = 'linux'
-bc3.name = '3.12-unit'
-bc3.conda_packages = ['python=3.12']
-
-bc4 = utils.copy(bc_unit_dev)
-bc4.nodetype = 'linux'
-bc4.name = '3.12-unit-dev'
-bc4.conda_packages = ['python=3.12']
 
 // Linux regression tests
-bc5 = utils.copy(bc_rt)
+bc1 = utils.copy(bc_rt)
+bc1.nodetype = 'linux'
+bc1.name = '3.11-rt'
+bc1.conda_packages = ['python=3.11']
+
+// Linux
+bc2 = utils.copy(bc_unit)
+bc2.nodetype = 'linux'
+bc2.name = '3.11-unit'
+bc2.conda_packages = ['python=3.11']
+
+bc3 = utils.copy(bc_unit_dev)
+bc3.name = '3.11-unit-dev'
+bc3.nodetype = 'linux'
+bc3.conda_packages = ['python=3.11']
+
+bc4 = utils.copy(bc_unit)
+bc4.nodetype = 'linux'
+bc4.name = '3.12-unit'
+bc4.conda_packages = ['python=3.12']
+
+bc5 = utils.copy(bc_unit_dev)
 bc5.nodetype = 'linux'
-bc5.name = '3.11-rt'
-bc5.conda_packages = ['python=3.11']
+bc5.name = '3.12-unit-dev'
+bc5.conda_packages = ['python=3.12']
 
-
-// Mac OS unit tests
-bc6 = utils.copy(bc_unit)
-bc6.nodetype = 'macos_x86_64'
-bc6.name = '3.11-unit'
-bc6.conda_packages = ['python=3.11']
-
-bc7 = utils.copy(bc_unit_dev)
-bc7.nodetype = 'macos_x86_64'
-bc7.name = '3.11-unit-dev'
-bc7.conda_packages = ['python=3.11']
-
-bc8 = utils.copy(bc_unit)
-bc8.nodetype = 'macos_x86_64'
-bc8.name = '3.12-unit'
-bc8.conda_packages = ['python=3.12']
-
-bc9 = utils.copy(bc_unit_dev)
-bc9.nodetype = 'macos_x86_64'
-bc9.name = '3.12-unit-dev'
-bc9.conda_packages = ['python=3.12']
 
 // Mac OS regression tests
-bc10 = utils.copy(bc_rt)
+bc6 = utils.copy(bc_rt)
+bc6.nodetype = 'macos_x86_64'
+bc6.name = '3.11-rt'
+bc6.conda_packages = ['python=3.11']
+
+// Mac OS unit tests
+bc7 = utils.copy(bc_unit)
+bc7.nodetype = 'macos_x86_64'
+bc7.name = '3.11-unit'
+bc7.conda_packages = ['python=3.11']
+
+bc8 = utils.copy(bc_unit_dev)
+bc8.nodetype = 'macos_x86_64'
+bc8.name = '3.11-unit-dev'
+bc8.conda_packages = ['python=3.11']
+
+bc9 = utils.copy(bc_unit)
+bc9.nodetype = 'macos_x86_64'
+bc9.name = '3.12-unit'
+bc9.conda_packages = ['python=3.12']
+
+bc10 = utils.copy(bc_unit_dev)
 bc10.nodetype = 'macos_x86_64'
-bc10.name = '3.11-rt'
-bc10.conda_packages = ['python=3.11']
+bc10.name = '3.12-unit-dev'
+bc10.conda_packages = ['python=3.12']
 
 
 // Iterate over configurations that define the (distributed) build matrix.
