@@ -350,13 +350,14 @@ General
 """""""
 
 MIN_FIT_MATCHES: int (*default=4*)
-    Not currently in use. Added to alignment_pars but not used. 
+    Not currently in use. Value is added to the alignment_pars diictionary but not currently used. 
 
 MAX_FIT_RMS: int (*default=20*)
     Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done. 
 
 MAX_SOURCES_PER_CHIP: int (*default=250*)
-    Not currently in use. Maximum number of brightest sources per chip which will be used for cross-matching and fitting. If set to None, all sources will be used.
+    Not currently in use. 
+
 
 run_align (*primarily in align.py*)
 """""""""""""""""""""""""""""""""
@@ -394,15 +395,14 @@ mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 6, "general": 6}*)
     The different fit geometries tried in alignment as well as their minobj value, which specifies the number of fits required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of "rshift". 
     This is specficed as a default for perform_fit() function in align_utils. The value for minobj, however, is used. 
 
-run_align additional related parameters
-"""""""""""""""""""""""""""""""""""""""
+fit quality categories
+""""""""""""""""""""""
 
-fit quality category:
-    1 = valid solution with rms < 10 mas
-    2 = Valid but compromised solution with rms < 10 mas
-    3 = Valid solution with RMS >= 10 mas
-    4 = Valid but compromised solution with RMS >= 10 mas
-    5 = Not valid solution
+1 = valid solution with rms < 10 mas
+2 = Valid but compromised solution with rms < 10 mas
+3 = Valid solution with RMS >= 10 mas
+4 = Valid but compromised solution with RMS >= 10 mas
+5 = Not valid solution
 
 
 generate_source_catalogs
@@ -482,5 +482,8 @@ determine_fit_quality
 "MAX_FIT_RMS": 20,
 "MAX_FIT_LIMIT": 150,
 "MAX_SOURCES_PER_CHIP": 250,
+
+    Maximum number of brightest sources per chip which will be used for cross-matching and fitting.
+
 "MAS_TO_ARCSEC": 1000,
 "GOOD_FIT_QUALITY_VALUES": [1, 2, 3, 4]
