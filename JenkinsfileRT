@@ -50,7 +50,8 @@ bc_rt.build_cmds = [
 bc_rt.test_cmds = [
     "pip install ${common_test_deps}",
     "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --slow --bigdata",
-    "codecov"
+    "${codecov_install}",
+    "./codecov"
 ]
 bc_rt.test_configs = [data_config]
 bc_rt.failedFailureThresh = 0
@@ -61,7 +62,8 @@ bc_unit.test_cmds = [
     "pip install ${common_test_deps}",
     "pip install -e '.[test]'",
     "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml",
-    "codecov"
+    "${codecov_install}",
+    "./codecov"
 ]
 bc_unit.test_configs = []
 
@@ -75,7 +77,8 @@ bc_unit_dev.test_cmds = [
     "pip install ${common_test_deps}",
     "pip install -r requirements-dev.txt --upgrade -e '.[test]' || true",
     "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml",
-    "codecov"
+    "${codecov_install}",
+    "./codecov"
 ]
 bc_unit_dev.failedFailureThresh = 1000
 
