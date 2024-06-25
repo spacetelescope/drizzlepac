@@ -30,7 +30,7 @@ data_config.match_prefix = '(.*)_result' // .json is appended automatically
 bc_rt = new BuildConfig()
 bc_rt.env_vars += [
     'TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory',
-    'CFLAGS=-std=gnu99'
+    'CFLAGS=-std=gnu99',
     'crrefer=/grp/crds/cache/references/hst',
     'iref=${crrefer}/',
     'jref=${crrefer}/',
