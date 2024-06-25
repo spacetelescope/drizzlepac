@@ -398,11 +398,15 @@ mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 6, "general": 6}*)
 fit quality categories
 """"""""""""""""""""""
 
-1 = valid solution with rms < 10 mas
-2 = Valid but compromised solution with rms < 10 mas
-3 = Valid solution with RMS >= 10 mas
-4 = Valid but compromised solution with RMS >= 10 mas
-5 = Not valid solution
+    * 1 = valid solution with rms < 10 mas
+
+    * 2 = Valid but compromised solution with rms < 10 mas
+
+    * 3 = Valid solution with RMS >= 10 mas
+
+    * 4 = Valid but compromised solution with RMS >= 10 mas
+
+    * 5 = Not valid solution
 
 
 generate_source_catalogs
