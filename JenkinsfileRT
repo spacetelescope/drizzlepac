@@ -7,8 +7,7 @@ if (env.ARTIFACTORY_ENV) {
     artifactory_env = env.ARTIFACTORY_ENV
 }
 
-codecov_install = "curl -Os https://uploader.codecov.io/latest/linux/codecov && chmod +x codecov"
-common_test_deps = "codecov pytest-cov ci-watson"
+codecov_exec = "curl -Os https://uploader.codecov.io/latest/linux/codecov && chmod +x codecov && ./codecov"
 
 // Allow modification of the job configuration, affects all relevant
 // build configs.
@@ -48,10 +47,9 @@ bc_rt.build_cmds = [
     "pip freeze"
 ]
 bc_rt.test_cmds = [
-    "pip install ${common_test_deps}",
+    "pip install -e '.[test]'",
     "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --slow --bigdata",
-    "${codecov_install}",
-    "./codecov"
+    "${codecov_exec}"
 ]
 bc_rt.test_configs = [data_config]
 bc_rt.failedFailureThresh = 0
@@ -59,11 +57,9 @@ bc_rt.failedFailureThresh = 0
 // Unit testing config
 bc_unit = utils.copy(bc_rt)
 bc_unit.test_cmds = [
-    "pip install ${common_test_deps}",
     "pip install -e '.[test]'",
     "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml",
-    "${codecov_install}",
-    "./codecov"
+    "${codecov_exec}"
 ]
 bc_unit.test_configs = []
 
@@ -74,11 +70,9 @@ bc_unit_dev.build_cmds = [
     "pip freeze || true"
 ]
 bc_unit_dev.test_cmds = [
-    "pip install ${common_test_deps}",
     "pip install -r requirements-dev.txt --upgrade -e '.[test]' || true",
     "pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml",
-    "${codecov_install}",
-    "./codecov"
+    "${codecov_exec}"
 ]
 bc_unit_dev.failedFailureThresh = 1000
 
