@@ -43,7 +43,7 @@ bc_rt.env_vars += [
     'otab=${crrefer}/',
     'uref=${crrefer}/'
 ]
-bc_unit.build_cmds = [
+bc_rt.build_cmds = [
     "pip install .",
     "pip freeze"
 ]
