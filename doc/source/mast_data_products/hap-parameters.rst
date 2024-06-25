@@ -355,7 +355,7 @@ MIN_FIT_MATCHES: int (*default=4*)
 MAX_FIT_RMS: int (*default=20*)
     Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done. 
 
-MAX_SOURCES_PER_CHIP: int (*default=250)
+MAX_SOURCES_PER_CHIP: int (*default=250*)
     Not currently in use. Maximum number of brightest sources per chip which will be used for cross-matching and fitting. If set to None, all sources will be used.
 
 run_align (*primarily in align.py*)
