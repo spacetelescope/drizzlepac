@@ -163,7 +163,7 @@ driz_sep_pixfrac: float (*default=1.0*)
 
 .. null?!?!?!?!?
 
-driz_sep_fillval: int or INDEF (*default = null*)
+driz_sep_fillval: int or INDEF (*default=null*)
     Value to be assigned to output pixels that have zero weight, or that receive flux from any input pixels during drizzling. This parameter corresponds to the ``fillval`` parameter of the ``drizzle`` task. If the default of ``INDEF`` is used, and if the weight in both the input and output images for a given pixel are zero, then the output pixel will be set to the value it would have had if the input had a non-zero weight. Otherwise, if a numerical value is provided (e.g. 0), then these pixels will be set to that value.
 
 driz_sep_compress: bool (*default=False*)
@@ -350,10 +350,10 @@ General
 """""""
 
 MIN_FIT_MATCHES: int (*default=4*)
-    Not currently in use. Value is added to the alignment_pars dictionary but not currently used. 
+    Minimum number of acceptable cross-matches for a good fit.
 
 MAX_FIT_RMS: int (*default=20*)
-    Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done. 
+    Not currently in use.
 
 MAX_SOURCES_PER_CHIP: int (*default=250*)
     Not currently in use. 
@@ -365,7 +365,7 @@ run_align (*primarily in align.py*)
 update_hdr_wcs: bool (*default=True*)
     Not currently in use. Write newly computed WCS information to image headers?
 
-catalog_list: list of strings (*default = ["GAIAeDR3", "GSC242", "2MASS"]*)
+catalog_list: list of strings (*default=["GAIAeDR3", "GSC242", "2MASS"]*)
     Not currently in use. Set of astrometric catalogs which should be used as references for fitting the input images.  A separate fit will be performed for each catalog specified. The catalog name will also be used as part of the output ``WCSNAME`` value for the fit determined from that catalog.
 
 fit_algorithm_list_ngt1: list of strings (*default=["match_relative_fit", "match_2dhist_fit", "match_default_fit"]*)
@@ -375,7 +375,7 @@ fit_algorithm_list_ng1: list of strings (*default=["match_2dhist_fit", "match_de
     Not currently in use.
 
 MIN_CATALOG_THRESHOLD: int (*default=3*)
-    Not currently in use. The minimum number of catalog sources required to continue fitting. If below this threshold, the code will return a fit_quality=5 and try with another catalog. 
+    Not currently in use.
 
 MIN_OBSERVABLE_THRESHOLD: int (*default=10*)
     Not currently in use. The minimum number of observed sources required to continue fitting. If below this threshold, the code will return a status=1 and try with another catalog. 
@@ -409,38 +409,38 @@ fit quality categories
 generate_source_catalogs (*primarily in align_utils.py*)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-box_size: int (*default = 13*)
+box_size: int (*default=13*)
     The size of the box used for calculating the 2D Background of the catalog "white light" image along each axis in pixels. In nothing is specified, a default of BKG_BOX_SIZE=27 is used.  
 
-win_size: int (*default = 3*)
+win_size: int (*default=3*)
     The size of the 2D filter to apply to the background of the catalog "white light" image. If nothing is specified, a default of BKG_FILTER_SIZE=3 is used.
 
-nsigma: float (*default = 3.0*)
+nsigma: float (*default=3.0*)
     The number of signma used for setting the level of the average background rms. If nothing is specified, a value of 5.0 is used.
 
-centering_mode: str (*default = "starfind"*)
+centering_mode: str (*default="starfind"*)
     Algorithm to use when computing the positions of the detected sources. Options are "segmentaton" or ``starfind``. Centering will only take place after ``threshold`` has been determined, and sources are identified using segmentation.  Centering using ``segmentation`` will rely on ``photutils.segmentation.SourceCatalog`` to generate the properties for the source catalog.  Centering using ``starfind`` will use ``photutils.detection.IRAFStarFinder`` to characterize each source in the catalog.
 
-bkg_estimator: str (*default = "MedianBackground"*)
+bkg_estimator: str (*default="MedianBackground"*)
     Name of the algorithm to use for background calculation in *photutils.Background2D*.
 
-rms_estimator: str (*default = "StdBackgroundRMS"*)
+rms_estimator: str (*default="StdBackgroundRMS"*)
     Name of the rms estimation algorithm used by *photutils.Background2D*.
 
-num_sources: int (*default = 250*)
+num_sources: int (*default=250*)
     Not currently in use. Maximum number of brightest/faintest sources to return in catalog.
 
-deblend: bool (*default = false*)
+deblend: bool (*default=false*)
     Specify whether or not to apply photutils deblending algorithm when evaluating each of the identified segments (sources) from the chip.
 
-fwhmpsf: float (*default = 0.13*)
-    The full width at half maximum of the PSF.
+fwhmpsf: float (*default=0.13*)
+    The full width at half maximum of the PSF in arcseconds used for the starfind algorithm.
 
-classify: bool (*default = false*)
-    s
+classify: bool (*default=false*)
+    Not currently in use as cosmic rays are being removed before segmentation now. Specifies whether or not to apply photutils classification algorithm when evaluating each of the identified segments (sources) from the chip.
 
-threshold: float (*default = -1.1*)
-    s
+threshold: float (*default=-1.1*)
+    Value from the image which serves as the limit for determining sources. If None, compute a default value of (background+5*rms(background)). If threshold < 0.0, use absolute value as scaling factor for default value. If nothing is specified a default value of None is used to compute the background. 
 
 
 
@@ -448,43 +448,67 @@ generate_astrometric_catalog
 """"""""""""""""""""""""""""
 
 gaia_only: bool (*default=false*)
-    s
+    Not currently in use. Specify whether or not to only use sources from GAIA in output catalog.
 
-existing_wcs: bool (*default=null*)
-    s
+existing_wcs: Class Instance (*default=null*)
+    Existing WCS object specified by the user
 
 
-perform_fit
-"""""""""""
+perform_fit (*primarily external in tweakwcs.matchutils.XYXYMatch*)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 For match_relative_fit, match_default_fit, and match_2dhist_fit, the following parameters are used:
 
 fitgeom": "rshift",
-    as stated above, this is ignored for pipeline products. 
+    As used above, this is ignored for pipeline products. 
 
-searchrad: int (*default= 125*)
-    s
-separation: float (*default= 4.0*)
-    s
-tolerance: float (*default= 2.0*)
-    s
-use2dhist: bool(*default= true*)
-    s
+searchrad: float (*default=125*)
+    The search radius for a match (in units of the tangent plane).
+
+separation: float (*default=4.0*)
+    The  minimum  separation in the tangent plane (in units of the tangent plane) for sources in the image and reference catalogs in order to be considered to be disctinct sources. Objects closer together than ``separation`` distance are removed from the image and reference coordinate catalogs prior to matching.
+
+tolerance: float (*default=2.0*)
+    The matching tolerance (in units of the tangent plane) after applying an initial solution derived from the ``triangles`` algorithm.
+
+use2dhist: bool(*default=true*)
+    Use 2D histogram to find initial offset?
 
 
 determine_fit_quality
 """""""""""""""""""""
 
-"MIN_CATALOG_THRESHOLD": 3,
-"MIN_OBSERVABLE_THRESHOLD": 4,
-    in use, if below, ends alignment and differs to a priori solution
+MIN_CATALOG_THRESHOLD": int (*default=3*)
 
-"MIN_CROSS_MATCHES": 3,
-"MIN_FIT_MATCHES": 4,
-"MAX_FIT_RMS": 20,
-"MAX_FIT_LIMIT": 150,
-"MAX_SOURCES_PER_CHIP": 250,
+    The minimum number of catalog sources required to continue fitting. If below this threshold, the code will return a fit_quality=5 and try with another catalog. 
+
+MIN_OBSERVABLE_THRESHOLD": int (*default=4*)
+
+    If the number of observed sourcse is below this threshold, the code ends alignment and defers to an *a priori* solution.
+
+MIN_CROSS_MATCHES": int (*default=3*)
+
+    Not currently in use. 
+
+MIN_FIT_MATCHES": int (*default=4*)
+
+    Not currently in use.
+
+MAX_FIT_RMS": float (*default=20*)
+
+    Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done. 
+
+MAX_FIT_LIMIT": int (*default=150*)
+
+    The maximum allowable RMS value for a fit to be considered good. If not, the fit is considered compromised.
+
+MAX_SOURCES_PER_CHIP: int (*default=250*)
 
     Maximum number of brightest sources per chip which will be used for cross-matching and fitting.
 
-"MAS_TO_ARCSEC": 1000,
-"GOOD_FIT_QUALITY_VALUES": [1, 2, 3, 4]
+MAS_TO_ARCSEC: float (*default=1000*)
+
+    Conversion factor from milliarcseconds to arcseconds.
+
+GOOD_FIT_QUALITY_VALUES: int (*default=[1, 2, 3, 4]*)
+
+    The fit_quality (see above) flag values that are allowable for a successful fit. 
