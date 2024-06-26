@@ -116,8 +116,8 @@ skywidth: float (*default=0.1*)
 skylower: float (*default=-100.0*)
     Lower limit of usable data for sky (always in electrons)
 
-sky_bits: int (*default="16"*)
-    nteger mask bit values considered good pixels in DQ array
+sky_bits: str (*default="16"*)
+    Integer mask bit values considered good pixels in DQ array
 
 skyupper: int or null (*default=null*)
     Upper limit of usable data for sky (always in electrons)
@@ -150,16 +150,16 @@ driz_separate : bool (*default=False*)
     This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.
 
 driz_sep_bits: int (*default="16"*)
-    Integer sum of all the DQ bit values from the input image's DQ array that should be considered 'good' when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of ``AstroDrizzle``, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the ``Bits`` Parameter for a more detailed discussion.
+    Integer sum of all the DQ bit values from the input image's DQ array that should be considered "good" when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of ``AstroDrizzle``, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the ``Bits`` Parameter for a more detailed discussion.
 
 driz_sep_kernel: str (*default="turbo"*)
-    Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are: 'square', 'point', 'turbo', 'gaussian', and 'lanczos3'. The latter two options ('gaussian' and 'lanczos3') are not guaranteed to conserve flux, but may produce reasonable results; understand the effects of these kernels before using them. A former option 'tophat' has been removed as it was found to produce poor results. See adrizzle.help for more details. 
+    Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are: "square", "point", "turbo", "gaussian", and "lanczos3". The latter two options ("gaussian" and "lanczos3") are not guaranteed to conserve flux, but may produce reasonable results; understand the effects of these kernels before using them. A former option "tophat" has been removed as it was found to produce poor results. See adrizzle.help for more details. 
 
 driz_sep_wt_scl: float (*default=exposure time (from image header)*)
-    This parameter specifies the weighting factor for input image. If ``driz_sep_wt_scl``\ =\ ``exptime``, then the scaling value will be set equal to the exposure time found in the image header. The use of the default value is recommended for producing optimal behavior for most scenarious. It is possible to set ``wt_scl``\ =\ 'expsq' for weighting by the square of the exposure time, which is optimal for read-noise dominated images.
+    This parameter specifies the weighting factor for input image. If ``driz_sep_wt_scl``\ =\ ``exptime``, then the scaling value will be set equal to the exposure time found in the image header. The use of the default value is recommended for producing optimal behavior for most scenarious. It is possible to set ``wt_scl``\ =\ "expsq" for weighting by the square of the exposure time, which is optimal for read-noise dominated images.
 
 driz_sep_pixfrac: float (*default=1.0*)
-    Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", of a pixel in units of the input pixel size. If ``pixfrac`` is set to less than 0.001, the kernel parameter will be reset to 'point' for more efficient processing. In the step of drizzling each input image onto a separate output image, the default value of 1.0 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the ``drizzle`` task.
+    Fraction by which input pixels are "shrunk" before being drizzled onto the output image grid, given as a real number between 0 and 1. This specifies the size of the footprint, or "dropsize", of a pixel in units of the input pixel size. If ``pixfrac`` is set to less than 0.001, the kernel parameter will be reset to "point" for more efficient processing. In the step of drizzling each input image onto a separate output image, the default value of 1.0 is best in order to ensure that each output drizzled image is fully populated with pixels from the input image. For more information, see the help for the ``drizzle`` task.
 
 .. null?!?!?!?!?
 
@@ -350,7 +350,7 @@ General
 """""""
 
 MIN_FIT_MATCHES: int (*default=4*)
-    Not currently in use. Value is added to the alignment_pars diictionary but not currently used. 
+    Not currently in use. Value is added to the alignment_pars dictionary but not currently used. 
 
 MAX_FIT_RMS: int (*default=20*)
     Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done. 
@@ -363,12 +363,10 @@ run_align (*primarily in align.py*)
 """""""""""""""""""""""""""""""""
 
 update_hdr_wcs: bool (*default=True*)
-    Not currently in use. Write newly computed WCS information to image image headers?
+    Not currently in use. Write newly computed WCS information to image headers?
 
 catalog_list: list of strings (*default = ["GAIAeDR3", "GSC242", "2MASS"]*)
-    Not currently in use. Set of astrometric catalogs which should be used as references for fitting the input images.  A
-    separate fit will be performed for each catalog specified. The catalog name will also be used
-    as part of the output ``WCSNAME`` value for the fit determined from that catalog.
+    Not currently in use. Set of astrometric catalogs which should be used as references for fitting the input images.  A separate fit will be performed for each catalog specified. The catalog name will also be used as part of the output ``WCSNAME`` value for the fit determined from that catalog.
 
 fit_algorithm_list_ngt1: list of strings (*default=["match_relative_fit", "match_2dhist_fit", "match_default_fit"]*)
     Not currently in use.
@@ -392,8 +390,7 @@ mosaic_fit_list: list of strings (*default=["match_relative_fit", "match_2dhist_
     List of available fit algorithms for aligning for both pipeline and SVM products; match_default_fit relative alignment without using 2dhist and different throusholds (see json configuration files).
 
 mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 6, "general": 6}*)
-    The different fit geometries tried in alignment as well as their minobj value, which specifies the number of fits required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of "rshift". 
-    This is specficed as a default for perform_fit() function in align_utils. The value for minobj, however, is used. 
+    The different fit geometries tried in alignment as well as their minobj value which specifies the number of matched sources required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of ``rshift``. The fitgeom for the pipeline products is specficed as a default in *align_utils.perform_fit*. The value for minobj, however, is used. 
 
 fit quality categories
 """"""""""""""""""""""
@@ -409,35 +406,35 @@ fit quality categories
     * 5 = Not valid solution
 
 
-generate_source_catalogs
-""""""""""""""""""""""""
+generate_source_catalogs (*primarily in align_utils.py*)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 box_size: int (*default = 13*)
-    s
+    The size of the box used for calculating the 2D Background of the catalog "white light" image along each axis in pixels. In nothing is specified, a default of BKG_BOX_SIZE=27 is used.  
 
 win_size: int (*default = 3*)
-    s
+    The size of the 2D filter to apply to the background of the catalog "white light" image. If nothing is specified, a default of BKG_FILTER_SIZE=3 is used.
 
 nsigma: float (*default = 3.0*)
-    s
+    The number of signma used for setting the level of the average background rms. If nothing is specified, a value of 5.0 is used.
 
 centering_mode: str (*default = "starfind"*)
-    s
+    Algorithm to use when computing the positions of the detected sources. Options are "segmentaton" or ``starfind``. Centering will only take place after ``threshold`` has been determined, and sources are identified using segmentation.  Centering using ``segmentation`` will rely on ``photutils.segmentation.SourceCatalog`` to generate the properties for the source catalog.  Centering using ``starfind`` will use ``photutils.detection.IRAFStarFinder`` to characterize each source in the catalog.
 
 bkg_estimator: str (*default = "MedianBackground"*)
-    s
+    Name of the algorithm to use for background calculation in *photutils.Background2D*.
 
 rms_estimator: str (*default = "StdBackgroundRMS"*)
-    s
+    Name of the rms estimation algorithm used by *photutils.Background2D*.
 
 num_sources: int (*default = 250*)
-    s
+    Not currently in use. Maximum number of brightest/faintest sources to return in catalog.
 
 deblend: bool (*default = false*)
-    s
+    Specify whether or not to apply photutils deblending algorithm when evaluating each of the identified segments (sources) from the chip.
 
 fwhmpsf: float (*default = 0.13*)
-    s
+    The full width at half maximum of the PSF.
 
 classify: bool (*default = false*)
     s
@@ -458,7 +455,7 @@ existing_wcs: bool (*default=null*)
 
 
 perform_fit
-"""""""""
+"""""""""""
 For match_relative_fit, match_default_fit, and match_2dhist_fit, the following parameters are used:
 
 fitgeom": "rshift",
