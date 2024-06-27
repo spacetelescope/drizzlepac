@@ -23,6 +23,16 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Modify the dependencies portion of the project.toml file to specify
   numpy<2.0 [#1813]
 
+- Reverted #1798 until further testing is done with Photutils.
+
+- Corrected the way that the number of constituent images are accumulated
+  per pixel by ensuring each contributing pixel has a finite value and 
+  is not zero. [#1820]
+
+- Within the HAP configuration files, increased the minimum number of matches 
+  for a successful "rscale" fit from 6 to 10, and removed "shift" as a fit geometry 
+  option. [#1823].
+
 - Removed the use of a custom smoothing kernel based upon actual image
   data as a poorly determined kernel can ultimately cause poor source
   position determination.  The default kernel has been set to a
@@ -78,8 +88,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Improved calculation of S_REGION using dialation and erosion. [#1762]
 
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
-
-- resolved ``AstropyDeprecationWarning`` s [#1798]
+  
 
 3.7.0 (02-Apr-2024)
 ===================
