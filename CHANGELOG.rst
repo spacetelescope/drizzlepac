@@ -24,9 +24,9 @@ number of the code change for that issue.  These PRs can be viewed at:
   per pixel by ensuring each contributing pixel has a finite value and 
   is not zero. [#1820]
 
-- Changed HAP configuration files to use "rshift" as opposed to "rscale",
-  increased the minimum number of matches from 6 to 10, and removed "shift"
-  as a fit geometry option. [#1823].
+- Within the HAP configuration files, increased the minimum number of matches 
+  for a successful "rscale" fit from 6 to 10, and removed "shift" as a fit geometry 
+  option. [#1823].
 
 - Removed the use of a custom smoothing kernel based upon actual image
   data as a poorly determined kernel can ultimately cause poor source
