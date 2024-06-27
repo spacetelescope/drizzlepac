@@ -29,7 +29,8 @@ from pathlib import Path
 """
 
 POLLER_FILE = "wfc3_bqk_07_input.out"
-WCS_SUB_NAME = "HSC30"
+WCS_IR_SUB_NAME = "HSC30"
+WCS_UVIS_SUB_NAME = "FIT_SVM_GAIA"
 expected_total_point_sources = {
 "hst_12557_07_wfc3_ir_total_ibqk07_point-cat.ecsv": 2,
 "hst_12557_07_wfc3_uvis_total_ibqk07_point-cat.ecsv": 13}
@@ -183,7 +184,7 @@ def test_svm_wcs_ir(gather_output_data):
     # Check the WCS solution is as expected
     wcsname = fits.getval(tdp_files[0], "WCSNAME", ext=1).upper()
     print("\ntest_svm_wcs_ir.  WCSNAME: {} Output file: {}".format(wcsname, tdp_files[0]))
-    assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp_files[0]}."
+    assert WCS_IR_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp_files[0]}."
 
 
 def test_svm_wcs_ir_all(gather_output_data):
@@ -203,7 +204,7 @@ def test_svm_wcs_uvis(gather_output_data):
     # Check the WCS solution is as expected
     wcsname = fits.getval(tdp_files[0], "WCSNAME", ext=1).upper()
     print("\ntest_svm_wcs_uvis.  WCSNAME: {} Output file: {}".format(wcsname, tdp_files[0]))
-    assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp_files[0]}."
+    assert WCS_UVIS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp_files[0]}."
 
 
 def test_svm_wcs_uvis_all(gather_output_data):
