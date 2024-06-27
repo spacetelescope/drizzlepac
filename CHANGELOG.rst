@@ -26,6 +26,10 @@ number of the code change for that issue.  These PRs can be viewed at:
   per pixel by ensuring each contributing pixel has a finite value and 
   is not zero. [#1820]
 
+- Within the HAP configuration files, increased the minimum number of matches 
+  for a successful "rscale" fit from 6 to 10, and removed "shift" as a fit geometry 
+  option. [#1823].
+
 - Removed the use of a custom smoothing kernel based upon actual image
   data as a poorly determined kernel can ultimately cause poor source
   position determination.  The default kernel has been set to a
