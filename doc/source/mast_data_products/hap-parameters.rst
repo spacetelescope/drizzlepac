@@ -360,7 +360,7 @@ MAX_SOURCES_PER_CHIP: int (*default=250*)
 
 
 run_align (*primarily in align.py*)
-"""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""
 
 update_hdr_wcs: bool (*default=True*)
     Not currently in use. Write newly computed WCS information to image headers?
