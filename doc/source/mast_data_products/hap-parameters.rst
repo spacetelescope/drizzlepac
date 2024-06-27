@@ -389,8 +389,8 @@ mosaic_catalog_list: list of strings (*default=["GAIAeDR3", "GSC242", "2MASS"]*)
 mosaic_fit_list: list of strings (*default=["match_relative_fit", "match_2dhist_fit", "match_default_fit"]*)
     List of available fit algorithms for aligning for both pipeline and SVM products; match_default_fit relative alignment without using 2dhist and different throusholds (see json configuration files).
 
-mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 6, "general": 6}*)
-    The different fit geometries tried in alignment as well as their minobj value which specifies the number of matched sources required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of ``rshift``. The fitgeom for the pipeline products is specified as a default in *align_utils.perform_fit*. The value for minobj, however, is used. 
+mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 10, "general": 6}*)
+    The different fit geometries tried in alignment as well as their minobj value which specifies the number of matched sources required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of ``rscale``. The fitgeom for the pipeline products is specified as a default in *align_utils.perform_fit*. The value for minobj specified here, however, is used for the pipeline products. 
 
 fit quality categories
 """"""""""""""""""""""
@@ -437,7 +437,7 @@ fwhmpsf: float (*default=0.13*)
     The full width at half maximum of the PSF in arcseconds used for the starfind algorithm.
 
 classify: bool (*default=false*)
-    Not currently in use as cosmic rays are being removed before segmentation now. Specifies whether or not to apply photutils classification algorithm when evaluating each of the identified segments (sources) from the chip.
+    Not currently in use as cosmic rays are being removed before segmentation. Specifies whether or not to apply photutils classification algorithm when evaluating each of the identified segments (sources) from the chip.
 
 threshold: float (*default=-1.1*)
     Value from the image which serves as the limit for determining sources. If None, compute a default value of (background+5*rms(background)). If threshold < 0.0, use absolute value as scaling factor for default value. If nothing is specified a default value of None is used to compute the background. 
@@ -490,7 +490,7 @@ MIN_FIT_MATCHES": int (*default=4*)
     Not currently in use.
 
 MAX_FIT_RMS": float (*default=20*)
-    Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done. 
+    Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done with this parameter. 
 
 MAX_FIT_LIMIT": int (*default=150*)
     The maximum allowable RMS value for a fit to be considered good. If not, the fit is considered compromised.
