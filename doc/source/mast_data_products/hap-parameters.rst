@@ -63,10 +63,10 @@ rnkeyword: str (*default="READNSEA,READNSEB,READNSEC,READNSED"*)
     Keyword used to specify a value, which is used to override the instrument specific default readnoise values. The value is assumed to be in units of electrons. This parameter should not be populated if the ``rdnoise`` parameter is in use.
 
 expkeyword: str (*default="EXPTIME"*)
-    Keyword used to specify a value, which is used to override the default exposure time image header values.  The value is assumed to be in units of seconds. This parameter should not be populated if the ``exptime`` parameter is in use.
+    Keyword used to specify a value, which is used to override the default exposure time image header values. The value is assumed to be in units of seconds. This parameter should not be populated if the ``exptime`` parameter is in use.
 
 gain: str (*default=""*)
-    Value used to override instrument specific default gain values. The value is assumed to be in units of electrons/count.  This parameter should not be populated if the ``gainkeyword`` parameter is in use.
+    Value used to override instrument specific default gain values. The value is assumed to be in units of electrons/count. This parameter should not be populated if the ``gainkeyword`` parameter is in use.
 
 rdnoise: str (*default=""*)
     Value used to override instrument specific default readnoise values. The value is assumed to be in units of electrons. This parameter should not be populated if the ``rnkeyword`` parameter is in use.
@@ -173,28 +173,28 @@ Step 3a: Custom WCS for Separate Outputs
 """"""""""""""""""""""""""""""""""""""""
 
 driz_sep_wcs: bool (*default=False*)
-    Define custom WCS for seperate output images?
+    Define custom WCS for separate output images?
 
 driz_sep_refimage: str (*default=""*)
     Reference image from which a WCS solution can be obtained.
 
 driz_sep_rot : float or null (*default=null*)
-    Position Angle of output image's Y-axis relative to North.  A value of 0.0 would orient the final output image to be North up.  The default of ``INDEF`` specifies that the images will not be rotated,  but will instead be drizzled in the default orientation for the camera  with the x and y axes of the drizzled image corresponding approximately  to the detector axes. This conserves disk space, as these single  drizzled images are only used in the intermediate step of creating  a median image.
+    Position Angle of output image's Y-axis relative to North. A value of 0.0 would orient the final output image to be North up. The default of ``INDEF`` specifies that the images will not be rotated, but will instead be drizzled in the default orientation for the camera with the x and y axes of the drizzled image corresponding approximately to the detector axes. This conserves disk space, as these single drizzled images are only used in the intermediate step of creating a median image.
 
 driz_sep_scale : float or null (*default=null*)
-    Linear size of the output pixels in arcseconds/pixel for each separate  drizzled image (used in creating the median for cosmic ray rejection).  The default value of ``INDEF`` specifies that the undistorted pixel  scale for the first input image will be used as the pixel scale for  all the output images.
+    Linear size of the output pixels in arcseconds/pixel for each separate drizzled image (used in creating the median for cosmic ray rejection). The default value of ``INDEF`` specifies that the undistorted pixel scale for the first input image will be used as the pixel scale for all the output images.
 
 driz_sep_outnx : int or null (*default=null*)
-    Size, in pixels, of the X axis in the output images that each input  will be drizzled onto. If no value is specified, the smallest size that  can accommodate the full dithered field will be used.
+    Size, in pixels, of the X axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 driz_sep_outny : int or null (*default=null*)
-    Size, in pixels, of the Y axis in the output images that each input  will be drizzled onto. If no value is specified, the smallest size  that can accommodate the full dithered field will be used.
+    Size, in pixels, of the Y axis in the output images that each input will be drizzled onto. If no value is specified, the smallest size that can accommodate the full dithered field will be used.
 
 driz_sep_ra : float or null (*default=null*)
-    Right ascension (in decimal degrees) specifying the center of the output  image. If this value is not designated, the center will automatically  be calculated based on the distribution of image dither positions.
+    Right ascension (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 driz_sep_dec : float or null (*default=null*)
-    Declination (in decimal degrees) specifying the center of the output  image. If this value is not designated, the center will automatically  be calculated based on the distribution of image dither positions.
+    Declination (in decimal degrees) specifying the center of the output image. If this value is not designated, the center will automatically be calculated based on the distribution of image dither positions.
 
 driz_sep_crpix1: float or null (*default=null*)
     Reference pixel X position on output (CRPIX1).
@@ -366,7 +366,7 @@ update_hdr_wcs: bool (*default=True*)
     Not currently in use. Write newly computed WCS information to image headers?
 
 catalog_list: list of strings (*default=["GAIAeDR3", "GSC242", "2MASS"]*)
-    Not currently in use. Set of astrometric catalogs which should be used as references for fitting the input images.  A separate fit will be performed for each catalog specified. The catalog name will also be used as part of the output ``WCSNAME`` value for the fit determined from that catalog.
+    Not currently in use. Set of astrometric catalogs which should be used as references for fitting the input images. A separate fit will be performed for each catalog specified. The catalog name will also be used as part of the output ``WCSNAME`` value for the fit determined from that catalog.
 
 fit_algorithm_list_ngt1: list of strings (*default=["match_relative_fit", "match_2dhist_fit", "match_default_fit"]*)
     Not currently in use.
@@ -390,7 +390,7 @@ mosaic_fit_list: list of strings (*default=["match_relative_fit", "match_2dhist_
     List of available fit algorithms for aligning for both pipeline and SVM products; match_default_fit relative alignment without using 2dhist and different throusholds (see json configuration files).
 
 mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 6, "general": 6}*)
-    The different fit geometries tried in alignment as well as their minobj value which specifies the number of matched sources required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of ``rshift``. The fitgeom for the pipeline products is specficed as a default in *align_utils.perform_fit*. The value for minobj, however, is used. 
+    The different fit geometries tried in alignment as well as their minobj value which specifies the number of matched sources required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of ``rshift``. The fitgeom for the pipeline products is specified as a default in *align_utils.perform_fit*. The value for minobj, however, is used. 
 
 fit quality categories
 """"""""""""""""""""""
@@ -410,7 +410,7 @@ generate_source_catalogs (*primarily in align_utils.py*)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 box_size: int (*default=13*)
-    The size of the box used for calculating the 2D Background of the catalog "white light" image along each axis in pixels. In nothing is specified, a default of BKG_BOX_SIZE=27 is used.  
+    The size of the box used for calculating the 2D Background of the catalog "white light" image along each axis in pixels. In nothing is specified, a default of BKG_BOX_SIZE=27 is used. 
 
 win_size: int (*default=3*)
     The size of the 2D filter to apply to the background of the catalog "white light" image. If nothing is specified, a default of BKG_FILTER_SIZE=3 is used.
@@ -419,7 +419,7 @@ nsigma: float (*default=3.0*)
     The number of signma used for setting the level of the average background rms. If nothing is specified, a value of 5.0 is used.
 
 centering_mode: str (*default="starfind"*)
-    Algorithm to use when computing the positions of the detected sources. Options are "segmentaton" or ``starfind``. Centering will only take place after ``threshold`` has been determined, and sources are identified using segmentation.  Centering using ``segmentation`` will rely on ``photutils.segmentation.SourceCatalog`` to generate the properties for the source catalog.  Centering using ``starfind`` will use ``photutils.detection.IRAFStarFinder`` to characterize each source in the catalog.
+    Algorithm to use when computing the positions of the detected sources. Options are "segmentaton" or ``starfind``. Centering will only take place after ``threshold`` has been determined, and sources are identified using segmentation. Centering using ``segmentation`` will rely on ``photutils.segmentation.SourceCatalog`` to generate the properties for the source catalog. Centering using ``starfind`` will use ``photutils.detection.IRAFStarFinder`` to characterize each source in the catalog.
 
 bkg_estimator: str (*default="MedianBackground"*)
     Name of the algorithm to use for background calculation in *photutils.Background2D*.
@@ -458,14 +458,14 @@ perform_fit (*primarily external in tweakwcs.matchutils.XYXYMatch*)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 For match_relative_fit, match_default_fit, and match_2dhist_fit, the following parameters are used:
 
-fitgeom": "rshift",
+fitgeom": "rscale",
     As used above, this is ignored for pipeline products. 
 
 searchrad: float (*default=125*)
     The search radius for a match (in units of the tangent plane).
 
 separation: float (*default=4.0*)
-    The  minimum  separation in the tangent plane (in units of the tangent plane) for sources in the image and reference catalogs in order to be considered to be disctinct sources. Objects closer together than ``separation`` distance are removed from the image and reference coordinate catalogs prior to matching.
+    The minimum separation in the tangent plane (in units of the tangent plane) for sources in the image and reference catalogs in order to be considered to be distinct sources. Objects closer together than ``separation`` distance are removed from the image and reference coordinate catalogs prior to matching.
 
 tolerance: float (*default=2.0*)
     The matching tolerance (in units of the tangent plane) after applying an initial solution derived from the ``triangles`` algorithm.
@@ -478,37 +478,28 @@ determine_fit_quality
 """""""""""""""""""""
 
 MIN_CATALOG_THRESHOLD": int (*default=3*)
-
     The minimum number of catalog sources required to continue fitting. If below this threshold, the code will return a fit_quality=5 and try with another catalog. 
 
 MIN_OBSERVABLE_THRESHOLD": int (*default=4*)
-
-    If the number of observed sourcse is below this threshold, the code ends alignment and defers to an *a priori* solution.
+    If the number of observed sources is below this threshold, the code ends alignment and defers to an *a priori* solution.
 
 MIN_CROSS_MATCHES": int (*default=3*)
-
     Not currently in use. 
 
 MIN_FIT_MATCHES": int (*default=4*)
-
     Not currently in use.
 
 MAX_FIT_RMS": float (*default=20*)
-
     Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done. 
 
 MAX_FIT_LIMIT": int (*default=150*)
-
     The maximum allowable RMS value for a fit to be considered good. If not, the fit is considered compromised.
 
 MAX_SOURCES_PER_CHIP: int (*default=250*)
-
     Maximum number of brightest sources per chip which will be used for cross-matching and fitting.
 
 MAS_TO_ARCSEC: float (*default=1000*)
-
     Conversion factor from milliarcseconds to arcseconds.
 
 GOOD_FIT_QUALITY_VALUES: int (*default=[1, 2, 3, 4]*)
-
     The fit_quality (see above) flag values that are allowable for a successful fit. 
