@@ -16,7 +16,7 @@
       "MAX_FIT_LIMIT": 150,
       "mosaic_catalog_list": ["GAIAeDR3", "GSC242", "2MASS"],
       "mosaic_fit_list": ["match_relative_fit", "match_2dhist_fit", "match_default_fit"],
-        "mosaic_fitgeom_list": {"rshift": 10, "rscale": 6, "general": 6}
+        "mosaic_fitgeom_list": {"rshift": 10, "rscale": 10, "general": 6}
     },
   "generate_source_catalogs":
     {
@@ -39,7 +39,7 @@
     },
   "match_relative_fit":
     {
-      "fitgeom": "rshift",
+      "fitgeom": "rscale",
       "searchrad": 125,
       "separation": 4.0,
       "tolerance": 2.0,
@@ -47,7 +47,7 @@
     },
   "match_default_fit":
     {
-      "fitgeom": "rshift",
+      "fitgeom": "rscale",
       "searchrad": 250,
       "separation": 0.1,
       "tolerance": 10,
@@ -55,7 +55,7 @@
     },
   "match_2dhist_fit":
     {
-      "fitgeom": "rshift",
+      "fitgeom": "rscale",
       "searchrad": 250,
       "separation": 4.0,
       "tolerance": 2,

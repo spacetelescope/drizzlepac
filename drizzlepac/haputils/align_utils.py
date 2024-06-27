@@ -300,7 +300,7 @@ class AlignmentTable:
         return list(self.fit_methods.keys())
 
     def perform_fit(self, method_name, catalog_name, reference_catalog,
-                    fitgeom='rshift'):
+                    fitgeom='rscale'):
         """Perform fit using specified method, then determine fit quality
 
         This method populates the ``fit_dict`` table with the results of the
