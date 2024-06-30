@@ -50,6 +50,7 @@ dependencies = [
     "tables",
     "typing_extensions>4.0",
     "markupsafe<=2.0.1",
+    "numpy<2.0",
 ]
 dynamic = [
     "version",
