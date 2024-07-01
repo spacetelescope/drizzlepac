@@ -75,6 +75,17 @@ The first WCS solution listed, OPUS, corresponds to the default WCS defined by t
 
 Additional WCS solutions will then be based on either the original **OPUS** WCS or the distortion-corrected **IDC_** WCS solutions.  Two types of solutions can be defined for images; namely, *a priori* and *a posteriori* solutions.
 
+
+Alignment Animation
+^^^^^^^^^^^^^^^^^^^
+.. raw:: html
+
+    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto; margin-bottom: 2em;">
+        <iframe src="https://www.youtube.com/embed/nLB58xwFbW4?si=svXZtqoTu-JtRhnS&amp" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+    </div>
+
+
+
 a priori solutions
 ^^^^^^^^^^^^^^^^^^
 The *a priori* solutions have been determined for **ALL HST data** by correcting the coordinates of the guide stars that were used from the originally specified coordinates to the coordinates of those guide stars as determined by GAIA.  The naming convention for these *a priori* solutions are::
