@@ -30,13 +30,13 @@ from pathlib import Path
 
 POLLER_FILE = "wfc3_byt_50_input.out"
 WCS_UVIS_SUB_NAME = "FIT_SVM_GAIA"
-WCS_IR_SUB_NAME = "FIT_SVM_GSC242"
+WCS_IR_SUB_NAME = "FIT_SVM_GAIA"
 expected_total_point_sources = {
-"hst_13023_50_wfc3_ir_total_ibyt50_point-cat.ecsv": 122,
-"hst_13023_50_wfc3_uvis_total_ibyt50_point-cat.ecsv": 105}
+"hst_13023_50_wfc3_ir_total_ibyt50_point-cat.ecsv": 118,
+"hst_13023_50_wfc3_uvis_total_ibyt50_point-cat.ecsv": 100}
 expected_total_segment_sources = {
-"hst_13023_50_wfc3_ir_total_ibyt50_segment-cat.ecsv": 107,
-"hst_13023_50_wfc3_uvis_total_ibyt50_segment-cat.ecsv": 415}
+"hst_13023_50_wfc3_ir_total_ibyt50_segment-cat.ecsv": 120,
+"hst_13023_50_wfc3_uvis_total_ibyt50_segment-cat.ecsv": 300}
 tolerance = 0.25
 
 
