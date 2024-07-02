@@ -23,7 +23,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Reverted #1798 until further testing is done with Photutils.
 
 - ``manageInputCopies`` now copies successfully even if the original files were
-defined by full paths rather than being in the current working directory. [#1835]
+  defined by full paths rather than being in the current working directory. [#1835]
 
 - Corrected the way that the number of constituent images are accumulated
   per pixel by ensuring each contributing pixel has a finite value and
