@@ -2,7 +2,7 @@
 if (utils.scm_checkout()) return
 
 // Select a tree on Artifactory to provide input and truth data
-artifactory_env = "dev"
+artifactory_env = "numpy2.0"
 if (env.ARTIFACTORY_ENV) {
     artifactory_env = env.ARTIFACTORY_ENV
 }
