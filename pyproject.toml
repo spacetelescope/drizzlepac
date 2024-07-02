@@ -50,7 +50,7 @@ dependencies = [
     "tables",
     "typing_extensions>4.0",
     "markupsafe<=2.0.1",
-    "numpy>2.0",
+    "numpy>=2.0.0",
 ]
 dynamic = [
     "version",
@@ -99,7 +99,7 @@ requires = [
     "setuptools>=61",
     "setuptools_scm[toml]>=3.4",
     "wheel",
-    "numpy>=2.0.0rc2",
+    "numpy>=2.0.0",
     "astropy>=5.0.4",
     "markupsafe<=2.0.1",
 ]
