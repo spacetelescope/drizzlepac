@@ -73,7 +73,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
     createOutwcs : bool
         whether of not to update the output WCS infomation
     overwrite_dict: dict
-        dictionary of user input paramters to overwrite in configObj 
+        dictionary of user input paramters to overwrite in configObj
         (needed in particular for using mdriztab=True option)
 
     Notes
@@ -655,14 +655,14 @@ def _process_input_wcs_single(fname, wcskey, updatewcs):
         wcscorr.init_wcscorr(fname)
 
 
-def buildFileList(input, output=None, 
+def buildFileList(input, output=None,
                 wcskey=None, updatewcs=True, **workinplace):
     """
     Builds a file list which has undergone various instrument-specific
     checks for input to MultiDrizzle, including splitting STIS associations.
     """
     newfilelist, ivmlist, output, oldasndict, filelist = \
-        buildFileListOrig(input=input, output=output, 
+        buildFileListOrig(input=input, output=output,
                     wcskey=wcskey, updatewcs=updatewcs, **workinplace)
     return newfilelist, ivmlist, output, oldasndict
 
@@ -924,8 +924,8 @@ def manageInputCopies(filelist, **workinplace):
     # check to see if copies already exist for each file
     for fname in filelist:
         copymade = False # If a copy is made, no need to restore
-        copyname = os.path.join(origdir,fname)
-        short_copyname = os.path.join('OrIg_files',fname)
+        copyname = os.path.join(origdir, os.path.basename(fname))
+        short_copyname = os.path.join('OrIg_files', os.path.basename(fname))
         if workinplace['overwrite']:
             print('Forcibly archiving original of: ',fname, 'as ',short_copyname)
             # make a copy of the file in the sub-directory
