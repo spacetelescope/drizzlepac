@@ -20,7 +20,8 @@ from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 from astropy.modeling import models, fitting
 
-from photutils import background, DAOStarFinder
+from photutils import background
+from photutils.detection import DAOStarFinder
 from photutils.background import Background2D
 from photutils.utils import NoDetectionsWarning
 
