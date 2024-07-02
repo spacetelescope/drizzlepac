@@ -78,7 +78,8 @@ Additional WCS solutions will then be based on either the original **OPUS** WCS 
 
 Alignment Animation
 ^^^^^^^^^^^^^^^^^^^
-.. image:: ../images/aligning_visualization.gif
+.. image:: https://ssb.stsci.edu/alignment/aligning_visualization.gif
+  :alt: drizzlepac-alignment
 
 
 
