@@ -11,7 +11,7 @@ from astropy.io import fits as fits
 from astropy.table import Table
 import numpy as np
 import pyds9
-import pdb
+# import pdb
 bit_list = [0, 1, 2, 4, 8, 16, 32, 64, 128]
 flag_meanings = ['Point Source', 'Extended Source', 'Single-Pixel Saturation', 'Multi-Pixel Saturation',
                  'Faint Magnitude Limit', 'Hot Pixel', 'Swarm Detection', 'Edge and Chip Gap',
