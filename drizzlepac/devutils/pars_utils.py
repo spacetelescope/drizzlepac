@@ -1,5 +1,5 @@
 import os
-import drizzlepac
+# import drizzlepac
 from stsci.tools import teal
 import json
 

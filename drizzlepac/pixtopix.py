@@ -92,10 +92,9 @@
                 output="xy_flt1.dat")
 
 """
-import os
 import numpy as np
 
-from stsci.tools import fileutil, teal
+from stsci.tools import fileutil
 from stwcs import wcsutil, distortion
 from . import wcs_functions
 from . import util

@@ -28,7 +28,7 @@ as well to fully setup all inputs for use with the rest of the MultiDrizzle
 steps either as stand-alone tasks or internally to MultiDrizzle itself.
 
 """
-import datetime
+# import datetime
 import os
 import shutil
 import string

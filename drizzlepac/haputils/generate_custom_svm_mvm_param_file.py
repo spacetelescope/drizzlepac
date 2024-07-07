@@ -37,14 +37,14 @@ Python USAGE:
 
 import argparse
 import datetime
-import json
+# import json
 import logging
 import os
 import sys
 import traceback
 
 from drizzlepac.haputils import config_utils
-from drizzlepac.haputils import ci_table
+# from drizzlepac.haputils import ci_table
 from drizzlepac.haputils import poller_utils
 
 from stsci.tools import logutil

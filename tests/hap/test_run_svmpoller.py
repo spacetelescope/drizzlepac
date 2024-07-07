@@ -3,12 +3,12 @@
     the Single Visit Mosaic pipeline.
     """
 import datetime
-import glob
+# import glob
 import os
 import shutil
-import sys
+# import sys
 import traceback
-import numpy as np
+# import numpy as np
 import pytest
 
 from astropy.io import ascii

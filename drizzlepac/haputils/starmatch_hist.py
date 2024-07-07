@@ -26,7 +26,7 @@ from scipy.ndimage.morphology import generate_binary_structure
 import astropy.io.fits as pyfits
 from astropy.table import Table
 
-from drizzlepac import util
+# from drizzlepac import util
 from drizzlepac.haputils import infrot
 from stsci.tools import logutil
 

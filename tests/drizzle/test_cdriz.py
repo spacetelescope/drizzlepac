@@ -1,5 +1,5 @@
 import pytest
-import os
+# import os
 import numpy as np
 import cdriz_setup
 

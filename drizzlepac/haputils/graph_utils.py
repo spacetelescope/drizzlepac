@@ -1,18 +1,18 @@
 """ Definition of Class to handle HAP SVM Bokeh Graphics
 
 """
-import logging
+# import logging
 import sys
-import os
-import traceback
-import shutil
+# import os
+# import traceback
+# import shutil
 
 from stsci.tools import logutil
-from astropy.io import fits
+# from astropy.io import fits
 import numpy as np
 
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, Label, Circle, Range1d
+from bokeh.models import Range1d
 from bokeh.models.tools import HoverTool
 from bokeh.core.properties import value
 

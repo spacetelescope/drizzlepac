@@ -34,20 +34,20 @@ Dependencies
 * ci_table.py
 """
 import os
-import string
+# import string
 import sys
-import pdb
+# import pdb
 import glob
 import time
-import shutil
+# import shutil
 import math
 import numpy
-import datetime
-import itertools
-import scipy
+# import datetime
+# import itertools
+# import scipy
 
 import astropy.io.fits as pyfits
-from astropy.table import Table
+# from astropy.table import Table
 new_table = pyfits.BinTableHDU.from_columns
 if not hasattr(pyfits,'__version__'):
     pyfits.__version__ = '1.3'
@@ -57,7 +57,7 @@ getdata = pyfits.getdata
 
 # import pywcs
 from stwcs import wcsutil
-from scipy import spatial
+# from scipy import spatial
 
 from drizzlepac.haputils import ci_table
 from drizzlepac import util

@@ -9,11 +9,11 @@ Interfaces to main drizzle functions.
 import os
 import copy
 import time
-import platform
+# import platform
 from . import util
 import numpy as np
 from astropy.io import fits
-from stsci.tools import fileutil, logutil, mputil, teal
+from stsci.tools import fileutil, logutil, mputil
 from . import outputimage, wcs_functions
 import stwcs
 from stwcs import distortion

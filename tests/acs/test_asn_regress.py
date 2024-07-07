@@ -1,7 +1,7 @@
-import os
+# import os
 
 from stsci.tools import teal
-import drizzlepac
+# import drizzlepac
 from drizzlepac import astrodrizzle
 
 from ..resources import BaseACS

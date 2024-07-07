@@ -13,17 +13,17 @@ import os, sys
 
 import numpy as np
 
-from stsci.tools import fileutil, teal, logutil
+from stsci.tools import fileutil, logutil
 from stsci.tools.bitmask import interpret_bit_flags
 import stsci.imagestats as imagestats
 
 from stsci.skypac.skymatch import skymatch
-from stsci.skypac.utils import MultiFileLog, ResourceRefCount, ext2str, \
+from stsci.skypac.utils import MultiFileLog, ext2str, \
      file_name_components, in_memory_mask, temp_mask_file, openImageEx
 from stsci.skypac.parseat import FileExtMaskInfo, parse_at_file
 
 from . import processInput
-from .imageObject import imageObject
+# from .imageObject import imageObject
 
 from . import util
 from . import __version__

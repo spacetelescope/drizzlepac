@@ -49,7 +49,7 @@ import traceback
 
 from astropy.io import ascii
 
-from astropy.table import Table
+# from astropy.table import Table
 import numpy as np
 import drizzlepac
 

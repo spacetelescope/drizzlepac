@@ -8,8 +8,8 @@ vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 ai :
 """
 import math
 import os
-import pdb
-import sys
+# import pdb
+# import sys
 import numpy as np
 from astropy.io import fits
 import requests

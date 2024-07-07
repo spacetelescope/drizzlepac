@@ -14,7 +14,6 @@ the "aligned" (to the new drizzled WCS) image coordinates.
 :License: :doc:`/LICENSE`
 
 """
-import os
 import string
 from datetime import date
 
@@ -30,7 +29,6 @@ from stsci.skypac.parseat import parse_cs_line
 
 
 from . import updatehdr
-from . import linearfit
 from . import util
 from . import __version__
 

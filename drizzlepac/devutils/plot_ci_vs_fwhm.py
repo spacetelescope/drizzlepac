@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-import pdb
+# import pdb
 
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table, vstack

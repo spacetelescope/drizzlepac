@@ -22,7 +22,7 @@ import stwcs
 from stwcs.distortion import utils
 from stwcs.wcsutil import wcscorr
 from stwcs.wcsutil import headerlet
-from stwcs.wcsutil import altwcs
+# from stwcs.wcsutil import altwcs
 from stsci.tools import fileutil as fu
 from stsci.stimage import xyxymatch
 from stsci.tools import logutil, textutil

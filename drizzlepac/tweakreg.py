@@ -6,11 +6,10 @@
 
 """
 import os
-import sys
 import numpy as np
 from copy import copy
 
-from stsci.tools import parseinput, teal
+from stsci.tools import teal
 from stsci.tools import logutil, textutil
 from stsci.tools.cfgpars import DuplicateKeyError
 from stwcs import updatewcs

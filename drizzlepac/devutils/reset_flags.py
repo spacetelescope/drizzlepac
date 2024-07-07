@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import fileinput
-import pdb
+# import pdb
 import sys
 """Simple little script to reset source flags in the last column of HLA classic and HAP sorucelists to zero"""
 

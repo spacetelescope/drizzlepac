@@ -1,7 +1,7 @@
 import pexpect
 import os
 import sys
-import re
+# import re
 import time
 
 acs_filter_dict = {'WFC': ['f435w', 'f475w', 'f555w', 'f606w', 'f625w',

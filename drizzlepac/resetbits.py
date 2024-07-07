@@ -62,8 +62,6 @@ EXAMPLES
         >>> resetbits.reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
 
 """
-import os
-import numpy as np
 
 from stsci.tools import stpyfits as fits
 from stsci.tools import parseinput, logutil
