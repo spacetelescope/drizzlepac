@@ -102,7 +102,10 @@ class BasePipeline:
             else:  # Download from FTP, if applicable
                 refname = os.path.join(ref_file)
                 if self.use_ftp_crds:
-                    download_crds(refname, self.timeout)
+                    if isinstance(refname, str):
+                        download_crds(refname, timeout = self.timeout)
+                    else:
+                        raise TypeError("Expected string, got {}".format(type(refname)))
         return filename
 
 
