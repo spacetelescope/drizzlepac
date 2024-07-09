@@ -113,7 +113,7 @@ class BaseCal:
             else:  # Download from FTP, if applicable
                 refname = os.path.join(ref_file)
                 if self.use_ftp_crds:
-                    download_crds(refname, self.timeout)
+                    download_crds(refname)
         return filename
 
     def compare_outputs(self, outputs, raise_error=True):
