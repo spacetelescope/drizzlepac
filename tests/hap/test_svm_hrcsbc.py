@@ -4,7 +4,6 @@
 import datetime
 import glob
 import os
-import sys
 import pytest
 import numpy as np
 
@@ -12,8 +11,6 @@ from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runsinglehap
 from astropy.io import fits, ascii
 from pathlib import Path
-from stsci.tools import logutil
-log = logutil.create_logger('test_svm_point_total_cat', level=logutil.logging.INFO, stream=sys.stdout)
 
 """
     test_svm_demo.py
@@ -136,9 +133,6 @@ def svm_setup(gather_data_for_processing):
     print(str(current_dt))
     print("\nsvm_setup fixture")
 
-    pstate = np._get_promotion_state()
-    log.info(f'numpy promotion state: {pstate}')
-    
     # Read the "poller file" and download the input files, as necessary
     input_names = gather_data_for_processing
 
