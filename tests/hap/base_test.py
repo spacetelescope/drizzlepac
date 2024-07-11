@@ -98,7 +98,7 @@ class BaseHLATest(BaseTest):
 
                     # Download from FTP, if applicable
                     if self.use_ftp_crds:
-                        download_crds(ref_file, timeout=self.timeout)
+                        download_crds(ref_file)
         return filenames
 
 # Pytest function to support the parameterization of these classes
