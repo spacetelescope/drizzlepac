@@ -45,7 +45,8 @@ bc2.nodetype = 'linux'
 bc2.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
 bc2.conda_packages = ['python=3.11']
 bc2.build_cmds = ["pip install numpy astropy pytest-cov ci-watson || true",
-                 "pip install -r requirements-dev.txt --upgrade -e '.[test]' || true",
+                 "pip install --upgrade -e '.[test]' || true",
+                 "pip install -r requirements-dev.txt' || true",
                  "pip freeze || true"]
 bc2.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata || true",
                  "${codecov_install}",
