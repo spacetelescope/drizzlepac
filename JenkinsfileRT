@@ -52,14 +52,14 @@ bc3.conda_packages = ['python=3.12']
 
 // Test 4 ///////////////////////////
 bc4 = new BuildConfig()
-bc4.name = '3.11-dev'
 bc4.nodetype = 'linux'
 bc4.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
+bc4.name = '3.11-dev'
 bc4.conda_packages = ['python=3.11']
 bc4.build_cmds = ["pip install numpy astropy pytest-cov ci-watson || true",
-                 "pip install --upgrade -e '.[test]' || true",
-                 "pip install -r requirements-dev.txt || true",
-                 "pip freeze || true"]
+                "pip install --upgrade -e '.[test]' || true",
+                "pip install -r requirements-dev.txt || true",
+                "pip freeze || true"]
 bc4.test_cmds = ["pytest --env=${artifactory_env} --cov=./ --basetemp=tests_output --junitxml=results.xml --bigdata || true",
                  "${codecov_install}",
                  "./codecov || true"]
@@ -71,4 +71,4 @@ bc4.failedFailureThresh = 1000
 // Iterate over configurations that define the (distributed) build matrix.
 // Spawn a host (or workdir) for each combination and run in parallel.
 // Also apply the job configuration defined in `jobconfig` above.
-utils.run([bc1, bc2, bc3, b4, jobconfig])
+utils.run([bc1, bc2, bc3, bc4, jobconfig])
