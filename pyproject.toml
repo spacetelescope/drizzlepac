@@ -43,13 +43,14 @@ dependencies = [
     "spherical_geometry>=1.2.22",
     "astroquery>=0.4",
     "astrocut<=0.9",
-    "photutils>1.5.0",
+    "photutils>1.5.0,<1.13.0",
     "lxml",
     "PyPDF2",
     "scikit-image>=0.14.2",
     "tables",
     "typing_extensions>4.0",
     "markupsafe<=2.0.1",
+    "numpy<2.0",
 ]
 dynamic = [
     "version",
