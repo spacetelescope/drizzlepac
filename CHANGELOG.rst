@@ -18,10 +18,14 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.7.1 (unreleased)
+3.7.2 (unreleased)
 ==================
 
 - Added python 3.12 to testing matrix for Jenkins and github actions. [#1843]
+
+
+3.7.1 (unreleased)
+==================
 
 - Reverted #1798 until further testing is done with Photutils.
 
