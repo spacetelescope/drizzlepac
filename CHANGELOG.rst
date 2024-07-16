@@ -26,6 +26,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - ``manageInputCopies`` now copies successfully even if the original files were
   defined by full paths rather than being in the current working directory. [#1835]
 
+
 3.7.1 (unreleased)
 ==================
 
