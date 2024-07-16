@@ -440,7 +440,7 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
         log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
 
     # temprary table for adding columns
-    temp_table = Table(hdu[4].data)
+    # temp_table = Table(hdu[4].data)
     
     # adds single entry for gendate if all SVM images have the same gendate
     unique_gendates = np.unique(svm_gen_dates)
@@ -448,16 +448,22 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
     if len(unique_gendates) == 0:
         raise ValueError("No SVM input files found.")
     elif len(unique_gendates) == 1:
-        temp_table.add_column([[unique_gendates][0][0]]*len(temp_table), name="GENDATE", index=1)
+        gendate_str_to_add = [unique_gendates][0][0]
+        gendate_column = fits.Column(name='GENDATE', format=f'{len(gendate_str_to_add)}A', array=np.array([gendate_str_to_add]))
     else:
-        temp_table.add_column([", ".join(svm_gen_dates)]*len(temp_table), name="GENDATE", index=1)
+        gendate_str_to_add = ", ".join(svm_gen_dates)
+        gendate_column = fits.Column(name='GENDATE', format=f'{len(gendate_str_to_add)}A', array=np.array([gendate_str_to_add]))
     
     if len(np.unique(svm_inputs_list))==0:
         raise ValueError("No SVM input files found.")
     else:
-        temp_table.add_column([", ".join(svm_inputs_list)]*len(temp_table), name="SVMROOTNAME", index=1)
+        svm_string_to_add = ", ".join(svm_inputs_list)
+        svmrootname_column = fits.Column(name='SVMROOTNAME', format=f'{len(svm_string_to_add)}A', array=np.array([svm_string_to_add]))
     
-    hdu[4].data=temp_table.as_array()
+    # import ipdb; ipdb.set_trace()
+    add_gendate =  gendate_column + hdu[4].data
+    new_columns = svmrootname_column + add_gendate
+    hdu[4].data = fits.BinTableHDU.from_columns(new_columns)
     
     # close file if opened by this functions
     if closefits:
