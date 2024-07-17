@@ -10,7 +10,6 @@ import numpy as np
 from astropy.io import fits as fits
 from astropy.io.fits import Column
 from astropy.time import Time
-from astropy.table import Table
 from stsci.tools import logutil
 from stsci.tools.fileutil import countExtn
 from stwcs import wcsutil
@@ -438,9 +437,6 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
         hdu, closefits = _process_input(mvm_filename)
     except:
         log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
-
-    # temprary table for adding columns
-    # temp_table = Table(hdu[4].data)
     
     # adds single entry for gendate if all SVM images have the same gendate
     unique_gendates = np.unique(svm_gen_dates)
@@ -460,10 +456,10 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
         svm_string_to_add = ", ".join(svm_inputs_list)
         svmrootname_column = fits.Column(name='SVMROOTNAME', format=f'{len(svm_string_to_add)}A', array=np.array([svm_string_to_add]))
     
-    # import ipdb; ipdb.set_trace()
-    add_gendate =  gendate_column + hdu[4].data
-    new_columns = svmrootname_column + add_gendate
-    hdu[4].data = fits.BinTableHDU.from_columns(new_columns)
+    # Add new columns to fitsrec structured array
+    columns_to_prepend = fits.ColDefs([svmrootname_column, gendate_column])
+    import ipdb; ipdb.set_trace()
+    hdu[4] = fits.BinTableHDU.from_columns(columns_to_prepend + hdu[4].data.columns)
     
     # close file if opened by this functions
     if closefits:
