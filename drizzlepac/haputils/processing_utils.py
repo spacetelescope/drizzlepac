@@ -438,27 +438,22 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
     except:
         log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
     
-    # adds single entry for gendate if all SVM images have the same gendate
-    unique_gendates = np.unique(svm_gen_dates)
-
-    if len(unique_gendates) == 0:
-        raise ValueError("No SVM input files found.")
-    elif len(unique_gendates) == 1:
-        gendate_str_to_add = [unique_gendates][0][0]
-        gendate_column = fits.Column(name='GENDATE', format=f'{len(gendate_str_to_add)}A', array=np.array([gendate_str_to_add]))
+    # add table rows of len(*input files*)
+    if len(svm_gen_dates) == 0:
+        raise ValueError("Missing GENDATE to populate HDRTAB.")
     else:
-        gendate_str_to_add = ", ".join(svm_gen_dates)
-        gendate_column = fits.Column(name='GENDATE', format=f'{len(gendate_str_to_add)}A', array=np.array([gendate_str_to_add]))
-    
+        gendate_array = np.array([[x] for x in svm_gen_dates])
+        gendate_column = fits.Column(name='GENDATE', format='10A', array=gendate_array)
     if len(np.unique(svm_inputs_list))==0:
-        raise ValueError("No SVM input files found.")
+        raise ValueError("Missing SVMROOTNAME to populate HDRTAB.")
     else:
-        svm_string_to_add = ", ".join(svm_inputs_list)
-        svmrootname_column = fits.Column(name='SVMROOTNAME', format=f'{len(svm_string_to_add)}A', array=np.array([svm_string_to_add]))
+        svmrootname_array = np.array([[x] for x in svm_inputs_list])
+        # the max number of characters, typically 46, but leaving flexible
+        svm_char_len = np.max(np.char.str_len(svmrootname_array))
+        svmrootname_column = fits.Column(name='SVMROOTNAME', format=f'{svm_char_len}A', array=svmrootname_array)
     
     # Add new columns to fitsrec structured array
     columns_to_prepend = fits.ColDefs([svmrootname_column, gendate_column])
-    import ipdb; ipdb.set_trace()
     hdu[4] = fits.BinTableHDU.from_columns(columns_to_prepend + hdu[4].data.columns)
     
     # close file if opened by this functions
