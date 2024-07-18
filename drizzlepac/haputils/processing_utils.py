@@ -423,7 +423,7 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
         hdu, closefits = _process_input(svm_filename)
     except:
         log.warning(
-            f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header."
+            f"Could not open '{svm_filename}' during add_svm_inputs_to_mvm_header."
         )
         bad_svm_filename = True
 
@@ -440,12 +440,12 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
         hdu, closefits = _process_input(mvm_filename)
     except:
         log.warning(
-            f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Skipping HDRTABLE update."
+            f"Could not open '{mvm_filename}' during add_svm_inputs_to_mvm_header. Skipping HDRTABLE update."
         )
         return None
 
     if bad_svm_gendate:
-        log.warning(f"Could not read DATE keyword from {svm_filename}.")
+        log.warning(f"Could not read DATE keyword from '{svm_filename}'.")
     else:
         # add gendate to each filter product extension/chip
         gendate_array = np.array([svm_gen_date] * len(hdu[4].data))
