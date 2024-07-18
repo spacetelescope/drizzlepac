@@ -81,9 +81,9 @@ def test_add_svm_inputs_to_mvm_header(mock_filter_product, tmpdir):
     assert isinstance(hdu[4].data["SVMROOTNAME"][0], str)
     assert isinstance(hdu[4].data["GENDATE"][0], str)
     assert len(hdu[4].data["GENDATE"]) == 12
-    assert len(hdu[4].data["GENDATE"][0]) == 10
+    assert hdu[4].data["GENDATE"][0] == '2023-12-15'
     assert len(hdu[4].data["SVMROOTNAME"]) == 12
-    assert len(hdu[4].data["SVMROOTNAME"][0]) == 128
+    assert os.path.basename(hdu[4].data["SVMROOTNAME"][0]) == 'sample_svm'
 
 
 @mock.patch("drizzlepac.hapmultisequencer.run_mvm_processing")
