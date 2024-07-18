@@ -417,8 +417,16 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
         driz_list = create_drizzle_products(total_obj_list, custom_limits=custom_limits)
         product_list += driz_list
-                
-        # add input svm products to header
+        
+        # get list of svm input filenames in order of total_obj_list
+        obs_info_dict_items = [key for key in obs_info_dict]
+        svm_input_filenames_in_order = [obs_info_dict[x]['files'][0] for x in obs_info_dict_items]
+        
+        # add svm input filename to each total_obj_list object
+        for i, svm_input_filename in enumerate(svm_input_filenames_in_order):
+            total_obj_list[i].svm_input_filename = svm_input_filename
+                    
+        # add input svm filenames to HDRTABLE
         for filter_product in total_obj_list:
             proc_utils.add_svm_inputs_to_mvm_header(filter_product)
 

@@ -413,20 +413,19 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
         
     """
 
-    svm_gen_dates = []
-    svm_inputs_list = filter_product.all_mvm_exposures
+    svm_gen_date = []
+    svm_filename = filter_product.svm_input_filename
     
-    # read gendate of SVM images and append to svm_gen_dates list
-    for svm_filename in svm_inputs_list:
-        try: 
-            hdu, closefits = _process_input(svm_filename)
-        except:
-            log.error(f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
-        try:
-            svm_gen_dates.append(hdu[0].header['DATE'])
-        except:
-            log.warning(f"Could not read DATE keyword from {svm_filename}. Inserting empty string.")
-            svm_gen_dates.append('')
+    # read in svm_input_filename to retrieve gendate
+    try: 
+        hdu, closefits = _process_input(svm_filename)
+    except:
+        log.error(f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
+    try:
+        svm_gen_date = (hdu[0].header['DATE'])
+    except:
+        log.warning(f"Could not read DATE keyword from {svm_filename}. Inserting empty string.")
+        svm_gen_date = ('')
             
     
     # file to which we are updating the header
@@ -438,22 +437,25 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
     except:
         log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
     
-    # add table rows of len(*input files*)
-    if len(svm_gen_dates) == 0:
+    if len(svm_gen_date) == 0:
         raise ValueError("Missing GENDATE to populate HDRTAB.")
     else:
-        gendate_array = np.array([[x] for x in svm_gen_dates])
+        # add gendate for each chip/extension
+        gendate_array = np.array([svm_gen_date]*len(hdu[4].data))
         gendate_column = fits.Column(name='GENDATE', format='10A', array=gendate_array)
-    if len(np.unique(svm_inputs_list))==0:
+        
+    if len(svm_filename)==0:
         raise ValueError("Missing SVMROOTNAME to populate HDRTAB.")
     else:
-        svmrootname_array = np.array([[x] for x in svm_inputs_list])
-        # the max number of characters, typically 46, but leaving flexible
+        # append everything but the last 9 characters "_fl?.fits" of str to svmrootname
+        svmrootname_array = np.array([svm_filename[:-9]]*len(hdu[4].data))
+        # the max number of characters, typically 35, but leaving flexible
         svm_char_len = np.max(np.char.str_len(svmrootname_array))
         svmrootname_column = fits.Column(name='SVMROOTNAME', format=f'{svm_char_len}A', array=svmrootname_array)
     
     # Add new columns to fitsrec structured array
     columns_to_prepend = fits.ColDefs([svmrootname_column, gendate_column])
+    
     hdu[4] = fits.BinTableHDU.from_columns(columns_to_prepend + hdu[4].data.columns)
     
     # close file if opened by this functions
