@@ -416,15 +416,14 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
     svm_gen_date = []
     svm_filename = filter_product.svm_input_filename
     
-    # read in svm_input_filename to retrieve gendate
+    # read in svm_input_filename to retrieve gendate, adds empty string if not found
     try: 
         hdu, closefits = _process_input(svm_filename)
     except:
-        log.error(f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
+        log.warning(f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header.")
     try:
         svm_gen_date = (hdu[0].header['DATE'])
     except:
-        log.warning(f"Could not read DATE keyword from {svm_filename}. Inserting empty string.")
         svm_gen_date = ('')
             
     
@@ -435,17 +434,18 @@ def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
     try: 
         hdu, closefits = _process_input(mvm_filename)
     except:
-        log.error(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Exiting.")
+        log.warning(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Skipping header update.")
+        return None
     
     if len(svm_gen_date) == 0:
-        raise ValueError("Missing GENDATE to populate HDRTAB.")
+        log.warning(f"Could not read DATE keyword from {svm_filename}. Inserting empty string.")
     else:
-        # add gendate for each chip/extension
+        # add gendate to each filter product extension/chip
         gendate_array = np.array([svm_gen_date]*len(hdu[4].data))
         gendate_column = fits.Column(name='GENDATE', format='10A', array=gendate_array)
         
     if len(svm_filename)==0:
-        raise ValueError("Missing SVMROOTNAME to populate HDRTAB.")
+        log.warning(f"Missing SVMROOTNAME needed to to populate HDRTAB for {mvm_filename}.")
     else:
         # append everything but the last 9 characters "_fl?.fits" of str to svmrootname
         svmrootname_array = np.array([svm_filename[:-9]]*len(hdu[4].data))
