@@ -394,78 +394,94 @@ def add_skycell_to_header(image_filename, extname='SCI'):
 
 
 def add_svm_inputs_to_mvm_header(filter_product, return_hdu=False):
-    """ Adds the SVM input list and generation date to the MVM 
+    """Adds the SVM input list and generation date to the MVM
     drizzled product header.
 
     Parameters
     ----------
     filter_product : object
         total object list created using poller_utils.interpret_mvm_input
-    
+
     return_hdu : bool, optional
         returns hdu object if True, otherwise None
-        
+
     Returns:
     --------
     Nothing; drizzled product headers have been updated unless keyword already exists.
-    That is unless return_hdu is turned on (e.g. for the unit test), in which case, 
+    That is unless return_hdu is turned on (e.g. for the unit test), in which case,
     the function will return the updated hdu object.
-        
+
     """
 
     svm_gen_date = []
+    bad_svm_filename = False
+    bad_svm_gendate = False
     svm_filename = filter_product.svm_input_filename
-    
+
     # read in svm_input_filename to retrieve gendate, adds empty string if not found
-    try: 
+    try:
         hdu, closefits = _process_input(svm_filename)
     except:
-        log.warning(f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header.")
+        log.warning(
+            f"Could not open {svm_filename} during add_svm_inputs_to_mvm_header."
+        )
+        bad_svm_filename = True
+
     try:
-        svm_gen_date = (hdu[0].header['DATE'])
+        svm_gen_date = hdu[0].header["DATE"]
     except:
-        svm_gen_date = ('')
-            
-    
+        bad_svm_gendate = True
+
     # file to which we are updating the header
     mvm_filename = filter_product.drizzle_filename
-    
+
     # Open image and determine whether to consequently close it
-    try: 
+    try:
         hdu, closefits = _process_input(mvm_filename)
     except:
-        log.warning(f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Skipping header update.")
+        log.warning(
+            f"Could not open {mvm_filename} during add_svm_inputs_to_mvm_header. Skipping HDRTABLE update."
+        )
         return None
-    
-    if len(svm_gen_date) == 0:
-        log.warning(f"Could not read DATE keyword from {svm_filename}. Inserting empty string.")
+
+    if bad_svm_gendate:
+        log.warning(f"Could not read DATE keyword from {svm_filename}.")
     else:
         # add gendate to each filter product extension/chip
-        gendate_array = np.array([svm_gen_date]*len(hdu[4].data))
-        gendate_column = fits.Column(name='GENDATE', format='10A', array=gendate_array)
-        
-    if len(svm_filename)==0:
-        log.warning(f"Missing SVMROOTNAME needed to to populate HDRTAB for {mvm_filename}.")
+        gendate_array = np.array([svm_gen_date] * len(hdu[4].data))
+        gendate_column = fits.Column(name="GENDATE", format="10A", array=gendate_array)
+
+    if bad_svm_filename:
+        log.warning(
+            f"Missing SVMROOTNAME needed to to populate HDRTAB for {mvm_filename}."
+        )
     else:
         # append everything but the last 9 characters "_fl?.fits" of str to svmrootname
-        svmrootname_array = np.array([svm_filename[:-9]]*len(hdu[4].data))
+        svmrootname_array = np.array([svm_filename[:-9]] * len(hdu[4].data))
         # the max number of characters, typically 35, but leaving flexible
         svm_char_len = np.max(np.char.str_len(svmrootname_array))
-        svmrootname_column = fits.Column(name='SVMROOTNAME', format=f'{svm_char_len}A', array=svmrootname_array)
-    
-    # Add new columns to fitsrec structured array
-    columns_to_prepend = fits.ColDefs([svmrootname_column, gendate_column])
-    
-    hdu[4] = fits.BinTableHDU.from_columns(columns_to_prepend + hdu[4].data.columns)
-    
+        svmrootname_column = fits.Column(
+            name="SVMROOTNAME", format=f"{svm_char_len}A", array=svmrootname_array
+        )
+
+    if bad_svm_filename or bad_svm_gendate:
+        log.warning(f"Skipping HDRTABLE update for {mvm_filename}.")
+        return
+
+    else:
+        # Add new columns to fitsrec structured array
+        columns_to_prepend = fits.ColDefs([svmrootname_column, gendate_column])
+        hdu[4] = fits.BinTableHDU.from_columns(columns_to_prepend + hdu[4].data.columns)
+
     # close file if opened by this functions
     if closefits:
         hdu.close()
-        
+
     if return_hdu:
         return hdu
-    
-def find_footprint(hdu, extname='SCI', extnum=1):
+
+
+def find_footprint(hdu, extname="SCI", extnum=1):
     """Extract the footprints from each input file
 
     Determine the composite of all the input chip's corners
