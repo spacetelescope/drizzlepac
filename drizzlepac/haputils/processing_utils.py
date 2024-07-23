@@ -275,10 +275,11 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
                     for exposure in tot_obj.edp_list:                      
                         if rootname in exposure.full_filename:
                             name_col.append(exposure.product_basename)
+                            # check to see if all MVMs are correctly labeled as level 4
+                            # can remove second condition and below if statement / warning once verified. 
                             if level == 4 or "skycell" in update_filename:
                                 svmrootname_col.append(exposure.svm_exposure_name)
                                 svm_gendata_col.append(exposure.svm_gendate)
-                                # check if consistent level. can remove if not needed
                                 if level !=4:
                                     log.warning(f"Incorrect level associated with {update_filename}.")
                                     log.warning(f"Skipping HDRTABLE update.")
