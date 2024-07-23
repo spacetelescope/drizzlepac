@@ -18,8 +18,21 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
+3.7.2 (unreleased)
+==================
+- Added python 3.12 to testing matrix for Jenkins and github actions. [#1843]
+
+- ``manageInputCopies`` now copies successfully even if the original files were
+  defined by full paths rather than being in the current working directory. [#1835]
+
+
 3.7.1 (unreleased)
 ==================
+- Modified the call to the hamming function in the deconvolve_utils.py module
+  as SciPy deprecated the way window filtering functions can be invoked. These
+  functions can no longer be imported from the scipy.signal namespace but need
+  to be accessed via scipy.signal.windows.  [#1848]
+
 - Modify the dependencies portion of the project.toml file to specify
   numpy<2.0 [#1813]
 
