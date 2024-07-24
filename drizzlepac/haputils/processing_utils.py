@@ -291,24 +291,24 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
         # will accommodate a string of at least 51 characters which handles an ACS image
         max_len = max(max([len(name) for name in name_col]), 51)
         hapcol = Column(array=np.array(name_col, dtype=np.str_), name=HAPCOLNAME, format='{}A'.format(max_len))
-        newcol = fits.ColDefs([hapcol])
-        hdrtab_cols += newcol
+        new_hap_col = fits.ColDefs([hapcol])
+        hdrtab_cols += new_hap_col
+        
+    if svm_gendata_col:
+        gendate_column = Column(name="GENDATE", format="10A", array=svm_gendata_col)
+        new_gendate_col = fits.ColDefs([gendate_column])
+        hdrtab_cols = new_gendate_col + hdrtab_cols
     
-    if level == 4:
-        if svm_gendata_col and svmrootname_col:
-            gendate_column = Column(name="GENDATE", format="10A", array=svm_gendata_col)
-            svm_char_len = np.max(np.char.str_len(svmrootname_col))
-            svmrootname_column = Column(
-                name="SVMROOTNAME", format=f"{svm_char_len}A", array=svmrootname_col
-            )
-            columns_to_prepend = fits.ColDefs([svmrootname_column, gendate_column])
-        else:
-            log.warning(f"Missing SVMROOTNAME or SVM_GENDATE for {update_filename}.")
-            log.warning(f"Skipping HDRTABLE update.")
-            return
+    if svmrootname_col:
+        svm_char_len = np.max(np.char.str_len(svmrootname_col))
+        svmrootname_column = Column(
+            name="SVMROOTNAME", format=f"{svm_char_len}A", array=svmrootname_col
+        )
+        new_svmrootname_col = fits.ColDefs([svmrootname_column])
+        hdrtab_cols = new_svmrootname_col + hdrtab_cols
 
     # define new extension
-    haphdu = fits.BinTableHDU.from_columns(columns_to_prepend + hdrtab_cols)
+    haphdu = fits.BinTableHDU.from_columns(hdrtab_cols)
     haphdu.header['extname'] = 'HDRTAB'
     haphdu.header['extver'] = 1
     # remove old extension
