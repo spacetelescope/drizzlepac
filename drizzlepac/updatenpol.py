@@ -11,7 +11,7 @@
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 __docformat__ = 'restructuredtext'
@@ -66,7 +66,7 @@ def update(input, refdir="jref$",local=None, interactive=False, wcsupdate=True):
     --------
     1. A set of associated images specified by an ASN file can be updated to use
        the NPOLFILEs and D2IMFILE found in the local directory defined using
-       the ``myjref$`` environment variable under PyRAF using::
+       the ``myjref$`` environment variable in python using::
 
             >>> import updatenpol
             >>> updatenpol.update('j8bt06010_asn.fits', 'myref$')

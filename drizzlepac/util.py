@@ -5,7 +5,7 @@ A library of utility functions
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import logging
@@ -116,17 +116,12 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
 
     if logname is not None:
         logutil.setup_global_logging()
-        # Don't use logging.basicConfig since it can only be called once in a
-        # session
-        # TODO: Would be fine to use logging.config.dictConfig, but it's not
-        # available in Python 2.5
         global _log_file_handler
         root_logger = logging.getLogger()
         if _log_file_handler:
             root_logger.removeHandler(_log_file_handler)
         # Default mode is 'a' which is fine
         _log_file_handler = logging.FileHandler(logname)
-        # TODO: Make the default level configurable in the task parameters
         _log_file_handler.setLevel(level)
 
         # Insure file handler has '.name' set so calling code can get it.
@@ -1174,7 +1169,7 @@ def base_taskname(taskname, packagename=None):
     ----------
     taskname : str, None
         Full task name. If it is ``None``, :py:func:`base_taskname` will
-        return ``None``\ .
+        return ``None`` .
 
     packagename : str, None (Default = None)
         Package name. It is assumed that a compound task name is formed by
@@ -1263,3 +1258,97 @@ def _def_help_functions(module, module_file, task_name, module_doc):
     module['help'] = help
 
     return getHelpAsString(docstring=True, show_ver=False)
+
+
+def _parse_ext_spec(hdulist, extno, extname=None):
+    # process FITS extension number(s) and return a list of extension versions
+    # for the input extname.
+    if extno in [None, '']:
+        return None
+
+    groups = None
+
+    if isinstance(hdulist, str):
+        hdulist = fits.open(hdulist)
+        close_hdulist = True
+    else:
+        close_hdulist = False
+
+    def close_image_file():
+        if close_hdulist:
+            hdulist.close()
+
+    if isinstance(extno, str):
+        exts = list(map(str.strip, extno.split(',')))
+        if len(exts) == 2 and exts[0].isalpha():
+            # user specified a specific extname, extver
+            groups = [(exts[0], int(exts[1]))]
+        else:
+            # user specified a list of extension numbers:
+            extno = exts
+
+    elif isinstance(extno, int):
+        # user provided a specific extname, extver in the form of a tuple
+        extno = [extno]
+
+    elif isinstance(extno, tuple):
+        # user provided a specific extname, extver in the form of a tuple
+        groups = [extno]
+
+    if groups is None and isinstance(extno, list):
+        # user specified a list of extension numbers if the form of a list
+        # of integers or strings convertable to integers:
+        groups = list(map(int, extno))
+        if max(groups) >= len(hdulist):
+            close_image_file()
+            raise ValueError(
+                "Requested FITS extension number is larger than the "
+                "number extensions in the input file."
+            )
+        try:
+            groups = [
+                (
+                    hdulist[g].header['extname'].strip().lower(),
+                    hdulist[g].header['extver']
+                )
+                for g in groups
+            ]
+        except KeyError:
+            close_image_file()
+            raise ValueError(
+                f"The 'group' parameter must correspond to '{extname}' "
+                "FITS extensions of HST data files."
+            )
+
+    elif groups is None:
+        close_image_file()
+        raise TypeError("Unsupported group format.")
+
+    if extname is not None:
+        extname = extname.strip().lower()
+
+        # make sure actual extension name is the same as the desired extname
+        # and that the extension exists:
+        for extn, extv in groups:
+            if extn != extname:
+                close_image_file()
+                raise ValueError(
+                    "Groups must correspond to FITS extensions with "
+                    f"'{extname}' extension name."
+                )
+            if (extn, extv) not in hdulist:
+                if hdulist.filename is None:
+                    f = "in-memory file."
+                else:
+                    f = f"file '{hdulist.filename()}'."
+                close_image_file()
+                raise ValueError(
+                    f"Requested group ({extn}, {extv}) does not exist in the "
+                    f"input {f}"
+                )
+
+    close_image_file()
+
+    # return a list of extension versions corresponding to input 'extname'
+    extvers = [extv for _, extv in groups]
+    return extvers

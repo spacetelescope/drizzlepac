@@ -19,7 +19,7 @@ Parameters
 ----------
 
 input : str or list of str (Default = None)
-    A python list of drizzled image filenames, or just a single filename.
+    A Python list of drizzled image filenames, or just a single filename.
 
 configObj : configObject (Default = None)
     An instance of ``configObject`` which overrides default parameter settings.

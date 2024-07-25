@@ -4,7 +4,7 @@ Main program for running MultiDrizzle from the command line.
 
 :Authors: Warren Hack
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import getopt

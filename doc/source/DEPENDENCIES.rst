@@ -1,5 +1,7 @@
 Requirements
 -------------
 
-.. include:: ../../requirements-dev.txt
+.. include:: ../../pyproject.toml
     :literal:
+    :start-after: dependencies = [
+    :end-before: ]

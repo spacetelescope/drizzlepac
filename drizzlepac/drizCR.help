@@ -12,7 +12,7 @@ Parameters
 ----------
 
 input : str or list of str (Default = None)
-    A python list of blotted median image filenames, or just a single
+    A Python list of blotted median image filenames, or just a single
     filename.
 
 configObj : configObject (Default = None)
@@ -81,7 +81,7 @@ input file with be directly altered.
 
 Examples
 --------
-Basic example of how to call ``drizCR`` yourself from a python command line
+Basic example of how to call ``drizCR`` yourself from a Python command line
 using the default parameters for the task.
 
 >>> from drizzlepac import drizCR

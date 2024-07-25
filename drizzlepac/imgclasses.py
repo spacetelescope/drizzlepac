@@ -4,7 +4,7 @@ Used by ``TweakReg``.
 
 :Authors: Warren Hack, Mihai Cara
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import os
@@ -1049,7 +1049,7 @@ class RefImage:
                                im_fmode='readonly')
             fi[0].release_all_images()
             if len(fi) != 1:
-                ValueError('Reference image file name must contain a single '
+                raise ValueError('Reference image file name must contain a single '
                            'file name specification.')
             froot = fi[0].image
             if len(fi[0].fext) == 0:

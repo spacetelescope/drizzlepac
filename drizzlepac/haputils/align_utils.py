@@ -150,7 +150,7 @@ class AlignmentTable:
         # Apply filter to input observations to insure that they meet minimum criteria for being able to be aligned
         log.info(
             "{} AlignmentTable: Filter STEP {}".format("-" * 20, "-" * 63))
-        self.filtered_table = analyze.analyze_data(input_list, type=process_type)
+        self.filtered_table, _ = analyze.analyze_data(input_list, type=process_type)
         log.debug("Input sorted as: \n{}".format(self.filtered_table))
 
         if self.filtered_table['doProcess'].sum() == 0:
@@ -174,7 +174,7 @@ class AlignmentTable:
                 hdr0 = fits.getheader(img)
                 instrume = hdr0.get('instrume')
                 if instrume.lower() == 'wfpc2' and 'detector' not in hdr0:
-                    detector = 'WFPC2'
+                    detector = 'PC'
                 else:
                     detector = hdr0.get('detector')
 
@@ -702,7 +702,6 @@ class HAPImage:
 
             dqmask = self.build_dqmask(chip=chip)
             sciarr = self.imghdu[("SCI", chip)].data.copy()
-            #  TODO: replace detector_pars with dict from OO Config class
             # Turning off 'classify' since same CRs are being removed before segmentation now
             extract_pars = {'classify': False,  # alignment_pars['classify'],
                             'centering_mode': alignment_pars['centering_mode'],
@@ -715,7 +714,6 @@ class HAPImage:
                                                                  outroot=outroot,
                                                                  kernel=self.kernel,
                                                                  segment_threshold=self.threshold[chip],
-                                                                 dao_threshold=self.bkg_rms_mean[chip],
                                                                  fwhm=self.kernel_fwhm,
                                                                  **extract_pars)
             if crclean and crmap is not None:
@@ -923,8 +921,6 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
                                 fitgeom=fitgeom, nclip=nclip)
         # Insure the expanded reference catalog has all the information needed
         # to complete processing.
-        # TODO: Work out how to get the 'mag' column from input source catalog
-        #       into this extended reference catalog...
         # reference_catalog = match_relcat
         # reference_catalog['mag'] = np.array([-999.9] * len(reference_catalog),
         #                                    np.float32)

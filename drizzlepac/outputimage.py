@@ -3,7 +3,7 @@ This module manages the creation of the output image FITS file.
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import time
@@ -715,8 +715,6 @@ def getTemplates(fnames, blend=True, rules_file=None):
         newtab = None
     else:
         # apply rules to create final version of headers, plus table
-        # TODO:  NEED to add pointer to dataset-specific rules file as
-        #        'rules_file' parameter.
         newhdrs, newtab = blendheaders.get_blended_headers(inputs=fnames,
                                                             rules_file=rules_file)
 

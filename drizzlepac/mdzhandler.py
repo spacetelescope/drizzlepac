@@ -1,10 +1,14 @@
 """
 This module supports the interpretation of the ``MDRIZTAB`` for
-processing as used in the pipeline.
+processing as used in the pipeline. The MDRIZTAB reference table contains 
+AstroDrizzle task parameters optimized for a wide range of observations. 
+AstroDrizzle uses this table to match the best parameter values with the 
+type of observations being processed. Each instrument detector has its own 
+MDRIZTAB reference table.
 
 :Authors: Warren Hack, Ivo Busko, Christopher Hanley
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import string, os

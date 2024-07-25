@@ -3,7 +3,7 @@ Class used to model NICMOS specific instrument data.
 
 :Authors: Christopher Hanley, David Grumm, Megan Sosey
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import numpy as np
@@ -423,10 +423,10 @@ def fromcalfile(filename):
     hdulist = fileutil.openImage(filename)
 
     if 'TEMPFILE' in hdulist[0].header:
+        tddfile = hdulist[0].header['TEMPFILE']
         if tddfile == 'N/A':
             return None
         else:
-            tddfile = hdulist[0].header['TEMPFILE']
             tddhdulist = fileutil.openImage(tddfile)
             return darkobject(tddhdulist)
     else:

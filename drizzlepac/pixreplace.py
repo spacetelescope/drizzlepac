@@ -1,6 +1,6 @@
 """ Pixreplace -- Replace pixels which have one value with another value
 
-    :License: :doc:`../LICENSE`
+    :License: :doc:`/LICENSE`
 
 """
 
@@ -14,7 +14,7 @@ from stsci.tools import parseinput
 from . import util
 
 
-__all__ = ['replace', 'help', 'getHelpAsString']
+__all__ = ['replace', 'help']
 __taskname__ = 'pixreplace'
 
 

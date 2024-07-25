@@ -19,6 +19,7 @@ from spherical_geometry.polygon import SphericalPolygon
 from PIL import Image, ImageDraw
 
 from stwcs.wcsutil import HSTWCS
+from stsci.tools import logutil
 
 from .. import wcs_functions
 
@@ -36,6 +37,7 @@ SKYCELL_OVERLAP = 256
 
 SUPPORTED_SCALES = {'fine': 0.04, 'coarse': 0.12}  # arcseconds/pixel
 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diagnostic_mode=False):
     """Return all sky cells that overlap the exposures in the input.
@@ -84,8 +86,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
     # Check that exposures are located in current working directory
     if not os.path.exists(expnames[0]):
         if not input_path:
-            msg = "No exposures found in cwd().  Please specify path to files!"
-            raise (ValueError, msg)
+            raise ValueError("No exposures found in cwd().  Please specify path to files!")
         bad_files = 0
         for file in expnames:
             fullfile = os.path.join(input_path, file)
@@ -96,15 +97,14 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
                 continue
             shutil.copy(fullfile, file)
         if bad_files:
-            msg = "Could not find {} specified input files".format(bad_files)
-            raise (ValueError, msg)
+            raise ValueError(f"Could not find {bad_files} specified input files")
 
     # Check that all exposures have up-to-date WCS solutions
     #  This will weed out exposures which were not processed by the pipeline
     #  such as those with EXPTIME==0
     for filename in expnames:
         fimg = fits.open(filename)
-        print("Validating WCS solutions for {}".format(filename))
+        log.debug("Validating WCS solutions for {}".format(filename))
         if 'wcsname' not in fimg[1].header:
             expnames.remove(filename)
         fimg.close()
@@ -133,12 +133,12 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
     # at this point, we have a dict of visit IDs with a list of all expnames that go with each visit
     sky_cells = {}
     for visit_id, visit_expnames in visit_groups.items():
-        print('Looking for SkyCells that overlap exposures from visit "{}"'.format(visit_id))
+        log.debug('Looking for SkyCells that overlap exposures from visit "{}"'.format(visit_id))
 
         # build reference wcs for combined footprint of all input exposures
         meta_wcs = wcs_functions.make_mosaic_wcs(visit_expnames, rot=0.0, scale=sky_grid.scale)
 
-        print('Visit WCS: \n{}'.format(meta_wcs))
+        log.debug('Visit WCS: \n{}'.format(meta_wcs))
         # For each exposure in the visit,
         # look to see what SkyCell it overlaps
         for expname in visit_expnames:
@@ -152,7 +152,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
 
             # Use this footprint to identify overlapping sky cells
             visit_cells = sky_grid.get_sky_cells(footprint, diagnostic_mode=diagnostic_mode)
-            print('Exposure {} from visit {} overlapped SkyCells:\n{}'.format(expname, visit_id, visit_cells))
+            log.debug('Exposure {} from visit {} overlapped SkyCells:\n{}'.format(expname, visit_id, visit_cells))
 
             for scell in visit_cells:
                 if scell not in sky_cells:
@@ -421,8 +421,9 @@ class SkyFootprint(object):
         # which are particularly noticable for WFC3/IR data.
         # We are hard-coding the number of iterations since it is only
         # intended to improve, not make perfect, the mask shape.
-        total_mask = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
-        self.total_mask = total_mask
+        
+        total_mask_eroded = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
+        self.total_mask = np.bitwise_or(total_mask, total_mask_eroded)
 
         # clean up as quickly as possible
         del arr
@@ -545,7 +546,13 @@ class SkyFootprint(object):
             fp = np.clip(self.footprint, 0, 1).astype(np.int16)
 
             # simple trick to remove noise and small regions 3x3 or less.
-            scmask = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
+            scmask_dilated_erroded = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
+            
+            # Start by smoothing out the edges of the chips/field
+            # this will remove rough edges up to 3 pixels deep along the image edge
+            # multiplying by 100 to avoid having the threshold as a decimal (0.5) between 0 and 1. 
+            scmask = ndimage.gaussian_filter(scmask_dilated_erroded.astype(np.float32) * 100, sigma=2) > 50
+            
             # Label each major contiguous region in the mask
             sclabels, nlabels = ndimage.label(scmask)
             slices = ndimage.find_objects(sclabels)
@@ -800,9 +807,13 @@ class GridDefs(object):
         sky_cells = {}
         for pcell in self.projection_cells:
             pcell.diagnostic_mode = diagnostic_mode
-            sky_cells.update(pcell.find_sky_cells(skyfootprint,
-                                                 nxy=self.sc_nxy,
-                                                 overlap=self.sc_overlap))
+            sky_cells.update(
+                pcell.find_sky_cells(
+                    skyfootprint,
+                    nxy=self.sc_nxy,
+                    overlap=self.sc_overlap,
+                )
+            )
 
         return sky_cells
 
@@ -972,7 +983,7 @@ class ProjectionCell(object):
             self.sc_nxy = nxy
         if overlap:
             self.sc_overlap = overlap
-        print("Looking for sky cells in PROJECTION_CELL {}".format(self.cell_id))
+        log.debug("Looking for sky cells in PROJECTION_CELL {}".format(self.cell_id))
 
         skycell00 = SkyCell(x=0, y=0, projection_cell=self)
         skycells = {}
@@ -991,7 +1002,7 @@ class ProjectionCell(object):
         mosaic_xr = [max(1, mosaic_edges_x.min() - 1), min(self.sc_nxy, mosaic_edges_x.max() + 2)]
         mosaic_yr = [max(1, mosaic_edges_y.min() - 1), min(self.sc_nxy, mosaic_edges_y.max() + 2)]
 
-        print("SkyCell Ranges: {}, {}".format(mosaic_xr, mosaic_yr))
+        log.debug("SkyCell Ranges: {}, {}".format(mosaic_xr, mosaic_yr))
         # for each suspected sky cell or neighbor, look for any pixel by pixel
         #    overlap with input mosaic footprint
         for xi in range(mosaic_xr[0], mosaic_xr[1]+1):
@@ -1007,7 +1018,7 @@ class ProjectionCell(object):
 
                 sc_overlap = self.compute_overlap(skycell, mosaic_ra, mosaic_dec)
 
-                print("    Checking SkyCell {},{} for overlap: {}".format(xi, yi, sc_overlap))
+                log.debug("    Checking SkyCell {},{} for overlap: {}".format(xi, yi, sc_overlap))
                 if sc_overlap:
                     # Within this SkyCell, determine which members of the
                     # mosaic overlap with this SkyCell.
@@ -1019,7 +1030,7 @@ class ProjectionCell(object):
                         if member_overlap:
                             skycell.members.append(filename)
                     # We found overlapping pixels from mosaic, so return this SkyCell
-                    print("   Found overlap in SkyCell {}".format(skycell.sky_cell_id))
+                    log.debug("   Found overlap in SkyCell {}".format(skycell.sky_cell_id))
                     skycells[skycell.sky_cell_id] = skycell
 
         return skycells
@@ -1662,8 +1673,8 @@ def fill_row_k(imin, imax, k, S, J, sum_x, sum_x_sq, N):
     fill_row_k(i + 1, imax, k, S, J, sum_x, sum_x_sq, N)
 
 def fill_dp_matrix(data, S, J, K, N):
-    sum_x = np.zeros(N, dtype=np.float_)
-    sum_x_sq = np.zeros(N, dtype=np.float_)
+    sum_x = np.zeros(N, dtype=np.float64)
+    sum_x_sq = np.zeros(N, dtype=np.float64)
 
     # median. used to shift the values of x to improve numerical stability
     shift = data[N // 2]
@@ -1702,7 +1713,7 @@ def ckmeans(data, n_clusters):
     data.sort()
     n = len(data)
 
-    S = np.zeros((n_clusters, n), dtype=np.float_)
+    S = np.zeros((n_clusters, n), dtype=np.float64)
 
     J = np.zeros((n_clusters, n), dtype=np.uint64)
 

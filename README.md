@@ -1,7 +1,6 @@
 # Drizzlepac
 
-[![Build Status](https://dev.azure.com/spacetelescope/drizzlepac/_apis/build/status/spacetelescope.drizzlepac?branchName=master)](https://dev.azure.com/spacetelescope/drizzlepac/_build/latest?definitionId=2&branchName=master)
-[![Build Status](https://ssbjenkins.stsci.edu/job/STScI/job/drizzlepac/job/master/badge/icon)](https://ssbjenkins.stsci.edu/job/STScI/job/drizzlepac/job/master/)
+[![Build Status](https://github.com/spacetelescope/drizzlepac/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/drizzlepac/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/drizzlepac/badge/?version=latest)](http://drizzlepac.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/spacetelescope/drizzlepac/branch/master/graph/badge.svg)](https://codecov.io/gh/spacetelescope/drizzlepac)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3743274.svg)](https://doi.org/10.5281/zenodo.3743274)
@@ -23,10 +22,19 @@ can be found at:
 
 ## Conda (Recommended)
 
+`Drizzlepac` is installed when you install the `stenv` conda environment (a replacement for `astroconda`). Select your desired release and follow the instructions on the [`stenv` installation page](https://stenv.readthedocs.io/en/latest/getting_started.html). 
+
+## Install with pip
+
 ```bash
-$ conda config --add channels http://ssb.stsci.edu/astroconda
-$ conda create -n astroconda stsci
+$ pip install git+https://github.com/spacetelescope/drizzlepac.git
 ```
+The option `--no-use-pep517` MAY be required in order to correctly build 
+the C extensions with `pip` versions up to 22.2, after commenting out 
+the `build-backend` from the `pyproject.toml` config file.
+
+Support for installing using `pip` is still evolving, so use of this 
+command is provided on an experimental basis for now.
 
 ## From Source
 
@@ -43,26 +51,12 @@ an interactive `python` or `ipython` session, we recommend you do not skip
 this step.
 
 ```bash
-$ python setup.py build_sphinx
+$ cd doc/
+$ make html
 ```
 
-### Install drizzlepac
+### Install DrizzlePac
 
 ```bash
 $ python setup.py install
 ```
-
-##### SUPPORT for PIP Installation:
-Installation tools are evolving to rely on commands such as `pip` 
-to build and install software.  This package can now be installed 
-using the following command:
-
-```bash
-$ pip install .
-```
-The option `--no-use-pep517` MAY be required in order to correctly build 
-the C extensions with `pip` versions up to 22.2, after commenting out 
-the `build-backend` from the `pyproject.toml` config file.
-
-**Support for installing using `pip` is still evolving, so use of this 
-command is provided on an experimental basis for now.**

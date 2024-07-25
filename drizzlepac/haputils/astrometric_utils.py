@@ -167,6 +167,7 @@ SUPPORTED_CATALOGS = {
                'mag': 'mag', 'objID': 'objID', 'epoch': 'epoch'},
     }
 
+log.info(f'ASTROMETRIC_CATALOG_URL = {SERVICELOCATION}')
 
 # CRBIT definitions
 CRBIT = 4096
@@ -181,7 +182,7 @@ def create_astrometric_catalog(inputs, catalog="GAIAedr3", output="ref_cat.ecsv"
                                gaia_only=False, table_format="ascii.ecsv",
                                existing_wcs=None, num_sources=None,
                                use_footprint=False, full_catalog=False,
-                               user_epoch='match', log_level=logutil.logging.NOTSET):
+                               user_epoch='match', log_level=logutil.logging.INFO):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
     This function will return a table containing sources derived from the
@@ -451,7 +452,7 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
     spec = base_spec + epoch_str.format(epoch) if epoch else base_spec
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
-    log.debug("Getting catalog using: \n    {}".format(serviceUrl))
+    log.info(f"Getting catalog using: \n    {serviceUrl}")
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
@@ -460,7 +461,7 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
     if rstr[0].startswith('Error'):
         # Try again without EPOCH
         serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, base_spec)
-        log.debug("Getting catalog using: \n    {}".format(serviceUrl))
+        log.warning(f"Problem accessing catalog service - getting catalog using: \n    {serviceUrl}")
         rawcat = requests.get(serviceUrl, headers=headers)
         r_contents = rawcat.content.decode()  # convert from bytes to a String
         rstr = r_contents.split('\r\n')
@@ -522,7 +523,7 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     spec = base_spec + epoch_str.format(epoch) if epoch else base_spec
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
-    log.debug("Getting catalog using: \n    {}".format(serviceUrl))
+    log.info(f"Getting catalog from footprint using: \n    {serviceUrl}")
 
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
@@ -532,7 +533,7 @@ def get_catalog_from_footprint(footprint, epoch=None, catalog='GSC241'):
     if rstr[0].startswith('Error'):
         # Try again without EPOCH
         serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, base_spec)
-        log.debug("Getting catalog using: \n    {}".format(serviceUrl))
+        log.warning(f"Problem accessing catalog service - getting catalog from footprint using: \n    {serviceUrl}")
         rawcat = requests.get(serviceUrl, headers=headers)
         r_contents = rawcat.content.decode()  # convert from bytes to a String
         rstr = r_contents.split('\r\n')
@@ -605,7 +606,7 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     serviceUrl = "{}/{}?{}".format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl)
     if not rawcat.ok:
-        log.info("Problem accessing service with:\n{{}".format(serviceUrl))
+        log.info(f"Problem accessing service with:\n{serviceUrl}")
         raise ValueError
 
     delta_ra = delta_dec = None
@@ -719,7 +720,7 @@ def compute_2d_background(imgarr, box_size, win_size,
 
 def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
                       good_fwhm=[1.0, 4.0], num_fwhm=30,
-                      isolation_size=11, saturation_limit=70000., log_level=logutil.logging.NOTSET):
+                      isolation_size=11, saturation_limit=70000., log_level=logutil.logging.INFO):
     """Build kernel for use in source detection based on image PSF
     This algorithm looks for an isolated point-source that is non-saturated to use as a template
     for the source detection kernel.  Failing to find any suitable sources, it will return a
@@ -898,7 +899,7 @@ def find_fwhm(psf, default_fwhm):
 
 def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
                           nbright=1000,
-                          threshold=200.0, sigma=3.0, source_box=7, log_level=logutil.logging.NOTSET):
+                          threshold=200.0, sigma=3.0, source_box=7, log_level=logutil.logging.INFO):
     """Use photutils to replicate the IRAF point-source catalogs"""
     # Initialize logging for this user-callable function
     log.setLevel(log_level)
@@ -957,11 +958,10 @@ def build_gaussian_kernel(fwhm, npixels):
 
 
 def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
-                    segment_threshold=None, dao_threshold=None,
-                    dao_nsigma=3.0, source_box=7,
+                    segment_threshold=None, dao_nsigma=3.0, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
                     outroot=None, plot=False, vmax=None, deblend=False,
-                    log_level=logutil.logging.NOTSET):
+                    log_level=logutil.logging.INFO):
     """Use photutils to find sources in image based on segmentation.
 
     Parameters
@@ -987,10 +987,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     segment_threshold : ndarray or None
         Value from the image which serves as the limit for determining sources.
         If None, compute a default value of (background+5*rms(background)).
-    dao_threshold : float, optional
-        [Deprecated] This parameter is not used.  In fact, it now gets computed
-        internally using the ``sigma_clipped_bkg()`` function which uses the
-        ``dao_nsigma`` parameter.
     dao_nsigma : float
         This number gets used to determine the threshold for detection of point
         sources.  The threshold gets computed using a simple ``mean + dao_nsigma * rms``,
@@ -1455,7 +1451,6 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
 
         bkg_ra, bkg_median, bkg_rms_ra, bkg_rms_median = compute_2d_background(imgarr, box_size, win_size)
         threshold = nsigma * bkg_rms_ra
-        dao_threshold = nsigma * bkg_rms_median
 
         (kernel, kernel_psf), kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr,
                                                               threshold=threshold,
@@ -1469,7 +1464,6 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
                                                  outroot=outroot, kernel=kernel,
                                                  photmode=photmode,
                                                  segment_threshold=threshold,
-                                                 dao_threshold=dao_threshold,
                                                  fwhm=kernel_fwhm, **detector_pars)
         del crmap
         source_cats[chip] = seg_tab

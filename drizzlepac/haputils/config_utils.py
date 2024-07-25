@@ -59,7 +59,7 @@ class HapConfig(object):
         Nothing.
         """
         log.setLevel(log_level)
-        if input_custom_pars_file and input_custom_pars_file and input_custom_pars_file == output_custom_pars_file:
+        if input_custom_pars_file and input_custom_pars_file == output_custom_pars_file:
             log.error("ERROR: Input and output parameter files must have unique names!")
             sys.exit(1)
         self.label = "hap_config"
@@ -248,14 +248,14 @@ class HapConfig(object):
                 elif self.instrument == "wfpc2":
                     if self.hap_pipeline_name == 'mvm':
                         if n_exp > 1:
-                            self.conditions.append("wfpc2_wfpc2_any_n2")
+                            self.conditions.append("wfpc2_pc_any_n2")
                     if self.hap_pipeline_name == 'svm':
                         if n_exp == 2:
-                            self.conditions.append("wfpc2_wfpc2_any_n2")
+                            self.conditions.append("wfpc2_pc_any_n2")
                         if n_exp == 3:
-                            self.conditions.append("wfpc2_wfpc2_any_n3")
+                            self.conditions.append("wfpc2_pc_any_n3")
                         if n_exp >= 4:
-                            self.conditions.append("wfpc2_wfpc2_any_n4")
+                            self.conditions.append("wfpc2_pc_any_n4")
                 else:
                     log.error("{} is an invalid HST instrument!".format(self.instrument))
                     sys.exit(1)
@@ -672,7 +672,7 @@ def read_index(instrument, detector, hap_pipeline_name='svm'):
 def get_wfpc2_pars(infiles):
 
     pars = {}
-    full_cfg_index, pars_dir = read_index('wfpc2', 'wfpc2', hap_pipeline_name='svm')
+    full_cfg_index, pars_dir = read_index('wfpc2', 'pc', hap_pipeline_name='svm')
 
     hap_pipeline_name = 'svm'
     conditions = ["single_basic"]

@@ -5,7 +5,7 @@ cosmic-rays.
 
 :Authors: Warren Hack
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import os
@@ -29,7 +29,7 @@ except ImportError:
 
 from . import __version__
 
-__all__ = ['blot', 'runBlot', 'help', 'getHelpAsString']
+__all__ = ['blot', 'runBlot', 'help']
 
 __taskname__ = 'ablot'
 _blot_step_num_ = 5

@@ -22,6 +22,12 @@ input : str or list of str (Default = ``'*flt.fits'``)
        will automatically generate the ``IVM`` files itself for each input
        exposure.
 
+mdriztab : bool (Default = False)
+    This button will immediately update the parameter values in the ``TEAL``
+    GUI based on those provided by the ``MDRIZTAB`` reference table referenced
+    in the first input image. This requires that the ``MDRIZTAB`` reference
+    file be available locally.
+
 editpars : bool (Default = False)
     A parameter that allows user to edit input parameters by hand in the GUI.
     ``True`` to use the GUI to edit parameters.
@@ -38,6 +44,12 @@ configobj : ConfigObjPars, ConfigObj, dict (Default = None)
     interface. When ``configobj`` is ``None``, ``AstroDrizzle``
     parameters not provided explicitly will be initialized with their
     default values as described in the "Other Parameters" section.
+
+wcsmap : wcs_functions.WCSMap, None (Default = None)
+    An instance of ``wcs_functions.WCSMap`` which can be used to override the
+    default ``WCS`` mapping for the input images. This parameter is used to
+    specify the mapping between the input images and the output frame. If
+    ``None`` is provided, then the default ``WCS`` mapping will be used.
 
 input_dict : dict, optional
     An optional list of parameters specified by the user, which can also
@@ -72,12 +84,6 @@ output : str (Default = '')
     on the input rootname. If no value is provided when a filelist or
     wild-card specification is given as input, then a rootname of ``'final'``
     will be used for the output file name.
-
-mdriztab : bool (Default = False)
-    This button will immediately update the parameter values in the ``TEAL``
-    GUI based on those provided by the ``MDRIZTAB`` reference table referenced
-    in the first input image. This requires that the ``MDRIZTAB`` reference
-    file be available locally.
 
 runfile : str (Default = 'astrodrizzle.log')
    This log file will contain all the output messages generated during
@@ -413,7 +419,7 @@ driz_separate : bool (Default = Yes)
     ``WCS`` as the final combined output frame. These images are used to create
     the median image, needed for cosmic ray rejection.
 
-driz_sep_kernel : str {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'} (Default = 'turbo')
+driz_sep_kernel : str {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'turbo')
     Used for the initial separate drizzling operation only, this parameter
     specifies the form of the kernel function used to distribute flux onto
     the separate output images. The current options are:
@@ -424,17 +430,13 @@ driz_sep_kernel : str {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczo
         contribute to the single pixel that is closest to the output position.
         It is equivalent to the limit as ``pixfrac->0``, and is very fast.
 
-      * ``'gaussian'``: this kernel is a circular gaussian with a FWHM
-        equal to the value of pixfrac, measured in input pixels.
-
       * ``'turbo'``: this is similar to ``kernel='square'`` but the box is
         always the same shape and size on the output grid, and is always
         aligned with the X and Y axes. This may result in a significant speed
         increase.
 
-      * ``'tophat'``: this kernel is a circular "top hat" shape of width
-        ``pixfrac``. It effects only output pixels within a radius of
-        ``pixfrac/2`` from the output position.
+      * ``'gaussian'``: this kernel is a circular gaussian with a FWHM
+        equal to the value of pixfrac, measured in input pixels.
 
       * ``'lanczos3'``: a Lanczos style kernel, extending a radius
         of 3 pixels from the center of the detection. The Lanczos kernel is
@@ -442,12 +444,16 @@ driz_sep_kernel : str {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczo
         effective for resampling single images when ``scale=pixfrac=1``.
         It leads to less resolution loss than other kernels, and typically
         results in reduced correlated noise in outputs.
+        
+        .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
+           produce reasonable results and can be useful in certain cases, they do not 
+           conserve flux; understand the effects of these kernels before using them. 
 
         .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
            processing as compared to other kernel options. This option should
            never be used for ``pixfrac!=1.0``, and is not recommended
            for ``scale!=1.0``.
-
+        
     The default for this step is ``'turbo'`` since it is much faster
     than ``'square'``, and it is quite satisfactory for the purposes
     of generating the median image. More information about the different
@@ -770,7 +776,7 @@ final_wht_type : {'EXP', 'ERR', 'IVM'} (Default = 'EXP')
           computed dark value from the image header to automatically generate
           an ``IVM`` file specific to each exposure.
 
-final_kernel : {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'} (Default = 'square')
+final_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'square')
     This parameter specifies the form of the kernel function used to distribute
     flux onto the separate output images, for the initial separate drizzling
     operation only. The value options for this parameter include:
@@ -789,10 +795,6 @@ final_kernel : {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'} (D
           the box is always the same shape and size on the output grid,
           and is always aligned with the ``X`` and ``Y`` axes. This may result
           in a significant speed increase.
-
-        * ``'tophat'``: this kernel is a circular "top hat" shape of width
-          ``pixfrac``. It effects only output pixels within a radius of
-          ``pixfrac/2`` from the output position.
 
         * ``'lanczos3'``: a Lanczos style kernel, extending a radius of
           3 pixels from the center of the detection. The Lanczos kernel is
@@ -997,8 +999,7 @@ or ``AstroDrizzle`` from command line (Python interpreter)
 Examples
 ---------
 
-The ``AstroDrizzle`` task can be run from either the ``TEAL`` GUI or from the
-command-line using ``PyRAF`` or Python. These examples illustrate the various
+The ``AstroDrizzle`` task can be run from either the ``TEAL`` GUI or from Python. These examples illustrate the various
 syntax options available.
 
 **Example 1:**  Drizzle a set of calibrated (``_flt.fits``) images using
@@ -1009,12 +1010,7 @@ ignore pixel flags of 64 and 32 in the DQ array of the (``_flt.fits``)
 images.  Align the final product such that North is
 up, and set the final pixel scale to 0.05 arcseconds/pixel.
 
-1. Run the task from ``PyRAF`` using the ``TEAL`` GUI::
-
-   >>> import drizzlepac
-   >>> epar astrodrizzle
-
-2. Run the task from ``PyRAF`` using the command line. ::
+Run the task from Python using the command line. ::
 
     >>> import drizzlepac
     >>> from drizzlepac import astrodrizzle
@@ -1022,20 +1018,13 @@ up, and set the final pixel scale to 0.05 arcseconds/pixel.
     ...     wcskey='A', driz_sep_bits='64,32', final_wcs=True,
     ...     final_scale=0.05, final_rot=0)
 
-   Or, run the same task from the PyRAF command line, but specify all
+   Or, run the same task from the Python command line, but specify all
    parameters in a config file named ``myparam.cfg``:
 
     >>> astrodrizzle.AstroDrizzle('*flt.fits', configobj='myparam.cfg')
 
-3. Run the task directly from Python:
-
-    >>> from drizzlepac import astrodrizzle
-    >>> astrodrizzle.AstroDrizzle('*flt.fits', output='final',
-    ...     wcskey='A', driz_sep_bits='64,32', final_wcs=True,
-    ...     final_scale=0.05, final_rot=0)
-
-4. Help can be accessed via the "Help" pulldown menu in the ``TEAL`` GUI.
-   It can also be accessed from the ``PyRAF`` command-line and saved
+Help can be accessed via the "Help" pulldown menu in the ``TEAL`` GUI.
+   It can also be accessed from the Python command-line and saved
    to a text file:
 
     >>> from drizzlepac import astrodrizzle
@@ -1043,5 +1032,4 @@ up, and set the final pixel scale to 0.05 arcseconds/pixel.
 
    or
 
-    >>> astrodrizzle.help(file='help.txt')
-    >>> page help.txt
+    >>> astrodrizzle.help(file='help.txt')    

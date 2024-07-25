@@ -3,7 +3,7 @@ A suite of functions for finding sources in images.
 
 :Authors: Warren Hack, Mihai Cara
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import sys
@@ -20,7 +20,7 @@ __all__ = ['gaussian1', 'gausspars', 'gaussian', 'moments', 'errfunc',
            'findstars', 'apply_nsigma_separation', 'xy_round',
            'precompute_sharp_round', 'sharp_round', 'roundness', 'immoments',
            'nmoment', 'centroid', 'cmoment', 'central_moments', 'covmat',
-           'help', 'getHelpAsString']
+           'help']
 
 
 #def gaussian(amplitude, xcen, ycen, xsigma, ysigma):

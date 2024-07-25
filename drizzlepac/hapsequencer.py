@@ -94,7 +94,7 @@ envvar_cat_svm = {"SVM_CATALOG_SBC": 'on',
                   "SVM_CATALOG_WFC": 'on',
                   "SVM_CATALOG_UVIS": 'on',
                   "SVM_CATALOG_IR": 'on',
-                  "SVM_CATALOG_WFPC2": 'on'}
+                  "SVM_CATALOG_PC": 'on'}
 envvar_cat_str = "SVM_CATALOG_{}"
 
 # --------------------------------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                        Specify which, if any, catalogs should be generated at all, based on detector.  This dictionary
                        needs to contain values for all instruments; namely:
 
-                       SVM_CATALOG_HRC, SVM_CATALOG_SBC, SVM_CATALOG_WFC, SVM_CATALOG_UVIS, SVM_CATALOG_IR, SVM_CATALOG_WFPC2
+                       SVM_CATALOG_HRC, SVM_CATALOG_SBC, SVM_CATALOG_WFC, SVM_CATALOG_UVIS, SVM_CATALOG_IR, SVM_CATALOG_PC
 
                        These variables can be defined with values of 'on'/'off'/'yes'/'no'/'true'/'false'.
 
@@ -622,6 +622,11 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
                 log.warning("This Total Data Product only has Grism/Prism data and no direct images: {}".format(total_item.drizzle_filename))
                 log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.")
                 product_list += [total_item.trl_filename]
+            
+            # Add skycell header keyword to SVM flt(c) files
+            # iterates over all exposure (names) in the total product
+            for image in total_item.edp_list:
+                proc_utils.add_skycell_to_header(image.full_filename)
 
         # Run AstroDrizzle to produce drizzle-combined products
         log.info("\n{}: Create drizzled imagery products.".format(str(datetime.datetime.now())))
@@ -765,10 +770,10 @@ def run_align_to_gaia(tot_obj, log_level=logutil.logging.INFO, diagnostic_mode=F
     for exp_obj in tot_obj.edp_list:
         if gaia_obj is None:
             prod_list = exp_obj.info.split("_")
-            prod_list[4] = "metawcs"
+            prod_list[5] = "metawcs"
             gaia_obj = product.FilterProduct(prod_list[0], prod_list[1], prod_list[2],
-                                             prod_list[3], prod_list[4], "all",
-                                             prod_list[5][0:3], log_level)
+                                             prod_list[3], prod_list[4], prod_list[5], "all",
+                                             prod_list[6][0:3], log_level)
             gaia_obj.configobj_pars = tot_obj.configobj_pars
         gaia_obj.add_member(exp_obj)
 
@@ -865,7 +870,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         drz_root_dir = os.getcwd()
         log.info("Run source list flagging on catalog file {}.".format(catalog_name))
 
-        # TODO: REMOVE BELOW CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
+        # Code for flagging parameters
         write_flag_filter_pickle_file = False
         if write_flag_filter_pickle_file:
             pickle_dict = {"drizzled_image": drizzled_image,
@@ -888,7 +893,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
             pickle.dump(pickle_dict, pickle_out)
             pickle_out.close()
             log.info("Wrote hla_flag_filter param pickle file {} ".format(out_pickle_filename))
-        # TODO: REMOVE ABOVE CODE ONCE FLAGGING PARAMS ARE OPTIMIZED
+
         if catalog_data is not None and len(catalog_data) > 0:
              source_cat = hla_flag_filter.run_source_list_flagging(drizzled_image,
                                                                    flt_list,

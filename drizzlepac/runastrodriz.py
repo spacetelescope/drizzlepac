@@ -3,7 +3,7 @@
 """ runastrodriz.py - Module to control operation of astrodrizzle to
         remove distortion and combine HST images in the pipeline.
 
-:License: :doc:`LICENSE`
+:License: :doc:`/LICENSE`
 
 USAGE: runastrodriz.py [-bdahfginv] inputFilename [newpath]
 
@@ -162,7 +162,7 @@ focus_pars = {"WFC3/IR": {'sigma': 2.0, 'good_bits': 512},
               "ACS/WFC": {'sigma': 1.5, 'good_bits': 1360},
               "ACS/SBC": {'sigma': 2.0, 'good_bits': 0},
               "ACS/HRC": {'sigma': 1.5, 'good_bits': 1360},
-              "WFPC2/WFPC2": {'sigma': 1.5, 'good_bits': 1360}}
+              "WFPC2/PC": {'sigma': 1.5, 'good_bits': 1360}}
 
 sub_dirs = ['OrIg_files', 'pipeline-default']
 valid_alignment_modes = ['apriori', 'aposteriori', 'default-pipeline']
@@ -200,7 +200,7 @@ wcs_preference = ['IDC_?????????-FIT_REL_GAIA*3', 'IDC_?????????-FIT_IMG_GAIA*3'
 # Primary user interface
 def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             headerlets=True, align_to_gaia=True, force_alignment=False,
-            do_verify_guiding=True, debug=False, make_manifest=False):
+            do_verify_guiding=False, debug=False, make_manifest=False):
     """ Run astrodrizzle on input file/ASN table
         using default values for astrodrizzle parameters.
     """
@@ -277,7 +277,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     else:
         # start by turning off 'verify_guiding' since loss of lock
         # was exceedingly rare and noted in the quality keywords
-        # which get checked in '_anayze_exposure'.
+        # which get checked in '_analyze_exposure'.
         do_verify_guiding = False
         # Convert input c0m file into compatible flt file
         if 'd0m' in inFilename:
@@ -463,6 +463,12 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         if _calfiles_flc:
             updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
 
+        # adds skycell keyword to science header of all flt(c) and drz(c,w) files.
+        # the SKYCELL value for IPPPSSOOT and SVM products may be different as the 
+        # current computation is based upon the WCSNAME of the input images.
+        for filename in _calfiles+_calfiles_flc:
+            processing_utils.add_skycell_to_header(filename)
+
         # Check to see whether or not guide star failure affected these observations
         # They would show up as images all sources streaked as if taken in SCAN mode or with a GRISM
         #
@@ -529,9 +535,13 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _good_images = [f for f in _calfiles if fits.getval(f, 'exptime') > 0.]
         _good_images = [f for f in _good_images if fits.getval(f, goodpix_name, ext=("SCI", 1)) > 0.]
         if len(_good_images) == 0:
-            _good_images = _calfiles
-            # Turn off alignment to GAIA since there is no valid data in the exposure.
-            align_to_gaia = False
+            if len(_calfiles)==0:
+                print("ERROR: No valid data found in input exposures.")
+                sys.exit(analyze.Ret_code.NO_VIABLE_DATA.value)
+            else:
+                _good_images = _calfiles
+                # Turn off alignment to GAIA since there is no valid data in the exposure.
+                align_to_gaia = False        
 
         if not wfpc2_input:
             adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
@@ -2098,7 +2108,7 @@ def _analyze_exposure(filename):
         print("        GUIDING == BAD.  Skipping processing ")
         process_exposure = False  # Yes, there was bad guiding...
 
-    badtab = analyze.analyze_data([filename])
+    badtab, _ = analyze.analyze_data([filename])
     if badtab['doProcess'][0] == 0:
         process_exposure = False
 

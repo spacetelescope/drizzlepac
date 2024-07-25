@@ -6,7 +6,7 @@ input image while recording the subtracted value in the image header.
 :Authors:
     Christopher Hanley, Megan Sosey, Mihai Cara
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import os, sys
@@ -292,7 +292,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
         fi.finalize()
 
         # combine user masks with static masks:
-        assert(len(extlist) == fi.count) #TODO: <-- remove after thorough testing
+        assert(len(extlist) == fi.count)
 
         masklist = []
         mextlist = []

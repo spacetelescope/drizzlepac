@@ -64,20 +64,24 @@ class HAPProduct:
     """
 
     def __init__(
-        self, prop_id, obset_id, instrument, detector, filename, filetype, log_level
+        self, prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filetype, log_level
     ):
         # set logging level to user-specified level
         log.setLevel(log_level)
         self.log_level = log_level
+
+        # Special logic to specify the WFPC2 detector name always to PC (as opposed to WFPC2) for filenaming. 
+        if instrument =='wfpc2':
+            detector = 'pc'
 
         # Make sure the proposal ID is a 5-character string
         self.prop_id = prop_id.zfill(5)
         self.obset_id = obset_id
         self.instrument = instrument
         self.detector = detector
+        self.aperture_from_poller = aperture_from_poller
         self.filetype = filetype
         self.rules_file = None
-
         self.basename = (
             "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector])) + "_"
         )
@@ -195,7 +199,6 @@ class HAPProduct:
 
         exposure_filenames = []
         headerlet_filenames = {}
-        align_table = None
         crclean = []
 
         # If no catalog list has been provided, use the list defined in the configuration file
@@ -533,13 +536,13 @@ class TotalProduct(HAPProduct):
     """
 
     def __init__(
-        self, prop_id, obset_id, instrument, detector, filename, filetype, log_level
+        self, prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filetype, log_level
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filetype, log_level
         )
         self.info = "_".join(
-            [prop_id, obset_id, instrument, detector, filename, filetype]
+            [prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filetype]
         )
         self.exposure_name = filename[0:6]
 
@@ -628,6 +631,7 @@ class TotalProduct(HAPProduct):
 
         .. note:: Cosmic-ray identification is NOT performed when creating the total detection image.
         """
+
         # This insures that keywords related to the footprint are generated for this
         # specific object to use in updating the output drizzle product.
         self.meta_wcs = meta_wcs
@@ -653,7 +657,35 @@ class TotalProduct(HAPProduct):
             )
         )
 
-        edp_filenames = [element.full_filename for element in self.edp_list]
+        # Determine if there are any single exposure filter images which 
+        # should NOT be used in the computation of the total detection image in
+        # order to minimize cosmic ray contamination
+        #
+        # Loop over the exposure objects to collect the exposures for each filter
+        count_dict = {}
+        for expo in self.edp_list:
+            count_dict.setdefault(expo.filters, []).append(expo.full_filename)
+
+        # Accumulate the exposure file names for only the filters which have
+        # more than one exposure
+        exclude_string = []
+        edp_filenames = []
+        for key, value in count_dict.items():
+            if len(value) > 1:
+                edp_filenames += value
+            else:
+                exclude_string.append("Excluding single exposure filter image {} for {}.".format(value, key))
+
+        # However, if all the filters only have one exposure, just use all
+        # the exposures
+        if not edp_filenames:
+            for value in count_dict.values():
+                edp_filenames += value
+            log.info("All filters are single exposures, so all exposures are included.")
+        else:
+            for entry in exclude_string:
+                log.info(entry)
+
         astrodrizzle.AstroDrizzle(
             input=edp_filenames, output=self.drizzle_filename, **drizzle_pars
         )
@@ -699,17 +731,18 @@ class FilterProduct(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture_from_poller,
         filename,
         filters,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filetype, log_level
         )
 
         self.info = "_".join(
-            [prop_id, obset_id, instrument, detector, filename, filters, filetype]
+            [prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filters, filetype]
         )
         if filename[0:7].lower() != "metawcs":
             self.exposure_name = filename[0:6]
@@ -798,7 +831,7 @@ class FilterProduct(HAPProduct):
         )
 
         edp_filenames = [element.full_filename for element in self.edp_list]
-
+    
         if len(edp_filenames) == 1:
             drizzle_pars["resetbits"] = "0"  # Use any pixels already flagged as CRs
 
@@ -830,7 +863,6 @@ class FilterProduct(HAPProduct):
         try:
             shutil.move(self.trl_logname, self.trl_filename)
         except PermissionError:
-            # TODO:  trailer filename should be saved for moving later...
             pass
 
 
@@ -846,17 +878,18 @@ class ExposureProduct(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture_from_poller, 
         filename,
         filters,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filetype, log_level
         )
 
         self.info = "_".join(
-            [prop_id, obset_id, instrument, detector, filename, filters, filetype]
+            [prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filters, filetype]
         )
         self.filters = filters
         self.full_filename = self.copy_exposure(filename)
@@ -1011,17 +1044,18 @@ class GrismExposureProduct(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture_from_poller,
         filename,
         filters,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filetype, log_level
         )
 
         self.info = "_".join(
-            [prop_id, obset_id, instrument, detector, filename, filters, filetype]
+            [prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filters, filetype]
         )
         self.filters = filters
         self.full_filename = self.copy_exposure(filename)
@@ -1107,13 +1141,14 @@ class SkyCellExposure(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture_from_poller,
         filename,
         layer,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, filename, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture_from_poller, filename, filetype, log_level
         )
 
         filter_str = layer[0]
@@ -1342,13 +1377,14 @@ class SkyCellProduct(HAPProduct):
         obset_id,
         instrument,
         detector,
+        aperture_from_poller,
         skycell_name,
         layer,
         filetype,
         log_level,
     ):
         super().__init__(
-            prop_id, obset_id, instrument, detector, skycell_name, filetype, log_level
+            prop_id, obset_id, instrument, detector, aperture_from_poller, skycell_name, filetype, log_level
         )
         # May need to exclude 'filter' component from layer_str
         filter_str = layer[0]

@@ -31,7 +31,7 @@ driz_separate : bool (Default = No)
     the same WCS as the final combined output frame. These images are used
     to create the median image, needed for cosmic ray rejection.
 
-driz_sep_kernel : {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'} (Default = 'turbo')
+driz_sep_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'turbo')
     Used for the initial separate drizzling operation only, this parameter
     specifies the form of the kernel function used to distribute flux onto
     the separate output images. The current options are:
@@ -47,9 +47,6 @@ driz_sep_kernel : {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'}
         the same shape and size on the output grid, and is always aligned
         with the X and Y axes. This may result in a significant speed
         increase.
-      * **tophat**: this kernel is a circular "top hat" shape of
-        width ``pixfrac``. It effects only output pixels within a radius
-        of ``pixfrac``/2 from the output position.
       * **lanczos3**: a Lanczos style kernel, extending a radius of 3
         pixels from the center of the detection. The Lanczos kernel
         is a damped and bounded form of the "sinc" interpolator,
@@ -57,6 +54,10 @@ driz_sep_kernel : {'square', 'point', 'gaussian', 'turbo', 'tophat', 'lanczos3'}
         when ``scale``\ =\ ``pixfrac``\ =1. It leads to less resolution loss
         than other kernels, and typically results in reduced correlated
         noise in outputs.
+
+        .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
+            produce reasonable results, we cannot guarantee that they will properly 
+            conserve flux; understand the effects of these kernels before using them. 
 
         .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
            processing as compared to other kernel options. This option
@@ -180,7 +181,7 @@ of them::
 
 Examples
 --------
-Basic example of how to call static yourself from a python command line,
+Basic example of how to call static yourself from a Python command line,
 using the default parameters for the task.
 
 >>> from drizzlepac import adrizzle

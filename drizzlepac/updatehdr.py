@@ -2,7 +2,7 @@
 
 :Authors: Warren Hack, Mihai Cara
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import re
@@ -515,7 +515,7 @@ def interpret_wcsname_type(wcsname):
     else:
         if 'FIT' not in fit_term:
             wcstype += default_fit.format(fit_term)
-        else:
+        elif fit_term is not None:
             wcstype += post_fit
             postfit_type = fit_term.split('_')
             wcstype += fit_terms[postfit_type[1]].format(postfit_type[2])

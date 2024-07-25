@@ -29,6 +29,8 @@ if sys.platform == 'win32':
         ('__STDC__', 1)
     ]
 
+# importing these extension modules is tested in `.github/workflows/build.yml`; 
+# when adding new modules here, make sure to add them to the `test_command` entry there
 ext_modules = [
     Extension(
         'drizzlepac.cdriz',

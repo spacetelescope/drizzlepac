@@ -3,7 +3,7 @@
 
 :Authors: Warren Hack, Ivo Busko, Christopher Hanley
 
-:License: :doc:`../LICENSE`
+:License: :doc:`/LICENSE`
 
 """
 import copy
@@ -397,7 +397,7 @@ def wfpc2_to_flt(imgname):
 
     # Add keywords to be more compatible with ACS and WFC3 data
     num_sci = fileutil.countExtn(imgname)
-    det_name = 'WFPC2'
+    det_name = 'PC'
     in_sci[0].header['DETECTOR'] = det_name
     in_sci[0].header['PRIMESI'] = det_name
 
