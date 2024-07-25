@@ -40,10 +40,10 @@ bc1.test_configs = [data_config]
 bc1.failedFailureThresh = 0
 
 bc2 = new BuildConfig()
-bc2.name = '3.10-dev'
+bc2.name = '3.11-dev'
 bc2.nodetype = 'linux'
 bc2.env_vars = ['TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory']
-bc2.conda_packages = ['python=3.10']
+bc2.conda_packages = ['python=3.11']
 bc2.build_cmds = ["pip install numpy astropy pytest-cov ci-watson || true",
                  "pip install -r requirements-dev.txt --upgrade -e '.[test]' || true",
                  "pip freeze || true"]

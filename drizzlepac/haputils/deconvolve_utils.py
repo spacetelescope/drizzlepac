@@ -28,7 +28,7 @@ from .. import astrodrizzle
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 from scipy import ndimage
-import scipy.signal as ss
+from scipy.signal import windows
 
 from stsci.tools import logutil
 
@@ -479,7 +479,7 @@ def _create_input_psf(psf_name, calimg, total_flux):
     lib_size = [lib_psf_arr.shape[0] // 2, lib_psf_arr.shape[1] // 2]
 
     # create hamming 2d filter to avoid edge effects
-    h = ss.hamming(lib_psf_arr.shape[0])
+    h = windows.hamming(lib_psf_arr.shape[0])
     h2d = np.sqrt(np.outer(h, h))
     lib_psf_arr *= h2d
 
