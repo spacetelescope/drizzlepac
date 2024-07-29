@@ -36,6 +36,16 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ==================
+- Corrected the way the n1_exposure_time and tot_exposure_time values
+  are computed as these values are used in the computation for rejecting
+  catalog creation based on expected cosmic ray detections.  Generalized
+  the crfactor dictionary for all detectors. Ensure if any catalog type
+  is rejected, all the catalog types are rejected. [#nnnn]
+
+- Modified the call to the hamming function in the deconvolve_utils.py module
+  as SciPy deprecated the way window filtering functions can be invoked. These
+  functions can no longer be imported from the scipy.signal namespace but need
+  to be accessed via scipy.signal.windows.  [#1848]
 
 - Reverted #1798 until further testing is done with Photutils.
 
