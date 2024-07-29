@@ -282,7 +282,6 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
                                 svm_gendata_col.append(exposure.svm_gendate)
                                 if level !=4:
                                     log.warning(f"Incorrect level associated with {update_filename}.")
-                                    log.warning(f"Skipping HDRTABLE update.")
                             break
 
     hdrtab_cols = orig_tab.columns
