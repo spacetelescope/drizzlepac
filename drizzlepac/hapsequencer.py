@@ -179,6 +179,57 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
             # Get parameter from config files for CR rejection of catalogs
             cr_residual = total_product_obj.configobj_pars.get_pars('catalog generation')['cr_residual']
             n1_exposure_time = 0
+            tot_exposure_time = 0
+            n1_factor = 0.0
+            n1_dict = {}
+
+            # Compute the n1_exposure_time for the total detection image as
+            # this value is used as a criterion for rejecting catalog creation
+            if total_product_obj.detector.upper() not in ['IR', 'SBC']:
+
+                # Create a dictionary based on ALL of the exposures available to be
+                # used for the creation of this particular total detection image.
+                # Accummulate the number of exposures per filter and the corresponding
+                # exposure time.
+                #pdb.set_trace()
+                for edp in total_product_obj.edp_list:
+                    if edp.filters not in n1_dict:
+                        n1_dict[edp.filters] = {'n': 1, 'texptime': edp.exptime}
+                    else:
+                        n1_dict[edp.filters]['n'] += 1
+                        n1_dict[edp.filters]['texptime'] += edp.exptime
+
+                # Since single filter exposures are excluded from the total
+                # detection image, these exposures should not be included in
+                # the computation of the tot_exposure_time. The exception to
+                # this statement is when there are only single exposures from
+                # all the filters which comprise the total detection image.
+
+                # If the total detection image is comprised of more than one
+                # exposure in at least one filter...
+                filter_info = n1_dict.values()
+                if max([x['n'] for x in n1_dict.values()]) > 1:
+                    for values in filter_info:
+                        if values['n'] > 1:
+                            tot_exposure_time += values['texptime']
+                # ...else if the the detection images is comprised of single
+                # filter exposures
+                else:
+                    for values in filter_info:
+                        if values['n'] == 1:
+                            tot_exposure_time += values['texptime']
+                            n1_exposure_time += values['texptime']
+                            n1_factor += cr_residual
+
+                # Insure that n1_factor only improves the threshold, not make it worse.
+                n1_factor = min(n1_factor, 1.0)
+
+                # Account for the influence of the single-image cosmic-ray identification
+                # This fraction represents the residual number of cosmic-rays after single-image identification
+                if n1_exposure_time < tot_exposure_time:
+                    n1_exposure_time *= n1_factor
+
+                log.info(f"Total exposure time of {tot_exposure_time} for total detection image: {total_product_obj.drizzle_filename}")
 
             log.info("Generating filter product source catalogs")
             for filter_product_obj in total_product_obj.fdp_list:
@@ -208,33 +259,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                                                                   filter_product_catalogs,
                                                                   log_level,
                                                                   diagnostic_mode)
-
-                if total_product_obj.detector.upper() not in ['IR', 'SBC']:
-                    # Apply cosmic-ray threshold criteria used by HLA to determine whether or not to reject
-                    # the catalogs.
-                    tot_exposure_time = 0
-                    n1_factor = 0.0
-                    n1_dict = {}
-                    for edp in total_product_obj.edp_list:
-                        if edp.filters not in n1_dict:
-                            n1_dict[edp.filters] = {'n': 1, 'texptime': edp.exptime}
-                        else:
-                            n1_dict[edp.filters]['n'] += 1
-                            n1_dict[edp.filters]['texptime'] += edp.exptime
-
-                    for edp in total_product_obj.edp_list:
-                        tot_exposure_time += edp.exptime
-                        if n1_dict[edp.filters]['n'] == 1:
-                            n1_exposure_time += edp.exptime
-                            n1_factor += cr_residual
-
-                    # Insure that n1_factor only improves the threshold, not make it worse.
-                    n1_factor = min(n1_factor, 1.0)
-
-                    # Account for the influence of the single-image cosmic-ray identification
-                    # This fraction represents the residual number of cosmic-rays after single-image identification
-                    if n1_exposure_time < tot_exposure_time:
-                        n1_exposure_time *= n1_factor
 
                 # write out CI and FWHM values to file (if IRAFStarFinder was used instead of DAOStarFinder) for hla_flag_filter parameter optimization.
                 if diagnostic_mode and phot_mode in ['aperture', 'both']:
