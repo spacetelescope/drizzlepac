@@ -28,9 +28,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.1 (unreleased)
 ==================
-- Added an if statement in verify_crthresh() so the evaluation for the possible
-  rejection of catalogs due to not enough sources vs estimated cosmic rays is
-  not done for ACS/SBC and WFC3/IR. [#nnnn]
+- Avoid applying the estimated cosmic ray vs real sources threshold for the
+  ACS/SBC and WFC3/IR detectors. [#1858]
 
 - Corrected the way the n1_exposure_time and tot_exposure_time values
   are computed as these values are used in the computation for rejecting
