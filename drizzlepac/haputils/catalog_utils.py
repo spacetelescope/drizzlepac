@@ -565,7 +565,7 @@ class HAPCatalogs:
     # WFPC2: 1600**2 pixels, pixel size (15um)**2
     # acs/wfc-> crfactor = {'aperture': 300, 'segment': 150}  # CRs / hr / 4kx4k pixels
     crfactor = {'WFC': {'aperture': 300, 'segment': 150}, 'HRC': {'aperture': 37, 'segment': 18.5},
-                'UVIS': {'aperture': 300, 'segment': 150}, 'PC': {'aperture': 46, 'segment': 23}} 
+                'UVIS': {'aperture': 300, 'segment': 150}, 'WFPC2': {'aperture': 46, 'segment': 23}}
 
     def __init__(self, fitsfile, param_dict, param_dict_qc, num_images_mask, log_level, diagnostic_mode=False, types=None,
                  tp_sources=None):
