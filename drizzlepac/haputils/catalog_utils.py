@@ -565,7 +565,7 @@ class HAPCatalogs:
     # WFPC2: 1600**2 pixels, pixel size (15um)**2
     # acs/wfc-> crfactor = {'aperture': 300, 'segment': 150}  # CRs / hr / 4kx4k pixels
     crfactor = {'WFC': {'aperture': 300, 'segment': 150}, 'HRC': {'aperture': 37, 'segment': 18.5},
-                'UVIS': {'aperture': 300, 'segment': 150}, 'PC': {'aperture': 46, 'segment': 23}} 
+                'UVIS': {'aperture': 300, 'segment': 150}, 'WFPC2': {'aperture': 46, 'segment': 23}}
 
     def __init__(self, fitsfile, param_dict, param_dict_qc, num_images_mask, log_level, diagnostic_mode=False, types=None,
                  tp_sources=None):
@@ -690,17 +690,18 @@ class HAPCatalogs:
         log.info("  based on EXPTIME = {}sec for the n=1 filters".format(n1_exposure_time))
 
         detector = self.image.keyword_dict["detector"].upper()
-        for cat_type in self.catalogs:
-            source_cat = self.catalogs[cat_type]
-            if source_cat.sources:
-                thresh = self.crfactor[detector][cat_type] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
-                source_cat = source_cat.sources if cat_type == 'aperture' else source_cat.source_cat
-                n_sources = source_cat.sources_num_good  # len(source_cat)
-                all_sources = len(source_cat)
-                log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
-                if n_sources < thresh and 0 < n_sources:
-                    self.reject_cats[cat_type] = True
-                    log.info("{} catalog FAILED CR threshold.".format(cat_type))
+        if detector not in ['IR', 'SBC']:
+            for cat_type in self.catalogs:
+                source_cat = self.catalogs[cat_type]
+                if source_cat.sources:
+                    thresh = self.crfactor[detector][cat_type] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
+                    source_cat = source_cat.sources if cat_type == 'aperture' else source_cat.source_cat
+                    n_sources = source_cat.sources_num_good
+                    all_sources = len(source_cat)
+                    log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
+                    if 0 < n_sources < thresh:
+                        self.reject_cats[cat_type] = True
+                        log.info("{} catalog FAILED CR threshold.".format(cat_type))
 
         # Ensure if any catalog is rejected, the remaining catalogs are also rejected
         if any([True for k,v in self.reject_cats.items() if v == True]):
