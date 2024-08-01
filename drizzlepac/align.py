@@ -991,7 +991,9 @@ def determine_fit_quality(
             required_nmatches = align_pars["run_align"]["mosaic_fitgeom_list"][fitgeom]
         else:
             required_nmatches = align_pars["run_align"]["mosaic_relgeom_list"][fitgeom]
-        
+
+        # If the number of matches is more than requirement set in configuration (json) files
+        # OR the fit RMS is higher --> fit is comprimised below
         if num_xmatches >= required_nmatches or (num_xmatches >= 2 and fit_rms_val > 0.5):
             nmatches_check = True
         radial_offset_check = False
