@@ -6,13 +6,13 @@ A suite of functions for finding sources in images.
 :License: :doc:`/LICENSE`
 
 """
-import sys
+# import sys
 import math
 
 import numpy as np
 from scipy import ndimage
 
-import stsci.imagestats as imagestats
+# import stsci.imagestats as imagestats
 
 from . import cdriz
 

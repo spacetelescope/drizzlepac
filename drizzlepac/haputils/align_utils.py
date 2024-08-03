@@ -35,7 +35,7 @@ from stsci.tools import fileutil
 from .. import updatehdr
 from . import astrometric_utils as amutils
 from . import analyze
-from . import deconvolve_utils as decutils
+# from . import deconvolve_utils as decutils
 
 from tweakwcs.matchutils import XYXYMatch
 from tweakwcs.imalign import align_wcs

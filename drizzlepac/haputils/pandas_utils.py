@@ -6,25 +6,25 @@
     tests.
 
 """
-import array
-from bokeh.layouts import row
-from bokeh.plotting import figure, output_file, show
-from bokeh.models import ColumnDataSource, Label
-import csv
-import glob
-import json
-import logging
-import os
+# import array
+# from bokeh.layouts import row
+# from bokeh.plotting import figure, output_file, show
+# from bokeh.models import ColumnDataSource, Label
+# import csv
+# import glob
+# import json
+# import logging
+# import os
 import sys
 import pandas as pd
 import pathlib
 import re
-import shutil
-import traceback
+# import shutil
+# import traceback
 
 from stsci.tools import logutil
-from astropy.io import fits
-import numpy as np
+# from astropy.io import fits
+# import numpy as np
 
 MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'

@@ -5,14 +5,14 @@ import os
 import sys
 
 from bokeh.layouts import row, column
-from bokeh.plotting import figure, output_file, save
-from bokeh.models import ColumnDataSource, Label, Range1d, Paragraph
+from bokeh.plotting import output_file, save
+from bokeh.models import ColumnDataSource, Range1d, Paragraph
 
 import numpy as np
 
 from stsci.tools import logutil
 
-from drizzlepac.haputils.pandas_utils import PandasDFReader, get_pandas_data
+from drizzlepac.haputils.pandas_utils import get_pandas_data
 from drizzlepac.haputils.graph_utils import HAPFigure, build_tooltips
 
 MSG_DATEFMT = '%Y%j%H%M%S'

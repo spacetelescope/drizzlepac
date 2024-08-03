@@ -4,7 +4,7 @@
 ['STATE OF INPUT FILES']['clean'] fields to 'True' in all astrodrizzle parameter .json files."""
 
 import json
-import glob
+# import glob
 from pathlib import Path
 
 code_dir = os.path.abspath(__file__)

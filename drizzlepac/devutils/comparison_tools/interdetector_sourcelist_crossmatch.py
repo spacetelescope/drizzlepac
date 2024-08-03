@@ -13,7 +13,7 @@ from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 import numpy as np
 
-from drizzlepac.devutils.comparison_tools import compare_sourcelists
+# from drizzlepac.devutils.comparison_tools import compare_sourcelists
 from drizzlepac.haputils import hla_flag_filter
 import drizzlepac.haputils.comparison_utils as cu
 import drizzlepac.haputils.svm_quality_analysis as svmqa

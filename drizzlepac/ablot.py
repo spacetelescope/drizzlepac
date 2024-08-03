@@ -9,12 +9,12 @@ cosmic-rays.
 
 """
 import os
-import sys
+# import sys
 import numpy as np
-from stsci.tools import fileutil, teal, logutil
+from stsci.tools import fileutil, logutil
 from . import outputimage
 from . import wcs_functions
-from . import processInput
+# from . import processInput
 from . import util
 import stwcs
 from stwcs import distortion

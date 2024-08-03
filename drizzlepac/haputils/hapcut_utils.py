@@ -7,7 +7,7 @@ from astropy.io import fits
 from astropy.table import Table, vstack, unique
 from astropy.units.quantity import Quantity
 from astroquery.mast import Observations
-from drizzlepac.haputils import cell_utils as cu
+# from drizzlepac.haputils import cell_utils as cu
 from pprint import pprint
 from stsci.tools import logutil
 

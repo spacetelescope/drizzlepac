@@ -3,7 +3,7 @@
 
 import sys
 from astropy.table import Table
-import numpy as np
+# import numpy as np
 
 
 infilename = sys.argv[1]

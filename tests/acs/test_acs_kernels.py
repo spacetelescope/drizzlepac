@@ -1,8 +1,8 @@
-import os
+# import os
 
 from stsci.tools import teal
 from drizzlepac import astrodrizzle
-from ci_watson.artifactory_helpers import get_bigdata
+# from ci_watson.artifactory_helpers import get_bigdata
 from ..resources import BaseACS
 
 

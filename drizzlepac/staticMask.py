@@ -13,8 +13,8 @@ import os
 import sys
 
 import numpy as np
-from stsci.tools import fileutil, teal, logutil
-import astropy
+from stsci.tools import fileutil, logutil
+# import astropy
 from astropy.io import fits
 from stsci.imagestats import ImageStats
 from . import util

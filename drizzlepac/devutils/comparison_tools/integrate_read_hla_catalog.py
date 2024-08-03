@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os
-import pdb
+# import pdb
 import sys
 from astropy.table import Table
 import numpy as np

@@ -19,7 +19,7 @@ import traceback
 import shutil
 
 from astropy.io import fits
-from collections import OrderedDict
+# from collections import OrderedDict
 from stsci.tools import logutil
 from stwcs import updatewcs
 import numpy as np

@@ -3,11 +3,11 @@ import pytest
 import math
 
 from astropy.io import fits
-from astropy.table import Table
+# from astropy.table import Table
 
 import numpy as np
 import stwcs
-from stwcs import updatewcs
+# from stwcs import updatewcs
 from stsci.tools import fileutil
 
 from ci_watson.artifactory_helpers import get_bigdata_root

@@ -4,14 +4,14 @@
 """
 import datetime
 import os
-import math
+# import math
 import numpy as np
 import pytest
 
 from drizzlepac.haputils import astroquery_utils as aqutils
 from drizzlepac import runsinglehap
 from astropy.io import fits, ascii
-from astropy.table import Table
+# from astropy.table import Table
 from pathlib import Path
 
 """
