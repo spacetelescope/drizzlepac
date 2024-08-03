@@ -337,7 +337,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
     logname = proc_utils.build_logname(input_filename, process_type='mvm')
 
     # Initialize total trailer filename as temp logname
-    logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT, force=True)
+    logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
     # Start by reading in any environment variable related to catalog generation that has been set
     cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_mvm[sw]) for sw in envvar_cat_mvm}
