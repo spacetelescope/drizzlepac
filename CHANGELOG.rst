@@ -18,8 +18,9 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.7.1 (unreleased)
-==================
+
+3.7.1 (12-Aug-2024)
+===================
 - Avoid applying the estimated cosmic ray vs real sources threshold for the
   ACS/SBC and WFC3/IR detectors. [#1858]
 
@@ -34,17 +35,12 @@ number of the code change for that issue.  These PRs can be viewed at:
   functions can no longer be imported from the scipy.signal namespace but need
   to be accessed via scipy.signal.windows.  [#1848]
 
-- Modify the dependencies portion of the project.toml file to specify
-  numpy<2.0 [#1813]
-
-- Reverted #1798 until further testing is done with Photutils.
-
 - Corrected the way that the number of constituent images are accumulated
-  per pixel by ensuring each contributing pixel has a finite value and 
+  per pixel by ensuring each contributing pixel has a finite value and
   is not zero. [#1820]
 
-- Within the HAP configuration files, increased the minimum number of matches 
-  for a successful "rscale" fit from 6 to 10, and removed "shift" as a fit geometry 
+- Within the HAP configuration files, increased the minimum number of matches
+  for a successful "rscale" fit from 6 to 10, and removed "shift" as a fit geometry
   option. [#1823].
 
 - Removed the use of a custom smoothing kernel based upon actual image
@@ -54,9 +50,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Addressed bugs caught by SonarQube static code analysis.  Interface
   changes listed here: Added missing input data parameter to the create_output
-  calls, Added missing log level to run function, Removed the deprecated 
-  parameter, dao_threshold, from astrometric_utils.py/extract_sources, removed 
-  "ivmlist" parameter from the interface of multiple functions in processInput.py 
+  calls, Added missing log level to run function, Removed the deprecated
+  parameter, dao_threshold, from astrometric_utils.py/extract_sources, removed
+  "ivmlist" parameter from the interface of multiple functions in processInput.py
   as it is an output parameter (buildFileListOrig, buildFileList, checkMultipleFiles,
   and process_input), and addressed missing parameters in the calls to
   get_ci_info and get_ci_from_file.. [#1802]
@@ -81,12 +77,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Created a new method, ricker_matched_kernel(), to generate the RickerWavelet2DKernel
   properly. Sigma is now provided, versus the FWHM, to the RickerWavelet2dKernel
-  constructor, and the normalization is handled by the new method where the 
+  constructor, and the normalization is handled by the new method where the
   normalization causes the RickerWavelet core to match the Gaussian core.  [#1791]
 
 - Added contributors guide to readthedocs. [#1787]
 
-- Removed "tophat" as a kernel option, added warnings for "gaussian" and "lanczos3" 
+- Removed "tophat" as a kernel option, added warnings for "gaussian" and "lanczos3"
   that they may not be conserving flux. [#1786]
 
 - Updated config json to exclude bad pixels in single WFC3/IR SVM processing. [#1783]
@@ -102,7 +98,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Improved calculation of S_REGION using dialation and erosion. [#1762]
 
 - Skycell added to flt(c) and drz(c) science headers for the pipeline and svm products. [#1729]
-  
+
 
 3.7.0 (02-Apr-2024)
 ===================
@@ -126,13 +122,13 @@ number of the code change for that issue.  These PRs can be viewed at:
   error under Python 3.12. [#1714]
 
 - Reorganized the readthedocs documentation with the help of various STScI
-  staff. [#1717] 
+  staff. [#1717]
 
 - Updates requirements-dev.txt to not install eggs that cause problems
   for the regression tests [#1721]
 
 - Regression Testing: allow "dev" jobs to fail [#1718]
-  
+
 - Initial setup for Architectural Design Records used to keep track of top-level
   thinking behind the code. [#1697]
 
@@ -144,15 +140,15 @@ number of the code change for that issue.  These PRs can be viewed at:
   package.  [#1689]
 
 - Added functionality to allow the use of a two-column poller file. This is used
-  to update the WFPC2 SVM aperture header keywords from the values in the poller 
+  to update the WFPC2 SVM aperture header keywords from the values in the poller
   file. [#1683]
 
 - Removed the version restriction on matplotlib. [#1649]
 
-- Forced a preferential order on the final selection of the WCS solution 
-  from the common pool of solutions among all input exposurea.  All input images 
-  need to have the same WCSNAME (same WCS solution) when performing pipeline 
-  alignment to avoid imprinting differences from one catalog to another on the 
+- Forced a preferential order on the final selection of the WCS solution
+  from the common pool of solutions among all input exposurea.  All input images
+  need to have the same WCSNAME (same WCS solution) when performing pipeline
+  alignment to avoid imprinting differences from one catalog to another on the
   final fit and destroying the relative alignment. [#1645, #1638]
 
 - Redesigned the overall structure of the documentation, readthedocs, for the
@@ -160,18 +156,18 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Addressed a bug in the calculation of measurements for each detected source
   in the filter catalogs. The detection catalog, based upon the "total" image,
-  is now used in the correct manner to define the source centroids and shape 
-  properties.  In addition, these properties are used to perform aperture 
+  is now used in the correct manner to define the source centroids and shape
+  properties.  In addition, these properties are used to perform aperture
   photometry. [#1614]
 
-- Updated the HAP drizzle parameters for WFPC2. The primary change includes 
-  changing skymethod='localmin' from the prior 'match' which did not work well 
+- Updated the HAP drizzle parameters for WFPC2. The primary change includes
+  changing skymethod='localmin' from the prior 'match' which did not work well
   for the overlapping chips. [#1617]
 
 - Corrected reference catalog weights from being proportional to sigma to
   the proper 1/sigma**2. [#1616]
 
-- Removed the use of the shadow mask as an initial step in addressing the WFPC2 
+- Removed the use of the shadow mask as an initial step in addressing the WFPC2
   chip gaps [#1551]
 
 - Fixed a bug in processing of the ``group`` argument due to which the code
@@ -189,7 +185,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Fixed projection cell identification in overlapping regions. [#1572]
 
 - Force the version of matplotlib to be <= 3.6.3 as the newer versions of
-  the library cause problems with the calcloud preview generation. [#1571] 
+  the library cause problems with the calcloud preview generation. [#1571]
 
 3.6.0 (12-Jun-2023)
 ===================
