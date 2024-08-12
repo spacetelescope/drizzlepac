@@ -28,7 +28,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   are computed as these values are used in the computation for rejecting
   catalog creation based on expected cosmic ray detections.  Generalized
   the crfactor dictionary for all detectors. Ensure if any catalog type
-  is rejected, all the catalog types are rejected. [#nnnn]
+  is rejected, all the catalog types are rejected. [#1853]
 
 - Modified the call to the hamming function in the deconvolve_utils.py module
   as SciPy deprecated the way window filtering functions can be invoked. These
