@@ -29,6 +29,7 @@ jobs:
         CRDS_SERVER_URL: https://hst-crds.stsci.edu
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+        CPPFLAGS: -fpermissive
       cache-path: /tmp/data/crds_cache/
       cache-key: ${{ needs.crds_contexts.outputs.hst }}
       libraries: |

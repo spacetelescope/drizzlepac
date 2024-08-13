@@ -10,6 +10,8 @@ jobs:
   build:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/publish.yml@v1
     with:
+      env:
+        CPPFLAGS: -fpermissive
       upload_to_pypi: ${{ (github.event_name == 'release') && (github.event.action == 'released') }}
       targets: |
         # Linux wheels (except python 313)
