@@ -1354,8 +1354,8 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             if 'relative' in item.meta['fit method']:
                 hdulist[sci_extn].header.insert("FITGEOM", ("RELGEOM", fitgeom_val), after=True)
                 hdulist[sci_extn].header.insert("FITGEOM", ("RELMATCH", nmatch_val, "number of matches for relative fit"), after=True)
-                hdulist[sci_extn].header.insert("FITGEOM", ("RELRMS_D", rms_ra_val, "RMS in DEC of relative WCS fit(mas)"), after=True)
-                hdulist[sci_extn].header.insert("FITGEOM", ("RELRMS_R", rms_dec_val, "RMS in RA of relative WCS fit(mas)"), after=True)
+                hdulist[sci_extn].header.insert("FITGEOM", ("RELRMS_D", rms_dec_val, "RMS in DEC of relative WCS fit(mas)"), after=True)
+                hdulist[sci_extn].header.insert("FITGEOM", ("RELRMS_R", rms_ra_val, "RMS in RA of relative WCS fit(mas)"), after=True)
                 # hdulist[sci_extn].header['RELREFIM'] = ?
             else:
                 # adds rel keywords if they don't exist
