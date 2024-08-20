@@ -1345,8 +1345,24 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             cr2_comment = RMS_DEC_COMMENT.replace('mas', 'deg')
             hdulist[sci_extn].header['CRDER1'] = (info['RMS_RA'].deg, cr1_comment) if info['RMS_RA'] is not None else -1.0
             hdulist[sci_extn].header['CRDER2'] = (info['RMS_DEC'].deg, cr2_comment) if info['RMS_DEC'] is not None else -1.0
-            hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else 0
-            hdulist[sci_extn].header['FITGEOM'] = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
+            nmatch_val = len(info['ref_mag']) if info['ref_mag'] is not None else 0
+            hdulist[sci_extn].header['NMATCHES'] = nmatch_val
+            fitgeom_val = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
+            hdulist[sci_extn].header['FITGEOM'] = fitgeom_val
+
+            # save relative fit solution keywords to science header
+            if 'relative' in item.meta['fit method']:
+                hdulist[sci_extn].header.insert("FITGEOM", ("RELGEOM", fitgeom_val), after=True)
+                hdulist[sci_extn].header.insert("FITGEOM", ("RELMATCH", nmatch_val, "number of matches for relative fit"), after=True)
+                hdulist[sci_extn].header.insert("FITGEOM", ("RELRMS_D", rms_ra_val, "RMS in DEC of relative WCS fit(mas)"), after=True)
+                hdulist[sci_extn].header.insert("FITGEOM", ("RELRMS_R", rms_dec_val, "RMS in RA of relative WCS fit(mas)"), after=True)
+                # hdulist[sci_extn].header['RELREFIM'] = ?
+            else:
+                # adds rel keywords if they don't exist
+                keys_to_add = ['RELGEOM', 'RELMATCH','RELRMS_D', 'RELRMS_R']
+                for keyword in keys_to_add:
+                    if keyword not in hdulist[sci_extn].header:
+                        hdulist[sci_extn].header.insert("FITGEOM", (keyword, "N/A"), after=True)
         else:
             hdulist[sci_extn].header['RMS_RA'] = (-1.0, RMS_RA_COMMENT)
             hdulist[sci_extn].header['RMS_DEC'] = (-1.0, RMS_DEC_COMMENT)
