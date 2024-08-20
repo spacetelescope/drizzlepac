@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.2 (unreleased)
 ==================
+
+- Added new header keywords and match requirements for relative fitting [#1860]
+
 - Added python 3.12 to testing matrix for Jenkins and github actions. [#1843]
 
 - ``manageInputCopies`` now copies successfully even if the original files were
