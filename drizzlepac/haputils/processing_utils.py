@@ -243,7 +243,6 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
     name_col = []
     svmrootname_col = []
     svm_gendata_col = []
-    columns_to_prepend = []
 
     orig_tab = image['hdrtab'].data
     # get the name of the product so it can be selected from
