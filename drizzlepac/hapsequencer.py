@@ -191,7 +191,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 # used for the creation of this particular total detection image.
                 # Accummulate the number of exposures per filter and the corresponding
                 # exposure time.
-                #pdb.set_trace()
                 for edp in total_product_obj.edp_list:
                     if edp.filters not in n1_dict:
                         n1_dict[edp.filters] = {'n': 1, 'texptime': edp.exptime}
@@ -208,10 +207,8 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 # If the total detection image is comprised of more than one
                 # exposure in at least one filter...
                 filter_info = n1_dict.values()
-                if max([x['n'] for x in n1_dict.values()]) > 1:
-                    for values in filter_info:
-                        if values['n'] > 1:
-                            tot_exposure_time += values['texptime']
+                if max(x['n'] for x in filter_info) > 1:
+                    tot_exposure_time = sum(values['texptime'] for values in filter_info if values['n'] > 1)
                 # ...else if the the detection images is comprised of single
                 # filter exposures
                 else:
