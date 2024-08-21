@@ -241,6 +241,9 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
     """Build HAP entry table extension for product"""
     # Convert input_exposure filenames into HAP product filenames
     name_col = []
+    svmrootname_col = []
+    svm_gendata_col = []
+
     orig_tab = image['hdrtab'].data
     # get the name of the product so it can be selected from
     # the total_obj_list for updating
@@ -268,9 +271,16 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
             for expname in input_exposures:
                 if rootname in expname:
                     # Convert input exposure names into HAP names
-                    for exposure in tot_obj.edp_list:
+                    for exposure in tot_obj.edp_list:                      
                         if rootname in exposure.full_filename:
                             name_col.append(exposure.product_basename)
+                            # check to see if all MVMs are correctly labeled as level 4
+                            # can remove second condition and below if statement / warning once verified. 
+                            if level == 4 or "skycell" in update_filename:
+                                svmrootname_col.append(exposure.svm_exposure_name)
+                                svm_gendata_col.append(exposure.svm_gendate)
+                                if level !=4:
+                                    log.warning(f"Incorrect level associated with {update_filename}.")
                             break
 
     hdrtab_cols = orig_tab.columns
@@ -279,8 +289,21 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
         # will accommodate a string of at least 51 characters which handles an ACS image
         max_len = max(max([len(name) for name in name_col]), 51)
         hapcol = Column(array=np.array(name_col, dtype=np.str_), name=HAPCOLNAME, format='{}A'.format(max_len))
-        newcol = fits.ColDefs([hapcol])
-        hdrtab_cols += newcol
+        new_hap_col = fits.ColDefs([hapcol])
+        hdrtab_cols += new_hap_col
+        
+    if svm_gendata_col:
+        gendate_column = Column(name="GENDATE", format="10A", array=svm_gendata_col)
+        new_gendate_col = fits.ColDefs([gendate_column])
+        hdrtab_cols = new_gendate_col + hdrtab_cols
+    
+    if svmrootname_col:
+        svm_char_len = np.max(np.char.str_len(svmrootname_col))
+        svmrootname_column = Column(
+            name="SVMROOTNAME", format=f"{svm_char_len}A", array=svmrootname_col
+        )
+        new_svmrootname_col = fits.ColDefs([svmrootname_column])
+        hdrtab_cols = new_svmrootname_col + hdrtab_cols
 
     # define new extension
     haphdu = fits.BinTableHDU.from_columns(hdrtab_cols)
@@ -290,7 +313,6 @@ def update_hdrtab(image, level, total_obj_list, input_exposures):
     del image['hdrtab']
     # replace with new extension
     image.append(haphdu)
-
 
 def compute_sregion(image, extname='SCI'):
     """Compute the S_REGION keyword for a given WCS.
@@ -391,7 +413,7 @@ def add_skycell_to_header(image_filename, extname='SCI'):
     # close file if opened by this functions
     if closefits:
         hdu.close()
-        
+
 
 def find_footprint(hdu, extname='SCI', extnum=1):
     """Extract the footprints from each input file

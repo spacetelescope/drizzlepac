@@ -1153,6 +1153,8 @@ class SkyCellExposure(HAPProduct):
 
         filter_str = layer[0]
 
+        self.svm_exposure_name = "_".join(filename.split("_")[:-1])
+
         # parse layer information into filename layer_str
         # layer: [filter_str, pscale_str, exptime_str, epoch_str]
         # e.g.: [f160w, coarse, all, all]
@@ -1181,6 +1183,7 @@ class SkyCellExposure(HAPProduct):
         hdu_list = fits.open(filename)
         self.mjdutc = hdu_list[0].header["EXPSTART"]
         self.exptime = hdu_list[0].header["EXPTIME"]
+        self.svm_gendate = hdu_list[0].header['DATE']
         hdu_list.close()
 
         self.product_basename = self.basename + "_".join(
