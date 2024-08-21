@@ -332,7 +332,7 @@ class CatalogImage:
                 log.info("")
 
             # Compute a minimum rms value based upon information directly from the data
-            if self.keyword_dict["detector"].upper() != "SBC":
+            if self.keyword_dict["detector"].upper() not in ['IR', 'SBC']:
                 minimum_rms = self.keyword_dict['atodgn'] * self.keyword_dict['readnse'] \
                               * self.keyword_dict['ndrizim'] / self.keyword_dict['texpo_time']
 
@@ -704,7 +704,7 @@ class HAPCatalogs:
                         log.info("{} catalog FAILED CR threshold.".format(cat_type))
 
         # Ensure if any catalog is rejected, the remaining catalogs are also rejected
-        if any([True for k,v in self.reject_cats.items() if v == True]):
+        if any(self.reject_cats.values()):
             for k in self.reject_cats.keys():
                 self.reject_cats[k] = True
 
