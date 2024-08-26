@@ -1350,30 +1350,42 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             fitgeom_val = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
             hdulist[sci_extn].header['FITGEOM'] = fitgeom_val
 
+            # adds rel keywords if they don't exist
+            keys_to_add = [
+                ("RELGEOM", "fitgeom for relative fit"),
+                ("RELMATCH", "number of matches for relative fit"),
+                ("RELRMS_D", "RMS in DEC of relative WCS fit(mas)"),
+                ("RELRMS_R", "RMS in RA of relative WCS fit(mas)"),
+                ("RELREFIM", "base/reference image rootname for relative fit"),
+            ]
+            for keyword in keys_to_add:
+                if keyword[0] not in hdulist[sci_extn].header:
+                    hdulist[sci_extn].header.insert(
+                        "FITGEOM", (keyword[0], "N/A", keyword[1]), after=True
+                    )
+
             # save relative fit solution keywords to science header
-            if 'relative' in item.meta['fit method']:
-                hdulist[sci_extn].header.insert("FITGEOM", ("RELGEOM", fitgeom_val), after=True)
-                hdulist[sci_extn].header.insert("FITGEOM", ("RELMATCH", nmatch_val, "number of matches for relative fit"), after=True)
-                hdulist[sci_extn].header.insert("FITGEOM", ("RELRMS_D", rms_dec_val, "RMS in DEC of relative WCS fit(mas)"), after=True)
-                hdulist[sci_extn].header.insert("FITGEOM", ("RELRMS_R", rms_ra_val, "RMS in RA of relative WCS fit(mas)"), after=True)
-                # hdulist[sci_extn].header['RELREFIM'] = ?
-            else:
-                # adds rel keywords if they don't exist
-                keys_to_add = ['RELGEOM', 'RELMATCH','RELRMS_D', 'RELRMS_R']
-                for keyword in keys_to_add:
-                    if keyword not in hdulist[sci_extn].header:
-                        hdulist[sci_extn].header.insert("FITGEOM", (keyword, "N/A"), after=True)
+            if "relative" in item.meta["fit method"]:
+                log.info("overwriting relative fit result keywords")
+                hdulist[sci_extn].header["RELGEOM"] = fitgeom_val
+                hdulist[sci_extn].header["RELMATCH"] = nmatch_val
+                hdulist[sci_extn].header["RELRMS_D"] = rms_dec_val
+                hdulist[sci_extn].header["RELRMS_R"] = rms_ra_val
+                base_image_rootname = tweakwcs_output[0].meta[
+                    "rootname"
+                ]  # base image for realtive fitting; first image in list
+                hdulist[sci_extn].header["RELREFIM"] = base_image_rootname
         else:
-            hdulist[sci_extn].header['RMS_RA'] = (-1.0, RMS_RA_COMMENT)
-            hdulist[sci_extn].header['RMS_DEC'] = (-1.0, RMS_DEC_COMMENT)
-            hdulist[sci_extn].header['CRDER1'] = -1.0
-            hdulist[sci_extn].header['CRDER2'] = -1.0
-            hdulist[sci_extn].header['NMATCHES'] = 0
-            hdulist[sci_extn].header['FITGEOM'] = "N/A"
+            hdulist[sci_extn].header["RMS_RA"] = (-1.0, RMS_RA_COMMENT)
+            hdulist[sci_extn].header["RMS_DEC"] = (-1.0, RMS_DEC_COMMENT)
+            hdulist[sci_extn].header["CRDER1"] = -1.0
+            hdulist[sci_extn].header["CRDER2"] = -1.0
+            hdulist[sci_extn].header["NMATCHES"] = 0
+            hdulist[sci_extn].header["FITGEOM"] = "N/A"
 
         # Update value of 'nmatches' in fit_info so that this value will get
         # used in writing out the headerlet as a file.
-        info['nmatches'] = hdulist[sci_extn].header['NMATCHES']
+        info["nmatches"] = hdulist[sci_extn].header["NMATCHES"]
 
         if 'HDRNAME' in hdulist[sci_extn].header:
             del hdulist[sci_extn].header['HDRNAME']
