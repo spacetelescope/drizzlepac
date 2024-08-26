@@ -1356,7 +1356,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
                 ("RELMATCH", "number of matches for relative fit"),
                 ("RELRMS_D", "RMS in DEC of relative WCS fit(mas)"),
                 ("RELRMS_R", "RMS in RA of relative WCS fit(mas)"),
-                ("RELREFIM", "base/reference image rootname for relative fit"),
+                ("RELREFIM", "base reference image rootname for relative fit"),
             ]
             for keyword in keys_to_add:
                 if keyword[0] not in hdulist[sci_extn].header:
