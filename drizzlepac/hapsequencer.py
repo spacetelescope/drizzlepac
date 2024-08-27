@@ -751,17 +751,28 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         # The Grism/Prism SVM FLT/FLC images which have had their WCS reconciled with the
         # corresponding direct images need trailer files.  This is also true of the Ramp images
         # which have only been processed through the "align to Gaia" stage.  At this time, just
-        # copy the total trailer file, and rename it appropriately.
+        # copy the full SVM processing log and rename it appropriately to the Grism or Ramp
+        # trailer filename.
+        # Note: When running under PyTest, the logname file cannot be found.  Since the Grism
+        # and Ramp log files are really placeholders, just create an empty file.
         if total_obj_list:
             for tot_obj in total_obj_list:
                 for gitem in grism_product_list:
                     if gitem.endswith('trl.txt'):
-                        shutil.copy(logname, gitem)
+                        if not os.path.exists(logname):
+                            open(gitem, 'a').close()
+                        else:
+                            shutil.copy(logname, gitem)
                 for ritem in ramp_product_list:
                     if ritem.endswith('trl.txt'):
-                        shutil.copy(logname, ritem)
+                        if not os.path.exists(logname):
+                            open(ritem, 'a').close()
+                        else:
+                            shutil.copy(logname, ritem)
 
-        # Append total trailer file (from astrodrizzle) to all total log files
+        # The tot_obj.trl_filename contains the astrodrizzle log.  The "logname"
+        # contains all the logging from the SVM processing.
+        # Append the full SVM processing log to the astrodrizzle log.
         if total_obj_list:
             for tot_obj in total_obj_list:
                 if found_data:
