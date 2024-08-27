@@ -1361,7 +1361,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             for keyword in keys_to_add:
                 if keyword[0] not in hdulist[sci_extn].header:
                     hdulist[sci_extn].header.insert(
-                        "FITGEOM", (keyword[0], "N/A", keyword[1]), after=True
+                        "FITGEOM", (keyword[0], 0.0, keyword[1]), after=True
                     )
 
             # save relative fit solution keywords to science header
@@ -1373,7 +1373,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
                 hdulist[sci_extn].header["RELRMS_R"] = rms_ra_val
                 base_image_rootname = tweakwcs_output[0].meta[
                     "rootname"
-                ]  # base image for realtive fitting; first image in list
+                ]  # base image for relative fitting; first image in list
                 hdulist[sci_extn].header["RELREFIM"] = base_image_rootname
         else:
             hdulist[sci_extn].header["RMS_RA"] = (-1.0, RMS_RA_COMMENT)
