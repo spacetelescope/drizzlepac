@@ -2372,7 +2372,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         # Take the min since the Hamming distance can be skewed by bad-pixels and noise
         # more than the similarity_index.
         # similarity_index is scaled by 2 to be scaled the same as the Hamming distance
-        dist = min(dist, sim * 2.0)
+        dist = min(dist, np.float64(sim) * 2.0)
 
         # Record results for each exposure compared to the combined drizzle product
         # Number of sources in drz and sfile can include artifacts such as CRs
@@ -2395,11 +2395,11 @@ def sigma_clipped_bkg(arr, sigma=3.0, nsigma=4, maxiters=None):
     if arr.max() == 0:
         return 0.0, [0.0, 0.0, 0.0]
     if maxiters is None:
-        maxiters = int(np.log10(arr.max() / 2) + 0.5)
+        maxiters = int(np.log10(arr.max() / np.float32(2)) + 0.5)
 
     # Use simple constant background to avoid problems with nebulosity
     bkg = sigma_clipped_stats(arr, sigma=sigma, maxiters=maxiters)
-    bkg_total = bkg[0] + nsigma * bkg[2]  # mean + 4 * sigma
+    bkg_total = np.float64(bkg[0] + nsigma * bkg[2])  # mean + 4 * sigma
 
     return bkg_total, bkg
 
@@ -2450,8 +2450,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
     if blank_image:
         # median filter image to limit noise-induced variations into overlap differences
         rebin_arr = ndimage.median_filter(rebin_arr, size=5)
-
-    rebin_arr -= bkg_total
+    rebin_arr -= np.float32(bkg_total)
     rebin_arr = np.clip(rebin_arr, 0, rebin_arr.max())
 
     return rebin_arr
