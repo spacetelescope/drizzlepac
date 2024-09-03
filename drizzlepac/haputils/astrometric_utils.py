@@ -2450,6 +2450,7 @@ def reduce_diff_region(arr, scale=1, background=None, nsigma=4,
     if blank_image:
         # median filter image to limit noise-induced variations into overlap differences
         rebin_arr = ndimage.median_filter(rebin_arr, size=5)
+
     rebin_arr -= bkg_total
     rebin_arr = np.clip(rebin_arr, 0, rebin_arr.max())
 
