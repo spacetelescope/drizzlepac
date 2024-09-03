@@ -21,6 +21,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.2 (unreleased)
 ==================
 
+- Added new header keywords and match requirements for relative fitting [#1860]
+
 - Update to HDRTABLE for MVM products to include SVM rootname and SVM creation date [#1846].
 
 - Modified the call to the hamming function in the deconvolve_utils.py module

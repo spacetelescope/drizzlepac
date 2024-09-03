@@ -986,11 +986,16 @@ def determine_fit_quality(
 
         # Execute checks
         nmatches_check = False
-        if num_xmatches >= align_pars["run_align"]["mosaic_fitgeom_list"][fitgeom] or (
-            num_xmatches >= 2 and fit_rms_val > 0.5
-        ):
-            nmatches_check = True
+        
+        if item.meta['fit method']!='relative':
+            required_nmatches = align_pars["run_align"]["mosaic_fitgeom_list"][fitgeom]
+        else:
+            required_nmatches = align_pars["run_align"]["mosaic_relgeom_list"][fitgeom]
 
+        # If the number of matches is more than requirement set in configuration (json) files
+        # OR the fit RMS is higher --> fit is compromised below
+        if num_xmatches >= required_nmatches or (num_xmatches >= 2 and fit_rms_val > 0.5):
+            nmatches_check = True
         radial_offset_check = False
         radial_offset = (
             math.sqrt(
