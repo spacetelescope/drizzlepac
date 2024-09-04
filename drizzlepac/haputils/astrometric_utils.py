@@ -873,7 +873,8 @@ def find_fwhm(psf, default_fwhm):
                                               psf_model=gaussian_prf,
                                               aperture_radius=aperture_radius,
                                               fitter=fitter,
-                                              fit_shape=(5, 5),
+                                              #fit_shape=(5, 5),
+                                              fit_shape=(11, 11),
                                               maxiters=2)
 
         phot_results = itr_phot_obj(psf)
