@@ -2372,7 +2372,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         # Take the min since the Hamming distance can be skewed by bad-pixels and noise
         # more than the similarity_index.
         # similarity_index is scaled by 2 to be scaled the same as the Hamming distance
-        dist = min(dist, sim * 2.0)
+        dist = min(dist, np.float64(sim) * 2.0)
 
         # Record results for each exposure compared to the combined drizzle product
         # Number of sources in drz and sfile can include artifacts such as CRs

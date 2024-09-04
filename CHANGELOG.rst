@@ -39,7 +39,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Modified the call to the hamming function in the deconvolve_utils.py module
   as SciPy deprecated the way window filtering functions can be invoked. These
   functions can no longer be imported from the scipy.signal namespace but need
-  to be accessed via scipy.signal.windows.  [#1848]
+  to be accessed via scipy.signal.windows. [#1848]
 
 - Corrected the way that the number of constituent images are accumulated
   per pixel by ensuring each contributing pixel has a finite value and
