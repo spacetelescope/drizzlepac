@@ -21,14 +21,16 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.2 (unreleased)
 ==================
 
-- Added new header keywords and match requirements for relative fitting [#1860]
+- Addressed additional issures related to numpy 2.0 scalar promotion. [#1875]
 
-- Update to HDRTABLE for MVM products to include SVM rootname and SVM creation date [#1846].
+- Added new header keywords and match requirements for relative fitting. [#1860]
+
+- Update to HDRTABLE for MVM products to include SVM rootname and SVM creation date. [#1846]
 
 - Modified the call to the hamming function in the deconvolve_utils.py module
   as SciPy deprecated the way window filtering functions can be invoked. These
   functions can no longer be imported from the scipy.signal namespace but need
-  to be accessed via scipy.signal.windows.  [#nnnn]
+  to be accessed via scipy.signal.windows. [#nnnn]
 
 - Added python 3.12 to testing matrix for Jenkins and github actions. [#1843]
 
@@ -50,7 +52,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Modified the call to the hamming function in the deconvolve_utils.py module
   as SciPy deprecated the way window filtering functions can be invoked. These
   functions can no longer be imported from the scipy.signal namespace but need
-  to be accessed via scipy.signal.windows.  [#1848]
+  to be accessed via scipy.signal.windows. [#1848]
 
 - Reverted #1798 until further testing is done with Photutils.
 
