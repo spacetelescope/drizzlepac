@@ -27,19 +27,14 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Update to HDRTABLE for MVM products to include SVM rootname and SVM creation date. [#1846]
 
-- Modified the call to the hamming function in the deconvolve_utils.py module
-  as SciPy deprecated the way window filtering functions can be invoked. These
-  functions can no longer be imported from the scipy.signal namespace but need
-  to be accessed via scipy.signal.windows. [#nnnn]
-
 - Added python 3.12 to testing matrix for Jenkins and github actions. [#1843]
 
 - ``manageInputCopies`` now copies successfully even if the original files were
   defined by full paths rather than being in the current working directory. [#1835]
 
 
-3.7.1 (unreleased)
-==================
+3.7.1 (12-Aug-2024)
+===================
 - Avoid applying the estimated cosmic ray vs real sources threshold for the
   ACS/SBC and WFC3/IR detectors. [#1858]
 
@@ -47,14 +42,12 @@ number of the code change for that issue.  These PRs can be viewed at:
   are computed as these values are used in the computation for rejecting
   catalog creation based on expected cosmic ray detections.  Generalized
   the crfactor dictionary for all detectors. Ensure if any catalog type
-  is rejected, all the catalog types are rejected. [#nnnn]
+  is rejected, all the catalog types are rejected. [#1853]
 
 - Modified the call to the hamming function in the deconvolve_utils.py module
   as SciPy deprecated the way window filtering functions can be invoked. These
   functions can no longer be imported from the scipy.signal namespace but need
   to be accessed via scipy.signal.windows. [#1848]
-
-- Reverted #1798 until further testing is done with Photutils.
 
 - Corrected the way that the number of constituent images are accumulated
   per pixel by ensuring each contributing pixel has a finite value and
