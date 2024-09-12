@@ -2,8 +2,8 @@ Regression Tests
 ================
 .. _regression-tests:
 
-SVM
----
+
+**SVM**
 
 Several HAP specific tests do various checks on different datasets included in the test file name (e.g. test_svm_wfc3ir.py). 
 The four groups of tests used are as follows:
@@ -55,8 +55,9 @@ test_svm_ibqk07.py: A, B, C, D
 
 test_svm_ibyt50.py: A, B, C
 
-HAP
-***
+|
+
+**HAP**
 
 test_processing_utils.py
 
@@ -91,8 +92,9 @@ archival_test_alignpipe_randomlist.py (*currently disabled*)
     test_alignpipe_randomlist
      * Similar to test_randomlist but include pipeline processing (runastrodriz.process). 
 
-ACS
-***
+|
+
+**ACS**
 
 test_acs_narrowband.py
     
@@ -121,8 +123,9 @@ test_asn_regress.py
     test_hrc_asn
      * Relative fit AstroDrizzle of ACS HRC dataset.
 
-WFPC2
-*****
+|
+
+**WFPC2**
 
 test_wfpc2.py
 
@@ -138,8 +141,9 @@ test_wfpc2.py
     test_mef_asn
      * Tests WFPC2 Astrodrizzle with data in multi-extension fits file format.
 
-WFC3
-****
+|
+
+**WFC3**
 
 test_wfc3.py
 
@@ -160,8 +164,9 @@ test_vary_perf.py
     test_perf
      * Tests Astrodrizzle performence using different numbers of cores.
 
-STIS
-****
+|
+
+**STIS**
 
 test_stis.py
 
@@ -177,8 +182,9 @@ test_stis.py
      * The same as test_nuv_mama but with STIS F28x50OIII CCD data. 
 
 
-drizzle algorithm
-*****************
+|
+
+**drizzle algorithm**
 
 test_cdriz.py
 
