@@ -11,13 +11,13 @@ The four groups of tests used are as follows:
 A. Simple tests:
    
     test_svm_samewcs
-     * Checks that products for both detectors are aligned to the same catalog
+     * Checks that products for both detectors are aligned to the same catalog.
 
     test_svm_wcs
-     * Checks the output primary WCSNAME includes FIT_SVM_GAIA
+     * Checks the output primary WCSNAME includes FIT_SVM_GAIA.
 
     test_svm_manifest_name
-     * Ensures the manifest file is created
+     * Ensures the manifest file is created.
 
    This also includes the general success of SVM alignment and catalog creation code.
 
@@ -34,7 +34,7 @@ B. SVM catalog tests (currently disabled)
 C. Tests for different detectors
     
     test_svm_wcs_ir, test_svm_wcs_ir_all, test_svm_wcs_uvis, test_svm_wcs_uvis_all
-     * SVM alignment and catalog creation for different detectors
+     * SVM alignment and catalog creation for different detectors.
 
 
 D. Mean magnitude tests
@@ -61,32 +61,35 @@ HAP
 test_processing_utils.py
 
     test_add_skycell_to_header
-     * unit test for function for adding skycell name to SVM headers
+     * Unit test for function for adding skycell name to SVM headers.
 
 test_pipeline.py
 
     test_astrometric_singleton
-     * A test of runastrodriz.process with varying envinroment setups and aqutils.retrieve_observations
+     * A test of runastrodriz.process with varying environment setups. Obtains data using aqutils.retrieve_observations.
 
 test_apriori.py
     
-    tests alignment of all of the available a priori wcs solutions
+    Tests alignment of all of the available a priori wcs solutions for two datasets for ACS and WFC3. 
 
 test_align.py
     
-    tests alignment of all of the available a posteriori wcs solutions
+    Tests alignment of all of the available a posteriori wcs solutions for a variety of datasets and scenarios.
 
-archival_test_run_svmpoller.py
+archival_test_run_svmpoller.py (*currently disabled*)
 
-    currently disabled
+    test_run_svmpoller
+     * Tests runsinglehap.perform using poller file as input. 
 
-archival_test_randomlist.py
+archival_test_randomlist.py (*currently disabled*)
 
-    currently disabled
+    test_randomlist
+     * Tests SVM alignment (align.perform_align) on a random dataset from "ACSWFC3ListDefault50.csv". Success is marked by a statistical sample (70%) of ACS and WFC3 datasets aligned to within 10mas RMS.
 
-archival_test_alignpipe_randomlist.py
+archival_test_alignpipe_randomlist.py (*currently disabled*)
 
-    currently disabled
+    test_alignpipe_randomlist
+     * Similar to test_randomlist but include pipeline processing (runastrodriz.process). 
 
 ACS
 ***
@@ -94,29 +97,29 @@ ACS
 test_acs_narrowband.py
     
     test_acs_narrowband
-     * tests relative fit AstroDrizzle on narrowband association.
+     * Tests relative fit AstroDrizzle on narrowband association.
 
 test_unit.py
     
-    Test do_driz square kernel with point
+    Test do_driz square kernel with point.
 
 test_acs_tweak.py
     
     test_tweak
-     * tests tweakreg and then AstroDrizzle
+     * Tests tweakreg and then AstroDrizzle.
 
     test_pixsky1
-     * tests pixtosky, pixtopix, skytopix on ACS data
+     * Tests pixtosky, pixtopix, skytopix on ACS data.
 
 test_acs_kernels.py
     
     test_kernels
-     * tests AstroDrizzle on ACS file over different final combined image kernels
+     * Tests AstroDrizzle on ACS file over different final combined image kernels.
 
 test_asn_regress.py
     
     test_hrc_asn
-     * relative fit AstroDrizzle of ACS HRC dataset. What does Regress refer to?
+     * Relative fit AstroDrizzle of ACS HRC dataset.
 
 WFPC2
 *****
@@ -124,16 +127,16 @@ WFPC2
 test_wfpc2.py
 
     test_waiver_single
-     * tests wfpc2 Astrodrizzle association of 1 dataset (c01 and c1f files)
+     * Tests WFPC2 Astrodrizzle association of 1 dataset (c01 and c1f files).
 
     test_waiver_asn
-     * tests wfpc2 Astrodrizzle association of multiple datasets
+     * Tests WFPC2 Astrodrizzle association of multiple datasets.
 
     test_wfpc2_single
-     * tests Astrodrizzle  with c01 and c1f with filenames as inputs
+     * Tests WFPC2 Astrodrizzle with c01 and c1f with filenames as inputs.
 
     test_mef_asn
-     * tests Astrodrizzle with data in multi-extension fits file format
+     * Tests WFPC2 Astrodrizzle with data in multi-extension fits file format.
 
 WFC3
 ****
@@ -141,18 +144,21 @@ WFC3
 test_wfc3.py
 
     test_binned_single
-     * tests with skysub=False
+     * Tests pipeline processing of WFC3 data with the parameter skysub=False.
 
     test_uvis_single
+     * Tests pipeline processing of a single WFC3/UVIS dataset.
 
     test_uvis_asn
+     * Tests pipeline processing of a WFC3/UVIS association (relative fitting).
 
     test_wfc3_ir_saturated
+     * Tests pipeline processing of a saturated WFC3/IR visit.
 
 test_vary_perf.py
 
     test_perf
-     * tests Astrodrizzle using different numbers of cores
+     * Tests Astrodrizzle performence using different numbers of cores.
 
 STIS
 ****
@@ -162,12 +168,13 @@ test_stis.py
     test_fuv_mama
 
     test_nuv_mama
+     * Tests for a correctly applies distortion model for STIS NUV MAMA data and the creation of a combined product using AstroDrizzle. 
 
     test_stis_ccd
-     * CCD data
+     * The same as test_nuv_mama but using CCD data. 
 
     test_stis_oiii_ccd
-     * STIS F28x50OIII CCD data
+     * The same as test_nuv_mama but with STIS F28x50OIII CCD data. 
 
 
 drizzle algorithm
@@ -175,8 +182,8 @@ drizzle algorithm
 
 test_cdriz.py
 
-    tests drizzling algorithm for different kernels in small square
+    Tests drizzling algorithm for different kernels in small square.
 
 test_kernel.py
 
-    tests drizzling algorithm for different kernels in larger square
+    Tests drizzling algorithm for different kernels in larger square.
