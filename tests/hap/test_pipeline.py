@@ -129,9 +129,9 @@ class TestSingleton(BaseWFC3Pipeline):
         """ Tests pipeline-style processing of a singleton exposure using runastrodriz.
         """
         # Get sample data through astroquery
-        flcfile = aqutils.retrieve_observation(dataset_names, suffix=['FLC'])[0]
-        fltfile = aqutils.retrieve_observation(dataset_names, suffix=['FLT'])[0]
-        rawfile = aqutils.retrieve_observation(dataset_names, suffix=['RAW'])[0]
+        flcfile = aqutils.retrieve_observation(dataset_names, suffix=['FLC'], product_type="pipeline")[0]
+        fltfile = aqutils.retrieve_observation(dataset_names, suffix=['FLT'], product_type="pipeline")[0]
+        rawfile = aqutils.retrieve_observation(dataset_names, suffix=['RAW'], product_type="pipeline")[0]
 
         # Retrieve reference files for these as well
         self.get_input_file('', fltfile, docopy=False)

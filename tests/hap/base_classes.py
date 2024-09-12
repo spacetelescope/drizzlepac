@@ -99,7 +99,7 @@ class BaseTest(object):
             the full path to the local copy of the file.
         """
         if len(args[0]) == 9: # Only a rootname provided
-            local_files = retrieve_observation(args[0])
+            local_files = retrieve_observation(args[0], product_type="pipeline")
         else:
             # If user has specified action for no_copy, apply it with
             # default behavior being whatever was defined in the base class.
