@@ -21,7 +21,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.2 (unreleased)
 ==================
 
-- Added documentation describing tests. [#1881]
+- Added documentation describing regression tests. [#1881]
 
 - Addressed additional issures related to numpy 2.0 scalar promotion. [#1875]
 

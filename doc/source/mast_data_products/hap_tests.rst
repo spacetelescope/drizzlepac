@@ -67,7 +67,7 @@ test_processing_utils.py
 test_pipeline.py
 
     test_astrometric_singleton
-     * A test of runastrodriz.process with varying environment setups. Obtains data using aqutils.retrieve_observations.
+     * A test of runastrodriz.process with varying environment setups. Obtains data using astroquery_utils.retrieve_observations.
 
 test_apriori.py
     
@@ -173,7 +173,7 @@ test_stis.py
     test_fuv_mama
 
     test_nuv_mama
-     * Tests for a correctly applies distortion model for STIS NUV MAMA data and the creation of a combined product using AstroDrizzle. 
+     * Tests for a correctly applied distortion model for STIS NUV MAMA data and the creation of a combined product using AstroDrizzle. 
 
     test_stis_ccd
      * The same as test_nuv_mama but using CCD data. 
