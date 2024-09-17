@@ -579,7 +579,7 @@ class SkyFootprint(object):
                 # Perform corner detection on each region/chip separately.
                 mask_corners = corner_peaks(corner_harris(label_mask),
                                        min_distance=3,
-                                       threshold_rel=0.2)
+                                       threshold_rel=0.1)
                 xy_corners = mask_corners * 0.
                 xy_corners[:, 0] = mask_corners[:, 1]
                 xy_corners[:, 1] = mask_corners[:, 0]
