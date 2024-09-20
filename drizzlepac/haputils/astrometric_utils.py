@@ -860,6 +860,7 @@ def find_fwhm(psf, default_fwhm):
     aperture_radius = 1.5 * default_fwhm
     source_group = SourceGrouper(min_separation=8)
     mmm_bkg = MMMBackground()
+    # Inner and outer radius of the circular annulus in pixels
     local_bkg = LocalBackground(5, 8, mmm_bkg)
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
     fitter = LevMarLSQFitter()
@@ -873,7 +874,6 @@ def find_fwhm(psf, default_fwhm):
                                               psf_model=gaussian_prf,
                                               aperture_radius=aperture_radius,
                                               fitter=fitter,
-                                              #fit_shape=(5, 5),
                                               fit_shape=(11, 11),
                                               maxiters=2)
 

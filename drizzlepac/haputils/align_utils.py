@@ -773,7 +773,10 @@ class SBCHAPImage(HAPImage):
         bkg_mask = ~np.clip(slabels, 0, 1).astype(bool)
 
         # Measure sub-pixel positions of each identified source now.
-        daofind = DAOStarFinder(fwhm=self.kernel_fwhm, threshold=0)
+        # NOTE: It is necessary to use a non-zero threshold to ensure the values
+        # computed in the low levels of Photutils are finite (in v1.13.0) or no
+        # table will be returned in the "src_table = daofind()" line below.
+        daofind = DAOStarFinder(fwhm=self.kernel_fwhm, threshold=1.0e-10)
 
         log.debug("Determining source properties as src_table...")
         src_table = daofind(sciarr, mask=bkg_mask)
