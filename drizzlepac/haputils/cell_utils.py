@@ -18,6 +18,8 @@ from spherical_geometry.polygon import SphericalPolygon
 
 from PIL import Image, ImageDraw
 
+from simplify_polyline import simplify
+
 from stwcs.wcsutil import HSTWCS
 from stsci.tools import logutil
 
@@ -507,12 +509,9 @@ class SkyFootprint(object):
         make up the footprint.  The corners are computed starting with
         the corner nearest (within 45deg) of vertical as measured from
         the center of the footprint, then proceeds counter-clockwise
-        (North to East).  The corners are initially identified using
-        the ``skimage.corner_harris`` function on the footprint mask to
-        identify the starting corner which is closest to veritical.  The
-        edge pixels are then ordered counter-clockwise, and corners are
-        finally confirmed in order where the slope along each edge changes
-        sign.
+        (North to East).  The corners are identified from the edge
+        pixels, and then the edge pixel polygon is simplified using
+        the `simplify_polyline.simplify` function.
 
         This results in a list of corner positions
         which can be used to populate the ``S_REGION`` keyword and traces
@@ -540,70 +539,53 @@ class SkyFootprint(object):
             self.find_footprint(member=member)
 
         if member == 'total':
-            # Use Harris corner detection to identify corners in the
-            # total footprint
+            # Trace the edge to identify corners in the total footprint
             # insure footprint has enough signal to detect corners
             fp = np.clip(self.footprint, 0, 1).astype(np.int16)
 
             # simple trick to remove noise and small regions 3x3 or less.
-            scmask_dilated_erroded = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
+            scmask_dilated_eroded = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
             
             # Start by smoothing out the edges of the chips/field
             # this will remove rough edges up to 3 pixels deep along the image edge
             # multiplying by 100 to avoid having the threshold as a decimal (0.5) between 0 and 1. 
-            scmask = ndimage.gaussian_filter(scmask_dilated_erroded.astype(np.float32) * 100, sigma=2) > 50
+            scmask = ndimage.gaussian_filter(scmask_dilated_eroded.astype(np.float32), sigma=2) > 0.5
             
             # Label each major contiguous region in the mask
             sclabels, nlabels = ndimage.label(scmask)
             slices = ndimage.find_objects(sclabels)
 
-            # For each region, trace the edge, find the Harris corners,
-            # then order the Harris corners counter-clockwise around the region
-            # using the traced edge pixel positions.
+            # For each region, trace the edge and simplify the polygon
             ordered_xy = []
             ordered_edges = []
             sky_corners = []
-            for label, mask_slice in enumerate(slices):
-                label += 1
+            for label, mask_slice in enumerate(slices, start=1):
                 # Need to guarantee the slice ALWAYS has a border of non-assigned pixels
                 label_shape = (mask_slice[0].stop - mask_slice[0].start + (label_border * 2),
                                mask_slice[1].stop - mask_slice[1].start + (label_border * 2))
-                label_mask = np.zeros(label_shape, sclabels.dtype)
+                # create a boolean version of mask for this label
+                label_mask = np.zeros(label_shape, dtype=bool)
                 # get slice with just the region/label of interest
-                label_mask[label_border:-1*label_border, label_border:-1*label_border] = sclabels[mask_slice].copy()
-                # make sure no pixels from other regions are present in this mask
-                label_mask[label_mask != label] = 0
-                # reset label to be a binary mask only
-                label_mask[label_mask == label] = 1000
-                print('extracting corners for region {} in slice {}'.format(label, mask_slice))
-                # Perform corner detection on each region/chip separately.
-                mask_corners = corner_peaks(corner_harris(label_mask),
-                                       min_distance=3,
-                                       threshold_rel=0.1)
-                xy_corners = mask_corners * 0.
-                xy_corners[:, 0] = mask_corners[:, 1]
-                xy_corners[:, 1] = mask_corners[:, 0]
-                # shift corner positions to full array positions
-                xy_corners += (mask_slice[1].start-label_border, mask_slice[0].start-label_border)
+                label_mask[label_border:-1*label_border, label_border:-1*label_border] = (sclabels[mask_slice] == label)
+
+                # Perform edge tracing on each region/chip separately.
 
                 # Create a mask from the total footprint consisting solely of the
                 # pixels at the outer edge, ordered in clockwise fashion.
-                #
-                # get list of (X,Y) coordinates of all edges from each separate 'region' or chip
-                edge_pixels = trace_polygon(label_mask > 0, mask_slice)
+                # Correct for the label_border padding
+                edge_pixels = trace_polygon(label_mask, mask_slice) - label_border
 
-                # use the ordering of the traced edge pixels to order the corners in the same way
-                cordist = distance.cdist(xy_corners, edge_pixels)  # returns distances for each corner position
-                ordered_indices = []
-                for distarr, minval in zip(cordist, np.min(cordist, axis=1)):
-                    ordered_indices.append(np.where(distarr == minval)[0][0])
-                radial_order = np.argsort(ordered_indices)
-                ordered_xyc = xy_corners[radial_order].tolist()
-                ordered_xyc.append(ordered_xyc[0])  # close polygon
+                # simplify the polygon
+                # note edge_pixels and xy_corners polygons are already closed
+                xy_corners = simplify(edge_pixels, min_dist=3.0)
+
+                if xy_corners.shape[0] <= 3:
+                    # this is surely an error, ought to raise an exception
+                    print("WARNING: Too few corners")
 
                 # save as output values
-                ordered_xy.append(np.array(ordered_xyc, dtype=np.float64))
-                sky_corners.append(self.meta_wcs.all_pix2world(ordered_xyc, 0))
+                ordered_xy.append(xy_corners.astype(np.float64))
+                sky_corners.append(self.meta_wcs.all_pix2world(xy_corners, 0))
                 ordered_edges.append(edge_pixels)
         else:
             if member not in self.exp_masks:
@@ -1401,7 +1383,8 @@ def _poly_trace(input_mask, box_size=3):
     del mask
     # close the polygon
     polygon.append(polygon[0])
-    return np.array(polygon, dtype=np.int32)
+    # subtract the border offset
+    return np.array(polygon, dtype=np.int32) - border
 
 def perp(a):
     b = np.empty_like(a)
