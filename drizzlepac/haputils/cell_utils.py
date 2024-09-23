@@ -577,7 +577,7 @@ class SkyFootprint(object):
 
                 # simplify the polygon
                 # note edge_pixels and xy_corners polygons are already closed
-                xy_corners = simplify(edge_pixels, min_dist=3.0)
+                xy_corners = simplify(edge_pixels, min_dist=10.0)
 
                 if xy_corners.shape[0] <= 3:
                     # this is surely an error, ought to raise an exception
