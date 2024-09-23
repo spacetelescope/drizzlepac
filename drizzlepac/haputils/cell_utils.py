@@ -581,7 +581,7 @@ class SkyFootprint(object):
 
                 if xy_corners.shape[0] <= 3:
                     # this is surely an error, ought to raise an exception
-                    print("WARNING: Too few corners")
+                    log.info("WARNING: Too few corners")
 
                 # save as output values
                 ordered_xy.append(xy_corners.astype(np.float64))
