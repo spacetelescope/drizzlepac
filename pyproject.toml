@@ -38,6 +38,7 @@ dependencies = [
     "stregion>=1.1.7",
     "requests",
     "scikit-learn>=0.20",
+    "simplify-polyline",
     "bokeh",
     "pandas",
     "spherical_geometry>=1.2.22",
