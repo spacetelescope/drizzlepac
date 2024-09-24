@@ -17,6 +17,7 @@ import os
 from io import BytesIO
 import requests
 import inspect
+import math
 import sys
 import time
 import copy
@@ -857,11 +858,13 @@ def find_fwhm(psf, default_fwhm):
         Value of the computed Gaussian FWHM for the PSF
 
     """
+    # Default 1.0 * default_fwhm (default_fwhm is detector-dependent)
     aperture_radius = 1.5 * default_fwhm
     source_group = SourceGrouper(min_separation=8)
     mmm_bkg = MMMBackground()
-    # Inner and outer radius of the circular annulus in pixels
-    local_bkg = LocalBackground(5, 8, mmm_bkg)
+    # LocalBackground: Inner and outer radius of circular annulus in pixels
+    base = int(math.ceil(aperture_radius))
+    local_bkg = LocalBackground(base + 1, base + 3, mmm_bkg)
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
     fitter = LevMarLSQFitter()
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
