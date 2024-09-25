@@ -544,11 +544,10 @@ class SkyFootprint(object):
             fp = np.clip(self.footprint, 0, 1).astype(np.int16)
 
             # simple trick to remove noise and small regions 3x3 or less.
-            scmask_dilated_eroded = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=3)
+            scmask_dilated_eroded = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
             
             # Start by smoothing out the edges of the chips/field
             # this will remove rough edges up to 3 pixels deep along the image edge
-            # multiplying by 100 to avoid having the threshold as a decimal (0.5) between 0 and 1. 
             scmask = ndimage.gaussian_filter(scmask_dilated_eroded.astype(np.float32), sigma=2) > 0.5
             
             # Label each major contiguous region in the mask
@@ -1340,12 +1339,14 @@ def _poly_trace(input_mask, box_size=3):
         ystart = new_y
         # Zero out already identified pixels on the polygon
         mask[ystart, xstart] = 0
-        box = get_box(mask, xstart, ystart)
+        size = 3
+        box = get_box(mask, xstart, ystart, size=size)
         pts = np.where(box == 1)
 
         if len(pts[0]) == 0:
             # try a larger box to see if we can jump this gap
-            box = get_box(mask, xstart, ystart, size=5)
+            size = 5
+            box = get_box(mask, xstart, ystart, size=size)
             pts = np.where(box == 1)
             if len(pts[0]) == 0:
                 # We are back where we started, so quit
@@ -1357,13 +1358,13 @@ def _poly_trace(input_mask, box_size=3):
             # pixel which leads to the most pixels going on
             # start with pixels along the same slope that we have been going
             slope_indx = 0 if slope <= 0 else 1
-            slope_y = pts[0][slope_indx] + ystart - 1
-            slope_x = pts[1][slope_indx] + xstart - 1
+            slope_y = pts[0][slope_indx] + ystart - (size//2)
+            slope_x = pts[1][slope_indx] + xstart - (size//2)
             slope_sum = get_box(mask, slope_x, slope_y).sum()
             # Now get sum for the other pixel
             indx2 = 1 if slope < 0 else 0
-            y2 = pts[0][indx2] + ystart - 1
-            x2 = pts[1][indx2] + xstart - 1
+            y2 = pts[0][indx2] + ystart - (size//2)
+            x2 = pts[1][indx2] + xstart - (size//2)
             sum2 = get_box(mask, x2, y2).sum()
             # select point which leads to the largest sum,
             # but favor the previous slope if both directions are equal.
@@ -1372,13 +1373,19 @@ def _poly_trace(input_mask, box_size=3):
             else:
                 indx = indx2 if sum2 > slope_sum else slope_indx
 
-        new_y = pts[0][indx] + ystart - 1
-        new_x = pts[1][indx] + xstart - 1
+        new_y = pts[0][indx] + ystart - (size//2)
+        new_x = pts[1][indx] + xstart - (size//2)
         polygon.append([new_x, new_y])
         # reset for next pixel
         num_pixels -= 1
         new_start = False
-        slope = (new_y - ystart) / (new_x - xstart)
+
+        # this works but causes zero-divide warnings:
+        #     slope = (new_y - ystart) / (new_x - xstart)
+        # we only care about the sign of the slope
+        xsign = np.sign(new_x-xstart)
+        ysign = np.sign(new_y-ystart)
+        slope = (ysign if xsign >= 0 else -ysign)
 
     del mask
     # close the polygon
@@ -1408,14 +1415,19 @@ def seg_intersect(start, end):
 
 
 def get_box(arr, x, y, size=3):
-    """subarray extraction with limits checking """
+    """subarray extraction with limits checking
+
+    This always returns a (size,size) array with zero-padding off the edge
+    size must be odd
+    """
     amin = size // 2
     amax = amin + 1
-    ymin = y - amin if y >= 0 else 0
-    ymax = y + amax if y <= arr.shape[0] else arr.shape[0]
-    xmin = x - amin if x >= 0 else 0
-    xmax = x + amax if x <= arr.shape[1] else arr.shape[1]
-    box = arr[ymin: ymax, xmin: xmax]
+    ymin = max(y-amin, 0)
+    ymax = min(y+amax, arr.shape[0])
+    xmin = max(x-amin, 0)
+    xmax = min(x+amax, arr.shape[1])
+    box = np.zeros((size,size), dtype=arr.dtype)
+    box[ymin-y+amin:ymax-y+amin, xmin-x+amin:xmax-x+amin] = arr[ymin:ymax, xmin:xmax]
 
     return box
 
