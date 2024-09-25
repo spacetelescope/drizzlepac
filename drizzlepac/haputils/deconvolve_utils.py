@@ -516,7 +516,9 @@ def _create_input_psf(psf_name, calimg, total_flux):
 
 def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
 
-    coords = [(row[1], row[0]) for row in star_list]
+    # Updated 25 September 2024: The starlist now has four columns: (id, xpeak, ypeak, flux)
+    # It was necessary to shift the column acquisition by one column to obtain the cooords.
+    coords = [(row[2], row[1]) for row in star_list]
     convolved_data = data
 
     star_cutouts = []
