@@ -1401,7 +1401,8 @@ def _poly_trace(input_mask, box_size=3):
 
         indx = 0
         if len(pts[0]) > 1:
-            # if two pixels found, pixks the downward one. 
+            # if two pixels found, picks the one that appears to continue in
+            # the counter-clockwise direction. 
             # Perform some disambiguation to look for
             # pixel which leads to the most pixels going on
             # start with pixels along the same slope that we have been going
