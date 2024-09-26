@@ -599,7 +599,7 @@ class SkyFootprint(object):
                 # and determines if the errors in the line changes significantly when the 
                 # middle pixel is removed. If it is below an set error (min_dist), remove the pixel.
                 # It should be noted that these three pixels can be far apart. 
-                # Values were tested by Rick White who found 10 (around one arcsecond) 
+                # Values were tested by Rick White who found 10 (around one arcsecond for HST) 
                 # to be a good threshold.  
                 xy_corners = simplify(edge_pixels, min_dist=10.0)
 
