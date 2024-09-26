@@ -1322,7 +1322,7 @@ def trace_polygon(input_mask, mask_slice):
     """Convert mask with only edge pixels into a single contiguous polygon"""
 
     # takes the footprint and returns just the edges. 
-    # In this case we are using interations=1, so shinking the mask by 1 pixel
+    # In this case we are using iterations=1, so shrinking the mask by 1 pixel
     # We should then have 1s on the outside and 0s on the inside. We probably 
     # don't need them to be ints, but could instead by bools.  
     slice_edges = input_mask.astype(np.int16) - \
