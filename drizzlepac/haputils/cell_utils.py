@@ -1375,7 +1375,7 @@ def _poly_trace(input_mask, box_size=3):
     # we now iteratively look for pixels==1 in 3X3 boxes. 
     # If none are found, then we enlarge the box to 5X5 (maybe there was a gap)
     # If still no pixels, then we have reached the end. 
-    # Ideally we should iterative look in bigger boxes.
+    # Ideally we should perhaps iterate using bigger boxes.
     # If multiple pixels==1 are found, the slope is used to pick the downward
     # clockwise option.  
     # We should also add a check to see if we ended up at the same point
