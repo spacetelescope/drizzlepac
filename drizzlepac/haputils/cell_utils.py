@@ -429,7 +429,9 @@ class SkyFootprint(object):
         
         # This is used to add back in any real (possibly lesser quality) data near 
         # the edges that may go right up to the edges of boundaries. This may be 
-        # more important for MVM that go right up to the edges
+        # more important for MVM that go right up to the edges. There may be better
+        # approaches to handle the edge pixels (e.g., using the border_value parameter
+        # to the binary_erosion function).
         self.total_mask = np.bitwise_or(total_mask, total_mask_eroded)
 
         # clean up as quickly as possible
