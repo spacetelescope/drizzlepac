@@ -424,7 +424,7 @@ class SkyFootprint(object):
         # We are hard-coding the number of iterations since it is only
         # intended to improve, not make perfect, the mask shape.
         # We could also change the kernel to something larger, the 
-        # default kernel is a simple plus sign with a width of 1 pixel in each direction. 
+        # default kernel is a simple plus sign with a width of +-1 pixel in each direction. 
         total_mask_eroded = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
         
         # This is used to add back in any real (possibly lesser quality) data near 
