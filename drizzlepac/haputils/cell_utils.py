@@ -553,6 +553,7 @@ class SkyFootprint(object):
             # simple trick to remove noise, island pixels, and small regions 3x3 or less near the edges. 
             # This may be more important for removing the pixels added back in in the 
             # line in extract_mask: self.total_mask = np.bitwise_or(total_mask, total_mask_eroded) 
+
             scmask_dilated_eroded = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=3)
             
             # Start by smoothing out the edges of the chips/field
