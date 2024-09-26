@@ -1324,7 +1324,8 @@ def trace_polygon(input_mask, mask_slice):
     # takes the footprint and returns just the edges. 
     # In this case we are using iterations=1, so shrinking the mask by 1 pixel
     # We should then have 1s on the outside and 0s on the inside. We probably 
-    # don't need them to be ints, but could instead by bools.  
+    # don't need them to be ints, but could instead use bools with a simple
+    # modification of the code to use logical operations instead of subtraction.  
     slice_edges = input_mask.astype(np.int16) - \
                   ndimage.binary_erosion(input_mask).astype(np.int16)
 
