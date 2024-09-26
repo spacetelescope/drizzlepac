@@ -21,9 +21,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.2 (unreleased)
 ==================
 
-- Modifications to support an upgrade to Photutils v1.13.0. Changes
-  were made to accommodate new APIs, modified low-level functionality,
-  and support is now for versions of Photutils>=1.10.0. [#1844]
+- Modifications to support an upgrade to Photutils v1.13.0. Changes were made
+  to accommodate new APIs, modified low-level functionality, and address columns
+  of a table in get_cutouts() by name rather than position to ensure the correct
+  data is acquired.  Support is now for versions of Photutils>=1.10.0.  [#1844]
 
 - Added documentation describing regression tests. [#1881]
 

@@ -516,9 +516,9 @@ def _create_input_psf(psf_name, calimg, total_flux):
 
 def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
 
-    # Updated 25 September 2024: The starlist now has four columns: (id, xpeak, ypeak, flux)
-    # It was necessary to shift the column acquisition by one column to obtain the cooords.
-    coords = [(row[2], row[1]) for row in star_list]
+    # The star_list now has four columns: ('id', 'x_peak', 'y_peak', 'peak_value')
+    # It is best to access named table columns by name rather than position.
+    coords = [(row['y_peak'], row['x_peak']) for row in star_list]
     convolved_data = data
 
     star_cutouts = []
@@ -885,7 +885,7 @@ def find_point_sources(drzname, data=None, mask=None,
     -------
     peaks : `astropy.table.Table <https://docs.astropy.org/en/stable/api/astropy.table.Table.html>`_
         Output from ``photutils.detection.find_peaks`` for all identified sources
-        with columns ``x_peak``, ``y_peak`` and ``peak_value``.
+        with columns ``id``, ``x_peak``, ``y_peak`` and ``peak_value``.
 
     psf_fwhm : float
         FWHM (in pixels) of PSF used to identify the sources.
