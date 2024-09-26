@@ -1347,7 +1347,7 @@ def _poly_trace(input_mask, box_size=3):
     mask = np.zeros((input_mask.shape[0] + (border * 2), input_mask.shape[1] + (border * 2)),
                     dtype=input_mask.dtype)
     mask[border:-border, border:-border] = input_mask.copy()
-    # we step over columns of mask array looking for our first lower right starting
+    # we step over columns of mask array looking for our first lower left starting
     # point, a nonzero value. 
     for x in range(mask.shape[1]):
         pts = np.where(mask[:, x] == 1)[0]
