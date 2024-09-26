@@ -1378,7 +1378,7 @@ def _poly_trace(input_mask, box_size=3):
     # Ideally we should perhaps iterate using bigger boxes.
     # If multiple pixels==1 are found, the slope is used to pick the counter
     # clockwise option.  
-    # We should also add a check to see if we ended up at the same point
+    # We should also add a check to see if we ended up close to the same point
     # as the xstart, ystart. 
     while new_start or (num_pixels > 0):
         xstart = new_x
