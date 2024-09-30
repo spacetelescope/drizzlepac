@@ -655,7 +655,7 @@ The ``S_REGION`` keyword records the footprint of the final drizzle image as it 
 on the sky as a list of RA and Dec positions ordered in a counter-clockwise manner.
 These positions outline only those pixels which have been observed by HST, not
 just the rectangular shape of the final drizzle array. This allows the archive
-to provide a preview of the drizzle products footprints in their all-sky map to
+to provide a preview of the drizzle product footprints in their all-sky map to
 assist users in selecting the data most suited for their search.
 
 The computation of this keyword relies on creating a filled shape, finding the border
@@ -673,17 +673,36 @@ that build up a total mask (extract_mask), and find the vertices/corners of that
 
 Dilation and Erosion
 ********************
-We use binary erosion in different orders for two purposes. We use
+We use the mathematical morphology operations of binary erosion and binary dilation
+in different orders for two purposes. Using erosion and then dilation removes pixels
+and then inflates the outer region. This has the effect of isolating island pixels and
+removing noise. Doing the opposite, erosion and then dilation, will result in more-unique
+peninsulas and edge features being saved but smoothed to some degree.
 
-
-Simplifying Edges
+Extracting a Mask
 *****************
+Extracting the the mask first involves using a ndimage.binary_fill_holes to fill
+in any holes surrounded by data. The code then uses dilation to keep edge features
+while smoothing the outer edge. Erosion is then used to get a mask that has a similar
+shape and size to the original mask. We then combine the resulting mask with the original
+mask to ensure we retain edge features while yielding a smoother edge.
 
+
+Finding Border Pixels
+*********************
+The code traces the edge of the footprint to isolate only the edge pixels. It
+then uses erosion and then dilation to remove noise and island pixels. It then
+applies a gaussian filter to the edge pixels to ultimately create a smoother S_REGION.
+The resulting edge pixels are then simplified.
+
+
+Simplifying the Border
+**********************
 In order to decrease the number of vertices for our S_REGION we use the simplify-polyline
-package. A call to simplify-polyline.simplify looks are each set of three
-consequetive vertices and determines if the errors in the line changes significantly
+package. A call to simplify-polyline.simplify looks at each set of three
+consecutive vertices and determines if the errors in the line changes significantly
 when the middle pixel is removed. If it is below an set error (min_dist), the code
-remove the pixel. It should be noted that these three pixels can be far apart.
+removes the pixel. It should be noted that these three pixels can be far apart.
 The result is that unnecessary pixels are removed and more complicated edge shapes
 are simplified.
 
