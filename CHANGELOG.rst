@@ -19,6 +19,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 
 
+3.7.1.1 (1-Oct-2024)
+====================
+
+- Improved S_REGION using simplify-polygon, eorions, and dilation. [#1323] 
+
+
 3.7.1 (12-Aug-2024)
 ===================
 - Avoid applying the estimated cosmic ray vs real sources threshold for the
