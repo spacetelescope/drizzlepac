@@ -1177,7 +1177,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     seg_table['xcentroid'][max_row] = xcentroid
                     seg_table['ycentroid'][max_row] = ycentroid
                     seg_table['npix'][max_row] = sat_table['area'][0].value
-                    seg_table['sky'][max_row] = sky if sky is not None and not np.isnan(sky) else 0.0
+                    # sky is a deprecated value
+                    #seg_table['sky'][max_row] = sky if sky is not None and not np.isnan(sky) else 0.0
                     seg_table['mag'][max_row] = -2.5 * np.log10(sat_table[flux_colname][0])
 
                 # Add row for detected source to master catalog
