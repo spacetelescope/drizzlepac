@@ -665,9 +665,9 @@ are then converted to sky coordinates (degrees). Our strategy relies on two
 complementary techniques named dilation and erosion, which add and remove pixels,
 respectively.
 
-In the code, the top level call function is :py:func:`~drizzlepac.haputils.processing_utils.compute_sregion`
-which then calls :py:func:`~drizzlepac.haputils.processing_utils.find_footprint`.
-This function makes calls to two methods in :py:class:`~drizzlepac.haputils.cell_utils.SkyFootprint`
+In the code, the top level call functions are in :py:mod:`~drizzlepac.haputils.processing_utils`
+where the compute_sregion() function calls the find_footprint function.
+This function makes calls to two methods in the SkyFootprint class in :py:mod:`~drizzlepac.haputils.cell_utils`
 that build up a total mask (extract_mask), and find the vertices/corners of that mask
 (find_corners).
 
