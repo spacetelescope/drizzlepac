@@ -695,7 +695,10 @@ Finding Border Pixels
 The code traces the edge of the footprint to isolate only the edge pixels. It
 then uses erosion and then dilation to remove noise and island pixels. It then
 applies a gaussian filter to the edge pixels to ultimately create a smoother S_REGION.
-The resulting edge pixels are then simplified.
+To find all the edge pixels, an eroded version of the mask is subtracted from the mask,
+which leaves behind only the pixels around the edge.  A box search algorithm is used to 
+connect the edge pixels in a path going counter-clockwise around the image edge.
+Finally, the resulting edge path is simplified.
 
 
 Simplifying the Border
