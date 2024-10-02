@@ -707,7 +707,8 @@ In order to decrease the number of vertices for our S_REGION we use the simplify
 package. A call to simplify-polyline.simplify looks at each set of three
 consecutive vertices and determines if the errors in the line changes significantly
 when the middle pixel is removed. If it is below an set error (min_dist), the code
-removes the pixel. It should be noted that these three pixels can be far apart.
+removes the pixel. This algorithm is repeated until no more pixels are found to remove.
+It should be noted that in later iterations, these three pixels can be far apart.
 The result is that unnecessary pixels are removed and more complicated edge shapes
 are simplified.
 
