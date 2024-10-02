@@ -39,7 +39,7 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits as fits
 from astropy.io import ascii
 from astropy.convolution import Gaussian2DKernel, convolve
-from astropy.stats import (gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, 
+from astropy.stats import (gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm,
                            sigma_clipped_stats, SigmaClip)
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
@@ -886,7 +886,7 @@ def find_fwhm(psf, default_fwhm):
         return None
 
     # Check the phot_results table was generated successfully
-    if isinstance(phot_results, (type(None))): 
+    if isinstance(phot_results, (type(None))):
         return None
 
     # Check the table actually has rows
