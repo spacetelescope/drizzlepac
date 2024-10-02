@@ -687,7 +687,7 @@ Extracting the the mask first involves using a ndimage.binary_fill_holes to fill
 in any holes surrounded by data. The code then uses dilation to keep edge features
 while smoothing the outer edge. Erosion is then used to get a mask that has a similar
 shape and size to the original mask. We then combine the resulting mask with the original
-mask to ensure we retain edge features while yielding a smoother edge.
+mask to ensure we retain features that touch the image edges.
 
 
 Finding Border Pixels
