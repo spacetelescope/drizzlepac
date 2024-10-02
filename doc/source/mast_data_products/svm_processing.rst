@@ -674,10 +674,12 @@ that build up a total mask (extract_mask), and find the vertices/corners of that
 Dilation and Erosion
 ********************
 We use the mathematical morphology operations of binary erosion and binary dilation
-in different orders for two purposes. Using erosion and then dilation removes pixels
-and then inflates the outer region. This has the effect of isolating island pixels and
-removing noise. Doing the opposite, erosion and then dilation, will result in more-unique
-peninsulas and edge features being saved but smoothed to some degree.
+in different orders for two purposes. Using erosion and then dilation (the morphological
+"opening" operation) removes isolated pixels and narrow tendrils.  
+This has the effect of isolating islands of pixels that are thinly connected to one another and
+removing noise. Doing the opposite, dilation and then erosion (the morphological "closing"
+operation), fills in small holes and gaps to join islands and smooth the outer edge
+to some degree.
 
 Extracting a Mask
 *****************
