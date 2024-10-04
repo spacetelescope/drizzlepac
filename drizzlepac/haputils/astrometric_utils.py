@@ -17,6 +17,7 @@ import os
 from io import BytesIO
 import requests
 import inspect
+import math
 import sys
 import time
 import copy
@@ -38,31 +39,27 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits as fits
 from astropy.io import ascii
 from astropy.convolution import Gaussian2DKernel, convolve
-from astropy.stats import gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, sigma_clipped_stats
+from astropy.stats import (gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm,
+                           sigma_clipped_stats, SigmaClip)
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
-import photutils  # needed to check version
-from photutils.segmentation import (detect_sources, SourceCatalog,
+import photutils
+from photutils.segmentation import (detect_sources, SourceCatalog, detect_threshold,
                                     deblend_sources, SegmentationImage)
-if Version(photutils.__version__) < Version('1.5.0'):
-    OLD_PHOTUTILS = True
-    from photutils.segmentation import make_source_mask
-else:
-    OLD_PHOTUTILS = False
-    from photutils.segmentation import detect_threshold
-    from photutils.utils import circular_footprint
-    from astropy.stats import SigmaClip
+
+from photutils.psf import (IntegratedGaussianPRF, SourceGrouper,
+                           IterativePSFPhotometry)
+
+from photutils.utils import circular_footprint
 
 from photutils.detection import DAOStarFinder, find_peaks
 
-from photutils.background import (Background2D, MMMBackground,
+from photutils.background import (Background2D, MMMBackground, LocalBackground,
                                   SExtractorBackground, StdBackgroundRMS)
-from photutils.psf import (IntegratedGaussianPRF, DAOGroup,
-                           IterativelySubtractedPSFPhotometry)
 
 from tweakwcs.correctors import FITSWCSCorrector
 from stwcs.distortion import utils
@@ -698,16 +695,12 @@ def compute_2d_background(imgarr, box_size, win_size,
     if bkg is None:
         log.info("Background2D failure detected. Using alternative background calculation instead....")
 
-        if OLD_PHOTUTILS:
-            mask = make_source_mask(imgarr, nsigma=2, npixels=5, dilate_size=11)
-            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask, maxiters=9)
-        else:
-            sigma_clip = SigmaClip(sigma=3.0, maxiters=9)
-            threshold = detect_threshold(imgarr, nsigma=2.0, sigma_clip=sigma_clip)
-            segment_img = detect_sources(imgarr, threshold, npixels=5)
-            footprint = circular_footprint(radius=11)
-            mask = segment_img.make_source_mask(footprint=footprint)
-            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask)
+        sigma_clip = SigmaClip(sigma=3.0, maxiters=9)
+        threshold = detect_threshold(imgarr, nsigma=2.0, sigma_clip=sigma_clip)
+        segment_img = detect_sources(imgarr, threshold, npixels=5)
+        footprint = circular_footprint(radius=11)
+        mask = segment_img.make_source_mask(footprint=footprint)
+        sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask)
 
         bkg_median = max(0.0, sigcl_median)
         bkg_rms_median = sigcl_std
@@ -847,8 +840,8 @@ def find_fwhm(psf, default_fwhm):
     """Determine FWHM for auto-kernel PSF
 
     This function iteratively fits a Gaussian model to the extracted PSF
-    using `photutils.psf.IterativelySubtractedPSFPhotometry
-    <https://photutils.readthedocs.io/en/stable/api/photutils.psf.IterativelySubtractedPSFPhotometry.html>`_
+    using `photutils.psf.IterativePSFPhotometry
+    <https://photutils.readthedocs.io/en/stable/api/photutils.psf.IterativePSFPhotometry.html>`_
     to determine the FWHM of the PSF.
 
     Parameters
@@ -865,30 +858,48 @@ def find_fwhm(psf, default_fwhm):
         Value of the computed Gaussian FWHM for the PSF
 
     """
-    daogroup = DAOGroup(crit_separation=8)
+    # Default 1.0 * default_fwhm (default_fwhm is detector-dependent)
+    aperture_radius = 1.5 * default_fwhm
+    source_group = SourceGrouper(min_separation=8)
     mmm_bkg = MMMBackground()
+    # LocalBackground: Inner and outer radius of circular annulus in pixels
+    base = int(math.ceil(aperture_radius))
+    local_bkg = LocalBackground(base + 1, base + 3, mmm_bkg)
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
     fitter = LevMarLSQFitter()
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
     gaussian_prf = IntegratedGaussianPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
     try:
-        itr_phot_obj = IterativelySubtractedPSFPhotometry(finder=iraffind,
-                                                          group_maker=daogroup,
-                                                          bkg_estimator=mmm_bkg,
-                                                          psf_model=gaussian_prf,
-                                                          fitter=fitter,
-                                                          fitshape=(11, 11),
-                                                          niters=2)
+        itr_phot_obj = IterativePSFPhotometry(finder=iraffind,
+                                              grouper=source_group,
+                                              localbkg_estimator=local_bkg,
+                                              psf_model=gaussian_prf,
+                                              aperture_radius=aperture_radius,
+                                              fitter=fitter,
+                                              fit_shape=(11, 11),
+                                              maxiters=2)
+
         phot_results = itr_phot_obj(psf)
     except Exception:
         log.error("The find_fwhm() failed due to problem with fitting.")
         return None
+
+    # Check the phot_results table was generated successfully
+    if isinstance(phot_results, (type(None))):
+        return None
+
+    # Check the table actually has rows
+    if len(phot_results['flux_fit']) == 0:
+        return None
+
+    # Check the 'flags' column has at least one row with a flag value of zero
+    if (phot_results['flags'] == 0).sum() == 0:
+        return None
+
     # Insure none of the fluxes determined by photutils is np.nan
     phot_results['flux_fit'] = np.nan_to_num(phot_results['flux_fit'].data, nan=0)
 
-    if len(phot_results['flux_fit']) == 0:
-        return None
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
@@ -1166,7 +1177,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     seg_table['xcentroid'][max_row] = xcentroid
                     seg_table['ycentroid'][max_row] = ycentroid
                     seg_table['npix'][max_row] = sat_table['area'][0].value
-                    seg_table['sky'][max_row] = sky if sky is not None and not np.isnan(sky) else 0.0
                     seg_table['mag'][max_row] = -2.5 * np.log10(sat_table[flux_colname][0])
 
                 # Add row for detected source to master catalog
