@@ -1085,9 +1085,12 @@ class HAPPointCatalog(HAPCatalogBase):
                                            format='ascii.fast_no_header',
                                            overwrite=True)
 
+                        # NOTE: It is necessary to use a non-zero threshold to ensure the values
+                        # computed in the low levels of Photutils are finite (in v1.13.0) or no
+                        # table will be returned in the "src_table = daofind()" line below.
                         daofind = decutils.UserStarFinder(fwhm=source_fwhm,
                                                 coords=user_peaks,
-                                                threshold=0.0,
+                                                threshold=1.0e-10,
                                                 sharphi=0.9, sharplo=0.4)
 
                         _region_name = self.image.imgname.replace(reg_suffix, 'region{}.fits'.format(masknum))
