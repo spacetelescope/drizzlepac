@@ -16,7 +16,7 @@ from stsci.imagestats import ImageStats
 from stsci.image import numcombine
 from stsci.tools import iterfile, teal, logutil
 
-from . import imageObject
+# from . import imageObject
 from . import util
 from .minmed import min_med
 from . import processInput

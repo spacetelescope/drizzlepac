@@ -8,10 +8,10 @@ Main program for running MultiDrizzle from the command line.
 
 """
 import getopt
-import sys, os
+import sys
 from drizzlepac.astrodrizzle import AstroDrizzle
 from drizzlepac import __version__
-from drizzlepac import util
+# from drizzlepac import util
 
 
 ruler = '-' * 80

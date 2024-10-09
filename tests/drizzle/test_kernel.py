@@ -1,7 +1,7 @@
-import os
+# import os
 import pytest
 import numpy as np
-from astropy import wcs
+# from astropy import wcs
 import cdriz_setup
 
 

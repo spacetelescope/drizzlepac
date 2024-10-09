@@ -30,7 +30,7 @@ import argparse
 import collections
 from datetime import datetime
 import glob
-import json
+# import json
 import math
 import os
 import pickle
@@ -42,10 +42,10 @@ from astropy.coordinates import SkyCoord
 from astropy.io import ascii, fits
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table, Column
-from bokeh.layouts import row, column
+from bokeh.layouts import column
 from bokeh.plotting import figure, output_file, save
-from bokeh.models import ColumnDataSource, Label
-from bokeh.models.tools import HoverTool
+from bokeh.models import ColumnDataSource
+# from bokeh.models.tools import HoverTool
 from itertools import chain
 import numpy as np
 from photutils.detection import DAOStarFinder

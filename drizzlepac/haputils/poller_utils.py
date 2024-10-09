@@ -21,7 +21,7 @@ from astropy.io import fits
 from astropy.io import ascii
 from astropy.io.fits import getheader
 from astropy.table import Table, Column
-from drizzlepac import util
+# from drizzlepac import util
 from drizzlepac.haputils.product import (
     ExposureProduct,
     FilterProduct,

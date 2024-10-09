@@ -1,9 +1,9 @@
 import os
-import shutil
+# import shutil
 
 from stsci.tools import teal
 from drizzlepac import astrodrizzle
-from drizzlepac import pixtopix, pixtosky, skytopix
+# from drizzlepac import pixtopix, pixtosky, skytopix
 from stwcs import updatewcs
 
 from ..resources import BaseSTIS

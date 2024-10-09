@@ -34,12 +34,12 @@ Functions to build mask files for PyDrizzle.
 #
 import os
 
-from stsci.tools import fileutil, readgeis
+from stsci.tools import fileutil
 from stsci.tools.bitmask import bitfield_to_boolean_mask
 
 from astropy.io import fits
 import numpy as np
-from scipy import ndimage
+# from scipy import ndimage
 
 from . import processInput, util
 
