@@ -155,6 +155,8 @@ class CatalogImage:
                            maxiters=3):
         """Use a sigma-clipped algorithm or Background2D to determine the background of the input image.
 
+        There is also a special case background assessment reserved for SBC (MAMA detector) images.
+
         Parameters
         ----------
         image : ndarray
@@ -248,38 +250,48 @@ class CatalogImage:
         bkg = None
         is_zero_background_defined = False
 
-        # Make a local copy of the data(image) being processed in order to reset any
-        # data values which equal nan (e.g., subarrays) to zero.
-        imgdata = np.nan_to_num(self.data, copy=True, nan=0.0)
+        # Make a local copy of the data(image) being processed
+        imgdata = copy.deepcopy(self.data)
 
         # In order to compute the proper statistics on the input data, need to use the footprint
-        # mask to get the actual data - illuminated portion (True), non-illuminated (False).
+        # mask to get the actual data - illuminated portion (True), non-illuminated (False) based
+        # on images which actually contributed to a pixel, even if the contribution was the
+        # value of zero. Again, the num_images_mask here is not True/False, but the *number of images*
+        # which contributed to the value of a pixel.
+        #
+        # Note that if there are large shifts between images, the pixels in the gaps between the
+        # images have values of 0.  The self.num_images_mask is the mask created by 
+        # generate_footprint_mask() in product.py.
         footprint_mask = self.num_images_mask > 0
         self.footprint_mask = ndimage.binary_erosion(footprint_mask, iterations=10)
         self.inv_footprint_mask = np.invert(self.footprint_mask)
 
-        # If the image contains a lot of values identically equal to zero (as in some SBC images),
-        # set the two-dimensional background image to a constant of zero and the background rms to
-        # the real rms of the non-zero values in the image.
+        # Get the statistics on the number of illuminated pixels
         num_of_illuminated_pixels = self.footprint_mask.sum()
-        num_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
-        non_zero_pixels = imgdata[self.footprint_mask]
 
-        # BACKGROUND COMPUTATION 1 (unusual case)
-        # If there are too many background zeros in the image (> number_of_zeros_in_background_threshold), set the
-        # background median and background rms values
-        if num_of_zeros / float(num_of_illuminated_pixels) * 100.0 > zero_percent:
-            self.bkg_median = 0.0
-            self.bkg_rms_median = stats.tstd(non_zero_pixels, limits=[0, None], inclusive=[False, True])
-            self.bkg_background_ra = np.full_like(imgdata, 0.0)
-            self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
-            self.bkg_type = 'zero_background'
+        # BACKGROUND COMPUTATION 1 (unusual case which should only apply to ACS/SBC data)
+        # Get the number of pixels which are zero in the actual footprint mask.  In
+        # essence ignore the gaps between images which may also be set to zero and only do
+        # this for SBC.
+        if (self.imghdu[0].header['DETECTOR'].upper() == "SBC"):
+            num_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
+            num_of_nonzeros = num_of_illuminated_pixels - num_of_zeros
 
-            is_zero_background_defined = True
-            log.info("Input image contains excessive zero values in the background. Median: {} RMS: {}".format(self.bkg_median, self.bkg_rms_median))
+            # If there are too many background zeros in the image
+            # (> number_of_zeros_in_background_threshold), set the background median to
+            # zero and the background rms to the real rms of the non-zero values in the image.
+            if num_of_zeros / float(num_of_illuminated_pixels) * 100.0 > zero_percent:
+                self.bkg_median = 0.0
+                self.bkg_rms_median = stats.tstd(num_of_nonzeros, limits=[0, None], inclusive=[False, True])
+                self.bkg_background_ra = np.full_like(imgdata, 0.0)
+                self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
+                self.bkg_type = 'zero_background'
+
+                is_zero_background_defined = True
+                log.info("Input image contains excessive zero values in the background. Median: {} RMS: {}".format(self.bkg_median, self.bkg_rms_median))
 
         # BACKGROUND COMPUTATION 2 (sigma_clipped_stats)
-        # If the input data is not the unusual case of an "excessive zero background", compute
+        # If the input data is not the unusual case of SBC "excessive zero background", compute
         # a sigma-clipped background which returns only single values for mean,
         # median, and standard deviations
         if not is_zero_background_defined:
