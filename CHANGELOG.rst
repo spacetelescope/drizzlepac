@@ -21,6 +21,11 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.2 (unreleased)
 ==================
 
+- Modifications to support an upgrade to Photutils v1.13.0. Changes were made
+  to accommodate new APIs, modified low-level functionality, and address columns
+  of a table in get_cutouts() by name rather than position to ensure the correct
+  data is acquired.  Support is now for versions of Photutils>=1.10.0.  [#1844]
+
 - Added documentation describing regression tests. [#1881]
 
 - Addressed additional issures related to numpy 2.0 scalar promotion. [#1875]
@@ -33,6 +38,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - ``manageInputCopies`` now copies successfully even if the original files were
   defined by full paths rather than being in the current working directory. [#1835]
+
+
+3.7.1 (1-Oct-2024)
+===================
+
+- Improved S_REGION using simplify-polygon, eorions, and dilation. [#1323] 
 
 
 3.7.1 (12-Aug-2024)
