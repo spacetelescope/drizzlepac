@@ -2,11 +2,46 @@ HAP Parameters
 -----------------------------------
 
 .. _hap-parameters:
+The HAP parameter files are housed in the drizzlepac/pars/hap_pars directory. There are different json parameter files for the SVM and MVM products in separate directories. The svm_parameter json files are also used for pipeline products.
+
+
+In either directory, there is a separate detector json file for each instrument/detector. Each file specifies additional json files used for different tasks and scenarios. The primary differences are in the case of different number of exposures:
+
+
+Detector JSON Files
+*******************
+
+acs_hrc_index.json
+
+.. code-block:: python
+
+  {
+      "alignment": {
+          "all": "acs/hrc/acs_hrc_alignment_all.json"
+      },
+      "astrodrizzle": {
+          "any_n1": "acs/hrc/acs_hrc_astrodrizzle_any_n1.json",
+          "acs_hrc_any_n2": "acs/hrc/acs_hrc_astrodrizzle_any_n2.json",
+          "acs_hrc_any_n4": "acs/hrc/acs_hrc_astrodrizzle_any_n4.json",
+          "acs_hrc_any_n6": "acs/hrc/acs_hrc_astrodrizzle_any_n6.json",
+          "filter_basic": "any/any_astrodrizzle_filter_hap_basic.json",
+          "single_basic": "any/any_astrodrizzle_single_hap_basic.json",
+          "total_basic": "acs/hrc/acs_hrc_astrodrizzle_any_total.json"
+      },
+      "catalog generation": {
+          "all": "acs/hrc/acs_hrc_catalog_generation_all.json"
+      },
+      "quality control": {
+          "all": "acs/hrc/acs_hrc_quality_control_all.json"
+      }
+  }
+
+The different files for "astrodrizzle" are for the case of 1 exposure ("any_n1"), 2 exposures (acs_hrc_any_n2), etc. Each json file with an associated task above (e.g. astrodrizzle) will have the parameters for that task. These files will be used to instantiate variables that are required in the processing of the data and, in the case of "astrodrizzle", are separated into different steps.
 
 Shown below are the parameters that are used by the Hubble Advanced Products. We include the parameter, the default value for WFC3 processing, and a description of that parameter.
 
 .. run_hap_processing
-.. identified in json files. 
+.. identified in json files.
 
 
 Initialize HAP
@@ -153,7 +188,7 @@ driz_sep_bits: int (*default="16"*)
     Integer sum of all the DQ bit values from the input image's DQ array that should be considered "good" when building the weighting mask. This can also be used to reset pixels to good if they had been flagged as cosmic rays during a previous run of ``AstroDrizzle``, by adding the value 4096 for ACS and WFPC2 data. Please see the section on Selecting the ``Bits`` Parameter for a more detailed discussion.
 
 driz_sep_kernel: str (*default="turbo"*)
-    Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are: "square", "point", "turbo", "gaussian", and "lanczos3". The latter two options ("gaussian" and "lanczos3") are not guaranteed to conserve flux, but may produce reasonable results; understand the effects of these kernels before using them. A former option "tophat" has been removed as it was found to produce poor results. See adrizzle.help for more details. 
+    Used for the initial separate drizzling operation only, this parameter specifies the form of the kernel function used to distribute flux onto the separate output images. The current options are: "square", "point", "turbo", "gaussian", and "lanczos3". The latter two options ("gaussian" and "lanczos3") are not guaranteed to conserve flux, but may produce reasonable results; understand the effects of these kernels before using them. A former option "tophat" has been removed as it was found to produce poor results. See adrizzle.help for more details.
 
 driz_sep_wt_scl: float (*default=exposure time (from image header)*)
     This parameter specifies the weighting factor for input image. If ``driz_sep_wt_scl``\ =\ ``exptime``, then the scaling value will be set equal to the exposure time found in the image header. The use of the default value is recommended for producing optimal behavior for most scenarious. It is possible to set ``wt_scl``\ =\ "expsq" for weighting by the square of the exposure time, which is optimal for read-noise dominated images.
@@ -266,7 +301,7 @@ driz_cr: bool (*default=False*)
 
 driz_cr_snr: str (*default="5.0 4.0"*)
     Driz_cr.SNR parameter*
-    
+
 driz_cr_grow: int (*default=1*)
     Driz_cr_grow parameter
 
@@ -356,7 +391,7 @@ MAX_FIT_RMS: int (*default=20*)
     Not currently in use.
 
 MAX_SOURCES_PER_CHIP: int (*default=250*)
-    Not currently in use. 
+    Not currently in use.
 
 
 run_align (*primarily in align.py*)
@@ -378,19 +413,19 @@ MIN_CATALOG_THRESHOLD: int (*default=3*)
     Not currently in use.
 
 MIN_OBSERVABLE_THRESHOLD: int (*default=10*)
-    Not currently in use. The minimum number of observed sources required to continue fitting. If below this threshold, the code will return a status=1 and try with another catalog. 
+    Not currently in use. The minimum number of observed sources required to continue fitting. If below this threshold, the code will return a status=1 and try with another catalog.
 
 MAX_FIT_LIMIT: int (*default=150*)
     Not currently in use.
 
 mosaic_catalog_list: list of strings (*default=["GAIAeDR3", "GSC242", "2MASS"]*)
-    List of available catalogs for aligning for both pipeline and SVM products. The code will go through each catalog in this order. 
+    List of available catalogs for aligning for both pipeline and SVM products. The code will go through each catalog in this order.
 
 mosaic_fit_list: list of strings (*default=["match_relative_fit", "match_2dhist_fit", "match_default_fit"]*)
     List of available fit algorithms for aligning for both pipeline and SVM products; match_default_fit relative alignment without using 2dhist and different throusholds (see json configuration files).
 
 mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 10, "general": 6}*)
-    The different fit geometries tried in alignment as well as their minobj value which specifies the number of matched sources required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of ``rscale``. The fitgeom for the pipeline products is specified as a default in *align_utils.perform_fit*. The value for minobj specified here, however, is used for the pipeline products. 
+    The different fit geometries tried in alignment as well as their minobj value which specifies the number of matched sources required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of ``rscale``. The fitgeom for the pipeline products is specified as a default in *align_utils.perform_fit*. The value for minobj specified here, however, is used for the pipeline products.
 
 fit quality categories
 """"""""""""""""""""""
@@ -410,7 +445,7 @@ generate_source_catalogs (*primarily in align_utils.py*)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 box_size: int (*default=13*)
-    The size of the box used for calculating the 2D Background of the catalog "white light" image along each axis in pixels. In nothing is specified, a default of BKG_BOX_SIZE=27 is used. 
+    The size of the box used for calculating the 2D Background of the catalog "white light" image along each axis in pixels. In nothing is specified, a default of BKG_BOX_SIZE=27 is used.
 
 win_size: int (*default=3*)
     The size of the 2D filter to apply to the background of the catalog "white light" image. If nothing is specified, a default of BKG_FILTER_SIZE=3 is used.
@@ -440,7 +475,7 @@ classify: bool (*default=false*)
     Not currently in use as cosmic rays are being removed before segmentation. Specifies whether or not to apply photutils classification algorithm when evaluating each of the identified segments (sources) from the chip.
 
 threshold: float (*default=-1.1*)
-    Value from the image which serves as the limit for determining sources. If None, compute a default value of (background+5*rms(background)). If threshold < 0.0, use absolute value as scaling factor for default value. If nothing is specified a default value of None is used to compute the background. 
+    Value from the image which serves as the limit for determining sources. If None, compute a default value of (background+5*rms(background)). If threshold < 0.0, use absolute value as scaling factor for default value. If nothing is specified a default value of None is used to compute the background.
 
 
 
@@ -459,7 +494,7 @@ perform_fit (*primarily external in tweakwcs.matchutils.XYXYMatch*)
 For match_relative_fit, match_default_fit, and match_2dhist_fit, the following parameters are used:
 
 fitgeom": "rscale",
-    As used above, this is ignored for pipeline products. 
+    As used above, this is ignored for pipeline products.
 
 searchrad: float (*default=125*)
     The search radius for a match (in units of the tangent plane).
@@ -478,19 +513,19 @@ determine_fit_quality
 """""""""""""""""""""
 
 MIN_CATALOG_THRESHOLD": int (*default=3*)
-    The minimum number of catalog sources required to continue fitting. If below this threshold, the code will return a fit_quality=5 and try with another catalog. 
+    The minimum number of catalog sources required to continue fitting. If below this threshold, the code will return a fit_quality=5 and try with another catalog.
 
 MIN_OBSERVABLE_THRESHOLD": int (*default=4*)
     If the number of observed sources is below this threshold, the code ends alignment and defers to an *a priori* solution.
 
 MIN_CROSS_MATCHES": int (*default=3*)
-    Not currently in use. 
+    Not currently in use.
 
 MIN_FIT_MATCHES": int (*default=4*)
     Not currently in use.
 
 MAX_FIT_RMS": float (*default=20*)
-    Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done with this parameter. 
+    Not currently in use. Maximum RMS value for a fit to be considered good. Currently a warning is printed but nothing is done with this parameter.
 
 MAX_FIT_LIMIT": int (*default=150*)
     The maximum allowable RMS value for a fit to be considered good. If not, the fit is considered compromised.
@@ -502,4 +537,4 @@ MAS_TO_ARCSEC: float (*default=1000*)
     Conversion factor from milliarcseconds to arcseconds.
 
 GOOD_FIT_QUALITY_VALUES: int (*default=[1, 2, 3, 4]*)
-    The fit_quality (see above) flag values that are allowable for a successful fit. 
+    The fit_quality (see above) flag values that are allowable for a successful fit.
