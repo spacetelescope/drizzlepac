@@ -2,6 +2,7 @@ HAP Parameters
 -----------------------------------
 
 .. _hap-parameters:
+
 The HAP parameter files are housed in the drizzlepac/pars/hap_pars directory. There are different json parameter files for the SVM and MVM products in separate directories. The svm_parameter json files are also used for pipeline products.
 
 
