@@ -62,9 +62,6 @@ content-type = "text/x-rst"
 file = "LICENSE.txt"
 
 [project.optional-dependencies]
-dev = [
-    "PyPDF2",
-]
 docs = [
     "sphinx",
     "stsci_rtd_theme",
