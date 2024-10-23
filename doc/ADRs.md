@@ -26,3 +26,17 @@ The second column of a poller file is now reserved (for WFPC2) for passing the a
 ## Consequences
 
 Caution must be taken is using variations of the poller file while processing WFPC2 data.
+
+# The Use of the TEAL Interface 11/14/23
+
+## Context
+
+The code can be run using the interactive GUI TEAL, however, it is hard to maintain. TEAL is also used in the code to load the json parameter files. 
+
+## Decision
+
+In order to make the code more easily maintainable, we will no longer support the use of the GUI for running tasks, however, TEAL will still be used in the background to load the parameter files as there is no current alternative for parsing that data. 
+
+## Consequences
+
+TEAL will need to be included in drizzlepac until a replacement for parsing the json files can be found. 
