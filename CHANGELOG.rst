@@ -21,6 +21,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.2 (unreleased)
 ==================
 
+- Ensure that exposures with science data of all zeros is not processed. [#998]
+
 - Modifications to support an upgrade to Photutils v1.13.0. Changes were made
   to accommodate new APIs, modified low-level functionality, and address columns
   of a table in get_cutouts() by name rather than position to ensure the correct

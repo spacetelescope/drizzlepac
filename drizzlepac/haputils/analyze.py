@@ -16,7 +16,7 @@ import sys
 
 from enum import Enum
 from astropy.io import fits
-from astropy.io.fits import getheader
+from astropy.io.fits import getheader, getdata
 from astropy.table import Table
 from astropy.stats import sigma_clipped_stats
 import numpy as np
@@ -364,6 +364,8 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     for i, input_file in enumerate(input_file_list):
         header_hdu = 0
         header_data = getheader(input_file, header_hdu)
+        science_hdu = 1
+        science_data = getdata(input_file, science_hdu)
 
         # Keywords to use potentially for downstream analysis
         instrume = (header_data['INSTRUME']).upper()
@@ -424,14 +426,18 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
 
         # Determine if the image has one of these conditions.  The routine
         # will exit processing upon the first satisfied condition.
+        
+        # Science image array is filled with zero values
+        science_array_of_zeros = True if np.all(science_data==0) else False
 
         # Compute if the exposure time is very close to zero as it will be
         # needed when deciding whether or not to use the particular Grism/Prism data
-        is_zero = True if math.isclose(exptime, 0.0, abs_tol=1e-5) else False
+        exposure_time_near_zero = True if math.isclose(exptime, 0.0, abs_tol=1e-5) else False
 
         no_proc_key = None
         no_proc_value = None
         do_process = True
+                
         # Imaging vs spectroscopic or coronagraphic
         if obstype != 'IMAGING':
             no_proc_key = hdr_keys['OBSKEY']
@@ -494,7 +500,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         split_sfilter = sfilter.upper().split('_')
         for item in split_sfilter:
             # This is the only circumstance when Grism/Prism data WILL be processed.
-            if item.startswith(('G', 'PR')) and not is_zero and type.upper() == "SVM":
+            if item.startswith(('G', 'PR')) and not exposure_time_near_zero and type.upper() == "SVM":
                 no_proc_key = None
                 no_proc_value = None
                 log.info("The Grism/Prism data, {}, will be processed.".format(input_file))
@@ -503,7 +509,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                 if type.upper() == "MVM":
                     no_proc_value += ", Grism/Prism data and MVM processing"
                     log.warning("The Grism/Prism data {} with MVM processing will be ignored.".format(input_file))
-                elif is_zero:
+                elif exposure_time_near_zero:
                     no_proc_value += ", Grism/Prism data and EXPTIME = 0.0"
                     log.warning("The Grism/Prism data {} with zero exposure time will be ignored.".format(input_file))
     
@@ -533,6 +539,10 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             # GYROS mode so some drift)
             generate_msg(input_file, msg_type, no_proc_key, no_proc_value)
         
+        elif science_array_of_zeros:
+            do_process=False
+            log.warning(f'Science data for {input_file} filled with zeros, not aligning.')
+            
         else:
             analyze_data_good_index.append(i)
 
