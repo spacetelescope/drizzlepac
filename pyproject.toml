@@ -46,6 +46,7 @@ dependencies = [
     "astrocut<=0.9",
     "photutils>=1.10.0",
     "lxml",
+    "scikit-image>=0.14.2",
     "numpy<2.0",
 ]
 dynamic = [
