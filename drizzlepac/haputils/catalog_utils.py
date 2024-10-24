@@ -155,6 +155,8 @@ class CatalogImage:
                            maxiters=3):
         """Use a sigma-clipped algorithm or Background2D to determine the background of the input image.
 
+        There is also a special case background assessment reserved for SBC (MAMA detector) images.
+
         Parameters
         ----------
         image : ndarray
@@ -248,38 +250,48 @@ class CatalogImage:
         bkg = None
         is_zero_background_defined = False
 
-        # Make a local copy of the data(image) being processed in order to reset any
-        # data values which equal nan (e.g., subarrays) to zero.
-        imgdata = np.nan_to_num(self.data, copy=True, nan=0.0)
+        # Make a local copy of the data(image) being processed
+        imgdata = copy.deepcopy(self.data)
 
         # In order to compute the proper statistics on the input data, need to use the footprint
-        # mask to get the actual data - illuminated portion (True), non-illuminated (False).
+        # mask to get the actual data - illuminated portion (True), non-illuminated (False) based
+        # on images which actually contributed to a pixel, even if the contribution was the
+        # value of zero. Again, the num_images_mask here is not True/False, but the *number of images*
+        # which contributed to the value of a pixel.
+        #
+        # Note that if there are large shifts between images, the pixels in the gaps between the
+        # images have values of 0.  The self.num_images_mask is the mask created by 
+        # generate_footprint_mask() in product.py.
         footprint_mask = self.num_images_mask > 0
         self.footprint_mask = ndimage.binary_erosion(footprint_mask, iterations=10)
         self.inv_footprint_mask = np.invert(self.footprint_mask)
 
-        # If the image contains a lot of values identically equal to zero (as in some SBC images),
-        # set the two-dimensional background image to a constant of zero and the background rms to
-        # the real rms of the non-zero values in the image.
+        # Get the statistics on the number of illuminated pixels
         num_of_illuminated_pixels = self.footprint_mask.sum()
-        num_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
-        non_zero_pixels = imgdata[self.footprint_mask]
 
-        # BACKGROUND COMPUTATION 1 (unusual case)
-        # If there are too many background zeros in the image (> number_of_zeros_in_background_threshold), set the
-        # background median and background rms values
-        if num_of_zeros / float(num_of_illuminated_pixels) * 100.0 > zero_percent:
-            self.bkg_median = 0.0
-            self.bkg_rms_median = stats.tstd(non_zero_pixels, limits=[0, None], inclusive=[False, True])
-            self.bkg_background_ra = np.full_like(imgdata, 0.0)
-            self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
-            self.bkg_type = 'zero_background'
+        # BACKGROUND COMPUTATION 1 (unusual case which should only apply to ACS/SBC data)
+        # Get the number of pixels which are zero in the actual footprint mask.  In
+        # essence ignore the gaps between images which may also be set to zero and only do
+        # this for SBC.
+        if (self.imghdu[0].header['DETECTOR'].upper() == "SBC"):
+            num_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
+            num_of_nonzeros = num_of_illuminated_pixels - num_of_zeros
 
-            is_zero_background_defined = True
-            log.info("Input image contains excessive zero values in the background. Median: {} RMS: {}".format(self.bkg_median, self.bkg_rms_median))
+            # If there are too many background zeros in the image
+            # (> number_of_zeros_in_background_threshold), set the background median to
+            # zero and the background rms to the real rms of the non-zero values in the image.
+            if num_of_zeros / float(num_of_illuminated_pixels) * 100.0 > zero_percent:
+                self.bkg_median = 0.0
+                self.bkg_rms_median = stats.tstd(num_of_nonzeros, limits=[0, None], inclusive=[False, True])
+                self.bkg_background_ra = np.full_like(imgdata, 0.0)
+                self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
+                self.bkg_type = 'zero_background'
+
+                is_zero_background_defined = True
+                log.info("Input image contains excessive zero values in the background. Median: {} RMS: {}".format(self.bkg_median, self.bkg_rms_median))
 
         # BACKGROUND COMPUTATION 2 (sigma_clipped_stats)
-        # If the input data is not the unusual case of an "excessive zero background", compute
+        # If the input data is not the unusual case of SBC "excessive zero background", compute
         # a sigma-clipped background which returns only single values for mean,
         # median, and standard deviations
         if not is_zero_background_defined:
@@ -332,7 +344,7 @@ class CatalogImage:
                 log.info("")
 
             # Compute a minimum rms value based upon information directly from the data
-            if self.keyword_dict["detector"].upper() != "SBC":
+            if self.keyword_dict["detector"].upper() not in ['IR', 'SBC']:
                 minimum_rms = self.keyword_dict['atodgn'] * self.keyword_dict['readnse'] \
                               * self.keyword_dict['ndrizim'] / self.keyword_dict['texpo_time']
 
@@ -556,7 +568,16 @@ class CatalogImage:
 class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
-    crfactor = {'aperture': 300, 'segment': 150}  # CRs / hr / 4kx4k pixels
+
+    # This reference for the crfactor is Rick White.  It is based upon the physical
+    # area of the detector.  From the instrument handbooks:
+    # ACS/WFC: 4096**2 pixels, pixel size (15 um)**2
+    # ACS/HRC: 1024**2 pixels, pixel size (21 um)**2
+    # WFC3/UVIS: 4096**2 pixels, pixel size (15 um)**2
+    # WFPC2: 1600**2 pixels, pixel size (15um)**2
+    # acs/wfc-> crfactor = {'aperture': 300, 'segment': 150}  # CRs / hr / 4kx4k pixels
+    crfactor = {'WFC': {'aperture': 300, 'segment': 150}, 'HRC': {'aperture': 37, 'segment': 18.5},
+                'UVIS': {'aperture': 300, 'segment': 150}, 'WFPC2': {'aperture': 46, 'segment': 23}}
 
     def __init__(self, fitsfile, param_dict, param_dict_qc, num_images_mask, log_level, diagnostic_mode=False, types=None,
                  tp_sources=None):
@@ -664,6 +685,9 @@ class HAPCatalogs:
             crthresh_mask = None
             source_cat = self.catalogs[cat_type].sources if cat_type == 'aperture' else self.catalogs[cat_type].source_cat
 
+            # Collect up the names of all the columns which start with "Flag" - there will be
+            # a flag column for each filter in the visit - even the filters which did not end up
+            # contributing to the total detection image.
             flag_cols = [colname for colname in source_cat.colnames if colname.startswith('Flag')]
             for colname in flag_cols:
                 catalog_crmask = source_cat[colname] < 2
@@ -677,17 +701,24 @@ class HAPCatalogs:
         log.info("Determining whether point and/or segment catalogs meet cosmic-ray threshold")
         log.info("  based on EXPTIME = {}sec for the n=1 filters".format(n1_exposure_time))
 
-        for cat_type in self.catalogs:
-            source_cat = self.catalogs[cat_type]
-            if source_cat.sources:
-                thresh = self.crfactor[cat_type] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
-                source_cat = source_cat.sources if cat_type == 'aperture' else source_cat.source_cat
-                n_sources = source_cat.sources_num_good  # len(source_cat)
-                all_sources = len(source_cat)
-                log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
-                if n_sources < thresh and 0 < n_sources:
-                    self.reject_cats[cat_type] = True
-                    log.info("{} catalog FAILED CR threshold.".format(cat_type))
+        detector = self.image.keyword_dict["detector"].upper()
+        if detector not in ['IR', 'SBC']:
+            for cat_type in self.catalogs:
+                source_cat = self.catalogs[cat_type]
+                if source_cat.sources:
+                    thresh = self.crfactor[detector][cat_type] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
+                    source_cat = source_cat.sources if cat_type == 'aperture' else source_cat.source_cat
+                    n_sources = source_cat.sources_num_good
+                    all_sources = len(source_cat)
+                    log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
+                    if 0 < n_sources < thresh:
+                        self.reject_cats[cat_type] = True
+                        log.info("{} catalog FAILED CR threshold.".format(cat_type))
+
+        # Ensure if any catalog is rejected, the remaining catalogs are also rejected
+        if any(self.reject_cats.values()):
+            for k in self.reject_cats.keys():
+                self.reject_cats[k] = True
 
         return self.reject_cats
 
@@ -1066,9 +1097,12 @@ class HAPPointCatalog(HAPCatalogBase):
                                            format='ascii.fast_no_header',
                                            overwrite=True)
 
+                        # NOTE: It is necessary to use a non-zero threshold to ensure the values
+                        # computed in the low levels of Photutils are finite (in v1.13.0) or no
+                        # table will be returned in the "src_table = daofind()" line below.
                         daofind = decutils.UserStarFinder(fwhm=source_fwhm,
                                                 coords=user_peaks,
-                                                threshold=0.0,
+                                                threshold=1.0e-10,
                                                 sharphi=0.9, sharplo=0.4)
 
                         _region_name = self.image.imgname.replace(reg_suffix, 'region{}.fits'.format(masknum))

@@ -21,16 +21,46 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.2 (unreleased)
 ==================
 
+- Modifications to support an upgrade to Photutils v1.13.0. Changes were made
+  to accommodate new APIs, modified low-level functionality, and address columns
+  of a table in get_cutouts() by name rather than position to ensure the correct
+  data is acquired.  Support is now for versions of Photutils>=1.10.0.  [#1844]
+
+- Added documentation describing regression tests. [#1881]
+
+- Addressed additional issures related to numpy 2.0 scalar promotion. [#1875]
+
+- Added new header keywords and match requirements for relative fitting. [#1860]
+
+- Update to HDRTABLE for MVM products to include SVM rootname and SVM creation date. [#1846]
+
 - Added python 3.12 to testing matrix for Jenkins and github actions. [#1843]
 
 - ``manageInputCopies`` now copies successfully even if the original files were
   defined by full paths rather than being in the current working directory. [#1835]
 
 
-3.7.1 (unreleased)
-==================
+3.7.1 (1-Oct-2024)
+===================
 
-- Reverted #1798 until further testing is done with Photutils.
+- Improved S_REGION using simplify-polygon, eorions, and dilation. [#1323] 
+
+
+3.7.1 (12-Aug-2024)
+===================
+- Avoid applying the estimated cosmic ray vs real sources threshold for the
+  ACS/SBC and WFC3/IR detectors. [#1858]
+
+- Corrected the way the n1_exposure_time and tot_exposure_time values
+  are computed as these values are used in the computation for rejecting
+  catalog creation based on expected cosmic ray detections.  Generalized
+  the crfactor dictionary for all detectors. Ensure if any catalog type
+  is rejected, all the catalog types are rejected. [#1853]
+
+- Modified the call to the hamming function in the deconvolve_utils.py module
+  as SciPy deprecated the way window filtering functions can be invoked. These
+  functions can no longer be imported from the scipy.signal namespace but need
+  to be accessed via scipy.signal.windows. [#1848]
 
 - Corrected the way that the number of constituent images are accumulated
   per pixel by ensuring each contributing pixel has a finite value and

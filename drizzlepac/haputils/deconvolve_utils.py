@@ -28,7 +28,7 @@ from .. import astrodrizzle
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 from scipy import ndimage
-import scipy.signal as ss
+from scipy.signal import windows
 
 from stsci.tools import logutil
 
@@ -479,7 +479,7 @@ def _create_input_psf(psf_name, calimg, total_flux):
     lib_size = [lib_psf_arr.shape[0] // 2, lib_psf_arr.shape[1] // 2]
 
     # create hamming 2d filter to avoid edge effects
-    h = ss.hamming(lib_psf_arr.shape[0])
+    h = windows.hamming(lib_psf_arr.shape[0])
     h2d = np.sqrt(np.outer(h, h))
     lib_psf_arr *= h2d
 
@@ -516,7 +516,9 @@ def _create_input_psf(psf_name, calimg, total_flux):
 
 def get_cutouts(data, star_list, kernel, threshold_eff, exclude_border=False):
 
-    coords = [(row[1], row[0]) for row in star_list]
+    # The star_list now has four columns: ('id', 'x_peak', 'y_peak', 'peak_value')
+    # It is best to access named table columns by name rather than position.
+    coords = [(row['y_peak'], row['x_peak']) for row in star_list]
     convolved_data = data
 
     star_cutouts = []
@@ -883,7 +885,7 @@ def find_point_sources(drzname, data=None, mask=None,
     -------
     peaks : `astropy.table.Table <https://docs.astropy.org/en/stable/api/astropy.table.Table.html>`_
         Output from ``photutils.detection.find_peaks`` for all identified sources
-        with columns ``x_peak``, ``y_peak`` and ``peak_value``.
+        with columns ``id``, ``x_peak``, ``y_peak`` and ``peak_value``.
 
     psf_fwhm : float
         FWHM (in pixels) of PSF used to identify the sources.
