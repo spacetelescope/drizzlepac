@@ -20,8 +20,9 @@ from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 from astropy.modeling import models, fitting
 
-from photutils import background, DAOStarFinder
+from photutils import background
 from photutils.background import Background2D
+from photutils.detection import DAOStarFinder
 from photutils.utils import NoDetectionsWarning
 
 import stwcs
@@ -773,7 +774,10 @@ class SBCHAPImage(HAPImage):
         bkg_mask = ~np.clip(slabels, 0, 1).astype(bool)
 
         # Measure sub-pixel positions of each identified source now.
-        daofind = DAOStarFinder(fwhm=self.kernel_fwhm, threshold=0)
+        # NOTE: It is necessary to use a non-zero threshold to ensure the values
+        # computed in the low levels of Photutils are finite (in v1.13.0) or no
+        # table will be returned in the "src_table = daofind()" line below.
+        daofind = DAOStarFinder(fwhm=self.kernel_fwhm, threshold=1.0e-10)
 
         log.debug("Determining source properties as src_table...")
         src_table = daofind(sciarr, mask=bkg_mask)
@@ -1345,19 +1349,47 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             cr2_comment = RMS_DEC_COMMENT.replace('mas', 'deg')
             hdulist[sci_extn].header['CRDER1'] = (info['RMS_RA'].deg, cr1_comment) if info['RMS_RA'] is not None else -1.0
             hdulist[sci_extn].header['CRDER2'] = (info['RMS_DEC'].deg, cr2_comment) if info['RMS_DEC'] is not None else -1.0
-            hdulist[sci_extn].header['NMATCHES'] = len(info['ref_mag']) if info['ref_mag'] is not None else 0
-            hdulist[sci_extn].header['FITGEOM'] = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
+            nmatch_val = len(info['ref_mag']) if info['ref_mag'] is not None else 0
+            hdulist[sci_extn].header['NMATCHES'] = nmatch_val
+            fitgeom_val = info['fitgeom'] if info['fitgeom'] is not None else 'N/A'
+            hdulist[sci_extn].header['FITGEOM'] = fitgeom_val
+
+            # adds rel keywords if they don't exist
+            keys_to_add = [
+                ("RELGEOM", "N/A", "fitgeom for relative fit"),
+                ("RELMATCH", 0, "number of matches for relative fit"),
+                ("RELRMS_D", 0.0, "RMS in DEC of relative WCS fit(mas)"),
+                ("RELRMS_R", 0.0, "RMS in RA of relative WCS fit(mas)"),
+                ("RELREFIM", "N/A", "base reference image rootname for relative fit"),
+            ]
+            for keyword in keys_to_add:
+                if keyword[0] not in hdulist[sci_extn].header:
+                    hdulist[sci_extn].header.insert(
+                        "FITGEOM", (keyword[0], keyword[1], keyword[2]), after=True
+                    )
+
+            # save relative fit solution keywords to science header
+            if "relative" in item.meta["fit method"]:
+                log.info("overwriting relative fit result keywords")
+                hdulist[sci_extn].header["RELGEOM"] = fitgeom_val
+                hdulist[sci_extn].header["RELMATCH"] = nmatch_val
+                hdulist[sci_extn].header["RELRMS_D"] = rms_dec_val
+                hdulist[sci_extn].header["RELRMS_R"] = rms_ra_val
+                base_image_rootname = tweakwcs_output[0].meta[
+                    "rootname"
+                ]  # base image for relative fitting; first image in list
+                hdulist[sci_extn].header["RELREFIM"] = base_image_rootname
         else:
-            hdulist[sci_extn].header['RMS_RA'] = (-1.0, RMS_RA_COMMENT)
-            hdulist[sci_extn].header['RMS_DEC'] = (-1.0, RMS_DEC_COMMENT)
-            hdulist[sci_extn].header['CRDER1'] = -1.0
-            hdulist[sci_extn].header['CRDER2'] = -1.0
-            hdulist[sci_extn].header['NMATCHES'] = 0
-            hdulist[sci_extn].header['FITGEOM'] = "N/A"
+            hdulist[sci_extn].header["RMS_RA"] = (-1.0, RMS_RA_COMMENT)
+            hdulist[sci_extn].header["RMS_DEC"] = (-1.0, RMS_DEC_COMMENT)
+            hdulist[sci_extn].header["CRDER1"] = -1.0
+            hdulist[sci_extn].header["CRDER2"] = -1.0
+            hdulist[sci_extn].header["NMATCHES"] = 0
+            hdulist[sci_extn].header["FITGEOM"] = "N/A"
 
         # Update value of 'nmatches' in fit_info so that this value will get
         # used in writing out the headerlet as a file.
-        info['nmatches'] = hdulist[sci_extn].header['NMATCHES']
+        info["nmatches"] = hdulist[sci_extn].header["NMATCHES"]
 
         if 'HDRNAME' in hdulist[sci_extn].header:
             del hdulist[sci_extn].header['HDRNAME']

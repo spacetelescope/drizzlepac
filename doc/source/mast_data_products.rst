@@ -26,3 +26,4 @@ Hubble Advanced Products
     mast_data_products/mvm
     mast_data_products/hap_api
     mast_data_products/hap_glossary
+    mast_data_products/hap_tests
