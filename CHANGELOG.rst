@@ -25,7 +25,13 @@ number of the code change for that issue.  These PRs can be viewed at:
   use for processing when working on the output source catalogs.  If the RMS from
   the Photutils Background2D is greater than the RMS from the astropy.stats
   sigma_clipped_stats, then the background algorithm is now set to use the
-  sigma_clipped_stats. [#xxxx]
+  sigma_clipped_stats. [#1904]
+
+- Properly account for illuminated and non-illuminated pixels through the use
+  of masks when determining the background algorithm to use when working on the
+  output source catalogs. Use of the proper masks is particularly important for
+  the ACS/SBC data where the pixel is in the illuminated zone, but its value may
+  be zero. SBC is a MAMA photo-counting detector. (#1894)
 
 - Modifications to support an upgrade to Photutils v1.13.0. Changes were made
   to accommodate new APIs, modified low-level functionality, and address columns
