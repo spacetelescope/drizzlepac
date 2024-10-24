@@ -21,6 +21,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.2 (unreleased)
 ==================
 
+- Change to the algorithm which chooses which background determination algorithm to
+  use for processing when working on the output source catalogs.  If the RMS from
+  the Photutils Background2D is greater than the RMS from the astropy.stats
+  sigma_clipped_stats, then the background algorithm is now set to use the
+  sigma_clipped_stats. [#xxxx]
+
 - Modifications to support an upgrade to Photutils v1.13.0. Changes were made
   to accommodate new APIs, modified low-level functionality, and address columns
   of a table in get_cutouts() by name rather than position to ensure the correct
