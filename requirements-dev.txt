@@ -2,7 +2,6 @@
 # Testing of numpy developement packages will resume after drizzlepac's upstream
 # dependencies publish wheels that are compatible with numpy v2.x.
 
-git+https://github.com/astropy/photutils.git
 git+https://github.com/spacetelescope/stsci.tools.git
 git+https://github.com/spacetelescope/stwcs.git
 git+https://github.com/spacetelescope/stregion.git
@@ -11,3 +10,4 @@ numpy<2.0.dev0
 scipy>=0.0.dev0
 pyerfa>=0.0.dev0
 astropy>=0.0.dev0
+photutils>=0.0.dev0
