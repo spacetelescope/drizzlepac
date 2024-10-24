@@ -238,7 +238,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
                                                       total_product_obj.configobj_pars.get_pars('catalog generation'),
                                                       total_product_obj.configobj_pars.get_pars('quality control'),
-                                                      total_product_obj.mask,
+                                                      filter_product_obj.mask,
                                                       log_level,
                                                       types=phot_mode,
                                                       diagnostic_mode=diagnostic_mode,
