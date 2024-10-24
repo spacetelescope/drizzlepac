@@ -49,7 +49,7 @@ convention used for the names of these input and output files uses these
 components:
 
   * **<propid>** : the proposal ID for this visit
-  * **<obsetid>** : the 2-digit visit ID from this proposal 
+  * **<obsetid>** : the 2-digit visit ID from this proposal
   * **<instr>** : 3 or 4 letter designation of the instrument used for the observations
   * **<detector>** : name of the detector used for the observations
   * **<filter>** : hyphen-separated list of filter names used for the observations
@@ -70,7 +70,7 @@ created as a result of single-visit processing.
 .. list-table:: Single-visit product filenames
   :widths: 8 25 83
   :header-rows: 1
-  
+
   * - Product
     - File Type
     - Filename for Files Produced
@@ -80,7 +80,7 @@ created as a result of single-visit processing.
   * -
     - flat-field product
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_fl[ct].fits
-  * - 
+  * -
     - headerlet file
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_hlet.fits
   * -
@@ -89,7 +89,7 @@ created as a result of single-visit processing.
   * -
     - preview (full size)
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_dr[cz].jpg
-  * - 
+  * -
     - preview (thumbnail)
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppssoo>_dr[cz]_thumb.jpg
   * - Filter
@@ -101,7 +101,7 @@ created as a result of single-visit processing.
   * -
     - segment-source catalog
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_segment-cat.ecsv
-  * - 
+  * -
     - trailer file
     - hst_<propid>_<obsetid>_<instr>_<detector>_<filter>_<ipppss>_trl.txt
   * -
@@ -119,19 +119,19 @@ created as a result of single-visit processing.
   * -
     - segment-source catalog
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_segment-cat.ecsv
-  * - 
+  * -
     - trailer file
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_trl.txt
   * -
     - preview (full size)
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_dr[cz].jpg
-  * - 
+  * -
     - preview (thumbnail)
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_dr[cz]_thumb.jpg
-  * - 
+  * -
     - color preview (full size)
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_<filters>_dr[cz].jpg
-  * - 
+  * -
     - color preview (thumbnail)
     - hst_<propid>_<obsetid>_<instr>_<detector>_total_<ipppss>_<filters>_dr[cz]_thumb.jpg
 
@@ -291,9 +291,9 @@ input exposures using these header keywords for the stated rejection criteria.
     - 0
     - no exposure time, no data to align
   * - TARGNAME
-    - DARK, TUNGSTEN, BIAS, FLAT, 
-    - No alignable external sources in these calibration modes 
-  * - 
+    - DARK, TUNGSTEN, BIAS, FLAT,
+    - No alignable external sources in these calibration modes
+  * -
     - EARTH-CALIB, DEUTERIUM
     - No alignable external sources in these calibration modes
   * - CHINJECT
@@ -302,8 +302,8 @@ input exposures using these header keywords for the stated rejection criteria.
 
 
 Any observation which meets any of these criteria are flagged to be ignored (not
-processed).  An exception has been allowed for data where the OBSTYPE keyword is equal 
-to SPECTROSCOPIC and FILTER (or FILTER1, FILTER2) is equal to Grism or Prism.  
+processed).  An exception has been allowed for data where the OBSTYPE keyword is equal
+to SPECTROSCOPIC and FILTER (or FILTER1, FILTER2) is equal to Grism or Prism.
 The Grism/Prism
 SVM FLT/FLC data are retained to reconcile the active WCS between the Grism/Prism
 images and any valid direct exposures obtained with the same detector.
@@ -521,8 +521,8 @@ criteria, while an 8 exposure ACS/WFC association would end up selecting the
 User-customization of Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The parameter configuration files now included in the ``drizzlepac`` package are
-designed to be easily customized for manual processing with both ``runastrodriz`` 
-(pipeline astrometry processing) and ``runsinglehap`` (SVM processing).  These 
+designed to be easily customized for manual processing with both ``runastrodriz``
+(pipeline astrometry processing) and ``runsinglehap`` (SVM processing).  These
 ASCII JSON files can be edited prior to manual reprocessing to include whatever
 custom settings would best suit the science needs of the research being performed
 with the data. Template SVM processing pipeline parameter files populated with default
@@ -556,12 +556,12 @@ Handling Special Images
 -------------------------
 Grism and Prism images are acquired as part of a visit, in conjunction with their
 direct image counterparts, and classified as spectroscopic data.  It is beneficial for these
-images to share a common WCS with the corresponding direct images from the same detector 
+images to share a common WCS with the corresponding direct images from the same detector
 in the visit.  Because the Grism/Prism data cannot be used in the alignment procedure due
 to the nature of the data, the best WCS solution that can be generated for these images
 is an **a priori** solution. An **a priori** solution has been determined for essentially
-all HST data by correcting the coordinates of the guide stars that were used for the observation 
-to the coordinates of the same guide stars as determined by GAIA, in this case.  The actual 
+all HST data by correcting the coordinates of the guide stars that were used for the observation
+to the coordinates of the same guide stars as determined by GAIA, in this case.  The actual
 image pixels have not been used in the WCS determination.  The WCSNAME for this
 **a priori** solution is of the form::
 
@@ -573,31 +573,31 @@ image pixels have not been used in the WCS determination.  The WCSNAME for this
 
 where the `Astrometric Catalog <https://outerspace.stsci.edu/display/GC/Basic+Catalog+information>`_
 refers to the specific astrometric catalog used to correct
-the guide star positions.  
+the guide star positions.
 
 During SVM processing, all
 the WCS solutions in common to **all** of the Grism/Prism and direct images
 from the same detector in the visit are gathered and matched against a list of prioritized
 WCS solutions, where the preferred solution is of the form *IDC_?????????-GSC240* and
 the *IDC_?????????* represents the particular IDCTAB reference file.
-Once a common WCS solution is determined, the active (aka primary) WCS solution 
+Once a common WCS solution is determined, the active (aka primary) WCS solution
 for the Grism/Prism and direct images from the same detector is then set to this
-common solution.  Any previously active WCS for the image that is not already stored 
+common solution.  Any previously active WCS for the image that is not already stored
 in the image will be archived as a new WCS headerlet extension, unless the solution as identified
 by the HDRNAME, already exists as a headerlet.
 
-The only SVM processing performed on or with Grism/Prism images is with respect to the 
+The only SVM processing performed on or with Grism/Prism images is with respect to the
 potential update to a common active WCS with its corresponding direct images.  These images
 are not used in *any* SVM processing steps.  Effectively the images are only processed
-to an exposure level product.  If the Grism/Prism images have no corresponding direct 
-images acquired with the same detector, then the process of reconciling the WCS of the 
+to an exposure level product.  If the Grism/Prism images have no corresponding direct
+images acquired with the same detector, then the process of reconciling the WCS of the
 images in the visit is not done.
 
 
 Ramp images are utilized only in the alignment to GAIA stage of the processing, thereby
-contributing to the computation of the **metawcs** of the total detection image based 
-upon all exposures in the visit.  During this process it is possible the active WCS of 
-each Ramp exposure has been updated.  The Ramp exposures, similar to the Grism/Prism images, 
+contributing to the computation of the **metawcs** of the total detection image based
+upon all exposures in the visit.  During this process it is possible the active WCS of
+each Ramp exposure has been updated.  The Ramp exposures, similar to the Grism/Prism images,
 are only processed to an exposure level product.
 
 
@@ -653,32 +653,83 @@ Defining the Footprint
 ^^^^^^^^^^^^^^^^^^^^^^^
 The ``S_REGION`` keyword records the footprint of the final drizzle image as it appears
 on the sky as a list of RA and Dec positions ordered in a counter-clockwise manner.
-These positions outline only those pixels
-which have been observed by HST, not just the rectangular shape of the final drizzle array.
-This allows the archive to provide a preview of the drizzle products footprints in their
-all-sky map to assist users in selecting the data most suited for their search.
+These positions outline only those pixels which have been observed by HST, not
+just the rectangular shape of the final drizzle array. This allows the archive
+to provide a preview of the drizzle product footprints in their all-sky map to
+assist users in selecting the data most suited for their search.
 
-The computation of this keyword relies on automatically identifying all the corners of the
-exposed pixels from the final drizzle product, ordering them in a counter-clockwise manner
-relative to North up, then applying the WCS to transform those pixel
-positions into sky coordinates.  The function :py:func:`~drizzlepac.haputils.processing_utils.compute_sregion`
-gets used to define the value of this keyword, and can be called directly for any FITS image.
+The computation of this keyword relies on creating a filled shape, finding the border
+pixels of the shape, ordering the vertices in a counter-clockwise manner, and
+simplifying the shape by removing unnecessary vertices. The resulting vertices
+are then converted to sky coordinates (degrees). Our strategy relies on two
+complementary techniques named dilation and erosion, which add and remove pixels,
+respectively.
+
+In the code, the top level call functions are in :py:mod:`~drizzlepac.haputils.processing_utils`
+where the compute_sregion() function calls the find_footprint function.
+This function makes calls to two methods in the SkyFootprint class in :py:mod:`~drizzlepac.haputils.cell_utils`
+that build up a total mask (extract_mask), and find the vertices/corners of that mask
+(find_corners).
+
+Dilation and Erosion
+********************
+We use the mathematical morphology operations of binary erosion and binary dilation
+in different orders for two purposes. Using erosion and then dilation (the morphological
+"opening" operation) removes isolated pixels and narrow tendrils.  
+This has the effect of isolating islands of pixels that are thinly connected to one another and
+removing noise. Doing the opposite, dilation and then erosion (the morphological "closing"
+operation), fills in small holes and gaps to join islands and smooth the outer edge
+to some degree.
+
+Extracting a Mask
+*****************
+Extracting the the mask first involves using a ndimage.binary_fill_holes to fill
+in any holes surrounded by data. The code then uses dilation to keep edge features
+while smoothing the outer edge. Erosion is then used to get a mask that has a similar
+shape and size to the original mask. We then combine the resulting mask with the original
+mask to ensure we retain features that touch the image edges.
+
+
+Finding Border Pixels
+*********************
+The code traces the edge of the footprint to isolate only the edge pixels. It
+then uses erosion and then dilation to remove noise and island pixels. It then
+applies a gaussian filter to the edge pixels to ultimately create a smoother S_REGION.
+To find all the edge pixels, an eroded version of the mask is subtracted from the mask,
+which leaves behind only the pixels around the edge.  A box search algorithm is used to 
+connect the edge pixels in a path going counter-clockwise around the image edge.
+Finally, the resulting edge path is simplified.
+
+
+Simplifying the Border
+**********************
+In order to decrease the number of vertices for our S_REGION we use the simplify-polyline
+package. A call to simplify-polyline.simplify looks at each set of three
+consecutive vertices and determines if the errors in the line changes significantly
+when the middle pixel is removed. If it is below an set error (min_dist), the code
+removes the pixel. This algorithm is repeated until no more pixels are found to remove.
+It should be noted that in later iterations, these three pixels can be far apart.
+The result is that unnecessary pixels are removed and more complicated edge shapes
+are simplified.
+
+.. image:: https://ssb.stsci.edu/alignment/simplify_full.gif
+  :alt: drizzlepac-simplify-edges
+
+.. image:: https://ssb.stsci.edu/alignment/simplify_zoom.gif
+  :alt: drizzlepac-simplify-edges
+
 
 .. note::
     This function also gets called during standard-pipeline processing to populate the
-    ``S_REGION`` keyword in all calibrated FLC/FLT files as well.
-
-.. note::
-    The list of positions for the footprint can contain more corner positions than expected
-    due to the sensitivity of the
-    `Harris corner detection algorithm <https://scikit-image.org/docs/0.7.0/auto_examples/plot_harris.html>`_
-    used to identify the corners.
+    ``S_REGION`` keyword in all calibrated FLC/FLT files as well. For FLT/FLC files,
+    the underlying code for calculating the s_region is the astropy.wcs function
+    calc_footprint().
 
 Skycell Information
 ^^^^^^^^^^^^^^^^^^^
 The pipeline (ipppssoot) and SVM processing both add the SKYCELL keyword to the headers of the input FLT(C) and drizzled DRZ(C) products. This keyword includes all of the skycells that the input exposures overlap.
 
-.. note:: 
+.. note::
   The SKYCELL keyword values can differ between the pipeline and SVM products as the values depend on the WCSNAME of the input exposures.
 
 Catalog Generation
@@ -698,4 +749,3 @@ processing classifies each detected source into one or more of these groups and 
 value, known as a flag. Based on the flag value, sources that are obviously scientifically dubious are filtered out and
 not written to the final source catalogs. More details on this process can be found in section :ref:`flag_generation`
 of the catalog generation documentation page.
-

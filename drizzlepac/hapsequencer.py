@@ -191,7 +191,6 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 # used for the creation of this particular total detection image.
                 # Accummulate the number of exposures per filter and the corresponding
                 # exposure time.
-                #pdb.set_trace()
                 for edp in total_product_obj.edp_list:
                     if edp.filters not in n1_dict:
                         n1_dict[edp.filters] = {'n': 1, 'texptime': edp.exptime}
@@ -208,10 +207,8 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 # If the total detection image is comprised of more than one
                 # exposure in at least one filter...
                 filter_info = n1_dict.values()
-                if max([x['n'] for x in n1_dict.values()]) > 1:
-                    for values in filter_info:
-                        if values['n'] > 1:
-                            tot_exposure_time += values['texptime']
+                if max(x['n'] for x in filter_info) > 1:
+                    tot_exposure_time = sum(values['texptime'] for values in filter_info if values['n'] > 1)
                 # ...else if the the detection images is comprised of single
                 # filter exposures
                 else:
@@ -241,7 +238,7 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 filter_product_catalogs = HAPCatalogs(filter_product_obj.drizzle_filename,
                                                       total_product_obj.configobj_pars.get_pars('catalog generation'),
                                                       total_product_obj.configobj_pars.get_pars('quality control'),
-                                                      total_product_obj.mask,
+                                                      filter_product_obj.mask,
                                                       log_level,
                                                       types=phot_mode,
                                                       diagnostic_mode=diagnostic_mode,
@@ -754,17 +751,28 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
         # The Grism/Prism SVM FLT/FLC images which have had their WCS reconciled with the
         # corresponding direct images need trailer files.  This is also true of the Ramp images
         # which have only been processed through the "align to Gaia" stage.  At this time, just
-        # copy the total trailer file, and rename it appropriately.
+        # copy the full SVM processing log and rename it appropriately to the Grism or Ramp
+        # trailer filename.
+        # Note: When running under PyTest, the logname file cannot be found.  Since the Grism
+        # and Ramp log files are really placeholders, just create an empty file.
         if total_obj_list:
             for tot_obj in total_obj_list:
                 for gitem in grism_product_list:
                     if gitem.endswith('trl.txt'):
-                        shutil.copy(logname, gitem)
+                        if not os.path.exists(logname):
+                            open(gitem, 'a').close()
+                        else:
+                            shutil.copy(logname, gitem)
                 for ritem in ramp_product_list:
                     if ritem.endswith('trl.txt'):
-                        shutil.copy(logname, ritem)
+                        if not os.path.exists(logname):
+                            open(ritem, 'a').close()
+                        else:
+                            shutil.copy(logname, ritem)
 
-        # Append total trailer file (from astrodrizzle) to all total log files
+        # The tot_obj.trl_filename contains the astrodrizzle log.  The "logname"
+        # contains all the logging from the SVM processing.
+        # Append the full SVM processing log to the astrodrizzle log.
         if total_obj_list:
             for tot_obj in total_obj_list:
                 if found_data:
