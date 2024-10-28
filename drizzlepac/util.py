@@ -436,17 +436,19 @@ def updateNEXTENDKw(fobj):
     if 'nextend' in fobj[0].header:
         fobj[0].header['nextend'] = len(fobj) - 1
 
-def count_sci_extensions(filename):
+def count_sci_extensions(filename, return_ind=False):
     """ Return the number of SCI extensions and the EXTNAME from a input MEF file.
     """
     num_sci = 0
+    index=[]
     extname = 'SCI'
 
     hdu_list = fileutil.openImage(filename, memmap=False)
 
-    for extn in hdu_list:
+    for i, extn in enumerate(hdu_list):
         if 'extname' in extn.header and extn.header['extname'] == extname:
             num_sci += 1
+            index.append(i)
 
     if num_sci == 0:
         extname = 'PRIMARY'
@@ -454,7 +456,11 @@ def count_sci_extensions(filename):
 
     hdu_list.close()
 
-    return num_sci, extname
+    if return_ind:
+        return index
+    
+    else:
+        return num_sci, extname
 
 
 def verifyUniqueWcsname(fname, wcsname, include_primary=True):

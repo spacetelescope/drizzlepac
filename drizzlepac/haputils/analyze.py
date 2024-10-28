@@ -31,6 +31,7 @@ from stsci.tools import logutil
 from stsci.tools.bitmask import bitfield_to_boolean_mask
 
 from .astrometric_utils import classify_sources
+from ..util import count_sci_extensions
 
 __taskname__ = 'analyze'
 
@@ -364,8 +365,6 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     for i, input_file in enumerate(input_file_list):
         header_hdu = 0
         header_data = getheader(input_file, header_hdu)
-        science_hdu = 1
-        science_data = getdata(input_file, science_hdu)
 
         # Keywords to use potentially for downstream analysis
         instrume = (header_data['INSTRUME']).upper()
@@ -427,8 +426,18 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         # Determine if the image has one of these conditions.  The routine
         # will exit processing upon the first satisfied condition.
         
-        # Science image array is filled with zero values
-        science_array_of_zeros = True if np.all(science_data==0) else False
+        # Check if all science image arrays are filled with zero values
+        non_zero_data_in_array = False # start assuming data is zeros
+        science_ext_ind_array = count_sci_extensions(input_file_list, return_ind=True)
+        # make sure science extesion exists
+        if len(science_ext_ind_array)>0:
+            for sci_ext_ind in science_ext_ind_array:
+                science_data = getdata(input_file, sci_ext_ind)
+                # change flag if good data in any science array
+                if np.all(science_data==0):
+                    non_zero_data_in_array = True
+        else:
+            raise ValueError(f'No science extension in file: {input_file}')
 
         # Compute if the exposure time is very close to zero as it will be
         # needed when deciding whether or not to use the particular Grism/Prism data
@@ -539,9 +548,9 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             # GYROS mode so some drift)
             generate_msg(input_file, msg_type, no_proc_key, no_proc_value)
         
-        elif science_array_of_zeros:
+        elif non_zero_data_in_array==False:
             do_process=False
-            log.warning(f'Science data for {input_file} filled with zeros, not aligning.')
+            log.warning(f'Science data for {input_file} filled with zeros. Dataset cannot be aligned.')
             
         else:
             analyze_data_good_index.append(i)
