@@ -3,14 +3,14 @@ HAP Parameters
 
 .. _hap-parameters:
 
-The HAP parameter files are housed in the drizzlepac/pars/hap_pars directory. There are different json parameter files for the SVM and MVM products in separate directories. The svm_parameter json files are also used for pipeline products.
+In the high-level svm_parameters or mvm_parameters directories, the instrument/detector-dependent configuration index files (e.g., acs_sbc_index.json) provide a map to the configuration files used for the major HAP processing steps. The svm_parameter configuration files are also used for pipeline products.
 
 
-In either directory, there is a separate detector json file for each instrument/detector. Each file specifies additional json files used for different tasks and scenarios. The primary differences are in the case of different number of exposures:
+For the astrodrizzle step, there are different files which should be employed depending upon the number of exposures int the visit.
 
 
-Detector JSON Files
-*******************
+Detector Configuration Files
+****************************
 
 acs_hrc_index.json
 
@@ -37,7 +37,7 @@ acs_hrc_index.json
       }
   }
 
-The different files for "astrodrizzle" are for the case of 1 exposure ("any_n1"), 2 exposures (acs_hrc_any_n2), etc. Each json file with an associated task above (e.g. astrodrizzle) will have the parameters for that task. These files will be used to instantiate variables that are required in the processing of the data and, in the case of "astrodrizzle", are separated into different steps.
+The different files for "astrodrizzle" are for the case of 1 exposure ("any_n1"), 2 exposures (acs_hrc_any_n2), etc. Each json file with an associated task above (e.g. astrodrizzle) will have the parameters for that task. These files will be used to initialize variables that are required in the processing of the data and, in the case of "astrodrizzle", are separated into different steps.
 
 Shown below are the parameters that are used by the Hubble Advanced Products. We include the parameter, the default value for WFC3 processing, and a description of that parameter.
 
