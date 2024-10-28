@@ -449,8 +449,13 @@ def count_sci_extensions(filename, return_ind=False):
 
     Returns
     -------
-    _type_
-        _description_
+    tuple
+        Science extension and number of extensions. 
+    
+    or (if return_ind=True)
+    
+    list
+        indices of the "SCI" science extensions. 
     """    
 
     num_sci = 0
