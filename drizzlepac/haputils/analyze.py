@@ -86,7 +86,7 @@ BAD_DQ_FLAGS = [256,  # full-well saturated pixel
 
 MIN_LINES = 4  # Minimum number of detected lines for consideration of bad guiding
 
-# Return codes 
+# Return codes
 class Ret_code(Enum):
     """
     Define return status codes for Operations 
@@ -305,7 +305,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     log.setLevel(log_level)
 
     analyze_data_good_index = []
-    
+
     acs_filt_name_list = [DEFAULT_KEYS['FILKEY1'], DEFAULT_KEYS['FILKEY2']]
 
     # Interpret input filenames and adjust size of column accordingly
@@ -425,7 +425,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
 
         # Determine if the image has one of these conditions.  The routine
         # will exit processing upon the first satisfied condition.
-        
+
         # Check if all science image arrays are filled with zero values
         non_zero_data_in_array = False # start assuming data is zeros
         science_ext_ind_array = count_sci_extensions(input_file, return_ind=True)
@@ -436,8 +436,9 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                 # change flag if good data in any science array
                 if np.all(science_data==0):
                     non_zero_data_in_array = True
-                    log.warning(f'{input_file} (SCI, {sci_ext_ind}) is all zeros, 
-                                but processing will continue with the other science extensions.')
+                    log.warning(
+                        f"{input_file} (SCI, {sci_ext_ind}) is all zeros, but processing will continue with the other science extensions."
+                    )
         else:
             raise ValueError(f'No science extension in file: {input_file}')
 
@@ -448,7 +449,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         no_proc_key = None
         no_proc_value = None
         do_process = True
-                
+
         # Imaging vs spectroscopic or coronagraphic
         if obstype != 'IMAGING':
             no_proc_key = hdr_keys['OBSKEY']
@@ -523,7 +524,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                 elif exposure_time_near_zero:
                     no_proc_value += ", Grism/Prism data and EXPTIME = 0.0"
                     log.warning("The Grism/Prism data {} with zero exposure time will be ignored.".format(input_file))
-    
+
             if item.startswith(('BLOCK')):
                 no_proc_key = hdr_keys['FILKEY']
                 no_proc_value = sfilter
@@ -552,7 +553,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         elif non_zero_data_in_array==False:
             do_process=False
             log.warning(f'Science data for {input_file} filled with zeros. Dataset cannot be aligned.')
-            
+
         else:
             analyze_data_good_index.append(i)
 
