@@ -436,9 +436,11 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                 # change flag if good data in any science extensnion array
                 if not np.all(science_data==0):
                     non_zero_data_in_array = True
+                else:
                     log.warning(
                         f"{input_file} (SCI, {sci_ext_ind}) is all zeros, but processing will continue with the other science extensions."
                     )
+    
         else:
             log.warning(f'No science extension in file: {input_file}')
 
