@@ -436,6 +436,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                 # change flag if good data in any science array
                 if np.all(science_data==0):
                     non_zero_data_in_array = True
+                    log.warning(f'Warning, (SCI, {sci_ext_ind}) is all zeros, but processing will continue')
         else:
             raise ValueError(f'No science extension in file: {input_file}')
 
@@ -533,6 +534,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
 
         # If no_proc_key is set to a keyword, then this image has been found to not be viable for
         # alignment purposes.
+        import ipdb; ipdb.set_trace()
         if no_proc_key is not None:
             if no_proc_key != hdr_keys['FGSKEY']:
                 do_process = False
@@ -547,7 +549,6 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             # processing should be allowed, but there may be some issue with the result (e.g.,
             # GYROS mode so some drift)
             generate_msg(input_file, msg_type, no_proc_key, no_proc_value)
-        
         elif non_zero_data_in_array==False:
             do_process=False
             log.warning(f'Science data for {input_file} filled with zeros. Dataset cannot be aligned.')
