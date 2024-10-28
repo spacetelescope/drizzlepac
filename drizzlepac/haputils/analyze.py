@@ -432,7 +432,6 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         # make sure science extesion exists
         if len(science_ext_ind_array)>0:
             for sci_ext_ind in science_ext_ind_array:
-                import ipdb; ipdb.set_trace()
                 science_data = getdata(input_file, sci_ext_ind)
                 # change flag if good data in any science extensnion array
                 if np.logical_not(np.all(science_data==0)):
