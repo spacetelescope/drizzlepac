@@ -432,15 +432,16 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         # make sure science extesion exists
         if len(science_ext_ind_array)>0:
             for sci_ext_ind in science_ext_ind_array:
+                import ipdb; ipdb.set_trace()
                 science_data = getdata(input_file, sci_ext_ind)
-                # change flag if good data in any science array
-                if np.all(science_data==0):
+                # change flag if good data in any science extensnion array
+                if np.logical_not(np.all(science_data==0)):
                     non_zero_data_in_array = True
                     log.warning(
                         f"{input_file} (SCI, {sci_ext_ind}) is all zeros, but processing will continue with the other science extensions."
                     )
         else:
-            raise ValueError(f'No science extension in file: {input_file}')
+            log.warning(f'No science extension in file: {input_file}')
 
         # Compute if the exposure time is very close to zero as it will be
         # needed when deciding whether or not to use the particular Grism/Prism data
