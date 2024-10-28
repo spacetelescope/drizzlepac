@@ -438,7 +438,21 @@ def updateNEXTENDKw(fobj):
 
 def count_sci_extensions(filename, return_ind=False):
     """ Return the number of SCI extensions and the EXTNAME from a input MEF file.
-    """
+
+    Parameters
+    ----------
+    filename : str
+        Filename of the file you would like to count the extensions of. 
+    return_ind : bool, optional
+        Whether to return a list of the indices of the true "SCI" science extensions, 
+        by default False.
+
+    Returns
+    -------
+    _type_
+        _description_
+    """    
+
     num_sci = 0
     index=[]
     extname = 'SCI'
