@@ -429,12 +429,12 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         # Check if all science image arrays in the RAW file are filled with zero values
         non_zero_data_in_array = False # start assuming data is zeros
         science_ext_ind_array = count_sci_extensions(input_file, return_ind=True)
-        # make sure science extesion exists
+        # make sure science extension exists
         if len(science_ext_ind_array)>0:
             for sci_ext_ind in science_ext_ind_array:
                 science_data = getdata(input_file, sci_ext_ind)
                 # change flag if good data in any science extensnion array
-                if np.logical_not(np.all(science_data==0)):
+                if not np.all(science_data==0):
                     non_zero_data_in_array = True
                     log.warning(
                         f"{input_file} (SCI, {sci_ext_ind}) is all zeros, but processing will continue with the other science extensions."
