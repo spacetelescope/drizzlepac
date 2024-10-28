@@ -433,7 +433,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         if len(science_ext_ind_array)>0:
             for sci_ext_ind in science_ext_ind_array:
                 science_data = getdata(input_file, sci_ext_ind)
-                # change flag if good data in any science extensnion array
+                # change flag if good data in any science extension array
                 if not np.all(science_data==0):
                     non_zero_data_in_array = True
                 else:
