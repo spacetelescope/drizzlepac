@@ -426,7 +426,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         # Determine if the image has one of these conditions.  The routine
         # will exit processing upon the first satisfied condition.
 
-        # Check if all science image arrays are filled with zero values
+        # Check if all science image arrays in the RAW file are filled with zero values
         non_zero_data_in_array = False # start assuming data is zeros
         science_ext_ind_array = count_sci_extensions(input_file, return_ind=True)
         # make sure science extesion exists
