@@ -20,8 +20,8 @@ classifiers = [
     "Operating System :: POSIX",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
     "astropy>=5.0.4",
@@ -48,9 +48,6 @@ dependencies = [
     "lxml",
     "PyPDF2",
     "scikit-image>=0.14.2",
-    "tables",
-    "typing_extensions>4.0",
-    "markupsafe<=2.0.1",
     "numpy<2.0",
 ]
 dynamic = [
@@ -74,6 +71,7 @@ docs = [
     "sphinx_automodapi",
     "graphviz",
     "astrocut",
+    "tables",
 ]
 test = [
     "ci_watson",
