@@ -52,8 +52,8 @@ number of the code change for that issue.  These PRs can be viewed at:
   defined by full paths rather than being in the current working directory. [#1835]
 
 
-3.7.1 (1-Oct-2024)
-===================
+3.7.1.1 (1-Oct-2024)
+====================
 
 - Improved S_REGION using simplify-polygon, eorions, and dilation. [#1323] 
 
