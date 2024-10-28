@@ -554,6 +554,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             generate_msg(input_file, msg_type, no_proc_key, no_proc_value)
         elif non_zero_data_in_array==False:
             do_process=False
+            process_msg="SCI data all zeros"
             log.warning(f'Science data for {input_file} filled with zeros. Dataset cannot be aligned.')
 
         else:
