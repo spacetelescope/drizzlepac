@@ -21,6 +21,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.7.2 (unreleased)
 ==================
 
+- Introduce warnings for fits extensions with science data of all zeros, and ensure 
+  data with zeros in all science extensions are not processed. [#998]
+
 - Change to the algorithm which chooses which background determination algorithm to
   use for processing when working on the output source catalogs.  If the RMS from
   the Photutils Background2D is greater than the RMS from the astropy.stats
