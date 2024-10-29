@@ -39,7 +39,7 @@ acs_hrc_index.json
 
 The different files for "astrodrizzle" are for the case of 1 exposure ("any_n1"), 2 exposures (acs_hrc_any_n2), etc. Each json file with an associated task above (e.g. astrodrizzle) will have the parameters for that task. These files will be used to initialize variables that are required in the processing of the data and, in the case of "astrodrizzle", are separated into different steps.
 
-Shown below are the parameters that are used by the Hubble Advanced Products. We include the parameter, the default value for WFC3 processing, and a description of that parameter.
+Shown below are the parameters that are used by the Hubble Advanced Products. As an example, we include the parameter, the default value for WFC3/IR processing, and a description of that parameter.
 
 .. run_hap_processing
 .. identified in json files.
