@@ -16,7 +16,7 @@ import sys
 
 from enum import Enum
 from astropy.io import fits
-from astropy.io.fits import getheader
+from astropy.io.fits import getheader, getdata
 from astropy.table import Table
 from astropy.stats import sigma_clipped_stats
 import numpy as np
@@ -31,6 +31,7 @@ from stsci.tools import logutil
 from stsci.tools.bitmask import bitfield_to_boolean_mask
 
 from .astrometric_utils import classify_sources
+from ..util import count_sci_extensions
 
 __taskname__ = 'analyze'
 
@@ -85,7 +86,7 @@ BAD_DQ_FLAGS = [256,  # full-well saturated pixel
 
 MIN_LINES = 4  # Minimum number of detected lines for consideration of bad guiding
 
-# Return codes 
+# Return codes
 class Ret_code(Enum):
     """
     Define return status codes for Operations 
@@ -304,7 +305,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     log.setLevel(log_level)
 
     analyze_data_good_index = []
-    
+
     acs_filt_name_list = [DEFAULT_KEYS['FILKEY1'], DEFAULT_KEYS['FILKEY2']]
 
     # Interpret input filenames and adjust size of column accordingly
@@ -425,13 +426,32 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         # Determine if the image has one of these conditions.  The routine
         # will exit processing upon the first satisfied condition.
 
+        # Check if all science image arrays in the RAW file are filled with zero values
+        non_zero_data_in_array = False # start assuming data is zeros
+        science_ext_ind_array = count_sci_extensions(input_file, return_ind=True)
+        # make sure science extension exists
+        if len(science_ext_ind_array)>0:
+            for sci_ext_ind in science_ext_ind_array:
+                science_data = getdata(input_file, sci_ext_ind)
+                # change flag if good data in any science extension array
+                if not np.all(science_data==0):
+                    non_zero_data_in_array = True
+                else:
+                    log.warning(
+                        f"{input_file} (SCI, {sci_ext_ind}) is all zeros, but processing will continue with the other science extensions."
+                    )
+    
+        else:
+            log.warning(f'No science extension in file: {input_file}')
+
         # Compute if the exposure time is very close to zero as it will be
         # needed when deciding whether or not to use the particular Grism/Prism data
-        is_zero = True if math.isclose(exptime, 0.0, abs_tol=1e-5) else False
+        exposure_time_near_zero = True if math.isclose(exptime, 0.0, abs_tol=1e-5) else False
 
         no_proc_key = None
         no_proc_value = None
         do_process = True
+
         # Imaging vs spectroscopic or coronagraphic
         if obstype != 'IMAGING':
             no_proc_key = hdr_keys['OBSKEY']
@@ -494,7 +514,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         split_sfilter = sfilter.upper().split('_')
         for item in split_sfilter:
             # This is the only circumstance when Grism/Prism data WILL be processed.
-            if item.startswith(('G', 'PR')) and not is_zero and type.upper() == "SVM":
+            if item.startswith(('G', 'PR')) and not exposure_time_near_zero and type.upper() == "SVM":
                 no_proc_key = None
                 no_proc_value = None
                 log.info("The Grism/Prism data, {}, will be processed.".format(input_file))
@@ -503,10 +523,10 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                 if type.upper() == "MVM":
                     no_proc_value += ", Grism/Prism data and MVM processing"
                     log.warning("The Grism/Prism data {} with MVM processing will be ignored.".format(input_file))
-                elif is_zero:
+                elif exposure_time_near_zero:
                     no_proc_value += ", Grism/Prism data and EXPTIME = 0.0"
                     log.warning("The Grism/Prism data {} with zero exposure time will be ignored.".format(input_file))
-    
+
             if item.startswith(('BLOCK')):
                 no_proc_key = hdr_keys['FILKEY']
                 no_proc_value = sfilter
@@ -532,7 +552,11 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             # processing should be allowed, but there may be some issue with the result (e.g.,
             # GYROS mode so some drift)
             generate_msg(input_file, msg_type, no_proc_key, no_proc_value)
-        
+        elif non_zero_data_in_array==False:
+            do_process=False
+            process_msg="SCI data all zeros"
+            log.warning(f'Science data for {input_file} filled with zeros. Dataset cannot be aligned.')
+
         else:
             analyze_data_good_index.append(i)
 
