@@ -28,5 +28,5 @@ jobs:
         - linux: py311-xdist
         - macos: py311-xdist
         - linux: py312-xdist
-        - linux: py3-devdeps-xdist
-        - macos: py3-devdeps-xdist
+        - linux: py312-devdeps-xdist
+        - macos: py312-devdeps-xdist
