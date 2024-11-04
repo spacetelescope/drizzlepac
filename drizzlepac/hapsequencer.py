@@ -67,6 +67,7 @@ from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import diagnostic_utils
 from drizzlepac.haputils import hla_flag_filter
 from drizzlepac.haputils import poller_utils
+from drizzlepac.haputils import analyze
 from drizzlepac.haputils import product
 from drizzlepac.haputils import processing_utils as proc_utils
 from drizzlepac.haputils import svm_quality_analysis as svm_qa
@@ -579,7 +580,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
             log.warning("")
             log.warning("There are no viable direct images in any Total Data Product for this visit. No processing can be done.")
             log.warning("No SVM processing is done for the Grism/Prism data - no SVM output products are generated.")
-            sys.exit(65)
+            sys.exit(analyze.Ret_code.NO_VIABLE_DATA.value)
 
         # Update all of the product objects with their associated configuration information.
         for total_item in total_obj_list:
