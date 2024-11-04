@@ -343,17 +343,18 @@ class CatalogImage:
                 log.info("")
 
             # Compute a minimum rms value based upon information directly from the data
-            if self.keyword_dict["detector"].upper() != 'SBC':
-                minimum_rms = self.keyword_dict['atodgn'] * self.keyword_dict['readnse'] \
-                              * self.keyword_dict['ndrizim'] / self.keyword_dict['texpo_time']
+            if self.keyword_dict['detector'].upper() != 'SBC':
+                minimum_rms = np.sqrt(self.keyword_dict['numexp']) * self.keyword_dict['readnse'] / self.keyword_dict['texpo_time']
+            else:
+                minimum_rms = np.sqrt(np.clip(bkg_median * self.keyword_dict['texpo_time'], a_min=1.0, a_max=None)) / self.keyword_dict['texpo_time']
 
-                # Compare a minimum rms based upon input characteristics versus the one computed and use
-                # the larger of the two values.
-                if (bkg_rms < minimum_rms):
-                    bkg_rms = minimum_rms
-                    log.info(f"Mimimum RMS of input based upon the readnoise, gain, number of exposures, and total exposure time: {minimum_rms:.6f}")
-                    log.info(f"Sigma-clipped RMS has been updated - Background mean: {bkg_mean:.6f}  median: {bkg_median:.6f}  rms: {bkg_rms:.6f}")
-                    log.info("")
+            # Compare a minimum rms based upon input characteristics versus the rms computed and use
+            # the larger of the two values.
+            if (bkg_rms < minimum_rms):
+               bkg_rms = minimum_rms
+               log.info(f"Minimum RMS of input based upon the readnoise, number of exposures, and total exposure time: {minimum_rms:.6f}")
+               log.info(f"Sigma-clipped RMS has been updated - Background mean: {bkg_mean:.6f}  median: {bkg_median:.6f}  rms: {bkg_rms:.6f}")
+               log.info("")
 
             # Generate two-dimensional background and rms images with the attributes of
             # the input data, but the content based on the sigma-clipped statistics.
@@ -490,6 +491,7 @@ class CatalogImage:
         keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
         keyword_dict["exptime"] = self.imghdu[0].header["EXPTIME"]
         keyword_dict["ndrizim"] = self.imghdu[0].header["NDRIZIM"]
+        keyword_dict["numexp"] = self.imghdu[0].header["NUMEXP"]
         if keyword_dict["detector"].upper() != "SBC":
             if keyword_dict["instrument"].upper() == 'WFPC2':
                 atodgn = self._get_max_key_value(self.imghdu[0].header, 'ATODGAIN')
