@@ -275,14 +275,13 @@ class CatalogImage:
         # this for SBC.
         if (self.imghdu[0].header['DETECTOR'].upper() == "SBC"):
             num_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
-            num_of_nonzeros = num_of_illuminated_pixels - num_of_zeros
 
             # If there are too many background zeros in the image
             # (> number_of_zeros_in_background_threshold), set the background median to
             # zero and the background rms to the real rms of the non-zero values in the image.
             if num_of_zeros / float(num_of_illuminated_pixels) * 100.0 > zero_percent:
                 self.bkg_median = 0.0
-                self.bkg_rms_median = stats.tstd(num_of_nonzeros, limits=[0, None], inclusive=[False, True])
+                self.bkg_rms_median = stats.tstd(imgdata[self.footprint_mask], limits=[0, None], inclusive=[False, True])
                 self.bkg_background_ra = np.full_like(imgdata, 0.0)
                 self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
                 self.bkg_type = 'zero_background'
