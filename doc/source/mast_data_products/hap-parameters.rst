@@ -1,5 +1,5 @@
 HAP Parameters
------------------------------------
+##############
 
 .. _hap-parameters:
 
@@ -219,7 +219,7 @@ Shown below are the parameters that are used by the Hubble Advanced Products. As
 
 
 Initialize HAP
-^^^^^^^^^^^^^^
+""""""""""""""
 
 \_mdriztab_btn\_: str (*default=Update From MDRIZTAB*)
     Immediately read and use the values from the MDRIZTAB.
@@ -261,7 +261,7 @@ in_memory: bool (*default=False*)
     Process everything in memory to minimize disk I/O?
 
 Instrument Parameters
-^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""
 
 .. or float?
 
@@ -284,7 +284,7 @@ exptime: str (*default=""*)
     .. ?
 
 State of input files
-^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""
 
 restore: bool (*default=False*)
     Copy input files FROM archive directory for processing?
@@ -299,7 +299,7 @@ clean: bool (*default=True*)
     Delete temporary files after completion?
 
 Step 1: Static mask
-^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""
 
 static: bool (*default=True*)
     Create static bad-pixel mask from the data?
@@ -308,7 +308,7 @@ static_sig: float (*default=4.0*)
     Sigma*rms below mode to clip for static mask
 
 Step 2: Sky Subtraction
-^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""
 
 skysub: bool (*default=False*)
     Turn on or off sky subtraction on the input data. When ``skysub`` is set  to ``no``, then ``skyuser`` field will be enabled and if user specifies a  header keyword showing the sky value in the image, then that value will  be used for CR-rejection but it will not be subtracted from the (drizzled)  image data. If user sets ``skysub`` to ``yes`` then ``skyuser`` field will be  disabled (and if it is not empty - it will be ignored) and user can use  one of the methods available through the ``skymethod`` parameter to  compute the sky or provide a file (see ``skyfile`` parameter) with values  that should be subtracted from (single) drizzled images.
@@ -353,7 +353,7 @@ skyuser: str (*default""*)
     KEYWORD indicating a sky subtraction value if done by user
 
 Step 3: Drizzle Separate images
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""
 
 driz_separate : bool (*default=False*)
     This parameter specifies whether or not to drizzle each input image onto separate output images. The separate output images will all have the same WCS as the final combined output frame. These images are used to create the median image, needed for cosmic ray rejection.
@@ -412,7 +412,7 @@ driz_sep_crpix2: float or null (*default=null*)
     Reference pixel Y position on output (CRPIX2).
 
 Step 4: Create Median Image
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""
 
 median: bool (*default=False*)
     Create a median image?
@@ -450,7 +450,7 @@ combine_bufsize: ??? (*default=null*)
 
 
 Step 5: Blot back the median image
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""
 
 blot: bool (*default=False*)
     Blot the median back to the input frame?
@@ -468,7 +468,7 @@ blot_skyval: float (*default=0.0*)
     Custom sky value to be added to blot image
 
 Step 6: Remove cosmic rays with deriv, driz_cr
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""
 
 driz_cr: bool (*default=False*)
     Perform CR rejection with deriv and driz_cr?
@@ -489,7 +489,7 @@ driz_cr_corr: bool (*default=False*)
     Create CR cleaned _crclean file and a _crmask file?
 
 Step 7: Drizzle final combined image
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""
 
 driz_combine: bool (*default=True*)
     Perform final drizzle image combination?
