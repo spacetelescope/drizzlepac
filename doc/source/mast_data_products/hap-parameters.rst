@@ -86,7 +86,7 @@ mosaic_catalog_list: list of strings (*default=["GAIAeDR3", "GSC242", "2MASS"]*)
     List of available catalogs for aligning for both pipeline and SVM products. The code will go through each catalog in this order.
 
 mosaic_fit_list: list of strings (*default=["match_relative_fit", "match_2dhist_fit", "match_default_fit"]*)
-    List of available fit algorithms for aligning for both pipeline and SVM products; match_default_fit relative alignment without using 2dhist and different throusholds (see json configuration files).
+    List of available fit algorithms for aligning for both pipeline and SVM products; match_default_fit relative alignment without using 2dhist and different thresholds (see json configuration files).
 
 mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 10, "general": 6}*)
     The different fit geometries tried in alignment as well as their minimum number of objects (minobj) value which specifies the number of matched sources required for a successful fit. For pipeline products, the fitgeometry value is ignored and defaults to a fit geometry of ``rscale``; the code governing the default values is in *align_utils.perform_fit*. The value for minobj specified here, however, is used for the pipeline products.
