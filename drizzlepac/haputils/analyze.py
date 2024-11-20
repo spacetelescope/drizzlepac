@@ -92,6 +92,7 @@ class Ret_code(Enum):
     Define return status codes for Operations 
     """
     OK = 0
+    KEYWORD_UPDATE_PROBLEM = 15
     SBCHRC_DATA = 55 
     NO_VIABLE_DATA = 65
 
