@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.7.2 (unreleased)
 ==================
+
+- Update to pipeline and SVM alignment configuration parameters. [1912]
+
 - Force an exit with a return code, KEYWORD_UPDATE_PROBLEM, in try/exception block
   when invoking refine_product_headers in hapsequencer.py and hapmultisequencer.py.
   If the FITS header keywords are not properly updated, this can cause errors during
