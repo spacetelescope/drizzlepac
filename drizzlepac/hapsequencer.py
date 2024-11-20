@@ -457,6 +457,10 @@ def create_drizzle_products(total_obj_list):
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         logging.exception("message")
+        # When there is not enough disk space, there can be a problem updating the
+        # header keywords. This can cause problems for CAOM.
+        sys.exit(analyze.Ret_code.KEYWORD_UPDATE_PROBLEM.value)
+
     # Remove rules files copied to the current working directory
     for rules_filename in list(rules_files.values()):
         log.info("Removed rules file {}".format(rules_filename))
