@@ -53,8 +53,6 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Addressed additional issures related to numpy 2.0 scalar promotion. [#1875]
 
-- Added new header keywords and match requirements for relative fitting. [#1860]
-
 - Update to HDRTABLE for MVM products to include SVM rootname and SVM creation date. [#1846]
 
 - Added python 3.12 to testing matrix for Jenkins and github actions. [#1843]
