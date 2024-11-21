@@ -22,7 +22,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 ==================
 - Include a minimum RMS value for the SBC detector, as is done for the other
   detectors, as there seems to be a lot of noise in the source catalogs due to 
-  a low detection threshold. [#nnnn]
+  a low detection threshold. [#1908]
 
 - Force an exit with a return code, KEYWORD_UPDATE_PROBLEM, in try/exception block
   when invoking refine_product_headers in hapsequencer.py and hapmultisequencer.py.
