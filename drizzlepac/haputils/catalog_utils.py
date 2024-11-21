@@ -289,6 +289,15 @@ class CatalogImage:
                 is_zero_background_defined = True
                 log.info(f"Input image contains excessive zero values in the background. Median: {self.bkg_median:.6f} RMS: {self.bkg_rms_median:.6f}")
 
+                # Compute a minimum rms value based upon information directly from the data
+                minimum_rms = 1.0 / self.keyword_dict['texpo_time']
+                if np.nan_to_num(self.bkg_rms_median) < minimum_rms:
+                    self.bkg_rms_median = minimum_rms
+                    log.info("")
+                    log.info(f"Minimum RMS of input based upon the total exposure time: {minimum_rms:.6f}")
+                    log.info(f"Median RMS has been updated - Median: {self.bkg_median:.6f} RMS: {self.bkg_rms_median:.6f}")
+                    log.info("")
+
         # BACKGROUND COMPUTATION 2 (sigma_clipped_stats)
         # If the input data is not the unusual case of SBC "excessive zero background", compute
         # a sigma-clipped background which returns only single values for mean,
