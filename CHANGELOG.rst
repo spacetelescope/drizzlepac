@@ -18,10 +18,14 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.7.2 (unreleased)
+3.8.0 (unreleased)
 ==================
 
 - Update to pipeline and SVM alignment configuration parameters. [1912]
+
+- Include a minimum RMS value for the SBC detector, as is done for the other
+  detectors, as there seems to be a lot of noise in the source catalogs due to 
+  a low detection threshold. [#1908]
 
 - Force an exit with a return code, KEYWORD_UPDATE_PROBLEM, in try/exception block
   when invoking refine_product_headers in hapsequencer.py and hapmultisequencer.py.
@@ -51,8 +55,6 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Added documentation describing regression tests. [#1881]
 
 - Addressed additional issures related to numpy 2.0 scalar promotion. [#1875]
-
-- Added new header keywords and match requirements for relative fitting. [#1860]
 
 - Update to HDRTABLE for MVM products to include SVM rootname and SVM creation date. [#1846]
 
