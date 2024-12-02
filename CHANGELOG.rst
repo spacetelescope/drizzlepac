@@ -18,7 +18,7 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.7.2 (unreleased)
+3.8.0 (unreleased)
 ==================
 - Include a minimum RMS value for the SBC detector, as is done for the other
   detectors, as there seems to be a lot of noise in the source catalogs due to 
