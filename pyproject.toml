@@ -48,7 +48,7 @@ dependencies = [
     "lxml",
     "PyPDF2",
     "scikit-image>=0.14.2",
-    "numpy<2.0",
+    "numpy>2.0",
 ]
 dynamic = [
     "version",
