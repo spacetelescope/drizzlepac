@@ -21,7 +21,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.8.0 (unreleased)
 ==================
 
-- Update to pipeline and SVM alignment configuration parameters. [1913]
+- Update to pipeline and SVM alignment configuration parameters. [1912]
 
 - Include a minimum RMS value for the SBC detector, as is done for the other
   detectors, as there seems to be a lot of noise in the source catalogs due to 
