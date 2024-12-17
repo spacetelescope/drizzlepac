@@ -18,8 +18,15 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.7.2 (unreleased)
+3.9.1 (unreleased)
 ==================
+
+- Added new header keywords and match requirements for relative fitting. [#1860]
+  
+
+3.9.0 (16-Dec-2024)
+===================
+
 - Include a minimum RMS value for the SBC detector, as is done for the other
   detectors, as there seems to be a lot of noise in the source catalogs due to 
   a low detection threshold. [#1908]
@@ -51,9 +58,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Added documentation describing regression tests. [#1881]
 
-- Addressed additional issures related to numpy 2.0 scalar promotion. [#1875]
-
-- Added new header keywords and match requirements for relative fitting. [#1860]
+- Addressed additional issues related to numpy 2.0 scalar promotion. [#1875]
 
 - Update to HDRTABLE for MVM products to include SVM rootname and SVM creation date. [#1846]
 
@@ -62,6 +67,11 @@ number of the code change for that issue.  These PRs can be viewed at:
 - ``manageInputCopies`` now copies successfully even if the original files were
   defined by full paths rather than being in the current working directory. [#1835]
 
+
+3.8.0
+=====
+
+- Version not released; internal testing only. 
 
 3.7.1.1 (1-Oct-2024)
 ====================
