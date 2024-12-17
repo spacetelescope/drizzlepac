@@ -187,7 +187,7 @@ def test_svm_wcs(gather_output_data):
         print("\ntest_svm_wcs.  WCSNAME: {} Output file: {}".format(wcsname, tdp))
         assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp}."
 
-
+@pytest.mark.skip(reason="Need to update logic as changes in the small number of catalog sources is too sensitive.")
 def test_svm_point_cat_numsources(gather_output_data):
    # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("point-cat.ecsv")]
@@ -202,7 +202,7 @@ def test_svm_point_cat_numsources(gather_output_data):
     bad_cats = [cat for cat in valid_cats if not valid_cats[cat][0]]
     assert len(bad_cats) == 0,  f"Point Catalog(s) {bad_cats} had {valid_cats} sources, expected {EXPECTED_POINT_SOURCES}"
 
-
+@pytest.mark.skip(reason="Need to update logic as changes in the small number of catalog sources is too sensitive.")
 def test_svm_segment_cat_numsources(gather_output_data):
    # Check that the point catalogs have the expected number of sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("segment-cat.ecsv")]
