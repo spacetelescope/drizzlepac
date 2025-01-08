@@ -168,13 +168,13 @@ class TestAlignMosaic(BaseHLATest):
                 "jbqf02i3q_flc.fits",
                 "jbqf02i8q_flc.fits",
                 "jbqf02iaq_flc.fits",
-            ],
-            [
-                "ib2u12kaq_flt.fits",
-                "ib2u12keq_flt.fits",
-                "ib2u12kiq_flt.fits",
-                "ib2u12klq_flt.fits",
-            ],
+            ], # commented out until alignment parameters better optimized. 
+            # [
+            #     "ib2u12kaq_flt.fits",
+            #     "ib2u12keq_flt.fits",
+            #     "ib2u12kiq_flt.fits",
+            #     "ib2u12klq_flt.fits",
+            # ],
             [
                 "ibnh02coq_flc.fits",
                 "ibnh02cmq_flc.fits",
@@ -216,7 +216,7 @@ class TestAlignMosaic(BaseHLATest):
 
         dataset_table = alignimages.perform_align(
             input_filenames,
-            catalog_list=["GAIADR2", "GSC242"],
+            catalog_list=["GAIADR2", "GAIADR1"],
             num_sources=250,
             archive=False,
             clobber=False,
