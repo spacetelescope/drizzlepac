@@ -188,7 +188,7 @@ class BaseCal:
                 sys.stdout.writelines(udiff)
                 sys.stdout = old_stdout
                 udiff_report = udiffIO.getvalue()
-                creature_report += udiff_report[:100]
+                creature_report += udiff_report[:100] # TRUNCATED to first 100 characters
                 if len(udiff_report) > 2 and all_okay:
                     all_okay = False
                 if len(udiff_report) > 2:
