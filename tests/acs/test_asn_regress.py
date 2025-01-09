@@ -10,6 +10,7 @@ from ci_watson.hst_helpers import raw_from_asn
 
 class TestAsnRegress(BaseACS):
 
+    @pytest.mark.skip(reason="stsci.tools.asnutils failing to load asn only using github actions.")
     def test_hrc_asn(self):
         # Customized tolerances as Linux and Mac would need different truth files.
         self.rtol = 1e-4
