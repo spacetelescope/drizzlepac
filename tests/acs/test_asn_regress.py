@@ -6,7 +6,6 @@ from drizzlepac import astrodrizzle
 
 from ..resources import BaseACS
 from ci_watson.hst_helpers import raw_from_asn
-from stsci.tools import asnutil
 
 
 class TestAsnRegress(BaseACS):
@@ -41,18 +40,6 @@ class TestAsnRegress(BaseACS):
         parObj['STEP 6: REMOVE COSMIC RAYS WITH DERIV, DRIZ_CR']['driz_cr_snr'] = '3.0 2.5'
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_bits'] = 8578
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_units'] = 'counts'
-
-
-        if os.path.exists("j8bt06010_asn.fits"):
-            pass
-        else:
-            raise ValueError("File not found")
-            
-        try:
-            asnutil.readASNTable('j8bt06010_asn.fits')
-        except:
-            print("Failed to read ASN table")
-            return
 
         astrodrizzle.AstroDrizzle(asn_file, configobj=parObj)       
 
