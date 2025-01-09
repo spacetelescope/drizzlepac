@@ -1,5 +1,6 @@
 import os
 
+import pytest
 from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
