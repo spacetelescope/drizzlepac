@@ -105,6 +105,8 @@ mosaic_fitgeom_list: dict (*default={"rshift": 10, "rscale": 10, "general": 6}*)
         * 4 = Valid but compromised solution with RMS >= 10 mas
 
         * 5 = Not valid solution
+  
+        * -1 = Alignment failed altogether. 
 
 
 generate_source_catalogs (*primarily in align_utils.py*)
