@@ -22,6 +22,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 ==================
 
 - Added new header keywords and match requirements for relative fitting. [#1860]
+
+- Updated alignment parameters. [#1932]
   
 
 3.9.0 (16-Dec-2024)
