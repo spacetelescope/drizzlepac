@@ -206,8 +206,7 @@ class BaseCal:
                       files[0], files[1]))
                 shutil.move(files[0], files[1])
             log_pattern = [os.path.join(os.path.dirname(x), '*.log') for x in new_truths]
-            json_pattern = [os.path.join(os.path.dirname(x), '*.json') for x in new_truths]
-            generate_upload_schema(pattern=new_truths + log_pattern + json_pattern,
+            generate_upload_schema(pattern=new_truths + log_pattern,
                            testname=testname,
                            target= tree)
 
