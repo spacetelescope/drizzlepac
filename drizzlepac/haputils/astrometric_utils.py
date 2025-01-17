@@ -833,6 +833,8 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
         kernel_fwhm = fwhm
         kernel = build_gaussian_kernel(fwhm, npixels=source_box)
 
+        log.info(f"Finished build_auto_kernel")
+
     return (kernel, kernel_psf), kernel_fwhm
 
 
