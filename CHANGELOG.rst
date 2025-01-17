@@ -21,6 +21,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.1 (unreleased)
 ==================
 
+- Updated path for regression test results on artifactory. [#1933]
+
 - Added new header keywords and match requirements for relative fitting. [#1860]
   
 
