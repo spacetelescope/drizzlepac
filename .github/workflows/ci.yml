@@ -41,7 +41,7 @@ jobs:
         - linux: py312-xdist
         - linux: py312-devdeps-xdist
         - macos: py312-devdeps-xdist
-        - linux: py313-xdist
-        - macos: py313-xdist
+        - linux: py313-devdeps-xdist
+        - macos: py313-devdeps-xdist
         - linux: py312-cov-xdist
           coverage: codecov
