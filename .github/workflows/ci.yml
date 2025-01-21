@@ -41,7 +41,24 @@ jobs:
         - linux: py312-xdist
         - linux: py312-devdeps-xdist
         - macos: py312-devdeps-xdist
-        - linux: py313-xdist
-        - macos: py313-xdist
         - linux: py312-cov-xdist
           coverage: codecov
+  test313:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@9f1f43251dde69da8613ea8e11144f05cdea41d5  # v1.15.0
+    needs: [ crds_contexts ]
+    with:
+      setenv: |
+        CRDS_PATH: /tmp/data/crds_cache/
+        CRDS_SERVER_URL: https://hst-crds.stsci.edu
+        CRDS_CLIENT_RETRY_COUNT: 3
+        CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+      cache-path: /tmp/data/crds_cache/
+      cache-key: ${{ needs.crds_contexts.outputs.hst }}
+      libraries: |
+        brew:
+          - hdf5
+      posargs: '--no-deps'
+      envs: |
+        - linux: py313-xdist
+        - macos: py313-xdist
+
