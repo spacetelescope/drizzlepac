@@ -2102,7 +2102,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
             log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
             for wht_mask in self.tp_masks:
-                threshold_rms = bkg_rms * np.sqrt(wht_mask['scale'] * wht_mask['mask'] / wht_mask['rel_weight'].max())
+                threshold_rms = bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
                 threshold_rms_median = np.nanmedian(threshold_rms[threshold_rms > 0])
                 threshold_item = nsigma * threshold_rms_median
 
@@ -3029,41 +3029,50 @@ def make_wht_masks(
     mask (np.ndarray of bools, dtype=int16), and  relative weight (np.ndarray, dtype=float32). 
     
     """
-    
-    # create inverse of mask as ints
-    invmask = make_inv_mask(maskarr)
-
     # uses scipy maximum filter on image. Maximum filter selects the largest value within an ordered 
-    # window of pixels values and replaces the central pixel with the largest value.
+    # window of pixel values and replaces the central pixel with the largest value.
     maxwht = ndimage.filters.maximum_filter(whtarr, size=kernel)
     
     # normalized weight array
     rel_wht = maxwht / maxwht.max()
 
     # initialize values
-    delta = 0.0
-    master_mask = np.zeros(invmask.shape, dtype=np.uint16)
+    #
+    # master_mask indicates pixels remaining to be included
+    # initially it includes all unmasked pixels
+    master_mask = (maskarr == 0) & (rel_wht > 0)
     limit = 1 / scale
     masks = []
+
+    # minimum threshold on number of pixels in a segment
+    # this is weird, trying to preserve the peculiar definition of similarity
+    osum = master_mask.sum()
+    pthresh = (1 - sensitivity) * osum
     
-    # loop through scale values until delta is greater than sensitivity
-    while delta < sensitivity:
-        mask = rel_wht > limit
-        mask = (mask.astype(np.uint16) * invmask) - master_mask
+    # loop through scale values until all pixels are used
+    while master_mask.any():
 
-        new_delta = master_mask.sum() / mask.sum()
-        if new_delta < sensitivity:
-            masks.append(
-                dict(
-                    scale=limit,
-                    wht_limit=limit * maxwht.max(),
-                    mask=mask,
-                    rel_weight=rel_wht * mask,
+        # get pixels above the new limit that have not been used yet
+        mask = (rel_wht > limit) & master_mask
+        if mask.any():
+            mask_sum = mask.sum()
+
+            # If the segment is sufficiently big, and if the remaining pixels are not too small,
+            # keep this segment.
+            mmaster_sum = master_mask.sum()
+            if mask_sum == mmaster_sum or (mask_sum > pthresh and (mmaster_sum - mask_sum) > pthresh):
+                masks.append(
+                    dict(
+                        scale=limit,
+                        wht_limit=limit * maxwht.max(),
+                        mask=mask.astype(np.uint16),
+                        rel_weight=rel_wht * mask)
                 )
-            )
+                master_mask &= (~mask)
+            elif (mmaster_sum - mask_sum) <= pthresh:
+                # few pixels remaining, drop threshold to zero so they are found in the next iteration
+                limit = 0.0
 
-        delta = new_delta
-        master_mask = master_mask + mask
         limit /= scale
 
     return masks
