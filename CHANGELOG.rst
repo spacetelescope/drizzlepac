@@ -30,7 +30,8 @@ number of the code change for that issue.  These PRs can be viewed at:
   the compute_threshold method associated with only the Segment catalog was also
   addressed.  The "scale factor" which causes the RMS computation to be too small
   was deleted.  The RMS computation for the Point and Segment catalogs is now the
-  same. [#nnnn]
+  same. [#1939]
+
 
 3.9.1 (30-Jan-2025)
 ===================
