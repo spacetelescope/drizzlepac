@@ -33,6 +33,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.0 (16-Dec-2024)
 ===================
 
+- **This version used by operations but does not generate HAP products (SVM/MVM).**
+
 - Include a minimum RMS value for the SBC detector, as is done for the other
   detectors, as there seems to be a lot of noise in the source catalogs due to 
   a low detection threshold. [#1908]
