@@ -43,7 +43,7 @@ from astropy.stats import (gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm,
                            sigma_clipped_stats, SigmaClip)
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
-from astropy.modeling.fitting import LevMarLSQFitter
+from astropy.modeling.fitting import LMLSQFitter
 from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
@@ -836,7 +836,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     return (kernel, kernel_psf), kernel_fwhm
 
 
-def find_fwhm(psf, default_fwhm):
+def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
     """Determine FWHM for auto-kernel PSF
 
     This function iteratively fits a Gaussian model to the extracted PSF
@@ -858,22 +858,19 @@ def find_fwhm(psf, default_fwhm):
         Value of the computed Gaussian FWHM for the PSF
 
     """
+    fwhm = 0.0
+
     # Default 1.0 * default_fwhm (default_fwhm is detector-dependent)
     aperture_radius = 1.5 * default_fwhm
-    source_group = SourceGrouper(min_separation=8)
     mmm_bkg = MMMBackground()
-    # LocalBackground: Inner and outer radius of circular annulus in pixels
-    base = int(math.ceil(aperture_radius))
-    local_bkg = LocalBackground(base + 1, base + 3, mmm_bkg)
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
-    fitter = LevMarLSQFitter()
+    # LevMarLSQFitter is in disfavor and will be deprecated
+    fitter = LMLSQFitter()
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
     gaussian_prf = IntegratedGaussianPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
     try:
         itr_phot_obj = IterativePSFPhotometry(finder=iraffind,
-                                              grouper=source_group,
-                                              localbkg_estimator=local_bkg,
                                               psf_model=gaussian_prf,
                                               aperture_radius=aperture_radius,
                                               fitter=fitter,
@@ -881,20 +878,18 @@ def find_fwhm(psf, default_fwhm):
                                               maxiters=2)
 
         phot_results = itr_phot_obj(psf)
-    except Exception:
-        log.error("The find_fwhm() failed due to problem with fitting.")
+    except Exception as x_cept:
+        log.warn(f"The find_fwhm() failed due to problem with fitting. Trying again. Exception: {x_cept}")
         return None
 
     # Check the phot_results table was generated successfully
     if isinstance(phot_results, (type(None))):
+        log.warn("The PHOT_RESULTS table was not generated successfully. Trying again.")
         return None
 
     # Check the table actually has rows
     if len(phot_results['flux_fit']) == 0:
-        return None
-
-    # Check the 'flags' column has at least one row with a flag value of zero
-    if (phot_results['flags'] == 0).sum() == 0:
+        log.warn("The PHOT_RESULTS table has no rows. Trying again.")
         return None
 
     # Insure none of the fluxes determined by photutils is np.nan
