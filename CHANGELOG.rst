@@ -18,12 +18,8 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.9.1 (unreleased)
+3.9.1 (29-Jan-2025)
 ==================
-
-- Updated path for regression test results on artifactory. [#1933]
-
-- Added new header keywords and match requirements for relative fitting. [#1860]
 
 - Further updates done to address the deprecated Photutils functionality as the
   original changes did not produce results at least as good as the results
