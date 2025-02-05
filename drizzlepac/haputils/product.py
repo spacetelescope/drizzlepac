@@ -495,21 +495,17 @@ class HAPProduct:
                         headerlet_filenames=headerlet_filenames, fit_label=fit_label
                     )
                 else:
-                    log.warning("No satisfactory fit found for any catalog.")
+                    log.warning("No satisfactory fit found for any catalog. No correction to absolute astrometric frame applied.\n")
                     raise ValueError
 
         except Exception:
             # Report a problem with the alignment
             if fit_label.upper().strip() == "SVM":
                 log.warning(
-                    "EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n"
-                )
+                    "EXCEPTION encountered in align_to_gaia for the FilterProduct. Proceeding with previous best solution.\n")
             else:
                 log.warning(
-                    "EXCEPTION encountered in align_to_gaia for the SkyCellProduct.\n"
-                )
-            log.warning("No correction to absolute astrometric frame applied.\n")
-            log.warning("Proceeding with previous best solution.\n")
+                    "EXCEPTION encountered in align_to_gaia for the SkyCellProduct. Proceeding with previous best solution.\n")
 
             # Only write out the traceback if in "debug" mode since not being able to
             # align the data to an absolute astrometric frame is not actually a failure.
