@@ -24,6 +24,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Added new header keywords and match requirements for relative fitting. [#1860]
 
+- Updated alignment parameters. [#1932]
+
 - Implemented fixes to address uneven detection thresholds in the HAP catalogs
   due to bugs in the function, make_wht_masks, which intends to create weight
   masks covering the full drizzled output footprint. A somewhat related bug in
