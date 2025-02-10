@@ -17,13 +17,26 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-
-3.9.1 (unreleased)
+3.9.2 (unreleased)
 ==================
 
 - Updated path for regression test results on artifactory. [#1933]
 
 - Added new header keywords and match requirements for relative fitting. [#1860]
+
+- Updated alignment parameters. [#1932]
+
+- Implemented fixes to address uneven detection thresholds in the HAP catalogs
+  due to bugs in the function, make_wht_masks, which intends to create weight
+  masks covering the full drizzled output footprint. A somewhat related bug in
+  the compute_threshold method associated with only the Segment catalog was also
+  addressed.  The "scale factor" which causes the RMS computation to be too small
+  was deleted.  The RMS computation for the Point and Segment catalogs is now the
+  same. [#1939]
+
+
+3.9.1 (30-Jan-2025)
+===================
 
 - Further updates done to address the deprecated Photutils functionality as the
   original changes did not produce results at least as good as the results
