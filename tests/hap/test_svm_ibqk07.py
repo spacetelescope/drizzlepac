@@ -30,7 +30,7 @@ from pathlib import Path
 
 POLLER_FILE = "wfc3_bqk_07_input.out"
 WCS_IR_SUB_NAME = "HSC30"
-WCS_UVIS_SUB_NAME = "FIT_SVM_GAIA"
+WCS_UVIS_SUB_NAME = "HSC30"
 expected_total_point_sources = {
 "hst_12557_07_wfc3_ir_total_ibqk07_point-cat.ecsv": 2,
 "hst_12557_07_wfc3_uvis_total_ibqk07_point-cat.ecsv": 13}
