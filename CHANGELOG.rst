@@ -20,7 +20,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
-- Replaced deprecated class IntegratedGaussianPRF with CircularGaussianSigmaPRF.
+- Replaced deprecated class IntegratedGaussianPRF with CircularGaussianSigmaPRF. [#1950]
 
 - Updated path for regression test results on artifactory. [#1933]
 
