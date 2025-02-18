@@ -35,7 +35,7 @@ dependencies = [
     "stsci.stimage",
     "stwcs>=1.7.4",
     "tweakwcs>=0.8.7",
-    "stregion>=1.1.7",
+    "stregion@git+https://github.com/spacetelescope/stregion.git",
     "requests",
     "scikit-learn>=0.20",
     "simplify-polyline",
