@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Removed python<3.13 restriction and added python 3.13 devdep CI (PR) tests. [#1936]
+
 - Updated path for regression test results on artifactory. [#1933]
 
 - Added new header keywords and match requirements for relative fitting. [#1860]
