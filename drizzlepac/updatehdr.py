@@ -549,7 +549,9 @@ def create_unique_wcsname(fimg, extnum, wcsname):
         uniqname = wcsname
     else:
         # setup pattern to match
-        rpatt = re.compile(wcsname + '_\d')
+        if wcsname is None:
+            raise ValueError("wcsname cannot be None")
+        rpatt = re.compile(wcsname + r'_\d+')
         index = 0
         for wname in wnames:
             rmatch = rpatt.match(wname)
