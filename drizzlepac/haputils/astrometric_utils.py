@@ -51,8 +51,8 @@ import photutils
 from photutils.segmentation import (detect_sources, SourceCatalog, detect_threshold,
                                     deblend_sources, SegmentationImage)
 
-from photutils.psf import (IntegratedGaussianPRF, SourceGrouper,
-                           IterativePSFPhotometry)
+from photutils.psf import (SourceGrouper, IterativePSFPhotometry,
+                           CircularGaussianSigmaPRF)
 
 from photutils.utils import circular_footprint
 
@@ -864,10 +864,9 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
     aperture_radius = 1.5 * default_fwhm
     mmm_bkg = MMMBackground()
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
-    # LevMarLSQFitter is in disfavor and will be deprecated
     fitter = LMLSQFitter()
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
-    gaussian_prf = IntegratedGaussianPRF(sigma=sigma_psf)
+    gaussian_prf = CircularGaussianSigmaPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
     try:
         itr_phot_obj = IterativePSFPhotometry(finder=iraffind,
