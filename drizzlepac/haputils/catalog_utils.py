@@ -2844,7 +2844,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Compute the biggest source identified 
         # The clip eliminates zero-divides when there are no good pixels in the image
         real_pixels = (np.isfinite(image_data) & (image_data != 0)).sum().clip(min=1)
-        biggest_source = segm_img.areas.max()/real_pixels
         biggest_source_pixels = segm_img.areas.max()
         biggest_source = biggest_source_pixels/real_pixels
 
