@@ -20,9 +20,13 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Replaced deprecated class IntegratedGaussianPRF with CircularGaussianSigmaPRF. [#1950]
+
 - Updated path for regression test results on artifactory. [#1933]
 
 - Added new header keywords and match requirements for relative fitting. [#1860]
+
+- Updated alignment parameters. [#1932]
 
 - Implemented fixes to address uneven detection thresholds in the HAP catalogs
   due to bugs in the function, make_wht_masks, which intends to create weight
