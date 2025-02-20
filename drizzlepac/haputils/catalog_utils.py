@@ -1578,6 +1578,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._rw2d_size = self.param_dict["sourcex"]["rw2d_size"]
         self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
         self._rw2d_biggest_source = self.param_dict["sourcex"]["rw2d_biggest_source"]
+        self._rw2d_biggest_pixels = self.param_dict["sourcex"]["rw2d_biggest_pixels"]
         self._rw2d_source_fraction = self.param_dict["sourcex"]["rw2d_source_fraction"]
         self._bs_deblend_limit = self.param_dict["sourcex"]["biggest_source_deblend_limit"]
         self._sf_deblend_limit = self.param_dict["sourcex"]["source_fraction_deblend_limit"]
@@ -1644,6 +1645,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("contrast (frac. flux for peak to be separate object, 0=max. deblend, 1=no deblend): {}".format(self._contrast))
             log.info("RickerWavelet nsigma (threshold = nsigma * background_rms): {}".format(self._rw2d_nsigma))
             log.info("RickerWavelet kernel X- and Y-dimension: {}".format(self._rw2d_size))
+            log.info("Pixel limit on biggest source (criterion for  RickerWavelet kernel): {}".format(self._rw2d_biggest_pixels))
             log.info("Percentage limit on biggest source (criterion for  RickerWavelet kernel): {}".format(100.0 * self._rw2d_biggest_source))
             log.info("Percentage limit on source fraction over the image (criterion for RickerWavelet kernel): {}".format(100.0 * self._rw2d_source_fraction))
             log.info("Percentage limit on biggest source deblending limit: {}".format(100.0 * self._bs_deblend_limit))
@@ -1687,6 +1689,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                      self.image.bkg_background_ra,
                                                                                      self.image.bkg_rms_ra,
                                                                                      check_big_island_only=False,
+                                                                                     rw2d_biggest_pixels=self._rw2d_biggest_pixels,
                                                                                      rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                      rw2d_source_fraction=self._rw2d_source_fraction)
             segm_img_orig = copy.deepcopy(g_segm_img)
@@ -1723,6 +1726,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                              self.image.bkg_background_ra,
                                                                                              self.image.bkg_rms_ra,
                                                                                              check_big_island_only=True,
+                                                                                             rw2d_biggest_pixels=self._rw2d_biggest_pixels,
                                                                                              rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                              rw2d_source_fraction=self._rw2d_source_fraction)
 
@@ -1802,6 +1806,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                              self.image.bkg_background_ra,
                                                                                              self.image.bkg_rms_ra,
                                                                                              check_big_island_only=False,
+                                                                                             rw2d_biggest_pixels=self._rw2d_biggest_pixels,
                                                                                              rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                              rw2d_source_fraction=self._rw2d_source_fraction)
 
@@ -1825,6 +1830,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                                      self.image.bkg_background_ra,
                                                                                                      self.image.bkg_rms_ra,
                                                                                                      check_big_island_only=True,
+                                                                                                     rw2d_biggest_pixels=self._rw2d_biggest_pixels,
                                                                                                      rw2d_biggest_source=self._bs_deblend_limit,
                                                                                                      rw2d_source_fraction=self._sf_deblend_limit)
 
@@ -2031,7 +2037,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def detect_and_eval_segments(self, imgarr, kernel, ncount, size_source_box, nsigma_above_bkg, background_img, background_rms, check_big_island_only=False, rw2d_biggest_source=0.015, rw2d_source_fraction=0.075):
+    def detect_and_eval_segments(self, imgarr, kernel, ncount, size_source_box, nsigma_above_bkg, background_img, background_rms,
+                                 check_big_island_only=False, rw2d_biggest_pixels=25000, rw2d_biggest_source=0.015,
+                                 rw2d_source_fraction=0.075):
 
             # Compute the threshold to use for source detection
             threshold = self.compute_threshold(nsigma_above_bkg, background_rms)
@@ -2068,6 +2076,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 is_big_crowded, big_island, source_fraction = self._evaluate_segmentation_image(segm_img,
                                                                                                 imgarr,
                                                                                                 big_island_only=check_big_island_only,
+                                                                                                max_biggest_pixels=rw2d_biggest_pixels,
                                                                                                 max_biggest_source=rw2d_biggest_source,
                                                                                                 max_source_fraction=rw2d_source_fraction)
 
@@ -2768,7 +2777,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _evaluate_segmentation_image(self, segm_img, image_data, big_island_only=False,
-                                     max_biggest_source=0.015, max_source_fraction=0.075):
+                                     max_biggest_pixels=25000, max_biggest_source=0.015, max_source_fraction=0.075):
         """
         Determine if the largest "source" or if the total fraction of "sources" exceeds a threshold.
 
@@ -2789,6 +2798,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         big_island_only : bool, optional
             Test for 'big island' situations only? (True/False)
+
+        max_biggest_pixels : int, optional
+            Maximum limit on the single largest detected "source" in pixels.
 
         max_biggest_source : float, optional
             Maximum limit on the single largest detected "source".
@@ -2832,8 +2844,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Compute the biggest source identified 
         # The clip eliminates zero-divides when there are no good pixels in the image
         real_pixels = (np.isfinite(image_data) & (image_data != 0)).sum().clip(min=1)
-        biggest_source = segm_img.areas.max()/real_pixels
-        log.info("Biggest_source in pixels: %d", segm_img.areas.max())
+        biggest_source_pixels = segm_img.areas.max()
+        biggest_source = biggest_source_pixels/real_pixels
 
         # Compute which segments are larger than the kernel.
         deb_limit = self.kernel.size
@@ -2855,6 +2867,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
             is_poor_quality = True
         else:
             log.info("Biggest source %.4f percent within the acceptable %f percent of the image.", (100.0*biggest_source), (100.0*max_biggest_source))
+
+        # Also check if the biggest_source exceeds the limit on the number of pixels allowed
+        # for the biggest source, and set is_poor_quality True when the limit is exceeded.
+        if biggest_source_pixels > max_biggest_pixels:
+            log.info("Biggest source of %d pixels EXCEEDS the maximim limit of %d pixels.", biggest_source_pixels, max_biggest_pixels)
+            is_poor_quality = True
+        else:
+            log.info("Biggest source of %d pixels within the acceptable maximim limit of %d pixels.", biggest_source_pixels, max_biggest_pixels)
 
         # Filter the big_segments array to remove the prohibitively large segments
         # as it is a very resource consuming task to deblend these segments
