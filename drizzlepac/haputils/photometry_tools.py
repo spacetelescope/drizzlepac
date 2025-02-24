@@ -150,7 +150,9 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
         if math.isclose(photflam, 0.0, abs_tol=constants.TOLERANCE):
             mag_err = mag
         else:
-            mag_err = 1.0857 * flux_error / flux
+            # ignores warnings from log10 of zeros and negative values
+            with np.errstate(divide='ignore', invalid='ignore'):
+                mag_err = 1.0857 * flux_error / flux
             # Set magnitude errors to infinity if flux is negative
             mag_err[np.logical_not(flux>0)]=np.inf
 
@@ -235,9 +237,13 @@ def convert_flux_to_abmag(in_flux, photflam, photplam):
         f_lambda = in_flux * photflam
 
         # Convert f_lambda to STMAG
-        stmag = -2.5 * np.log10(f_lambda) - 21.10
+        # ignores warnings from log10 of zeros and negative values
+        with np.errstate(divide='ignore', invalid='ignore'):
+            stmag = -2.5 * np.log10(f_lambda) - 21.10        
 
         # Convert STMAG to ABMAG
-        abmag = stmag - 5.0 * np.log10(photplam) + 18.6921
+        # ignores warnings from log10 of zeros and negative values
+        with np.errstate(divide='ignore', invalid='ignore'):
+            abmag = stmag - 5.0 * np.log10(photplam) + 18.6921
 
     return abmag
