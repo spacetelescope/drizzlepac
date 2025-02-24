@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Ignore warnings in calculation of catalog magnitudes from logarithm of zero or negative number. [1956]
+
 - Replaced deprecated class IntegratedGaussianPRF with CircularGaussianSigmaPRF. [#1950]
 
 - Updated path for regression test results on artifactory. [#1933]
