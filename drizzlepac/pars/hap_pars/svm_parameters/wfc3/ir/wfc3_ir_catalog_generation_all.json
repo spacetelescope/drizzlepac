@@ -37,6 +37,7 @@
         "border": 10,
         "rw2d_size": 11,
         "rw2d_nsigma": 3.0,
+        "rw2d_biggest_pixels": 25000,
         "rw2d_biggest_source": 0.045,
         "rw2d_source_fraction": 0.15,
         "biggest_source_deblend_limit": 0.15,

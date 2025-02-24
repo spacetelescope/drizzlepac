@@ -20,7 +20,13 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
-- Replaced deprecated class IntegratedGaussianPRF with CircularGaussianSigmaPRF. [#1950]
+- Added a third test using the size in pixels of the largest determined
+  segment as a discriminant with regard to switching from a Gaussian to a
+  Ricker-Wavelet kernel.  The kernel is used to convolve with the input image
+  to increase the signal-to-noise ratio for the detection of faint sources. [#1953]
+
+- Replaced deprecated class IntegratedGaussianPRF with CircularGaussianSigmaPRF.
+  [#1950]
 
 - Updated path for regression test results on artifactory. [#1933]
 
