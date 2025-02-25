@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Added a check to make sure that the pre-alignment WCS solutions from the astrometry 
+  database are within a reasonable distance of the header target positions. [#1958]
+
 - Added a third test using the size in pixels of the largest determined
   segment as a discriminant with regard to switching from a Gaussian to a
   Ricker-Wavelet kernel.  The kernel is used to convolve with the input image
