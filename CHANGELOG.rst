@@ -22,8 +22,6 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Removed python<3.13 restriction and added python 3.13 devdep CI (PR) tests. [#1936]
 
-- Replaced deprecated class IntegratedGaussianPRF with CircularGaussianSigmaPRF. [#1950]
-
 - build and test with latest supported version of Python [#1955]
 
 - Added a third test using the size in pixels of the largest determined
