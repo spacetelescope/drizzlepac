@@ -652,9 +652,11 @@ to identify signal which is similar in shape to the kernel. This process generat
 segmentation image or map where a segment is defined to be a number of connected pixels which are
 all identified by a numeric label and are considered part of the same source.
 
-The segmentation map gets evaluated to determine the fraction of sources which are larger than a
-user-specified fraction of the image ("large" segments) and the total fraction of the image covered by segments.
-If either of these two scenarios is true, this is a strong indication the detection image is a
+The derived segmentation map is then evaluated in three ways. Both the fraction of sources which are
+larger than a user-specified fraction of the image ("large" segments), as well as the total
+fraction of the image covered by segments are computed. Additionally, the size in pixels of the
+largest segment is checked to determine whether or not the size exceeds a user-specified limit.
+If any of these scenarios are true, this is a strong indication the detection image is a
 crowded astronomical field. In such a crowded field, the Gaussian kernel
 (discussed in Section 1.4) can blend objects in close proximity together, making it difficult to
 differentiate between the independent objects.  In extreme cases, a large number of astronomical objects
