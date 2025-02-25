@@ -1,7 +1,7 @@
 [project]
 name = "drizzlepac"
 description = " HST image combination using the drizzle algorithm to combine astronomical images, to model image distortion, to remove cosmic rays, and generally to improve the fidelity of data in the final image. "
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10"
 authors = [
     { name = "Megan Sosey" },
     { name = "Warren Hack" },
