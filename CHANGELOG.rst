@@ -20,7 +20,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
-- Removed python<3.13 restriction and added python 3.13 devdep CI (PR) tests. [#1936]
+- Removed python<3.13 restriction and remove some warnings. [#1936]
 
 - build and test with latest supported version of Python [#1955]
 
