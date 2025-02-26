@@ -677,7 +677,7 @@ def compute_2d_background(imgarr, box_size, win_size,
             bkg = Background2D(imgarr, (box_size, box_size), filter_size=(win_size, win_size),
                                bkg_estimator=bkg_estimator(),
                                bkgrms_estimator=rms_estimator(),
-                               exclude_percentile=percentile, edge_method="pad")
+                               exclude_percentile=percentile)
 
         except Exception:
             bkg = None
