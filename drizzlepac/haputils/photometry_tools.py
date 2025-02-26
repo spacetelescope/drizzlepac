@@ -142,7 +142,8 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
         else:
             flux_error = compute_phot_error(flux, bg_phot, bg_method, ap_area, epadu)
 
-        # When photflam is 0.0, mag is set to -9999.0.
+        # Convert to magnitudes, null or negative flux values set to nans and then -9999.0.
+        flux[np.logical_not(flux>0)] = np.nan
         mag = convert_flux_to_abmag(flux, photflam, photplam)
 
         # NOTE: Magnitude error calculation comes from computing d(ABMAG)/d(flux).
