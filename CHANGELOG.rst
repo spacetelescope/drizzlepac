@@ -20,6 +20,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Removed deprecated parameter, edge_method, from the instantiation of a 
+  Background2D.  The default for this value is now always equal to "pad"
+  which was the setting in use in our code. [#1957]
+
 - Removed python<3.13 restriction and remove some warnings. [#1936]
 
 - build and test with latest supported version of Python [#1955]
