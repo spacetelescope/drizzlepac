@@ -1198,11 +1198,11 @@ def base_taskname(taskname, packagename=None):
 
     packagename : str, None (Default = None)
         Package name. It is assumed that a compound task name is formed by
-        concatenating ``packagename`` + '.' + ``taskname``\ . If ``packagename``
+        concatenating ``packagename`` + '.' + ``taskname``\\ . If ``packagename``
         is not ``None``, :py:func:`base_taskname` will check that the string
         to the left of the right-most dot matches ``packagename`` and will
         raise an ``AssertionError`` if the package name derived from the
-        input ``taskname`` does not match the supplied ``packagename``\ . This
+        input ``taskname`` does not match the supplied ``packagename``\\ . This
         is intended as a check for discrepancies that may arise
         during the development of the tasks. If ``packagename`` is ``None``,
         no such check will be performed.

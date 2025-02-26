@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Removed python<3.13 restriction and remove some warnings. [#1936]
+
 - build and test with latest supported version of Python [#1955]
 
 - Added a third test using the size in pixels of the largest determined
