@@ -596,7 +596,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 confirm_aposteriori_hdrlets(_file, logfile=_trlfile)
             
                 # verify WCS solution (CRVALs) near target coordinates
-                warning_separation_threshold = 1*u.deg
+                warning_separation_threshold = 0.05*u.deg # value determine by Rick White from experience
                 header_ex0 = fits.getheader(_file, ext=0)
                 header_ex1 = fits.getheader(_file, ext=1)
                 targ_pos = SkyCoord(header_ex0['RA_TARG']*u.deg, header_ex0['DEC_TARG']*u.deg)
