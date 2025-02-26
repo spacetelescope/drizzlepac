@@ -605,7 +605,7 @@ class HAPImage:
                     bkg = Background2D(scidata, box_size, filter_size=win_size,
                                        bkg_estimator=bkg_estimator(),
                                        bkgrms_estimator=rms_estimator(),
-                                       exclude_percentile=percentile, edge_method="pad")
+                                       exclude_percentile=percentile)
                 except Exception:
                     bkg = None
                     continue

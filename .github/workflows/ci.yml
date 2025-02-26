@@ -42,5 +42,5 @@ jobs:
         # if this breaks, add an upper pin to `requires-python` and revert this py3 to the latest working version
         - linux: py3-cov-xdist
           coverage: codecov
-        - macos: py3-xdist
+        - linux: py3-xdist
       toxdeps: tox-uv
