@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Set non-positive catalog fluxes to nans to remove warnings for dividing by 
+  zero and calculating the log of negative numbers. [#1959]
+
 - Removed python<3.13 restriction and remove some warnings. [#1936]
 
 - build and test with latest supported version of Python [#1955]
