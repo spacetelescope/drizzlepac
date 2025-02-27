@@ -863,7 +863,12 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
     # Default 1.0 * default_fwhm (default_fwhm is detector-dependent)
     aperture_radius = 1.5 * default_fwhm
     mmm_bkg = MMMBackground()
+    # The psf variable is a background subtracted array, normalized to 1.0.  The
+    # mmm_bkg(psf) will compute a background value of the array, where any pixel
+    # 2.5 x the background value can be considered part of a source.
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
+    # The LevMarLSQFitter fitter is no longer recommended. To use the
+    # Levenberg-Marquardt algorithm without bounds, use LMLSQFitter.
     fitter = LMLSQFitter()
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
     gaussian_prf = CircularGaussianSigmaPRF(sigma=sigma_psf)
