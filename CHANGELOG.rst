@@ -18,7 +18,7 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 
-3.9.1 (29-Jan-2025)
+3.9.1 (27-Feb-2025)
 ===================
 
 - Further updates done to address the deprecated Photutils functionality as the
