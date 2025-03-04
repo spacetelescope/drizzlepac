@@ -660,14 +660,14 @@ Fit quality and selection of WCS solution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The primary WCS selected will depends on several factors. These include the ``fit_rms``, 
-and whether a solution is deemed ``compromised`` (discussed below). The ``fit_quality`` is an integer value 
-between 1 and 5, where 1 is the best fit and 5 is the worst. As `a posteriori` WCS solutions 
+and whether a solution is deemed *compromised* (discussed below). The ``fit_quality`` is an integer value 
+between 1 and 5, where 1 is the best fit and 5 is the worst. As *a posteriori* WCS solutions 
 are fit with different catalogs (e.g. GAIADR3, GAIADR2, etc.), and different fit geometries 
-(e.g. ``rscale``, ``shift``, etc.), the code will only adopt the new solution if it has a 
+(e.g. rscale, shift, etc.), the code will only adopt the new solution if it has a 
 fit_quality less than or equal to the previous value AND a lower fit_rms. The fit_quality 
 value is determined as follows:
 
-  * 1 = valid solution with fit_rms < 10 mas
+  * 1 = Valid solution with fit_rms < 10 mas
 
   * 2 = Valid but compromised solution with fit_rms < 10 mas
 
@@ -675,13 +675,11 @@ value is determined as follows:
 
   * 4 = Valid but compromised solution with fit_rms >= 10 mas
 
-  * 5 = Not valid solution
+  * 5 = No valid solution
 
-  * -1 = Alignment failed altogether. 
+  * -1 = Alignment code failed altogether. 
 
 
-Compromised fit solutions
--------------------------
 There are several ways in which a WCS solution can be considered compromised. These manifest
 as a series of checks done in the align.py function determine_fit_quality(). 
 
