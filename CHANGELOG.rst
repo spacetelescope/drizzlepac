@@ -23,6 +23,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Set non-positive catalog fluxes to nans to remove warnings for dividing by 
   zero and calculating the log of negative numbers. [#1959]
 
+- Added a check to make sure that the pre-alignment WCS solutions from the astrometry 
+  database are within a reasonable distance of the header target positions. [#1958]
+
 - Removed deprecated parameter, edge_method, from the instantiation of a 
   Background2D.  The default for this value is now always equal to "pad"
   which was the setting in use in our code. [#1957]
