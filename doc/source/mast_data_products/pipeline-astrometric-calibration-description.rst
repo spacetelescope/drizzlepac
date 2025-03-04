@@ -656,6 +656,47 @@ these computations were being performed in based up to the parent directory to
 replace the previously updated versions of the input files.  This entire sub-directory
 then gets deleted, unless the processing was being run in debug mode.
 
+Fit quality and selection of WCS solution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The primary WCS selected will depends on several factors. These include the ``fit_rms``, 
+and whether a solution is deemed ``compromised`` (discussed below). The ``fit_quality`` is an integer value 
+between 1 and 5, where 1 is the best fit and 5 is the worst. As `a posteriori` WCS solutions 
+are fit with different catalogs (e.g. GAIADR3, GAIADR2, etc.), and different fit geometries 
+(e.g. ``rscale``, ``shift``, etc.), the code will only adopt the new solution if it has a 
+fit_quality less than or equal to the previous value AND a lower fit_rms. The fit_quality 
+value is determined as follows:
+
+  * 1 = valid solution with fit_rms < 10 mas
+
+  * 2 = Valid but compromised solution with fit_rms < 10 mas
+
+  * 3 = Valid solution with fit_rms >= 10 mas
+
+  * 4 = Valid but compromised solution with fit_rms >= 10 mas
+
+  * 5 = Not valid solution
+
+  * -1 = Alignment failed altogether. 
+
+
+Compromised fit solutions
+-------------------------
+There are several ways in which a WCS solution can be considered compromised. These manifest
+as a series of checks done in the align.py function determine_fit_quality(). 
+
+  * consistency_check: 
+
+  * large_rms_check: 
+
+  * radial_offset_check: 
+
+  * nmatches_check: 
+
+  * cross_match_check: 
+
+
+
 Creation of Final Aligned Products
 ----------------------------------
 The starting directory now contains updated input FLC/FLT files based on WCSs which
