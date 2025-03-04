@@ -603,7 +603,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 wcs_pos = SkyCoord(header_ex1['CRVAL1']*u.deg, header_ex1['CRVAL2']*u.deg)
                 sep = wcs_pos.separation(targ_pos)
                 if sep > warning_separation_threshold:
-                    logger.warning(f'WARNING: WCS reference pixel is {sep.value:.2f} degrees from target position!')
+                    logger.warning(f'WARNING: WCS reference pixel is {sep.value:.2f} degrees '+
+                                   'from target position. The astrometry database solution is suspect!')
 
             _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles)
             _trlmsg += verify_gaia_wcsnames(_calfiles) + '\n'
