@@ -95,8 +95,11 @@ except ImportError:
     Process = None
 
 # THIRD-PARTY
+import logging
 import numpy as np
+import astropy.units as u
 from astropy.io import fits
+from astropy.coordinates import SkyCoord
 import photutils
 
 import stwcs
@@ -129,6 +132,7 @@ from drizzlepac import photeq
 
 from drizzlepac import __version__
 
+logger = logging.getLogger()
 
 __taskname__ = "runastrodriz"
 
@@ -590,6 +594,17 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             updatewcs.updatewcs(_calfiles)
             for _file in _calfiles:
                 confirm_aposteriori_hdrlets(_file, logfile=_trlfile)
+            
+                # verify WCS solution (CRVALs) near target coordinates
+                warning_separation_threshold = 0.05*u.deg # value determine by Rick White from experience
+                header_ex0 = fits.getheader(_file, ext=0)
+                header_ex1 = fits.getheader(_file, ext=1)
+                targ_pos = SkyCoord(header_ex0['RA_TARG']*u.deg, header_ex0['DEC_TARG']*u.deg)
+                wcs_pos = SkyCoord(header_ex1['CRVAL1']*u.deg, header_ex1['CRVAL2']*u.deg)
+                sep = wcs_pos.separation(targ_pos)
+                if sep > warning_separation_threshold:
+                    logger.warning(f'WARNING: WCS reference pixel is {sep.value:.2f} degrees '+
+                                   'from target position. The astrometry database solution is suspect!')
 
             _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles)
             _trlmsg += verify_gaia_wcsnames(_calfiles) + '\n'
