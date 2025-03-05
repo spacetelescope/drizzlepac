@@ -684,33 +684,36 @@ There are several ways in which a WCS solution can be considered compromised. Th
 manifest as a series of checks done in the align.py function determine_fit_quality(). 
 Checks must return True, otherwise the solution is considered compromised. These checks 
 include:
+  
+  * **consistency_check** (pipeline processing only): Ensures that the combination of the 
+    standard deviation of the X and Y shifts is less than one of two values, whichever is 
+    larger. The limit is either the value defined in align_pars["determine_fit_quality"]["MAX_FIT_RMS"] 
+    (default is 20 pixels) or the mean of the fit_rms values for all observations, 
+    whichever is larger. This check is disabled for SVM and MVM processing, as there can be 
+    large offsets between higher level products like filter level-products. 
 
-  * consistency_check (pipeline processing only): Ensures that the combination of the 
-  standard deviation of the X and Y shifts is less than one of two values, whichever is 
-  larger. The limit is either the value defined in align_pars["determine_fit_quality"]["MAX_FIT_RMS"] 
-  (default is 20 pixels) or the mean of the fit_rms values for all observations, 
-  whichever is larger. This check is disabled for SVM and MVM processing, as there can be 
-  large offsets between higher level products like filter level-products. 
 
-  * large_rms_check: Ensures that both the fit_rms and the max_rms are less than the 
-  max_fit_limit (default is 150). The fit_rms is RMS between the astrometric catalog 
-  and the image alignment sources for an individual exposure. The max_rms is the maximum 
-  of the fit_rms values for all the exposures in the association.
+  * **large_rms_check**: Ensures that both the fit_rms and the max_rms are less than the 
+    max_fit_limit (default is 150). The fit_rms is RMS between the astrometric catalog 
+    and the image alignment sources for an individual exposure. The max_rms is the maximum 
+    of the fit_rms values for all the exposures in the association.
 
-  * radial_offset_check: Ensures that the image alignment source magnitudes and astrometric 
-  catalog magnitudes have a pearsons correlation coefficient of greater than 0.5.
 
-  * nmatches_check: Ensures that the number of matches between the image alignment sources 
-  and the astrometric catalog is greater than the value specified in the corresponding 
-  alignment parameter configuration files (e.g. acs_hrc_alignment_all.json). The nmatch 
-  requirement values are those next to each geometry in the mosaic_fitgeom_list and 
-  mosaic_relgeom_list values entries. Alternatively, the check passes so long as the number 
-  of cross matches is at least 2, and the fit_rms is less than 0.5. 
+  * **radial_offset_check**: Ensures that the image alignment source magnitudes and astrometric 
+    catalog magnitudes have a pearsons correlation coefficient of greater than 0.5.
 
-  * cross_match_check: Ensures that if the number of cross matches is less than 100, it does
-  a check to ensure a pearsons correlation coefficient of greater than 0.5; this appears to 
-  duplicate the radial_offset_check.
 
+  * **nmatches_check**: Ensures that the number of matches between the image alignment sources 
+    and the astrometric catalog is greater than the value specified in the corresponding 
+    alignment parameter configuration files (e.g. acs_hrc_alignment_all.json). The nmatch 
+    requirement values are those next to each geometry in the mosaic_fitgeom_list and 
+    mosaic_relgeom_list values entries. Alternatively, the check passes so long as the number 
+    of cross matches is at least 2, and the fit_rms is less than 0.5. 
+
+
+  * **cross_match_check**: Ensures that if the number of cross matches is less than 100, it does
+    a check to ensure a pearsons correlation coefficient of greater than 0.5; this appears to 
+    duplicate the radial_offset_check.
 
 
 Creation of Final Aligned Products
