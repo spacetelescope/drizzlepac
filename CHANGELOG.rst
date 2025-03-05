@@ -21,7 +21,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 ==================
 
 - Updated the Pyproject.toml file to force use of Photutils v2.0.0 or greater.
-  This update is in support of the change addressed by #1950. [#nnnn]
+  This update is in support of the change addressed by #1950. [#1966]
 
 - Set non-positive catalog fluxes to nans to remove warnings for dividing by 
   zero and calculating the log of negative numbers. [#1959]
