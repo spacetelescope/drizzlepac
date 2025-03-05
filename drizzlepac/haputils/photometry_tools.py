@@ -142,18 +142,22 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
         else:
             flux_error = compute_phot_error(flux, bg_phot, bg_method, ap_area, epadu)
 
-        # Convert to magnitudes, null or negative flux values set to nans
-        # Null values are ultimately set to -9999.0 in calls to this function
-        # in catalog_utils.py.
-        flux[np.logical_not(flux>0)] = np.nan
-        mag = convert_flux_to_abmag(flux, photflam, photplam)
+
+        # copying flux allows us to keep negative and zero fluxes.
+        flux_w_nans = np.copy(flux)
+        
+        # We use nans to avoid logarithm of negative number warnings for
+        # Mag and MagErr conversion; these values will be converted to -9999.0 outside
+        # of this function. 
+        flux_w_nans[np.logical_not(flux_w_nans>0)] = np.nan
+        mag = convert_flux_to_abmag(flux_w_nans, photflam, photplam)
 
         # NOTE: Magnitude error calculation comes from computing d(ABMAG)/d(flux).
         # See https://iraf.net/forum/viewtopic.php?showtopic=83932 for details.
         if math.isclose(photflam, 0.0, abs_tol=constants.TOLERANCE):
             mag_err = mag
         else:
-            mag_err = 1.0857 * flux_error / flux
+            mag_err = 1.0857 * flux_error / flux_w_nans
 
         # Build the final data table
         stacked = np.stack([flux, flux_error, mag, mag_err], axis=1)
