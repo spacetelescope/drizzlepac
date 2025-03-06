@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Added documentation for the alignment logic and the selection of the SVM
+  reference image. [#1967]
+
 - Removed deprecated parameter, edge_method, from the instantiation of a 
   Background2D.  The default for this value is now always equal to "pad"
   which was the setting in use in our code. [#1957]
