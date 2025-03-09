@@ -20,6 +20,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Fixed the crfactor designation for the WFPC2 detector (PC) which caused the
+  the computation for rejecting catalog creation based on expected cosmic ray
+  detections to fail ONLY for WFPC2.  Also, updated the WFPC2 cr_residual factor
+  from 0.0 to 0.05 as it had never be set correctly.  Created a PyTest for
+  WFPC2 SVM processing. [#nnnn]
+
 - Added a check on the EXPFLAG keyword to eliminate any images from being
   processed as part of a mosaic if the value EXPFLAG is not equal to NORMAL.
   Any value other than NORMAL indicates there was an issue during the exposure.
