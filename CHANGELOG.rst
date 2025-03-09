@@ -20,6 +20,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Fixed the crfactor designation for the WFPC2 detector (PC) which caused the
+  the computation for rejecting catalog creation based on expected cosmic ray
+  detections to fail ONLY for WFPC2.  Also, updated the WFPC2 cr_residual factor
+  from 0.0 to 0.05 as it had never be set correctly.  Created a PyTest for
+  WFPC2 SVM processing. [#nnnn]
+
 - Updated the Pyproject.toml file to force use of Photutils v2.0.0 or greater.
   This update is in support of the change addressed by #1950. [#1966]
 
