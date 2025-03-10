@@ -17,6 +17,7 @@ import os
 from io import BytesIO
 import requests
 import inspect
+import math
 import sys
 import time
 import copy
@@ -38,31 +39,27 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits as fits
 from astropy.io import ascii
 from astropy.convolution import Gaussian2DKernel, convolve
-from astropy.stats import gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm, sigma_clipped_stats
+from astropy.stats import (gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm,
+                           sigma_clipped_stats, SigmaClip)
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
-from astropy.modeling.fitting import LevMarLSQFitter
+from astropy.modeling.fitting import LMLSQFitter
 from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
-import photutils  # needed to check version
-from photutils.segmentation import (detect_sources, SourceCatalog,
+import photutils
+from photutils.segmentation import (detect_sources, SourceCatalog, detect_threshold,
                                     deblend_sources, SegmentationImage)
-if Version(photutils.__version__) < Version('1.5.0'):
-    OLD_PHOTUTILS = True
-    from photutils.segmentation import make_source_mask
-else:
-    OLD_PHOTUTILS = False
-    from photutils.segmentation import detect_threshold
-    from photutils.utils import circular_footprint
-    from astropy.stats import SigmaClip
+
+from photutils.psf import (SourceGrouper, IterativePSFPhotometry,
+                           CircularGaussianSigmaPRF)
+
+from photutils.utils import circular_footprint
 
 from photutils.detection import DAOStarFinder, find_peaks
 
-from photutils.background import (Background2D, MMMBackground,
+from photutils.background import (Background2D, MMMBackground, LocalBackground,
                                   SExtractorBackground, StdBackgroundRMS)
-from photutils.psf import (IntegratedGaussianPRF, DAOGroup,
-                           IterativelySubtractedPSFPhotometry)
 
 from tweakwcs.correctors import FITSWCSCorrector
 from stwcs.distortion import utils
@@ -606,7 +603,7 @@ def find_gsc_offset(image, input_catalog='GSC1', output_catalog='GAIA'):
     serviceUrl = "{}/{}?{}".format(SERVICELOCATION, serviceType, spec)
     rawcat = requests.get(serviceUrl)
     if not rawcat.ok:
-        log.info("Problem accessing service with:\n{{}".format(serviceUrl))
+        log.info(f"Problem accessing service with:\n{serviceUrl}")
         raise ValueError
 
     delta_ra = delta_dec = None
@@ -680,7 +677,7 @@ def compute_2d_background(imgarr, box_size, win_size,
             bkg = Background2D(imgarr, (box_size, box_size), filter_size=(win_size, win_size),
                                bkg_estimator=bkg_estimator(),
                                bkgrms_estimator=rms_estimator(),
-                               exclude_percentile=percentile, edge_method="pad")
+                               exclude_percentile=percentile)
 
         except Exception:
             bkg = None
@@ -698,16 +695,12 @@ def compute_2d_background(imgarr, box_size, win_size,
     if bkg is None:
         log.info("Background2D failure detected. Using alternative background calculation instead....")
 
-        if OLD_PHOTUTILS:
-            mask = make_source_mask(imgarr, nsigma=2, npixels=5, dilate_size=11)
-            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask, maxiters=9)
-        else:
-            sigma_clip = SigmaClip(sigma=3.0, maxiters=9)
-            threshold = detect_threshold(imgarr, nsigma=2.0, sigma_clip=sigma_clip)
-            segment_img = detect_sources(imgarr, threshold, npixels=5)
-            footprint = circular_footprint(radius=11)
-            mask = segment_img.make_source_mask(footprint=footprint)
-            sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask)
+        sigma_clip = SigmaClip(sigma=3.0, maxiters=9)
+        threshold = detect_threshold(imgarr, nsigma=2.0, sigma_clip=sigma_clip)
+        segment_img = detect_sources(imgarr, threshold, npixels=5)
+        footprint = circular_footprint(radius=11)
+        mask = segment_img.make_source_mask(footprint=footprint)
+        sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask)
 
         bkg_median = max(0.0, sigcl_median)
         bkg_rms_median = sigcl_std
@@ -843,12 +836,12 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     return (kernel, kernel_psf), kernel_fwhm
 
 
-def find_fwhm(psf, default_fwhm):
+def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
     """Determine FWHM for auto-kernel PSF
 
     This function iteratively fits a Gaussian model to the extracted PSF
-    using `photutils.psf.IterativelySubtractedPSFPhotometry
-    <https://photutils.readthedocs.io/en/stable/api/photutils.psf.IterativelySubtractedPSFPhotometry.html>`_
+    using `photutils.psf.IterativePSFPhotometry
+    <https://photutils.readthedocs.io/en/stable/api/photutils.psf.IterativePSFPhotometry.html>`_
     to determine the FWHM of the PSF.
 
     Parameters
@@ -865,30 +858,47 @@ def find_fwhm(psf, default_fwhm):
         Value of the computed Gaussian FWHM for the PSF
 
     """
-    daogroup = DAOGroup(crit_separation=8)
+    fwhm = 0.0
+
+    # Default 1.0 * default_fwhm (default_fwhm is detector-dependent)
+    aperture_radius = 1.5 * default_fwhm
     mmm_bkg = MMMBackground()
+    # The psf variable is a background subtracted array, normalized to 1.0.  The
+    # mmm_bkg(psf) will compute a background value of the array, where any pixel
+    # 2.5 x the background value can be considered part of a source.
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
-    fitter = LevMarLSQFitter()
+    # The LevMarLSQFitter fitter is no longer recommended. To use the
+    # Levenberg-Marquardt algorithm without bounds, use LMLSQFitter.
+    fitter = LMLSQFitter()
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
-    gaussian_prf = IntegratedGaussianPRF(sigma=sigma_psf)
+    gaussian_prf = CircularGaussianSigmaPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
     try:
-        itr_phot_obj = IterativelySubtractedPSFPhotometry(finder=iraffind,
-                                                          group_maker=daogroup,
-                                                          bkg_estimator=mmm_bkg,
-                                                          psf_model=gaussian_prf,
-                                                          fitter=fitter,
-                                                          fitshape=(11, 11),
-                                                          niters=2)
+        itr_phot_obj = IterativePSFPhotometry(finder=iraffind,
+                                              psf_model=gaussian_prf,
+                                              aperture_radius=aperture_radius,
+                                              fitter=fitter,
+                                              fit_shape=(11, 11),
+                                              maxiters=2)
+
         phot_results = itr_phot_obj(psf)
-    except Exception:
-        log.error("The find_fwhm() failed due to problem with fitting.")
+    except Exception as x_cept:
+        log.warn(f"The find_fwhm() failed due to problem with fitting. Trying again. Exception: {x_cept}")
         return None
+
+    # Check the phot_results table was generated successfully
+    if isinstance(phot_results, (type(None))):
+        log.warn("The PHOT_RESULTS table was not generated successfully. Trying again.")
+        return None
+
+    # Check the table actually has rows
+    if len(phot_results['flux_fit']) == 0:
+        log.warn("The PHOT_RESULTS table has no rows. Trying again.")
+        return None
+
     # Insure none of the fluxes determined by photutils is np.nan
     phot_results['flux_fit'] = np.nan_to_num(phot_results['flux_fit'].data, nan=0)
 
-    if len(phot_results['flux_fit']) == 0:
-        return None
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
@@ -958,8 +968,7 @@ def build_gaussian_kernel(fwhm, npixels):
 
 
 def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
-                    segment_threshold=None, dao_threshold=None,
-                    dao_nsigma=3.0, source_box=7,
+                    segment_threshold=None, dao_nsigma=3.0, source_box=7,
                     classify=True, centering_mode="starfind", nlargest=None,
                     outroot=None, plot=False, vmax=None, deblend=False,
                     log_level=logutil.logging.INFO):
@@ -988,10 +997,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     segment_threshold : ndarray or None
         Value from the image which serves as the limit for determining sources.
         If None, compute a default value of (background+5*rms(background)).
-    dao_threshold : float, optional
-        [Deprecated] This parameter is not used.  In fact, it now gets computed
-        internally using the ``sigma_clipped_bkg()`` function which uses the
-        ``dao_nsigma`` parameter.
     dao_nsigma : float
         This number gets used to determine the threshold for detection of point
         sources.  The threshold gets computed using a simple ``mean + dao_nsigma * rms``,
@@ -1171,7 +1176,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     seg_table['xcentroid'][max_row] = xcentroid
                     seg_table['ycentroid'][max_row] = ycentroid
                     seg_table['npix'][max_row] = sat_table['area'][0].value
-                    seg_table['sky'][max_row] = sky if sky is not None and not np.isnan(sky) else 0.0
                     seg_table['mag'][max_row] = -2.5 * np.log10(sat_table[flux_colname][0])
 
                 # Add row for detected source to master catalog
@@ -1456,7 +1460,6 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
 
         bkg_ra, bkg_median, bkg_rms_ra, bkg_rms_median = compute_2d_background(imgarr, box_size, win_size)
         threshold = nsigma * bkg_rms_ra
-        dao_threshold = nsigma * bkg_rms_median
 
         (kernel, kernel_psf), kernel_fwhm = build_auto_kernel(imgarr - bkg_ra, whtarr,
                                                               threshold=threshold,
@@ -1470,7 +1473,6 @@ def generate_source_catalog(image, dqname="DQ", output=False, fwhm=3.0,
                                                  outroot=outroot, kernel=kernel,
                                                  photmode=photmode,
                                                  segment_threshold=threshold,
-                                                 dao_threshold=dao_threshold,
                                                  fwhm=kernel_fwhm, **detector_pars)
         del crmap
         source_cats[chip] = seg_tab
@@ -2379,7 +2381,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         # Take the min since the Hamming distance can be skewed by bad-pixels and noise
         # more than the similarity_index.
         # similarity_index is scaled by 2 to be scaled the same as the Hamming distance
-        dist = min(dist, sim * 2.0)
+        dist = min(dist, np.float64(sim) * 2.0)
 
         # Record results for each exposure compared to the combined drizzle product
         # Number of sources in drz and sfile can include artifacts such as CRs

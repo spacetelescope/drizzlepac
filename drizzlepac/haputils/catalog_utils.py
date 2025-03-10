@@ -1,6 +1,5 @@
 """This script contains code to support creation of photometric sourcelists using two techniques:
 aperture photometry and segmentation-map based photometry."""
-
 import copy
 import math
 import sys
@@ -8,7 +7,7 @@ from collections import OrderedDict
 from packaging.version import Version
 
 from astropy.io import fits as fits
-from astropy.stats import sigma_clipped_stats
+from astropy.stats import sigma_clipped_stats, gaussian_fwhm_to_sigma
 from astropy.table import Column, MaskedColumn, Table, join, vstack
 from astropy.convolution import RickerWavelet2DKernel, convolve
 from astropy.coordinates import SkyCoord
@@ -137,15 +136,14 @@ class CatalogImage:
                                     nsigma_clip=nsigma_clip,
                                     maxiters=maxiters)
 
-        log.info("Attempt to determine FWHM based upon input data within a good FWHM range of {:.2f} to {:.2f}.".format(good_fwhm[0], good_fwhm[1]))
-        log.info("If no good FWHM candidate is identified, a value of {:.2f} will be used instead.".format(fwhmpsf / self.imgwcs.pscale))
-        k, self.kernel_fwhm = astrometric_utils.build_auto_kernel(self.data,
-                                                                  self.wht_image,
-                                                                  good_fwhm=good_fwhm,
-                                                                  num_fwhm=50,
-                                                                  threshold=self.bkg_rms_ra,
-                                                                  fwhm=fwhmpsf / self.imgwcs.pscale)
-        (self.kernel, self.kernel_psf) = k
+        # Build a Gaussian2DKernel - the use of a custom kernel based upon a PSF
+        # of the input image is no longer used here as it could be asymmetric and
+        # lead to smeared segments (i.e., centroid coordinates offset from actual source).
+        # The value of 11 for the Gaussian kernel is big enough for all detectors. This
+        # value is hard-coded here in contrast to being in the configuration files like 
+        # the RickerWavelet2DKernel.
+        self.kernel_fwhm = fwhmpsf / self.imgwcs.pscale
+        self.kernel = astrometric_utils.build_gaussian_kernel(self.kernel_fwhm, npixels=11)
 
     def compute_background(self, box_size, win_size,
                            bkg_estimator=SExtractorBackground, rms_estimator=StdBackgroundRMS,
@@ -156,6 +154,8 @@ class CatalogImage:
                            nsigma_clip=3.0,
                            maxiters=3):
         """Use a sigma-clipped algorithm or Background2D to determine the background of the input image.
+
+        There is also a special case background assessment reserved for SBC (MAMA detector) images.
 
         Parameters
         ----------
@@ -250,38 +250,56 @@ class CatalogImage:
         bkg = None
         is_zero_background_defined = False
 
-        # Make a local copy of the data(image) being processed in order to reset any
-        # data values which equal nan (e.g., subarrays) to zero.
-        imgdata = np.nan_to_num(self.data, copy=True, nan=0.0)
+        # Make a local copy of the data(image) being processed
+        imgdata = copy.deepcopy(self.data)
 
         # In order to compute the proper statistics on the input data, need to use the footprint
-        # mask to get the actual data - illuminated portion (True), non-illuminated (False).
+        # mask to get the actual data - illuminated portion (True), non-illuminated (False) based
+        # on images which actually contributed to a pixel, even if the contribution was the
+        # value of zero. Again, the num_images_mask here is not True/False, but the *number of images*
+        # which contributed to the value of a pixel.
+        #
+        # Note that if there are large shifts between images, the pixels in the gaps between the
+        # images have values of 0.  The self.num_images_mask is the mask created by 
+        # generate_footprint_mask() in product.py.
         footprint_mask = self.num_images_mask > 0
         self.footprint_mask = ndimage.binary_erosion(footprint_mask, iterations=10)
         self.inv_footprint_mask = np.invert(self.footprint_mask)
 
-        # If the image contains a lot of values identically equal to zero (as in some SBC images),
-        # set the two-dimensional background image to a constant of zero and the background rms to
-        # the real rms of the non-zero values in the image.
+        # Get the statistics on the number of illuminated pixels
         num_of_illuminated_pixels = self.footprint_mask.sum()
-        num_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
-        non_zero_pixels = imgdata[self.footprint_mask]
 
-        # BACKGROUND COMPUTATION 1 (unusual case)
-        # If there are too many background zeros in the image (> number_of_zeros_in_background_threshold), set the
-        # background median and background rms values
-        if num_of_zeros / float(num_of_illuminated_pixels) * 100.0 > zero_percent:
-            self.bkg_median = 0.0
-            self.bkg_rms_median = stats.tstd(non_zero_pixels, limits=[0, None], inclusive=[False, True])
-            self.bkg_background_ra = np.full_like(imgdata, 0.0)
-            self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
-            self.bkg_type = 'zero_background'
+        # BACKGROUND COMPUTATION 1 (unusual case which should only apply to ACS/SBC data)
+        # Get the number of pixels which are zero in the actual footprint mask.  In
+        # essence ignore the gaps between images which may also be set to zero and only do
+        # this for SBC.
+        if (self.imghdu[0].header['DETECTOR'].upper() == "SBC"):
+            num_of_zeros = np.count_nonzero(imgdata[self.footprint_mask] == 0)
 
-            is_zero_background_defined = True
-            log.info("Input image contains excessive zero values in the background. Median: {} RMS: {}".format(self.bkg_median, self.bkg_rms_median))
+            # If there are too many background zeros in the image
+            # (> number_of_zeros_in_background_threshold), set the background median to
+            # zero and the background rms to the real rms of the non-zero values in the image.
+            if num_of_zeros / float(num_of_illuminated_pixels) * 100.0 > zero_percent:
+                self.bkg_median = 0.0
+                self.bkg_rms_median = stats.tstd(imgdata[self.footprint_mask], limits=[0, None], inclusive=[False, True])
+                self.bkg_background_ra = np.full_like(imgdata, 0.0)
+                self.bkg_rms_ra = np.full_like(imgdata, self.bkg_rms_median)
+                self.bkg_type = 'zero_background'
+
+                is_zero_background_defined = True
+                log.info(f"Input image contains excessive zero values in the background. Median: {self.bkg_median:.6f} RMS: {self.bkg_rms_median:.6f}")
+
+                # Compute a minimum rms value based upon information directly from the data
+                minimum_rms = 1.0 / self.keyword_dict['texpo_time']
+                if np.nan_to_num(self.bkg_rms_median) < minimum_rms:
+                    self.bkg_rms_median = minimum_rms
+                    log.info("")
+                    log.info(f"Minimum RMS of input based upon the total exposure time: {minimum_rms:.6f}")
+                    log.info(f"Median RMS has been updated - Median: {self.bkg_median:.6f} RMS: {self.bkg_rms_median:.6f}")
+                    log.info("")
 
         # BACKGROUND COMPUTATION 2 (sigma_clipped_stats)
-        # If the input data is not the unusual case of an "excessive zero background", compute
+        # If the input data is not the unusual case of SBC "excessive zero background", compute
         # a sigma-clipped background which returns only single values for mean,
         # median, and standard deviations
         if not is_zero_background_defined:
@@ -309,7 +327,7 @@ class CatalogImage:
             # Use the "raw" values generated by sigma_clipped_stats()
             # based on full unmasked image
             bkg_skew = np.abs(3.0 * (bkg_mean_full - bkg_median_full) / bkg_rms_full)
-            log.info("Sigma-clipped computed skewness: {0:.2f}".format(bkg_skew))
+            log.info(f"Sigma-clipped computed skewness: {bkg_skew:.2f}")
 
 
             # Refine background to better compute the median value
@@ -322,7 +340,7 @@ class CatalogImage:
                                                                 sigma=nsigma_clip,
                                                                 cenfunc='median')
 
-            log.info("Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
+            log.info(f"Sigma-clipped Statistics - Background mean: {bkg_mean:.6f}  median: {bkg_median:.6f}  rms: {bkg_rms:.6f}")
             log.info("")
 
             # Ensure the computed values are not negative
@@ -330,21 +348,22 @@ class CatalogImage:
                 bkg_mean = max(0, bkg_mean)
                 bkg_median = max(0, bkg_median)
                 bkg_rms = max(0, bkg_rms)
-                log.info("UPDATED Sigma-clipped Statistics - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
+                log.info(f"UPDATED Sigma-clipped Statistics - Background mean: {bkg_mean:.6f}  median: {bkg_median:.6f}  rms: {bkg_rms:.6f}")
                 log.info("")
 
             # Compute a minimum rms value based upon information directly from the data
-            if self.keyword_dict["detector"].upper() != "SBC":
-                minimum_rms = self.keyword_dict['atodgn'] * self.keyword_dict['readnse'] \
-                              * self.keyword_dict['ndrizim'] / self.keyword_dict['texpo_time']
+            if self.keyword_dict['detector'].upper() != 'SBC':
+                minimum_rms = np.sqrt(self.keyword_dict['numexp']) * self.keyword_dict['readnse'] / self.keyword_dict['texpo_time']
+            else:
+                minimum_rms = np.sqrt(np.clip(bkg_median * self.keyword_dict['texpo_time'], a_min=1.0, a_max=None)) / self.keyword_dict['texpo_time']
 
-                # Compare a minimum rms based upon input characteristics versus the one computed and use
-                # the larger of the two values.
-                if (bkg_rms < minimum_rms):
-                    bkg_rms = minimum_rms
-                    log.info("Mimimum RMS of input based upon the readnoise, gain, number of exposures, and total exposure time: {}".format(minimum_rms))
-                    log.info("Sigma-clipped RMS has been updated - Background mean: {}  median: {}  rms: {}".format(bkg_mean, bkg_median, bkg_rms))
-                    log.info("")
+            # Compare a minimum rms based upon input characteristics versus the rms computed and use
+            # the larger of the two values.
+            if (bkg_rms < minimum_rms):
+               bkg_rms = minimum_rms
+               log.info(f"Minimum RMS of input based upon the readnoise, number of exposures, and total exposure time: {minimum_rms:.6f}")
+               log.info(f"Sigma-clipped RMS has been updated - Background mean: {bkg_mean:.6f}  median: {bkg_median:.6f}  rms: {bkg_rms:.6f}")
+               log.info("")
 
             # Generate two-dimensional background and rms images with the attributes of
             # the input data, but the content based on the sigma-clipped statistics.
@@ -375,7 +394,7 @@ class CatalogImage:
                         bkg = Background2D(imgdata, (box_size, box_size), filter_size=(win_size, win_size),
                                            bkg_estimator=bkg_estimator(),
                                            bkgrms_estimator=rms_estimator(),
-                                           exclude_percentile=percentile, edge_method="pad",
+                                           exclude_percentile=percentile,
                                            coverage_mask=self.inv_footprint_mask)
 
                     except Exception:
@@ -389,6 +408,9 @@ class CatalogImage:
                         bkg_median = bkg.background_median
                         negative_threshold = negative_sigma * bkg.background_rms_median
                         break
+
+                log.info(f"Background2D - Background median: {bkg_median:.6f}  rms: {bkg_rms_median:.6f}")
+                log.info("")
 
                 # If computation of a two-dimensional background image were successful, compute the
                 # background-subtracted image and evaluate it for the number of negative values.
@@ -406,14 +428,22 @@ class CatalogImage:
                     del imgdata_bkgsub
 
                     # Report this information so the relative percentage and the threshold are known
-                    log.info("Percentage of negative values in the background subtracted image {0:.2f} vs low threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
+                    log.info(f"Percentage of negative values in the background subtracted image {100.0*negative_ratio:.2f} vs low threshold of {negative_percent:.2f}.")
 
                     # If the background subtracted image has too many negative values which may be
                     # indicative of large negative regions, the two-dimensional computed background
                     # fit image should NOT be used.  Use the sigma-clipped data instead.
                     if negative_ratio * 100.0 > negative_percent:
-                        log.info("Percentage of negative values {0:.2f} in the background subtracted image exceeds the threshold of {1:.2f}.".format(100.0 * negative_ratio, negative_percent))
+                        log.info(f"Percentage of negative values {100.0*negative_ratio:.2f} in the background subtracted image exceeds the threshold of {negative_percent:.2f}.")
                         log.info("")
+                        log.info("*** Use the background image determined from the sigma_clip algorithm. ***")
+
+                    # If the rms computed for the Background2D is larger than the rms computed
+                    # for the sigma-clipped algorithm, use the sigma-clipped algorithm instead.
+                    # The sigma-clipped values have already been set in BACKGROUND COMPUTATION 2
+                    # as the class attributes.
+                    elif bkg_rms_median > self.bkg_rms_median:
+                        log.info(f"Background2D rms, {bkg_rms_median:.6f}, is greater than sigma-clipped rms, {self.bkg_rms_median:.6f}.")
                         log.info("*** Use the background image determined from the sigma_clip algorithm. ***")
 
                     # Update the class variables with the background fit data
@@ -439,8 +469,8 @@ class CatalogImage:
         log.info("")
         log.info("Computation of image background complete")
         log.info("Found: ")
-        log.info("    Median background: {}".format(self.bkg_median))
-        log.info("    Median RMS background: {}".format(self.bkg_rms_median))
+        log.info(f"    Median background: {self.bkg_median:.6f}")
+        log.info(f"    Median RMS background: {self.bkg_rms_median:.6f}")
         log.info("")
 
         del bkg, imgdata
@@ -470,6 +500,7 @@ class CatalogImage:
         keyword_dict["texpo_time"] = self.imghdu[0].header["TEXPTIME"]
         keyword_dict["exptime"] = self.imghdu[0].header["EXPTIME"]
         keyword_dict["ndrizim"] = self.imghdu[0].header["NDRIZIM"]
+        keyword_dict["numexp"] = self.imghdu[0].header["NUMEXP"]
         if keyword_dict["detector"].upper() != "SBC":
             if keyword_dict["instrument"].upper() == 'WFPC2':
                 atodgn = self._get_max_key_value(self.imghdu[0].header, 'ATODGAIN')
@@ -558,7 +589,16 @@ class CatalogImage:
 class HAPCatalogs:
     """Generate photometric sourcelist for specified TOTAL or FILTER product image.
     """
-    crfactor = {'aperture': 300, 'segment': 150}  # CRs / hr / 4kx4k pixels
+
+    # This reference for the crfactor is Rick White.  It is based upon the physical
+    # area of the detector.  From the instrument handbooks:
+    # ACS/WFC: 4096**2 pixels, pixel size (15 um)**2
+    # ACS/HRC: 1024**2 pixels, pixel size (21 um)**2
+    # WFC3/UVIS: 4096**2 pixels, pixel size (15 um)**2
+    # WFPC2: 1600**2 pixels, pixel size (15um)**2
+    # acs/wfc-> crfactor = {'aperture': 300, 'segment': 150}  # CRs / hr / 4kx4k pixels
+    crfactor = {'WFC': {'aperture': 300, 'segment': 150}, 'HRC': {'aperture': 37, 'segment': 18.5},
+                'UVIS': {'aperture': 300, 'segment': 150}, 'WFPC2': {'aperture': 46, 'segment': 23}}
 
     def __init__(self, fitsfile, param_dict, param_dict_qc, num_images_mask, log_level, diagnostic_mode=False, types=None,
                  tp_sources=None):
@@ -666,6 +706,9 @@ class HAPCatalogs:
             crthresh_mask = None
             source_cat = self.catalogs[cat_type].sources if cat_type == 'aperture' else self.catalogs[cat_type].source_cat
 
+            # Collect up the names of all the columns which start with "Flag" - there will be
+            # a flag column for each filter in the visit - even the filters which did not end up
+            # contributing to the total detection image.
             flag_cols = [colname for colname in source_cat.colnames if colname.startswith('Flag')]
             for colname in flag_cols:
                 catalog_crmask = source_cat[colname] < 2
@@ -679,17 +722,24 @@ class HAPCatalogs:
         log.info("Determining whether point and/or segment catalogs meet cosmic-ray threshold")
         log.info("  based on EXPTIME = {}sec for the n=1 filters".format(n1_exposure_time))
 
-        for cat_type in self.catalogs:
-            source_cat = self.catalogs[cat_type]
-            if source_cat.sources:
-                thresh = self.crfactor[cat_type] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
-                source_cat = source_cat.sources if cat_type == 'aperture' else source_cat.source_cat
-                n_sources = source_cat.sources_num_good  # len(source_cat)
-                all_sources = len(source_cat)
-                log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
-                if n_sources < thresh and 0 < n_sources:
-                    self.reject_cats[cat_type] = True
-                    log.info("{} catalog FAILED CR threshold.".format(cat_type))
+        detector = self.image.keyword_dict["detector"].upper()
+        if detector not in ['IR', 'SBC']:
+            for cat_type in self.catalogs:
+                source_cat = self.catalogs[cat_type]
+                if source_cat.sources:
+                    thresh = self.crfactor[detector][cat_type] * n1_exposure_time**2 / self.image.keyword_dict['texpo_time']
+                    source_cat = source_cat.sources if cat_type == 'aperture' else source_cat.source_cat
+                    n_sources = source_cat.sources_num_good
+                    all_sources = len(source_cat)
+                    log.info("{} catalog with {} good sources out of {} total sources :  CR threshold = {}".format(cat_type, n_sources, all_sources, thresh))
+                    if 0 < n_sources < thresh:
+                        self.reject_cats[cat_type] = True
+                        log.info("{} catalog FAILED CR threshold.".format(cat_type))
+
+        # Ensure if any catalog is rejected, the remaining catalogs are also rejected
+        if any(self.reject_cats.values()):
+            for k in self.reject_cats.keys():
+                self.reject_cats[k] = True
 
         return self.reject_cats
 
@@ -1068,9 +1118,12 @@ class HAPPointCatalog(HAPCatalogBase):
                                            format='ascii.fast_no_header',
                                            overwrite=True)
 
+                        # NOTE: It is necessary to use a non-zero threshold to ensure the values
+                        # computed in the low levels of Photutils are finite (in v1.13.0) or no
+                        # table will be returned in the "src_table = daofind()" line below.
                         daofind = decutils.UserStarFinder(fwhm=source_fwhm,
                                                 coords=user_peaks,
-                                                threshold=0.0,
+                                                threshold=1.0e-10,
                                                 sharphi=0.9, sharplo=0.4)
 
                         _region_name = self.image.imgname.replace(reg_suffix, 'region{}.fits'.format(masknum))
@@ -1525,6 +1578,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._rw2d_size = self.param_dict["sourcex"]["rw2d_size"]
         self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
         self._rw2d_biggest_source = self.param_dict["sourcex"]["rw2d_biggest_source"]
+        self._rw2d_biggest_pixels = self.param_dict["sourcex"]["rw2d_biggest_pixels"]
         self._rw2d_source_fraction = self.param_dict["sourcex"]["rw2d_source_fraction"]
         self._bs_deblend_limit = self.param_dict["sourcex"]["biggest_source_deblend_limit"]
         self._sf_deblend_limit = self.param_dict["sourcex"]["source_fraction_deblend_limit"]
@@ -1546,8 +1600,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Defined in measure_sources
         self.subset_filter_source_cat = None
 
-        # Default kernel which may be the custom kernel based upon the actual image
-        # data or a Gaussian 2D kernel. This may be over-ridden in identify_sources().
+        # Default kernel is a Gaussian 2D kernel. This may be over-ridden in identify_sources().
         self.kernel = copy.deepcopy(self.image.kernel)
 
         # Attribute computed when generating the segmentation image.  If the segmentation image
@@ -1592,6 +1645,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("contrast (frac. flux for peak to be separate object, 0=max. deblend, 1=no deblend): {}".format(self._contrast))
             log.info("RickerWavelet nsigma (threshold = nsigma * background_rms): {}".format(self._rw2d_nsigma))
             log.info("RickerWavelet kernel X- and Y-dimension: {}".format(self._rw2d_size))
+            log.info("Pixel limit on biggest source (criterion for  RickerWavelet kernel): {}".format(self._rw2d_biggest_pixels))
             log.info("Percentage limit on biggest source (criterion for  RickerWavelet kernel): {}".format(100.0 * self._rw2d_biggest_source))
             log.info("Percentage limit on source fraction over the image (criterion for RickerWavelet kernel): {}".format(100.0 * self._rw2d_source_fraction))
             log.info("Percentage limit on biggest source deblending limit: {}".format(100.0 * self._bs_deblend_limit))
@@ -1604,7 +1658,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Get the SCI image data
             imgarr = copy.deepcopy(self.image.data)
             log.debug("IMG stats: min/max: {}, {}".format(imgarr.min(), imgarr.max()))
-            # Custom or Gaussian kernel depending upon the results of CatalogImage build_kernel()
+            # Gaussian kernel
             g2d_kernel = self.image.kernel
 
             # Write out diagnostic data
@@ -1625,7 +1679,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Round 1
             ncount = 0
             log.info("")
-            log.info("Using Custom kernel or Gaussian to generate a segmentation map.")
+            log.info("ROUND 1")
+            log.info("Using Gaussian kernel to generate a segmentation map.")
             g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                      g2d_kernel,
                                                                                      ncount,
@@ -1634,26 +1689,31 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                      self.image.bkg_background_ra,
                                                                                      self.image.bkg_rms_ra,
                                                                                      check_big_island_only=False,
+                                                                                     rw2d_biggest_pixels=self._rw2d_biggest_pixels,
                                                                                      rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                      rw2d_source_fraction=self._rw2d_source_fraction)
             segm_img_orig = copy.deepcopy(g_segm_img)
 
             # If the science field via the segmentation map is deemed crowded or has big sources/islands, compute the
-            # RickerWavelet2DKernel and call detect_and_eval_segments() again. Still use the custom fwhm as it
-            # should be better than a generic fwhm as it is based upon the data.
-            # Note: the fwhm might be a default if the custom algorithm had to fall back to a Gaussian.
+            # RickerWavelet2DKernel and call detect_and_eval_segments() again.
             if g_is_big_crowded and g_segm_img:
                 log.info("")
                 log.info("The segmentation map contains big sources/islands or a large source fraction of segments.")
                 log.info("Using RickerWavelet2DKernel to generate an alternate segmentation map.")
-                rw2dk = RickerWavelet2DKernel(self.image.kernel_fwhm,
-                                                    x_size=self._rw2d_size,
-                                                    y_size=self._rw2d_size)
-                rw2dk.normalize()
+
+                # Convert the FWHM into a sigma value
+                rw_sigma = self.image.kernel_fwhm * gaussian_fwhm_to_sigma
+                rw2dk = self.ricker_matched_kernel(rw_sigma,
+                                                   x_size=self._rw2d_size,
+                                                   y_size=self._rw2d_size)
+
                 # Only pass along the array to be consistent with the g2d_kernel object
                 rw2d_kernel = rw2dk.array
 
-                log.debug("IMG stats AFTER G2D iteration 1: min/max: {}, {}".format(imgarr.min(), imgarr.max()))
+                # Write out diagnostic data
+                if self.diagnostic_mode:
+                    outname = self.imgname.replace(".fits", "_rwkernel.fits")
+                    fits.PrimaryHDU(data=rw2d_kernel).writeto(outname)
 
                 # Detect segments and evaluate the detection in terms of big sources/islands or crowded fields
                 # Round 1
@@ -1666,6 +1726,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                              self.image.bkg_background_ra,
                                                                                              self.image.bkg_rms_ra,
                                                                                              check_big_island_only=True,
+                                                                                             rw2d_biggest_pixels=self._rw2d_biggest_pixels,
                                                                                              rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                              rw2d_source_fraction=self._rw2d_source_fraction)
 
@@ -1705,21 +1766,22 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                 self.param_dict['bkg_filter_size'],
                                                 self.param_dict['dao']['TWEAK_FWHMPSF'])
 
-                        # Reset the local version of the Custom/Gaussian kernel and the RickerWavelet
+                        # Reset the local version of the Gaussian kernel and the RickerWavelet
                         # kernel when the background type changes
                         g2d_kernel = self.image.kernel
 
-                        rw2dk = RickerWavelet2DKernel(self.image.kernel_fwhm,
-                                                            x_size=self._rw2d_size,
-                                                            y_size=self._rw2d_size)
-                        rw2dk.normalize()
+                        rw_sigma = self.image.kernel_fwhm * gaussian_fwhm_to_sigma
+                        rw2dk = self.ricker_matched_kernel(rw_sigma,
+                                                           x_size=self._rw2d_size,
+                                                           y_size=self._rw2d_size)
+
                         rw2d_kernel = rw2dk.array
                         sigma_for_threshold = self._nsigma
                         rw2d_sigma_for_threshold = self._rw2d_nsigma
 
                     # Re-compute a background2D with a higher threshold by increasing the nsigma used
                     elif (self.image.bkg_type.lower().startswith('twod')):
-                        log.info("Increasing the threshold image (bkg + nsigma * 2.0) for improved source detection.")
+                        log.info("Increasing the threshold by nsigma * 2.0 for improved source detection.")
                         sigma_for_threshold = self._nsigma * 2.0
                         rw2d_sigma_for_threshold = self._rw2d_nsigma * 2.0
 
@@ -1733,7 +1795,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     # Round 2
                     ncount += 1
                     log.info("")
-                    log.info("With alternate background...using Custom/Gaussian kernel to generate a segmentation map.")
+                    log.info("ROUND 2")
+                    log.info("With alternate background...using Gaussian kernel to generate a segmentation map.")
                     del g_segm_img
                     g_segm_img, g_is_big_crowded, g_bs, g_sf = self.detect_and_eval_segments(imgarr,
                                                                                              g2d_kernel,
@@ -1743,6 +1806,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                              self.image.bkg_background_ra,
                                                                                              self.image.bkg_rms_ra,
                                                                                              check_big_island_only=False,
+                                                                                             rw2d_biggest_pixels=self._rw2d_biggest_pixels,
                                                                                              rw2d_biggest_source=self._rw2d_biggest_source,
                                                                                              rw2d_source_fraction=self._rw2d_source_fraction)
 
@@ -1766,10 +1830,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                                      self.image.bkg_background_ra,
                                                                                                      self.image.bkg_rms_ra,
                                                                                                      check_big_island_only=True,
+                                                                                                     rw2d_biggest_pixels=self._rw2d_biggest_pixels,
                                                                                                      rw2d_biggest_source=self._bs_deblend_limit,
                                                                                                      rw2d_source_fraction=self._sf_deblend_limit)
 
-                        # Compute the ratio of big sources/islands using Custom/Gaussian vs Rickerwavelet kernel
+                        # Compute the ratio of big sources/islands using Gaussian vs Rickerwavelet kernel
                         # This value used as a discriminant between overlapping point sources and nebulousity fields
                         ratio_cg2rw_bigsource = 3.0
                         if rw_bs > 0.0:
@@ -1785,8 +1850,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # quite efficient and successful for the overlapping PSF case.
                         #
                         # Use the Round 2 RickerWavelet segmentation image
-                        log.info("Custom/Gaussian biggest source found: {}  Rickerwavelent biggest source found: {}.".format(g_bs, rw_bs))
-                        log.info("Ratio of big sources found using Custom/Gaussian vs Rickerwavelet kernel: {}.".format(ratio_cg2rw_bigsource))
+                        log.info("Gaussian biggest source found: {}  Rickerwavelet biggest source found: {}.".format(g_bs, rw_bs))
+                        log.info("Ratio of big sources found using Gaussian vs Rickerwavelet kernel: {}.".format(ratio_cg2rw_bigsource))
 
                         # This is the easy case.
                         if not rw_is_big_crowded:
@@ -1796,7 +1861,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # The field was found to be crowded, but the biggest source second criterion is deemed OK.
                         elif (rw_is_big_crowded and (ratio_cg2rw_bigsource > self._ratio_bigsource_limit)):
                             log.info("The Round 2 of segmentation images may still contain big sources/islands.\n"
-                                     "However, the ratio between the Custom/Gaussian and Rickerwavelet biggest source is\n"
+                                     "However, the ratio between the Gaussian and Rickerwavelet biggest source is\n"
                                      "indicative of overlapping PSFs vs nebulousity.")
                             log.info("Proceeding as the time to deblend should be nominal.")
                             self.kernel = rw2d_kernel
@@ -1814,7 +1879,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             del rw_segm_img
                             return
 
-                    # Use the second round custom/Gaussian segmentation image
+                    # Use the second round Gaussian segmentation image
                     else:
                         self.kernel = g2d_kernel
                         segm_img = copy.deepcopy(g_segm_img)
@@ -1833,7 +1898,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     self._define_empty_table(rw_segm_img)
                     return
 
-            # The first round custom/Gaussian segmentation image is good, continue with the processing
+            # The first round Gaussian segmentation image is good, continue with the processing
             elif not g_is_big_crowded and g_segm_img:
                 self.kernel = g2d_kernel
                 segm_img = copy.deepcopy(g_segm_img)
@@ -1874,20 +1939,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # the segmentation image too
             good_rows = []
             good_segm_rows_by_label = []
-            bad_segm_rows_by_label = []
             updated_table = None
             for i, old_row in enumerate(total_measurements_table):
                 if np.isfinite(old_row["xcentroid"]):
                     good_rows.append(old_row)
                     good_segm_rows_by_label.append(total_measurements_table['label'][i])
-                else:
-                    bad_segm_rows_by_label.append(total_measurements_table['label'][i])
-            updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
-            if self.diagnostic_mode and bad_segm_rows_by_label:
-                log.info("Bad segments removed from segmentation image for Total detection image {}.".format(self.imgname))
 
-            # Remove the bad segments from the image
-            self.segm_img.remove_labels(bad_segm_rows_by_label, relabel=True)
+            updated_table = Table(rows=good_rows, names=total_measurements_table.colnames)
 
             # Need to keep an updated copy of the total image SourceCatalog object for use when
             # making measurements in the filtered images
@@ -1901,7 +1959,11 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # (create_catalog_products()).  This is the way the independent catalogs of total and filter products
             # process the same segmentation image.
             # BEWARE: self.sources for "segmentation" is a SegmentationImage, but for "point" it is an Astropy table
-            self.sources = copy.deepcopy(self.segm_img)
+            # Keep only the good segments from the image
+            self.segm_img.keep_labels(good_segm_rows_by_label, relabel=True)
+
+            # Make a deep copy of the total "white light" segmentation image
+            self.sources = self.segm_img.copy()
 
             log.info("Done identifying sources in total detection image for the segmentation catalog.")
             log.info("")
@@ -1941,10 +2003,46 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def detect_and_eval_segments(self, imgarr, kernel, ncount, size_source_box, nsigma_above_bkg, background_img, background_rms, check_big_island_only=False, rw2d_biggest_source=0.015, rw2d_source_fraction=0.075):
+    def ricker_matched_kernel(self, sigma, sigma_factor=1.5, **kw):
+        """Return normalized RickerWavelet2D kernel matched to Gaussian width
+
+        The sigma is increased by a factor sigma_factor=1.5 to match the Gaussian
+        core width, and the normalization matches the RickerWavelet peak to the Gaussian
+        peak.  This kernel should be applied using the 'normalize_kernel=False' parameter
+        to astropy.convolution.convolve().
+
+        Routine contributed by Rick L. White.
+
+        Parameters
+        ----------
+        sigma : float
+            Sigma of the RickerWavelet kernel
+
+        sigma_factor : float
+            Factor to match the Gaussian core width
+
+        kw : int
+            x_size : Size in the x-direction 
+            y_size : Size in the y-direction 
+
+        Returns
+        -------
+        RickerWavelet2DKernel : ˜astropy.convolution.RickerWavelet2DKernel
+            Normalized RickerWavelet2DKernel
+        """
+
+        rsigma = sigma_factor*sigma
+        rnorm = 0.5 * sigma_factor**4 * sigma**2
+        return rnorm*RickerWavelet2DKernel(rsigma, **kw)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def detect_and_eval_segments(self, imgarr, kernel, ncount, size_source_box, nsigma_above_bkg, background_img, background_rms,
+                                 check_big_island_only=False, rw2d_biggest_pixels=25000, rw2d_biggest_source=0.015,
+                                 rw2d_source_fraction=0.075):
 
             # Compute the threshold to use for source detection
-            threshold = self.compute_threshold(nsigma_above_bkg, background_img, background_rms)
+            threshold = self.compute_threshold(nsigma_above_bkg, background_rms)
 
             # Write out diagnostic data
             if self.diagnostic_mode:
@@ -1952,17 +2050,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 fits.PrimaryHDU(data=threshold).writeto(outname)
 
             # Generate the segmentation map by detecting "sources" using the nominal settings.
-            # Use all the parameters here developed for the "custom kernel".  Note: if the
-            # "custom kernel" did not work out, build_auto_kernel() drops back to a Gaussian.
-            # log.info('Kernel shape: {}    source_box: {}'.format(g2d.shape, self._size_source_box))
             segm_img = self.detect_segments(imgarr,
                                             threshold,
+                                            background_img,
                                             ncount,
                                             filter_kernel=kernel,
                                             source_box=size_source_box,
                                             mask=self.image.inv_footprint_mask)
 
-            # Check if custom_segm_image is None indicating there are no detectable sources in this
+            # Check if segm_image is None indicating there are no detectable sources in this
             # total detection image.  If value is None, a warning has already been issued.  Issue
             # a final message for this particular total detection product and return.
             if segm_img is None:
@@ -1980,6 +2076,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 is_big_crowded, big_island, source_fraction = self._evaluate_segmentation_image(segm_img,
                                                                                                 imgarr,
                                                                                                 big_island_only=check_big_island_only,
+                                                                                                max_biggest_pixels=rw2d_biggest_pixels,
                                                                                                 max_biggest_source=rw2d_biggest_source,
                                                                                                 max_source_fraction=rw2d_source_fraction)
 
@@ -1987,16 +2084,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def compute_threshold(self, nsigma, bkg_mean, bkg_rms):
+    def compute_threshold(self, nsigma, bkg_rms):
         """Compute the threshold value above which sources are deemed detected.
 
            Parameters
            ----------
            nsigma : float
                Multiplicative factor for the background RMS
-
-           bkg_mean : float image
-               Mean of the background determined image
 
            bkg_rms : float image
                RMS of the background determined image
@@ -2006,26 +2100,31 @@ class HAPSegmentCatalog(HAPCatalogBase):
            threshold: float image
                Image which defines, on a pixel-by-pixel basis, the low limit above which
                sources are detected.
+
+           Note: The background image is NOT built into the threshold image.
         """
 
         log.info("Computing the threshold value used for source detection.")
         if not self.tp_masks:
-            threshold = bkg_mean + (nsigma * bkg_rms)
+            threshold = nsigma * bkg_rms
         else:
             threshold = np.zeros_like(self.tp_masks[0]['rel_weight'])
             log.info("Using WHT masks as a scale on the RMS to compute threshold detection limit.")
             for wht_mask in self.tp_masks:
-                threshold_rms = bkg_rms * np.sqrt(wht_mask['scale'] * wht_mask['mask'] / wht_mask['rel_weight'].max())
+                threshold_rms = bkg_rms * np.sqrt(wht_mask['mask'] / wht_mask['rel_weight'].max())
                 threshold_rms_median = np.nanmedian(threshold_rms[threshold_rms > 0])
-                threshold_item = bkg_mean + (nsigma * threshold_rms_median)
-                threshold += threshold_item
-            del(threshold_item)
+                threshold_item = nsigma * threshold_rms_median
+
+                # Ensure the threshold image is built up, section by section, as created by
+                # the wht_mask['mask']
+                threshold += (threshold_item * wht_mask['mask'])
+            del(threshold_rms)
 
         return threshold
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def detect_segments(self, imgarr, threshold, ncount, filter_kernel=None, source_box=7, mask=None):
+    def detect_segments(self, imgarr, threshold, background_img, ncount, filter_kernel=None, source_box=6, mask=None):
         """Detect segments found in the input total detection (aka white light) image.
 
            Image regions are identified as segments in the 'total detection image' if the region
@@ -2035,12 +2134,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
            Parameters
            ----------
-           imgarr :
+           imgarr : float
                Total detection image (no background subtraction)
 
-           threshold :
+           threshold : float
                Image which defines, on a pixel-by-pixel basis, the low limit above which
-               sources are detected.  The threshold is composed of the background + sigma * rms
+               sources are detected.  The threshold is composed of the 'sigma * rms'.
+
+           background_img : float
+               Computed 2D background for total detection image
                
            ncount : int
                Invocation index for this method.  The index is used to create unique names
@@ -2062,25 +2164,17 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         """
         log.info("Detecting sources in total image product.")
-        # Insure that regions with negative flux after background subtraction do not
-        # cause the segmentation to create a scene filled with segments, especially with RickerWavelet kernel,
-        # the imgarr needs to be background-subtracted, then clipped at zero before feeding to
-        # 'photutils.detect_sources'.
-        if filter_kernel.min() < 0:  # Found in normalized RickerWavelet kernels
-            img_bkg_sub = imgarr - threshold
-            img_bkg_sub = np.clip(img_bkg_sub, 0, img_bkg_sub.max())
-            # Now set threshold to 0, since it has already been applied to the input data array
-            thresh0 = np.zeros_like(img_bkg_sub)
-        else:
-            # Use inputs provided with the kernel
-            img_bkg_sub = imgarr
-            thresh0 = threshold
 
-        # Note: SExtractor has "connectivity=8" which is the default for detect_sources().
-        segm_img = None
-        self.convolved_img = convolve(img_bkg_sub, filter_kernel)
+        # Subtract the background image from the white light image and convolve
+        #
+        # Important to background subtract to get accurate positions for faint sources or
+        # positions will be shifted toward the geometrical center of the segment rather 
+        # than located at the flux-weighted centroid as desired.
+        self.convolved_img = convolve(imgarr-background_img, filter_kernel, normalize_kernel=False)
+
+        # The threshold should not include the background.
         segm_img = detect_sources(self.convolved_img,
-                                  thresh0,
+                                  threshold,
                                   npixels=source_box,
                                   mask=mask)
 
@@ -2099,7 +2193,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def deblend_segments(self, segm_img, imgarr, ncount, filter_kernel=None, source_box=5):
+    def deblend_segments(self, segm_img, imgarr, ncount, filter_kernel=None, source_box=6):
         """Deblend segments found in the input total detection (aka white light) image.
 
            The segmentation image generated by detect_segments is deblended in an effort to
@@ -2137,7 +2231,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         try:
             # Deblending is a combination of multi-thresholding and watershed
             # segmentation. Sextractor uses a multi-thresholding technique.
-            # npixels = number of connected pixels in source
+            # npixels = minimum number of connected pixels in source
             # npixels and filter_kernel should match those used by detect_sources()
             segm_deblended_img = deblend_sources(self.convolved_img,
                                                  segm_img,
@@ -2145,6 +2239,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                  nlevels=self._nlevels,
                                                  contrast=self._contrast,
                                                  labels=segm_img.big_segments)
+
             if self.diagnostic_mode:
                 log.info("Deblended {} out of {} segments".format(len(segm_img.big_segments), segm_img.nlabels))
                 outname = self.imgname.replace(".fits", "_segment_deblended" + str(ncount) + ".fits")
@@ -2682,7 +2777,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _evaluate_segmentation_image(self, segm_img, image_data, big_island_only=False,
-                                     max_biggest_source=0.015, max_source_fraction=0.075):
+                                     max_biggest_pixels=25000, max_biggest_source=0.015, max_source_fraction=0.075):
         """
         Determine if the largest "source" or if the total fraction of "sources" exceeds a threshold.
 
@@ -2703,6 +2798,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         big_island_only : bool, optional
             Test for 'big island' situations only? (True/False)
+
+        max_biggest_pixels : int, optional
+            Maximum limit on the single largest detected "source" in pixels.
 
         max_biggest_source : float, optional
             Maximum limit on the single largest detected "source".
@@ -2743,14 +2841,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
         nbins = segm_img.max_label
         log.info("Number of sources from segmentation map: %d", nbins)
 
-        n, binedges = np.histogram(segm_img.data, range=(1, nbins))
-        real_pixels = (image_data != 0).sum()
-        biggest_source = n.max()/float(real_pixels)
-        log.info("Biggest_source: %f", biggest_source)
+        # Compute the biggest source identified 
+        # The clip eliminates zero-divides when there are no good pixels in the image
+        real_pixels = (np.isfinite(image_data) & (image_data != 0)).sum().clip(min=1)
+        biggest_source_pixels = segm_img.areas.max()
+        biggest_source = biggest_source_pixels/real_pixels
 
         # Compute which segments are larger than the kernel.
         deb_limit = self.kernel.size
         log.debug("Deblending limit set at: {} pixels".format(deb_limit))
+
         # Add big_segments as an attribute to SegmentationImage for use when deblending.
         # This is a Numpy array which currently contains the segment labels of
         # the segments in the image which should be deblended. Larger segments will be
@@ -2763,10 +2863,21 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # and is_poor_quality should be set to True.  The is_poor_quality is only an indicator that
         # a different kernel type or background computation could be tried for improved results.
         if biggest_source > max_biggest_source:
-            log.info("Biggest source %.4f percent exceeds %f percent of the image", (100.0*biggest_source), (100.0*max_biggest_source))
+            log.info("Biggest source %.4f percent EXCEEDS %f percent of the image.", (100.0*biggest_source), (100.0*max_biggest_source))
             is_poor_quality = True
+        else:
+            log.info("Biggest source %.4f percent within the acceptable %f percent of the image.", (100.0*biggest_source), (100.0*max_biggest_source))
+
+        # Also check if the biggest_source exceeds the limit on the number of pixels allowed
+        # for the biggest source, and set is_poor_quality True when the limit is exceeded.
+        if biggest_source_pixels > max_biggest_pixels:
+            log.info("Biggest source of %d pixels EXCEEDS the maximim limit of %d pixels.", biggest_source_pixels, max_biggest_pixels)
+            is_poor_quality = True
+        else:
+            log.info("Biggest source of %d pixels within the acceptable maximim limit of %d pixels.", biggest_source_pixels, max_biggest_pixels)
 
         # Filter the big_segments array to remove the prohibitively large segments
+        # as it is a very resource consuming task to deblend these segments
         if big_segments.size > 0:
             # Sort the areas and get the indices of the sorted areas
             area_indices = np.argsort(segm_img.areas)
@@ -2810,12 +2921,15 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Always compute the source_fraction so the value can be reported.  Setting the
         # big_island_only parameter allows control over whether the source_fraction should
         # or should not be ignored.
-        source_fraction = n.sum()/float(real_pixels)
-        log.info("Source_fraction: %f", source_fraction)
+        source_fraction = segm_img.areas.sum()/real_pixels
         if not big_island_only:
             if source_fraction > max_source_fraction:
-                log.info("Total source fraction %.4f percent exceeds %f percent of the image.", (100.0*source_fraction), (100.0*max_source_fraction))
+                log.info("Total source fraction %.4f percent EXCEEDS %f percent of the image.", (100.0*source_fraction), (100.0*max_source_fraction))
                 is_poor_quality = True
+            else:
+                log.info("Total source fraction %.4f percent within the acceptable %f percent of the image.", (100.0*source_fraction), (100.0*max_source_fraction))
+        else:
+            log.info("INFORMATIONAL ONLY: Total source fraction %.4f percent.", (100.0*source_fraction))
 
         return is_poor_quality, biggest_source, source_fraction
 
@@ -2935,41 +3049,50 @@ def make_wht_masks(
     mask (np.ndarray of bools, dtype=int16), and  relative weight (np.ndarray, dtype=float32). 
     
     """
-    
-    # create inverse of mask as ints
-    invmask = make_inv_mask(maskarr)
-
     # uses scipy maximum filter on image. Maximum filter selects the largest value within an ordered 
-    # window of pixels values and replaces the central pixel with the largest value.
+    # window of pixel values and replaces the central pixel with the largest value.
     maxwht = ndimage.filters.maximum_filter(whtarr, size=kernel)
     
     # normalized weight array
     rel_wht = maxwht / maxwht.max()
 
     # initialize values
-    delta = 0.0
-    master_mask = np.zeros(invmask.shape, dtype=np.uint16)
+    #
+    # master_mask indicates pixels remaining to be included
+    # initially it includes all unmasked pixels
+    master_mask = (maskarr == 0) & (rel_wht > 0)
     limit = 1 / scale
     masks = []
+
+    # minimum threshold on number of pixels in a segment
+    # this is weird, trying to preserve the peculiar definition of similarity
+    osum = master_mask.sum()
+    pthresh = (1 - sensitivity) * osum
     
-    # loop through scale values until delta is greater than sensitivity
-    while delta < sensitivity:
-        mask = rel_wht > limit
-        mask = (mask.astype(np.uint16) * invmask) - master_mask
+    # loop through scale values until all pixels are used
+    while master_mask.any():
 
-        new_delta = master_mask.sum() / mask.sum()
-        if new_delta < sensitivity:
-            masks.append(
-                dict(
-                    scale=limit,
-                    wht_limit=limit * maxwht.max(),
-                    mask=mask,
-                    rel_weight=rel_wht * mask,
+        # get pixels above the new limit that have not been used yet
+        mask = (rel_wht > limit) & master_mask
+        if mask.any():
+            mask_sum = mask.sum()
+
+            # If the segment is sufficiently big, and if the remaining pixels are not too small,
+            # keep this segment.
+            mmaster_sum = master_mask.sum()
+            if mask_sum == mmaster_sum or (mask_sum > pthresh and (mmaster_sum - mask_sum) > pthresh):
+                masks.append(
+                    dict(
+                        scale=limit,
+                        wht_limit=limit * maxwht.max(),
+                        mask=mask.astype(np.uint16),
+                        rel_weight=rel_wht * mask)
                 )
-            )
+                master_mask &= (~mask)
+            elif (mmaster_sum - mask_sum) <= pthresh:
+                # few pixels remaining, drop threshold to zero so they are found in the next iteration
+                limit = 0.0
 
-        delta = new_delta
-        master_mask = master_mask + mask
         limit /= scale
 
     return masks

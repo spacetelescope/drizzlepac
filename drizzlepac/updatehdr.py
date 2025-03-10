@@ -515,7 +515,7 @@ def interpret_wcsname_type(wcsname):
     else:
         if 'FIT' not in fit_term:
             wcstype += default_fit.format(fit_term)
-        else:
+        elif fit_term is not None:
             wcstype += post_fit
             postfit_type = fit_term.split('_')
             wcstype += fit_terms[postfit_type[1]].format(postfit_type[2])
@@ -549,7 +549,9 @@ def create_unique_wcsname(fimg, extnum, wcsname):
         uniqname = wcsname
     else:
         # setup pattern to match
-        rpatt = re.compile(wcsname + '_\d')
+        if wcsname is None:
+            raise ValueError("wcsname cannot be None")
+        rpatt = re.compile(wcsname + r'_\d+')
         index = 0
         for wname in wnames:
             rmatch = rpatt.match(wname)

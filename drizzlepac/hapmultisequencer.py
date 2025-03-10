@@ -53,6 +53,7 @@ from astropy.table import Table
 import numpy as np
 import drizzlepac
 
+from drizzlepac.haputils import analyze
 from drizzlepac.haputils import cell_utils
 from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import poller_utils
@@ -245,6 +246,9 @@ def create_drizzle_products(total_obj_list, custom_limits=None):
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
         logging.exception("message")
+        # When there is not enough disk space, there can be a problem updating the
+        # header keywords. This can cause problems for CAOM.
+        sys.exit(analyze.Ret_code.KEYWORD_UPDATE_PROBLEM.value)
 
     # Remove rules files copied to the current working directory
     for rules_filename in list(rules_files.values()):
@@ -337,7 +341,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
     logname = proc_utils.build_logname(input_filename, process_type='mvm')
 
     # Initialize total trailer filename as temp logname
-    logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT, force=True)
+    logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
     # Start by reading in any environment variable related to catalog generation that has been set
     cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_mvm[sw]) for sw in envvar_cat_mvm}
@@ -563,7 +567,10 @@ def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logg
     #  - migrate updated WCS solutions to exp_obj instances, if necessary (probably not?)
     #  - re-run tot_obj.generate_metawcs() method to recompute total object meta_wcs based on updated
     #    input exposure's WCSs
-    catalog_list = [gaia_obj.configobj_pars.pars['alignment'].pars_multidict['all']['run_align']['catalog_list'][0]]  # For now, just pass in a single catalog name as list
+    if gaia_obj.configobj_pars is not None:
+        catalog_list = [gaia_obj.configobj_pars.pars['alignment'].pars_multidict['all']['run_align']['catalog_list'][0]]  # For now, just pass in a single catalog name as list
+    else:
+        catalog_list = []
     align_table, filt_exposures = gaia_obj.align_to_gaia(catalog_list=catalog_list,
                                                          output=diagnostic_mode,
                                                          fit_label='MVM')

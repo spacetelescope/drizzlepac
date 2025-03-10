@@ -21,6 +21,9 @@ from ci_watson.artifactory_helpers import get_bigdata, generate_upload_schema
 from ci_watson.hst_helpers import download_crds, ref_from_image
 
 
+TODAYS_DATE = datetime.datetime.now().strftime("%Y-%m-%d")
+
+
 # Base classes for actual tests.
 # NOTE: Named in a way so pytest will not pick them up here.
 @pytest.mark.bigdata
@@ -113,7 +116,7 @@ class BaseCal:
             else:  # Download from FTP, if applicable
                 refname = os.path.join(ref_file)
                 if self.use_ftp_crds:
-                    download_crds(refname, self.timeout)
+                    download_crds(refname)
         return filename
 
     def compare_outputs(self, outputs, raise_error=True):
@@ -146,15 +149,14 @@ class BaseCal:
         testpath, testname = os.path.split(os.path.abspath(os.curdir))
         # organize results by day test was run...could replace with git-hash
         whoami = getpass.getuser() or 'nobody'
-        dt = datetime.datetime.now().strftime("%d%b%YT")
-        ttime = datetime.datetime.now().strftime("%H_%M_%S")
-        user_tag = 'NOT_CI_{}_{}'.format(whoami, ttime)
-        build_tag = os.environ.get('BUILD_TAG',  user_tag)
-        build_suffix = os.environ.get('BUILD_MATRIX_SUFFIX', 'standalone')
-        testdir = "{}_{}_{}".format(testname, build_tag, build_suffix)
-        tree = os.path.join(self.results_root, self.input_loc,
-                            dt, testdir) + os.sep
-
+        user_tag = 'NOT_CI_{}'.format(whoami)
+        build_tag = os.environ.get('BUILD_TAG', user_tag)
+        build_matrix_suffix = os.environ.get('BUILD_MATRIX_SUFFIX', '0')
+        subdir = '{}_{}_{}'.format(TODAYS_DATE, build_tag, build_matrix_suffix)
+        
+        # subdir exmaple: # example: 2025-01-16_GITHUB_CI_Linux-X64-py3.11-783
+        # full path: drizzlepac_results/*subdir*/acs/test_tweak0/filename.fits
+        tree = os.path.join(self.results_root, subdir, self.input_loc, testname) + os.sep
         updated_outputs = []
         for actual, desired in outputs:
             # Get "truth" image
@@ -188,7 +190,7 @@ class BaseCal:
                 sys.stdout.writelines(udiff)
                 sys.stdout = old_stdout
                 udiff_report = udiffIO.getvalue()
-                creature_report += udiff_report
+                creature_report += udiff_report[:100] # TRUNCATED to first 100 characters
                 if len(udiff_report) > 2 and all_okay:
                     all_okay = False
                 if len(udiff_report) > 2:

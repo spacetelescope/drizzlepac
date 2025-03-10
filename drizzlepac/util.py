@@ -436,17 +436,38 @@ def updateNEXTENDKw(fobj):
     if 'nextend' in fobj[0].header:
         fobj[0].header['nextend'] = len(fobj) - 1
 
-def count_sci_extensions(filename):
+def count_sci_extensions(filename, return_ind=False):
     """ Return the number of SCI extensions and the EXTNAME from a input MEF file.
-    """
+
+    Parameters
+    ----------
+    filename : str
+        Filename of the file you would like to count the extensions of. 
+    return_ind : bool, optional
+        Whether to return a list of the indices of the true "SCI" science extensions, 
+        by default False.
+
+    Returns
+    -------
+    tuple
+        Science extension and number of extensions. 
+    
+    or (if return_ind=True)
+    
+    list
+        indices of the "SCI" science extensions. 
+    """    
+
     num_sci = 0
+    index=[]
     extname = 'SCI'
 
     hdu_list = fileutil.openImage(filename, memmap=False)
 
-    for extn in hdu_list:
+    for i, extn in enumerate(hdu_list):
         if 'extname' in extn.header and extn.header['extname'] == extname:
             num_sci += 1
+            index.append(i)
 
     if num_sci == 0:
         extname = 'PRIMARY'
@@ -454,7 +475,11 @@ def count_sci_extensions(filename):
 
     hdu_list.close()
 
-    return num_sci, extname
+    if return_ind:
+        return index
+    
+    else:
+        return num_sci, extname
 
 
 def verifyUniqueWcsname(fname, wcsname, include_primary=True):
@@ -1165,11 +1190,11 @@ def base_taskname(taskname, packagename=None):
 
     packagename : str, None (Default = None)
         Package name. It is assumed that a compound task name is formed by
-        concatenating ``packagename`` + '.' + ``taskname``\ . If ``packagename``
+        concatenating ``packagename`` + '.' + ``taskname``\\ . If ``packagename``
         is not ``None``, :py:func:`base_taskname` will check that the string
         to the left of the right-most dot matches ``packagename`` and will
         raise an ``AssertionError`` if the package name derived from the
-        input ``taskname`` does not match the supplied ``packagename``\ . This
+        input ``taskname`` does not match the supplied ``packagename``\\ . This
         is intended as a check for discrepancies that may arise
         during the development of the tasks. If ``packagename`` is ``None``,
         no such check will be performed.

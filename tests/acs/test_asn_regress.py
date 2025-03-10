@@ -1,5 +1,6 @@
 import os
 
+import pytest
 from stsci.tools import teal
 import drizzlepac
 from drizzlepac import astrodrizzle
@@ -10,6 +11,7 @@ from ci_watson.hst_helpers import raw_from_asn
 
 class TestAsnRegress(BaseACS):
 
+    @pytest.mark.skip(reason="stsci.tools.asnutils failing to load asn only using github actions.")
     def test_hrc_asn(self):
         # Customized tolerances as Linux and Mac would need different truth files.
         self.rtol = 1e-4
@@ -41,7 +43,7 @@ class TestAsnRegress(BaseACS):
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_bits'] = 8578
         parObj['STEP 7: DRIZZLE FINAL COMBINED IMAGE']['final_units'] = 'counts'
 
-        astrodrizzle.AstroDrizzle(asn_file, configobj=parObj)
+        astrodrizzle.AstroDrizzle(asn_file, configobj=parObj)       
 
         # Compare results
         outputs = [('j8bt06011_drz.fits', 'reference_asn_regress.fits')]

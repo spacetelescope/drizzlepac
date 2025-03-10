@@ -1,6 +1,8 @@
 """ This module is the high-level wrapper for running a test on a list of input
     datasets in order to process the dataset in manner similar to the pipeline
     processing (updatewcs, alignment, astrodrizzle).
+
+    This file is supported by conftest.py in the root directory of the package.
     """
 import datetime
 import traceback
@@ -147,15 +149,13 @@ def test_alignpipe_randomlist(tmpdir, dataset):
             shutil.rmtree('mastDownload')
         log.info("\nFiles: {}".format(files_on_disk))
 
-
         # Insure environment variables are set for full processing
         os.environ['ASTROMETRY_STEP_CONTROL'] = 'on'
         os.environ['ASTROMETRY_COMPUTE_APOSTERIORI'] = 'on'
         os.environ['ASTROMETRY_APPLY_APRIORI'] = 'on'
 
         flts = sorted(glob.glob('*fl?.fits'))
-        jref_dir = 'jref.old/' if '16r12191j_mdz' in fits.getval(flts[0], 'mdriztab') else 'jref/'
-        os.environ['jref'] = os.path.join(os.environ['crrefer'], jref_dir)
+        os.environ['jref'] = os.path.join(os.environ['crrefer'])
         log.info("JREF: {}".format(os.environ['jref']))
 
         # Run pipeline processing using

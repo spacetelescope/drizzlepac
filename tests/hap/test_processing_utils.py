@@ -4,7 +4,7 @@ import shutil
 from astropy.io import fits
 from drizzlepac.haputils import processing_utils
 
-test_path = "drizzlepac/haputils/tests/"
+test_path = "tests/hap/"
 
 @pytest.mark.parametrize(
     "filename",

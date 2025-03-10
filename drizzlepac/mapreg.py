@@ -98,7 +98,7 @@ def _simple_parse_teal_fname(fnamestr, parse_at=False):
             fh.close()
             for line in lines:
                 f = _simple_parse_teal_fname(
-                            map(str.strip,line.replace(',',' ').split())[0],
+                            next(map(str.strip,line.replace(',',' ').split())),
                             parse_at = parse_at )
                 if isinstance(f, str):
                     fnamelst.append(f)

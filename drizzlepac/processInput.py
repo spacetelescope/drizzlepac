@@ -59,7 +59,7 @@ if util.can_parallel:
     import multiprocessing
 
 
-def setCommonInput(configObj, createOutwcs=True):
+def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
     """
     The common interface interpreter for MultiDrizzle tasks which not only runs
     'process_input()' but 'createImageObject()' and 'defineOutput()' as well to
@@ -70,10 +70,11 @@ def setCommonInput(configObj, createOutwcs=True):
     ----------
     configObj : object
         configObj instance or simple dictionary of input parameters
-    imageObjectList : list of imageObject objects
-        list of imageObject instances, 1 for each input exposure
-    outwcs : object
-        imageObject instance defining the final output frame
+    createOutwcs : bool
+        whether of not to update the output WCS infomation
+    overwrite_dict: dict
+        dictionary of user input paramters to overwrite in configObj
+        (needed in particular for using mdriztab=True option)
 
     Notes
     -----
@@ -129,6 +130,28 @@ def setCommonInput(configObj, createOutwcs=True):
 
         # Update configObj with values from mpars
         cfgpars.mergeConfigObj(configObj, mdriztab_dict)
+
+    # add warnings for kernels that may not work as intended
+    kernels_w_warnings = ["gaussian", "lanczos3", "tophat"]
+    for kernel_param in overwrite_dict:
+        if overwrite_dict[kernel_param] in kernels_w_warnings:
+            if overwrite_dict[kernel_param] == "tophat":
+                raise ValueError(
+                    f'WARNING: It was found that kernel "tophat" does not work as intended.'
+                    + 'It has been removed as a option. Please instead use kernel "square", "point"'
+                    + f' or, "turbo" for {kernel_param}.'
+                )
+            else:
+                log.warning(
+                    f'WARNING: Kernel "{overwrite_dict[kernel_param]}" does not conserve flux.'
+                    + "Make sure you understand the effects of using this kernel, "
+                    + 'or use one of other available options: "square", "point", or "turbo".'
+                )
+
+    if overwrite_dict:
+        # user inputs are removed in above line, we need to add them back
+        # overwrite values in configObj with those from the input_dict
+        cfgpars.mergeConfigObj(configObj, overwrite_dict)
 
     # Convert interpreted list of input files from process_input into a list
     # of imageObject instances for use by the MultiDrizzle tasks.
@@ -188,7 +211,6 @@ def setCommonInput(configObj, createOutwcs=True):
         'Please check the filename specified in the "refimage" parameter.'
         print(textutil.textbox(msg))
         return None,None
-
 
     # Build imageObject list for all the valid, shift-updated input files
     log.info('-Creating imageObject List as input for processing steps.')
@@ -509,7 +531,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
     return filelist, output, ivmlist, oldasndict
 
 
-def process_input(input, output=None, ivmlist=None, updatewcs=True,
+def process_input(input, output=None, updatewcs=True,
                   prodonly=False,  wcskey=None, **workinplace):
     """
     Create the full input list of filenames after verifying and converting
@@ -517,7 +539,7 @@ def process_input(input, output=None, ivmlist=None, updatewcs=True,
     """
 
     newfilelist, ivmlist, output, oldasndict, origflist = buildFileListOrig(
-            input, output=output, ivmlist=ivmlist, wcskey=wcskey,
+            input, output=output, wcskey=wcskey,
             updatewcs=updatewcs, **workinplace)
 
     if not newfilelist:
@@ -631,19 +653,19 @@ def _process_input_wcs_single(fname, wcskey, updatewcs):
         wcscorr.init_wcscorr(fname)
 
 
-def buildFileList(input, output=None, ivmlist=None,
+def buildFileList(input, output=None,
                 wcskey=None, updatewcs=True, **workinplace):
     """
     Builds a file list which has undergone various instrument-specific
     checks for input to MultiDrizzle, including splitting STIS associations.
     """
     newfilelist, ivmlist, output, oldasndict, filelist = \
-        buildFileListOrig(input=input, output=output, ivmlist=ivmlist,
+        buildFileListOrig(input=input, output=output,
                     wcskey=wcskey, updatewcs=updatewcs, **workinplace)
     return newfilelist, ivmlist, output, oldasndict
 
 
-def buildFileListOrig(input, output=None, ivmlist=None,
+def buildFileListOrig(input, output=None,
                 wcskey=None, updatewcs=True, **workinplace):
     """
     Builds a file list which has undergone various instrument-specific
@@ -900,8 +922,8 @@ def manageInputCopies(filelist, **workinplace):
     # check to see if copies already exist for each file
     for fname in filelist:
         copymade = False # If a copy is made, no need to restore
-        copyname = os.path.join(origdir,fname)
-        short_copyname = os.path.join('OrIg_files',fname)
+        copyname = os.path.join(origdir, os.path.basename(fname))
+        short_copyname = os.path.join('OrIg_files', os.path.basename(fname))
         if workinplace['overwrite']:
             print('Forcibly archiving original of: ',fname, 'as ',short_copyname)
             # make a copy of the file in the sub-directory

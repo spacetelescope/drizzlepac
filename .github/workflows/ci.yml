@@ -13,52 +13,34 @@ on:
     - cron: "2 20 * * 3"
 
 jobs:
-  crds:
-    name: retrieve current CRDS context
-    runs-on: ubuntu-latest
-    env:
-      OBSERVATORY: hst
-      CRDS_PATH: /tmp/crds_cache
-      CRDS_SERVER_URL: https://hst-crds.stsci.edu
-    steps:
-      - id: context
-        run: >
-          echo "pmap=$(
-          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["${{ env.OBSERVATORY }}"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
-          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
-          )" >> $GITHUB_OUTPUT
-        # Get default CRDS_CONTEXT without installing crds client
-        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
-      - id: path
-        run: echo "path=${{ env.CRDS_PATH }}" >> $GITHUB_OUTPUT
-      - id: server
-        run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
-    outputs:
-      context: ${{ steps.context.outputs.pmap }}
-      path: ${{ steps.path.outputs.path }}
-      server: ${{ steps.server.outputs.url }}
+  crds_contexts:
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@efc6178464d6265a7b455ae36da6bb2d9efb5182  # 12.0.9
   check:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@8c0fde6f7e926df6ed7057255d29afa9c1ad5320  # v1.16.0
     with:
       envs: |
         - linux: check-style
   test:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
-    needs: [ crds ]
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@8c0fde6f7e926df6ed7057255d29afa9c1ad5320  # v1.16.0
+    needs: [ crds_contexts ]
     with:
       setenv: |
-        CRDS_PATH: ${{ needs.crds.outputs.path }}
-        CRDS_SERVER_URL: ${{ needs.crds.outputs.server }}
+        CRDS_PATH: /tmp/data/crds_cache/
+        CRDS_SERVER_URL: https://hst-crds.stsci.edu
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-      cache-path: ${{ needs.crds.outputs.path }}
-      cache-key: crds-${{ needs.crds.outputs.context }}
+      cache-path: /tmp/data/crds_cache/
+      cache-key: ${{ needs.crds_contexts.outputs.hst }}
+      libraries: |
+        brew:
+          - hdf5
       envs: |
-        - linux: test-xdist
-          python-version: 3.10
-        - linux: test-xdist
-          python-version: 3.11
-        - macos: test-xdist
-          python-version: 3.11
-        - linux: test-xdist-cov-devdeps
+        - linux: py310-xdist
+        - linux: py311-xdist
+        - linux: py312-xdist
+        # `tox` does not currently respect `requires-python` versions when creating testing environments;
+        # if this breaks, add an upper pin to `requires-python` and revert this py3 to the latest working version
+        - linux: py3-cov-xdist
           coverage: codecov
+        - linux: py3-xdist
+      toxdeps: tox-uv

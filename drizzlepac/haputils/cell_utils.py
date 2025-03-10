@@ -18,6 +18,8 @@ from spherical_geometry.polygon import SphericalPolygon
 
 from PIL import Image, ImageDraw
 
+from simplify_polyline import simplify
+
 from stwcs.wcsutil import HSTWCS
 from stsci.tools import logutil
 
@@ -86,8 +88,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
     # Check that exposures are located in current working directory
     if not os.path.exists(expnames[0]):
         if not input_path:
-            msg = "No exposures found in cwd().  Please specify path to files!"
-            raise (ValueError, msg)
+            raise ValueError("No exposures found in cwd().  Please specify path to files!")
         bad_files = 0
         for file in expnames:
             fullfile = os.path.join(input_path, file)
@@ -98,8 +99,7 @@ def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diag
                 continue
             shutil.copy(fullfile, file)
         if bad_files:
-            msg = "Could not find {} specified input files".format(bad_files)
-            raise (ValueError, msg)
+            raise ValueError(f"Could not find {bad_files} specified input files")
 
     # Check that all exposures have up-to-date WCS solutions
     #  This will weed out exposures which were not processed by the pipeline
@@ -415,7 +415,7 @@ class SkyFootprint(object):
             total_mask = (np.isnan(arr) == 0).astype(np.int16)
         else:
             total_mask = (arr != 0).astype(np.int16)
-        # Remove 'small' holes in the image due to noise to avoid
+        # Remove any holes in the image (surrounded by real data) due to noise to avoid
         # creating extraneous 'regions' from the image when it is really
         # all one region/chip.
         total_mask = ndimage.binary_fill_holes(total_mask)
@@ -423,8 +423,16 @@ class SkyFootprint(object):
         # which are particularly noticable for WFC3/IR data.
         # We are hard-coding the number of iterations since it is only
         # intended to improve, not make perfect, the mask shape.
-        total_mask = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
-        self.total_mask = total_mask
+        # We could also change the kernel to something larger, the 
+        # default kernel is a simple plus sign with a width of +-1 pixel in each direction. 
+        total_mask_eroded = ndimage.binary_erosion(ndimage.binary_dilation(total_mask, iterations=11), iterations=11)
+        
+        # This is used to add back in any real (possibly lesser quality) data near 
+        # the edges that may go right up to the edges of boundaries. This may be 
+        # more important for MVM that go right up to the edges. There may be better
+        # approaches to handle the edge pixels (e.g., using the border_value parameter
+        # to the binary_erosion function).
+        self.total_mask = np.bitwise_or(total_mask, total_mask_eroded)
 
         # clean up as quickly as possible
         del arr
@@ -508,12 +516,9 @@ class SkyFootprint(object):
         make up the footprint.  The corners are computed starting with
         the corner nearest (within 45deg) of vertical as measured from
         the center of the footprint, then proceeds counter-clockwise
-        (North to East).  The corners are initially identified using
-        the ``skimage.corner_harris`` function on the footprint mask to
-        identify the starting corner which is closest to veritical.  The
-        edge pixels are then ordered counter-clockwise, and corners are
-        finally confirmed in order where the slope along each edge changes
-        sign.
+        (North to East).  The corners are identified from the edge
+        pixels, and then the edge pixel polygon is simplified using
+        the `simplify_polyline.simplify` function.
 
         This results in a list of corner positions
         which can be used to populate the ``S_REGION`` keyword and traces
@@ -536,69 +541,75 @@ class SkyFootprint(object):
             print("Please add exposures before looking for corners...")
             return
         label_border = 10
+        # 10 may be overkill, as the code already creates a buffer.
+        
         # Insure footprint has been determined
         if self.footprint_member != member:
             self.find_footprint(member=member)
 
         if member == 'total':
-            # Use Harris corner detection to identify corners in the
-            # total footprint
+            # Trace the edge to identify corners in the total footprint
             # insure footprint has enough signal to detect corners
-            fp = np.clip(self.footprint, 0, 1).astype(np.int16)
+            fp = np.clip(self.footprint, 0, 1).astype(np.int16) # This clip may be unnecessary 
 
-            # simple trick to remove noise and small regions 3x3 or less.
-            scmask = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=2)
+            # simple trick to remove noise, island pixels, and small regions 3x3 or less near the edges. 
+            # This may be more important for removing the pixels added back in in the 
+            # line in extract_mask: self.total_mask = np.bitwise_or(total_mask, total_mask_eroded) 
+
+            scmask_dilated_eroded = ndimage.binary_dilation(ndimage.binary_erosion(fp, iterations=3), iterations=3)
+            
+            # Start by smoothing out the edges of the chips/field
+            # this will remove rough edges up to 3 pixels deep along the image edge
+            # this step may be unnecessary
+            scmask = ndimage.gaussian_filter(scmask_dilated_eroded.astype(np.float32), sigma=2) > 0.5
+            
             # Label each major contiguous region in the mask
+            # This will return an image of the same size but with numbers corresponding
+            # to each individual region. Regions with chip gaps are considered two regions. 
             sclabels, nlabels = ndimage.label(scmask)
+            
+            # This is to use a slice of the image instead of the full image, for efficiency. 
+            # Code is used later to relate pixels coordinates with full iamge. 
             slices = ndimage.find_objects(sclabels)
 
-            # For each region, trace the edge, find the Harris corners,
-            # then order the Harris corners counter-clockwise around the region
-            # using the traced edge pixel positions.
+            # For each region, trace the edge and simplify the polygon
             ordered_xy = []
             ordered_edges = []
             sky_corners = []
-            for label, mask_slice in enumerate(slices):
-                label += 1
+            for label, mask_slice in enumerate(slices, start=1): # for each number-assigned region
                 # Need to guarantee the slice ALWAYS has a border of non-assigned pixels
                 label_shape = (mask_slice[0].stop - mask_slice[0].start + (label_border * 2),
                                mask_slice[1].stop - mask_slice[1].start + (label_border * 2))
-                label_mask = np.zeros(label_shape, sclabels.dtype)
+                # create a boolean version of mask for this label
+                label_mask = np.zeros(label_shape, dtype=bool)
                 # get slice with just the region/label of interest
-                label_mask[label_border:-1*label_border, label_border:-1*label_border] = sclabels[mask_slice].copy()
-                # make sure no pixels from other regions are present in this mask
-                label_mask[label_mask != label] = 0
-                # reset label to be a binary mask only
-                label_mask[label_mask == label] = 1000
-                print('extracting corners for region {} in slice {}'.format(label, mask_slice))
-                # Perform corner detection on each region/chip separately.
-                mask_corners = corner_peaks(corner_harris(label_mask),
-                                       min_distance=3,
-                                       threshold_rel=0.2)
-                xy_corners = mask_corners * 0.
-                xy_corners[:, 0] = mask_corners[:, 1]
-                xy_corners[:, 1] = mask_corners[:, 0]
-                # shift corner positions to full array positions
-                xy_corners += (mask_slice[1].start-label_border, mask_slice[0].start-label_border)
+                label_mask[label_border:-1*label_border, label_border:-1*label_border] = (sclabels[mask_slice] == label)
+
+                # Perform edge tracing on each region/chip separately.
 
                 # Create a mask from the total footprint consisting solely of the
                 # pixels at the outer edge, ordered in clockwise fashion.
-                #
-                # get list of (X,Y) coordinates of all edges from each separate 'region' or chip
-                edge_pixels = trace_polygon(label_mask > 0, mask_slice)
+                # Correct for the label_border padding
+                # This may include upwards of 4000 pixels per side. 
+                edge_pixels = trace_polygon(label_mask, mask_slice) - label_border
 
-                # use the ordering of the traced edge pixels to order the corners in the same way
-                cordist = distance.cdist(xy_corners, edge_pixels)  # returns distances for each corner position
-                ordered_indices = []
-                for distarr, minval in zip(cordist, np.min(cordist, axis=1)):
-                    ordered_indices.append(np.where(distarr == minval)[0][0])
-                radial_order = np.argsort(ordered_indices)
-                ordered_xyc = xy_corners[radial_order].tolist()
-                ordered_xyc.append(ordered_xyc[0])  # close polygon
+                # simplify the polygon
+                # note edge_pixels and xy_corners polygons are already closed
+                # This simplify function checks each set of three consecutive pixels 
+                # and determines if the errors in the line changes significantly when the 
+                # middle pixel is removed. If it is below an set error (min_dist), remove the pixel.
+                # It should be noted that these three pixels can be far apart. 
+                # Values were tested by Rick White who found 10 (around one arcsecond for HST) 
+                # to be a good threshold.  
+                xy_corners = simplify(edge_pixels, min_dist=10.0)
+
+                if xy_corners.shape[0] <= 3:
+                    # this is surely an error, ought to raise an exception
+                    log.info("WARNING: Too few corners")
 
                 # save as output values
-                ordered_xy.append(np.array(ordered_xyc, dtype=np.float64))
-                sky_corners.append(self.meta_wcs.all_pix2world(ordered_xyc, 0))
+                ordered_xy.append(xy_corners.astype(np.float64))
+                sky_corners.append(self.meta_wcs.all_pix2world(xy_corners, 0))
                 ordered_edges.append(edge_pixels)
         else:
             if member not in self.exp_masks:
@@ -1310,13 +1321,18 @@ def compute_edge(start, end, int_pixel=True):
 def trace_polygon(input_mask, mask_slice):
     """Convert mask with only edge pixels into a single contiguous polygon"""
 
-    # now extract the edges to trace
+    # takes the footprint and returns just the edges. 
+    # In this case we are using iterations=1, so shrinking the mask by 1 pixel
+    # We should then have 1s on the outside and 0s on the inside. We probably 
+    # don't need them to be ints, but could instead use bools with a simple
+    # modification of the code to use logical operations instead of subtraction.  
     slice_edges = input_mask.astype(np.int16) - \
                   ndimage.binary_erosion(input_mask).astype(np.int16)
 
     # trace edge from this region and identify corners of edge
     edge_pixels = _poly_trace(slice_edges)
     # shift the origin of the edge pixels to coincide with the slice from the full mask
+    # this relates to the line in find_corners: slices = ndimage.find_objects(sclabels)
     edge_pixels += (mask_slice[1].start, mask_slice[0].start)
 
     return edge_pixels
@@ -1326,11 +1342,16 @@ def _poly_trace(input_mask, box_size=3):
     # find a starting point on the mask
     # expand input array to include empty border pixels to account for extraction box
     border = (box_size // 2)
+    # here we add an additional border of zeros, which is probably unnecessary.
+    # It does, however, make the function more robust as a standalone function.
     mask = np.zeros((input_mask.shape[0] + (border * 2), input_mask.shape[1] + (border * 2)),
                     dtype=input_mask.dtype)
     mask[border:-border, border:-border] = input_mask.copy()
+    # we step over columns of mask array looking for our first lower left starting
+    # point, a nonzero value. 
     for x in range(mask.shape[1]):
         pts = np.where(mask[:, x] == 1)[0]
+        # once one is found, set it as xstart, and ystart
         if len(pts) > 0:
             ystart = pts[0]
             xstart = x
@@ -1338,27 +1359,41 @@ def _poly_trace(input_mask, box_size=3):
     # Now start tracing looking at a 3x3 set of pixels around that position
     polygon = [[xstart, ystart]]
     # Zero out already identified pixels on the polygon
+    # the code is effectively erasing the line behind it. 
     mask[ystart, xstart] = 0
     new_x = xstart
     new_y = ystart
     xstart = None
     ystart = None
     new_start = True
+    # this insures that we start looking for points in a downward direction
+    # searching counter clockwise. 
     slope = -1
     # determine how many pixels should be in polygon.
     num_pixels = mask.sum()
 
+    # we now iteratively look for pixels==1 in 3X3 boxes. 
+    # If none are found, then we enlarge the box to 5X5 (maybe there was a gap)
+    # If still no pixels, then we have reached the end. 
+    # Ideally we should perhaps iterate using bigger boxes.
+    # If multiple pixels==1 are found, the slope is used to pick the counter
+    # clockwise option.  
+    # We should also add a check to see if we ended up close to the same point
+    # as the xstart, ystart. We have seen errors in the past where the search
+    # stops very far away from xstart, ystart.
     while new_start or (num_pixels > 0):
         xstart = new_x
         ystart = new_y
         # Zero out already identified pixels on the polygon
         mask[ystart, xstart] = 0
-        box = get_box(mask, xstart, ystart)
+        size = 3
+        box = get_box(mask, xstart, ystart, size=size)
         pts = np.where(box == 1)
 
         if len(pts[0]) == 0:
             # try a larger box to see if we can jump this gap
-            box = get_box(mask, xstart, ystart, size=5)
+            size = 5
+            box = get_box(mask, xstart, ystart, size=size)
             pts = np.where(box == 1)
             if len(pts[0]) == 0:
                 # We are back where we started, so quit
@@ -1366,17 +1401,19 @@ def _poly_trace(input_mask, box_size=3):
 
         indx = 0
         if len(pts[0]) > 1:
+            # if two pixels found, picks the one that appears to continue in
+            # the counter-clockwise direction. 
             # Perform some disambiguation to look for
             # pixel which leads to the most pixels going on
             # start with pixels along the same slope that we have been going
             slope_indx = 0 if slope <= 0 else 1
-            slope_y = pts[0][slope_indx] + ystart - 1
-            slope_x = pts[1][slope_indx] + xstart - 1
+            slope_y = pts[0][slope_indx] + ystart - (size//2)
+            slope_x = pts[1][slope_indx] + xstart - (size//2)
             slope_sum = get_box(mask, slope_x, slope_y).sum()
             # Now get sum for the other pixel
             indx2 = 1 if slope < 0 else 0
-            y2 = pts[0][indx2] + ystart - 1
-            x2 = pts[1][indx2] + xstart - 1
+            y2 = pts[0][indx2] + ystart - (size//2)
+            x2 = pts[1][indx2] + xstart - (size//2)
             sum2 = get_box(mask, x2, y2).sum()
             # select point which leads to the largest sum,
             # but favor the previous slope if both directions are equal.
@@ -1385,18 +1422,25 @@ def _poly_trace(input_mask, box_size=3):
             else:
                 indx = indx2 if sum2 > slope_sum else slope_indx
 
-        new_y = pts[0][indx] + ystart - 1
-        new_x = pts[1][indx] + xstart - 1
-        polygon.append([new_x, new_y])
+        new_y = pts[0][indx] + ystart - (size//2)
+        new_x = pts[1][indx] + xstart - (size//2)
+        polygon.append([new_x, new_y]) # adds pixel to list of corners. 
         # reset for next pixel
         num_pixels -= 1
         new_start = False
-        slope = (new_y - ystart) / (new_x - xstart)
+
+        # this works but causes zero-divide warnings:
+        #     slope = (new_y - ystart) / (new_x - xstart)
+        # we only care about the sign of the slope
+        xsign = np.sign(new_x-xstart)
+        ysign = np.sign(new_y-ystart)
+        slope = (ysign if xsign >= 0 else -ysign)
 
     del mask
     # close the polygon
     polygon.append(polygon[0])
-    return np.array(polygon, dtype=np.int32)
+    # subtract the border offset
+    return np.array(polygon, dtype=np.int32) - border
 
 def perp(a):
     b = np.empty_like(a)
@@ -1420,14 +1464,19 @@ def seg_intersect(start, end):
 
 
 def get_box(arr, x, y, size=3):
-    """subarray extraction with limits checking """
+    """subarray extraction with limits checking
+
+    This always returns a (size,size) array with zero-padding off the edge
+    size must be odd
+    """
     amin = size // 2
     amax = amin + 1
-    ymin = y - amin if y >= 0 else 0
-    ymax = y + amax if y <= arr.shape[0] else arr.shape[0]
-    xmin = x - amin if x >= 0 else 0
-    xmax = x + amax if x <= arr.shape[1] else arr.shape[1]
-    box = arr[ymin: ymax, xmin: xmax]
+    ymin = max(y-amin, 0)
+    ymax = min(y+amax, arr.shape[0])
+    xmin = max(x-amin, 0)
+    xmax = min(x+amax, arr.shape[1])
+    box = np.zeros((size,size), dtype=arr.dtype)
+    box[ymin-y+amin:ymax-y+amin, xmin-x+amin:xmax-x+amin] = arr[ymin:ymax, xmin:xmax]
 
     return box
 

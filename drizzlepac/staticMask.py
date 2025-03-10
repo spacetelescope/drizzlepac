@@ -26,7 +26,7 @@ _step_num_ = 1
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-#this is called by the user
+# this is called by the user
 def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj=None, **inputDict):
     """ The user can input a list of images if they like to create static masks
         as well as optional values for static_sig and inputDict.
@@ -62,7 +62,7 @@ def run(configObj):
     createStaticMask(imageObjList,configObj)
 
 
-#this is the workhorse function called by MultiDrizzle
+# this is the workhorse function called by MultiDrizzle
 def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
     if procSteps is not None:
         procSteps.addStep('Static Mask')
@@ -166,7 +166,7 @@ class staticMask:
         if chips is None:
             chips = imagePtr.getExtensions()
 
-        #for chip in range(1,numchips+1,1):
+        # for chip in range(1,numchips+1,1):
         for chip in chips:
             chipid=imagePtr.scienceExt + ','+ str(chip)
             chipimage=imagePtr.getData(chipid)
@@ -185,8 +185,13 @@ class staticMask:
                         maskname  = self.masknames[s]
                         break
             imagePtr[chipid].outputNames['staticMask'] = maskname
-
-            stats = ImageStats(chipimage,nclip=3,fields='mode')
+            stats = ImageStats(
+                chipimage,
+                nclip=3,
+                fields="mode",
+                lower=np.nanmin(chipimage),
+                upper=np.nanmax(chipimage),
+            )
             mode = stats.mode
             rms  = stats.stddev
             nbins = len(stats.histogram)
@@ -258,10 +263,10 @@ class staticMask:
         virtual = imageObjectList[0].inmemory
 
         for key in self.masklist.keys():
-            #check to see if the file already exists on disk
+            # check to see if the file already exists on disk
             filename = self.masknames[key]
-            #create a new fits image with the mask array and a standard header
-            #open a new header and data unit
+            # create a new fits image with the mask array and a standard header
+            # open a new header and data unit
             newHDU = fits.PrimaryHDU()
             newHDU.data = self.masklist[key]
 

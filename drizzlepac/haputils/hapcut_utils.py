@@ -113,11 +113,6 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
     del acs_query_table
     del wfc3_query_table
 
-    # Catch the case where no files are found which satisfied the Query
-    if not query_table:
-        log.warning("Query for objects within {} of {} returned NO RESULTS!".format(radius, (str_ra, str_dec)))
-        return query_table
-
     # Compute the limits of the cutout region
     deg_cutout_size = cutout_size.to(u.deg)
     ra_min = sky_coord.ra.degree - deg_cutout_size.value[0]
@@ -126,6 +121,11 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
     dec_max = sky_coord.dec.degree + deg_cutout_size.value[1]
     str_ra = "{:.4f}".format(sky_coord.ra.degree)
     str_dec = "{:.4f}".format(sky_coord.dec.degree)
+
+    # Catch the case where no files are found which satisfied the Query
+    if not query_table:
+        log.warning("Query for objects within {} of {} returned NO RESULTS!".format(radius, (str_ra, str_dec)))
+        return query_table
 
     # Filter the output as necessary to include only MVM filenames (MVM prefix: hst_skycell).
     # Also, filter out images which are not actually in the requested cutout region as the

@@ -5,8 +5,7 @@
 [![codecov](https://codecov.io/gh/spacetelescope/drizzlepac/branch/master/graph/badge.svg)](https://codecov.io/gh/spacetelescope/drizzlepac)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3743274.svg)](https://doi.org/10.5281/zenodo.3743274)
 
-Nightly regression test results are available only from within the STScI network at this time.
-https://plwishmaster.stsci.edu:8081/job/RT/job/drizzlepac/
+Nightly regression test results are run using [github actions](https://github.com/spacetelescope/RegressionTests/actions/workflows/drizzlepac.yml).
 
 The use of this software on HST data is described at:
 

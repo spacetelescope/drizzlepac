@@ -199,7 +199,6 @@ class HAPProduct:
 
         exposure_filenames = []
         headerlet_filenames = {}
-        align_table = None
         crclean = []
 
         # If no catalog list has been provided, use the list defined in the configuration file
@@ -496,21 +495,17 @@ class HAPProduct:
                         headerlet_filenames=headerlet_filenames, fit_label=fit_label
                     )
                 else:
-                    log.warning("No satisfactory fit found for any catalog.")
+                    log.warning("No satisfactory fit found for any catalog. No correction to absolute astrometric frame applied.\n")
                     raise ValueError
 
         except Exception:
             # Report a problem with the alignment
             if fit_label.upper().strip() == "SVM":
                 log.warning(
-                    "EXCEPTION encountered in align_to_gaia for the FilteredProduct.\n"
-                )
+                    "EXCEPTION encountered in align_to_gaia for the FilterProduct. Proceeding with previous best solution.\n")
             else:
                 log.warning(
-                    "EXCEPTION encountered in align_to_gaia for the SkyCellProduct.\n"
-                )
-            log.warning("No correction to absolute astrometric frame applied.\n")
-            log.warning("Proceeding with previous best solution.\n")
+                    "EXCEPTION encountered in align_to_gaia for the SkyCellProduct. Proceeding with previous best solution.\n")
 
             # Only write out the traceback if in "debug" mode since not being able to
             # align the data to an absolute astrometric frame is not actually a failure.
@@ -632,6 +627,7 @@ class TotalProduct(HAPProduct):
 
         .. note:: Cosmic-ray identification is NOT performed when creating the total detection image.
         """
+
         # This insures that keywords related to the footprint are generated for this
         # specific object to use in updating the output drizzle product.
         self.meta_wcs = meta_wcs
@@ -657,7 +653,35 @@ class TotalProduct(HAPProduct):
             )
         )
 
-        edp_filenames = [element.full_filename for element in self.edp_list]
+        # Determine if there are any single exposure filter images which 
+        # should NOT be used in the computation of the total detection image in
+        # order to minimize cosmic ray contamination
+        #
+        # Loop over the exposure objects to collect the exposures for each filter
+        count_dict = {}
+        for expo in self.edp_list:
+            count_dict.setdefault(expo.filters, []).append(expo.full_filename)
+
+        # Accumulate the exposure file names for only the filters which have
+        # more than one exposure
+        exclude_string = []
+        edp_filenames = []
+        for key, value in count_dict.items():
+            if len(value) > 1:
+                edp_filenames += value
+            else:
+                exclude_string.append("Excluding single exposure filter image {} for {}.".format(value, key))
+
+        # However, if all the filters only have one exposure, just use all
+        # the exposures
+        if not edp_filenames:
+            for value in count_dict.values():
+                edp_filenames += value
+            log.info("All filters are single exposures, so all exposures are included.")
+        else:
+            for entry in exclude_string:
+                log.info(entry)
+
         astrodrizzle.AstroDrizzle(
             input=edp_filenames, output=self.drizzle_filename, **drizzle_pars
         )
@@ -803,7 +827,7 @@ class FilterProduct(HAPProduct):
         )
 
         edp_filenames = [element.full_filename for element in self.edp_list]
-
+    
         if len(edp_filenames) == 1:
             drizzle_pars["resetbits"] = "0"  # Use any pixels already flagged as CRs
 
@@ -1125,6 +1149,8 @@ class SkyCellExposure(HAPProduct):
 
         filter_str = layer[0]
 
+        self.svm_exposure_name = "_".join(filename.split("_")[:-1])
+
         # parse layer information into filename layer_str
         # layer: [filter_str, pscale_str, exptime_str, epoch_str]
         # e.g.: [f160w, coarse, all, all]
@@ -1153,6 +1179,7 @@ class SkyCellExposure(HAPProduct):
         hdu_list = fits.open(filename)
         self.mjdutc = hdu_list[0].header["EXPSTART"]
         self.exptime = hdu_list[0].header["EXPTIME"]
+        self.svm_gendate = hdu_list[0].header['DATE']
         hdu_list.close()
 
         self.product_basename = self.basename + "_".join(
