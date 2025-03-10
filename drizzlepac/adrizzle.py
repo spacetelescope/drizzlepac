@@ -612,8 +612,7 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
     # This buffer should be reused for each input if possible.
     #
     _outsci = _outwht = _outctx = _hdrlist = None
-    if (not single) or \
-       (single and (not run_parallel) and (not imageObjectList[0].inmemory)):
+    if (not single) or (single and (not run_parallel) and (not imageObjectList[0].inmemory)):
         # Note there are four cases/combinations for single drizzle alone here:
         # (not-inmem, serial), (not-inmem, parallel), (inmem, serial), (inmem, parallel)
         _outsci = np.empty(output_wcs.array_shape, dtype=np.float32)
