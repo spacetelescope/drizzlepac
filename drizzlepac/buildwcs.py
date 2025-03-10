@@ -11,10 +11,10 @@ from . import util
 import numpy as np
 from astropy.io import fits
 
-from stsci.tools import fileutil,teal
+from stsci.tools import fileutil
 from . import outputimage, wcs_functions, processInput,util
 import stwcs
-from stwcs import distortion, wcsutil
+from stwcs import wcsutil
 from stwcs.wcsutil import headerlet
 from . import __version__
 

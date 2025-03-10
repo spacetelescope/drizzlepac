@@ -14,7 +14,7 @@ from astropy.io import fits
 
 from stsci.imagestats import ImageStats
 from stsci.image import numcombine
-from stsci.tools import iterfile, teal, logutil
+from stsci.tools import iterfile, logutil
 
 from . import imageObject
 from . import util
