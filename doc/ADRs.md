@@ -42,21 +42,6 @@ The second column of a poller file is now reserved (for WFPC2) for passing the a
 
 Caution must be taken is using variations of the poller file while processing WFPC2 data.
 
-
-# Primary Drizzlepac Module run functions 02/29/24
-
-## Context
-
-The primary modules for drizzlepac have main functions named "run". This comes from the TEAL interface's need to identify modules. There are also a number of cases when the primary function of a module is unclear (e.g. ablot.py)
-
-## Decision
-
-The primary function in the drizzlepac modules will be renamed to 'main()'. Any user interface will be renamed to 'user_main()'. Exceptions are commonly used standalone tools like Tweakback, Tweakreg, and Astrodrizzle. 
-
-## Consequences
-
-Calls of just "main" may be confusing if the function is loaded from any module. Calls to "main" should be left in their associated namespaces e.g. createMedian.main() not main(). 
-=======
 # The Use of the TEAL Interface 11/14/23
 
 ## Context
