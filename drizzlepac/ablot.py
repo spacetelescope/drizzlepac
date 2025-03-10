@@ -11,7 +11,7 @@ cosmic-rays.
 import os
 import sys
 import numpy as np
-from stsci.tools import fileutil, teal, logutil
+from stsci.tools import fileutil, logutil
 from . import outputimage
 from . import wcs_functions
 from . import processInput
@@ -37,10 +37,6 @@ _blot_step_num_ = 5
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-#
-#### User level interface run from TEAL
-#
-
 def blot(data, reference, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
          editpars=False, **input_dict):
     if input_dict is None:
@@ -49,9 +45,7 @@ def blot(data, reference, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
     input_dict['reference'] = reference
     input_dict['outdata'] = outdata
 
-    # If called from interactive user-interface, configObj will not be
-    # defined yet, so get defaults using EPAR/TEAL.
-    #
+    # gets configObj defaults using EPAR/TEAL.
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
     configObj = util.getDefaultConfigObj(__taskname__, configObj,

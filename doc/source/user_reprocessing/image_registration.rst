@@ -10,9 +10,7 @@ for IRAF's ``tweakshifts``, currently named ``TweakReg``, along
 with tasks for updating the WCS in HST images and performing
 photometry equalization for WFPC2 data.
 
-These pages describe how to run the new ``TEAL``-enabled task,
-as well as use the classes in the task to generate catalogs interactively
-for any chip and work with that catalog. The current implementation of this
+The current implementation of this
 code relies on a very basic source finding algorithm loosely patterned
 after the DAOFIND algorithm and does not provide all the same features
 or outputs found in DAOFIND. The fitting algorithm also reproduces the

@@ -13,12 +13,12 @@ import os, sys
 
 import numpy as np
 
-from stsci.tools import fileutil, teal, logutil
+from stsci.tools import fileutil, logutil
 from stsci.tools.bitmask import interpret_bit_flags
 import stsci.imagestats as imagestats
 
 from stsci.skypac.skymatch import skymatch
-from stsci.skypac.utils import MultiFileLog, ResourceRefCount, ext2str, \
+from stsci.skypac.utils import MultiFileLog, ext2str, \
      file_name_components, in_memory_mask, temp_mask_file, openImageEx
 from stsci.skypac.parseat import FileExtMaskInfo, parse_at_file
 
@@ -104,7 +104,6 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         run(configObj,outExt=outExt)
 
 
-#this is the function that will be called from TEAL
 def run(configObj,outExt=None):
 
     #now we really just need the imageObject list created for the dataset
