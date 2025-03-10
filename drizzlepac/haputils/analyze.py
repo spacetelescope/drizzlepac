@@ -56,19 +56,21 @@ EXPKEY = 'EXPTIME'
 FGSKEY = 'FGSLOCK'
 CHINKEY = 'CHINJECT'
 DRIZKEY = 'DRIZCORR'
+TYPEKEY = 'IMAGETYP'
+QUALKEY = 'EXPFLAG'
 """
 
 WFPC2_KEYS = {'OBSKEY': 'IMAGETYP', 'MTKEY': 'MTFLAG', 'SCNKEY': '',
               'FILKEY1': 'FILTNAM1', 'FILKEY2': 'FILTNAM2', 'FILKEY': 'FILTNAM1',
               'APKEY': '', 'TARKEY': 'TARGNAME', 'EXPKEY': 'EXPTIME',
               'FGSKEY': 'FGSLOCK', 'CHINKEY': '', 'DRIZKEY': 'DRIZCORR',
-              'TYPEKEY': 'IMAGETYP'}
+              'TYPEKEY': 'IMAGETYP', 'QUALKEY': 'EXPFLAG'}
 
 DEFAULT_KEYS = {'OBSKEY': 'OBSTYPE', 'MTKEY':' MTFLAG', 'SCNKEY': 'SCAN_TYP',
                 'FILKEY1': 'FILTER1', 'FILKEY2': 'FILTER2', 'FILKEY': 'FILTER',
                 'APKEY': 'APERTURE', 'TARKEY': 'TARGNAME', 'EXPKEY': 'EXPTIME',
                 'FGSKEY': 'FGSLOCK', 'CHINKEY': 'CHINJECT', 'DRIZKEY': 'DRIZCORR',
-                'TYPEKEY': 'IMAGETYP'}
+                'TYPEKEY': 'IMAGETYP', 'QUALKEY': 'EXPFLAG'}
 HEADER_KEYS = {'WFPC2': WFPC2_KEYS, 'DEFAULT':DEFAULT_KEYS}
 
 CAL_TARGETS = {'WFPC2': ['INTFLAT', 'UVFLAT', 'VISFLAT', 'KSPOTS',
@@ -85,6 +87,7 @@ BAD_DQ_FLAGS = [256,  # full-well saturated pixel
 ]
 
 MIN_LINES = 4  # Minimum number of detected lines for consideration of bad guiding
+
 
 # Return codes
 class Ret_code(Enum):
@@ -150,9 +153,10 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     Parameters
     ==========
     input_file_list : list
-        List containing FLT and/or FLC filenames for all input images which comprise an associated
-        dataset where 'associated dataset' may be a single image, multiple images, an HST
-        association, or a number of HST associations
+        List containing FLT and/or FLC filenames for all "ipppssoot" input images which comprise
+        an associated dataset where 'associated dataset' may be a single image, multiple images,
+        an HST association, or a number of HST associations when SVM processing. SVM FLT and/or FLC
+        images may also be input for MVM processing.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
@@ -255,9 +259,10 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     Parameters
     ==========
     input_file_list : list
-        List containing FLT and/or FLC filenames for all input images which comprise an associated
-        dataset where 'associated dataset' may be a single image, multiple images, an HST
-        association, or a number of HST associations
+        List containing FLT and/or FLC filenames for all "ipppssoot" input images which comprise
+        an associated dataset where 'associated dataset' may be a single image, multiple images,
+        an HST association, or a number of HST associations when SVM processing. SVM FLT and/or FLC
+        images may also be input for MVM processing.
 
     log_level : int, optional
         The desired level of verboseness in the log statements displayed on the screen and written to the .log file.
@@ -284,21 +289,29 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
     The keyword/value pairs below define the "cannot process categories".
     OBSTYPE : is not IMAGING
     MTFLAG : T
-    SCAN-TYP : C or D (or !N)
+    SCAN-TYP : C or D (or !N) (WFC3 only)
     FILTER : G*, PR*,  where G=Grism and PR=Prism
     FILTER1 : G*, PR*, where G=Grism and PR=Prism
     FILTER2 : G*, PR*, where G=Grism and PR=Prism
-    TARGNAME : DARK, TUNGSTEN, BIAS, FLAT, EARTH-CALIB, DEUTERIUM
+    TARGNAME : DARK, TUNGSTEN, BIAS, FLAT, EARTH-CALIB, DEUTERIUM (ACS and WFC3)
+    TARGNAME : INTFLAT, UVFLAT, VISFLAT, KSPOTS, DARK, BIAS, EARTH-CALIB (WFPC2)
     EXPTIME : 0
     CHINJECT : is not NONE
     DRIZCORR : OMIT, SKIPPED
+    EXPFLAG : is not NORMAL
+
 
     The keyword/value pairs below define the category which the data can be processed, but
     the results may be compromised
     FGSLOCK : FINE/GYRO, FINE/GY, COARSE, GYROS
 
+    The keyword/value pairs below define the category which the data will be partially processed
+    so the Grism/Prism images acquire the same WCS as their corresponding direct images.
+    SVM processing only - FILTER or FILTER1 or FILTER2: G*, PR*
+
     FITS Keywords only for WFC3 data: SCAN_TYP, FILTER, and CHINJECT (UVIS)
     FITS Keywords only for ACS data: FILTER1 and FILTER2
+    FITS Keywords only for WFPC2 data: FILTNAM1 and FILTNAM2
 
     Please be aware of the FITS keyword value NONE vs the Python None.
     """
@@ -419,6 +432,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         exptime = header_data[hdr_keys['EXPKEY']]
         fgslock = (header_data[hdr_keys['FGSKEY']]).upper()
         imagetype = (header_data[hdr_keys['TYPEKEY']]).upper()
+        expflag = (header_data[hdr_keys['QUALKEY']]).upper()
 
         chinject = 'NONE'
         if instrume == 'WFC3' and detector == 'UVIS':
@@ -499,6 +513,11 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         elif chinject != 'NONE':
             no_proc_key = hdr_keys['CHINKEY']
             no_proc_value = chinject
+
+        # Exposure flag indicates a "issue" happened during an exposure
+        elif (expflag != 'NORMAL'):
+            no_proc_key = hdr_keys['QUALKEY']
+            no_proc_value = expflag
 
         # Ramp filter images should not be processed for MVM products.
         #
