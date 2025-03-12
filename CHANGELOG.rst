@@ -23,6 +23,11 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Added documentation for the alignment logic and the selection of the SVM
   reference image. [#1967]
   
+- Added a check on the EXPFLAG keyword to eliminate any images from being
+  processed as part of a mosaic if the value EXPFLAG is not equal to NORMAL.
+  Any value other than NORMAL indicates there was an issue during the exposure.
+  [#1968]
+  
 - Updated the Pyproject.toml file to force use of Photutils v2.0.0 or greater.
   This update is in support of the change addressed by #1950. [#1966]
 
