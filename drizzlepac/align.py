@@ -3,7 +3,6 @@
 """This script is a modernized implementation of tweakreg.
 
 """
-import copy
 import datetime
 import sys
 import glob

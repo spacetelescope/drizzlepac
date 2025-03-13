@@ -62,9 +62,6 @@ EXAMPLES
         >>> resetbits.reset_dq_bits("input_file_flt.fits", 2+32+64+4096, extver=2)
 
 """
-import os
-import numpy as np
-
 from stsci.tools import stpyfits as fits
 from stsci.tools import parseinput, logutil
 from stsci.tools.bitmask import interpret_bit_flags
@@ -149,9 +146,10 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
         # close the file with the updated DQ array(s)
         p.close()
 
-#
-#### Interfaces used by TEAL
-#
+#--------------------------------
+# TEAL Interface functions
+# (these functions are deprecated)
+#---------------------------------
 def run(configobj=None):
     """ Teal interface for running this code. """
     reset_dq_bits(configobj['input'],configobj['bits'],

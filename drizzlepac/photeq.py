@@ -21,18 +21,12 @@ import logging
 
 # THIRD PARTY
 import numpy as np
-from astropy.io import fits
 from . import __version__
 
 __all__ = ['photeq']
 __taskname__ = 'photeq'
 __author__ = 'Mihai Cara'
 
-
-try:
-    from stsci.tools import teal
-except ImportError:
-    teal = None
 
 # LOCAL
 from stsci.skypac import parseat, utils
@@ -591,9 +585,10 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
             _log.removeHandler(h)
 
 
-#--------------------------
+#--------------------------------
 # TEAL Interface functions
-#--------------------------
+# (these functions are deprecated)
+#---------------------------------
 def run(configObj):
     logfile = configObj['logfile'] if len(configObj['logfile'].strip()) > 0 \
         else None

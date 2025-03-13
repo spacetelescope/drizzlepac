@@ -6,7 +6,6 @@ A suite of functions for finding sources in images.
 :License: :doc:`/LICENSE`
 
 """
-import sys
 import math
 
 import numpy as np

@@ -9,11 +9,10 @@ Interfaces to main drizzle functions.
 import os
 import copy
 import time
-import platform
 from . import util
 import numpy as np
 from astropy.io import fits
-from stsci.tools import fileutil, logutil, mputil, teal
+from stsci.tools import fileutil, logutil, mputil
 from . import outputimage, wcs_functions
 import stwcs
 from stwcs import distortion
@@ -60,8 +59,7 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
     input_dict['input'] = input
     input_dict['outdata'] = outdata
 
-    # If called from interactive user-interface, configObj will not be
-    # defined yet, so get defaults using EPAR/TEAL.
+    # gets configObj defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.
@@ -617,8 +615,7 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
     # This buffer should be reused for each input if possible.
     #
     _outsci = _outwht = _outctx = _hdrlist = None
-    if (not single) or \
-       (single and (not run_parallel) and (not imageObjectList[0].inmemory)):
+    if (not single) or (single and (not run_parallel) and (not imageObjectList[0].inmemory)):
         # Note there are four cases/combinations for single drizzle alone here:
         # (not-inmem, serial), (not-inmem, parallel), (inmem, serial), (inmem, parallel)
         _outsci = np.empty(output_wcs.array_shape, dtype=np.float32)
