@@ -2080,7 +2080,7 @@ def main():
 
         except Exception as errorobj:
             super_logger.error(str(errorobj))
-            super_logger.error(f"ERROR: Cannot run astrodrizzle on {" ".join(sys.argv)}.")
+            super_logger.error(f"ERROR: Cannot run astrodrizzle on {' '.join(sys.argv)}.")
             raise Exception(str(errorobj))
 
         # This except handles sys.exit() which raises the SystemExit exception which inherits from BaseException.
