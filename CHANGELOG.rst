@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Added documentation for the alignment logic and the selection of the SVM
+  reference image. [#1967]
+
 - Deprecated the TEAL GUI; TEAL is still used for loading configuration 
   files. [#1975]
 
