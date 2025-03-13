@@ -92,10 +92,9 @@
                 output="xy_flt1.dat")
 
 """
-import os
 import numpy as np
 
-from stsci.tools import fileutil, teal
+from stsci.tools import fileutil
 from stwcs import wcsutil, distortion
 from . import wcs_functions
 from . import util
@@ -202,9 +201,10 @@ def tran(inimage, outimage, direction='forward', x=None, y=None,
     return outx, outy
 
 
-# --------------------------
+#--------------------------------
 # TEAL Interface functions
-# --------------------------
+# (these functions are deprecated)
+#---------------------------------
 def run(configObj):
     coordfile = util.check_blank(configObj['coordfile'])
     colnames = util.check_blank(configObj['colnames'])

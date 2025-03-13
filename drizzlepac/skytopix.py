@@ -70,14 +70,10 @@
                 colnames=['c3','c4'], output="xy_sci1.dat")
 
 """
-import os,copy
 import numpy as np
 
-from astropy.io import fits
-from stsci.tools import fileutil, teal
-from . import util,wcs_functions,tweakutils
-import stwcs
-from stwcs import distortion,wcsutil
+from . import util,tweakutils
+from stwcs import wcsutil
 from . import __version__
 
 __taskname__ = 'skytopix'
@@ -159,9 +155,10 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
     return outx, outy
 
 
-#--------------------------
+#--------------------------------
 # TEAL Interface functions
-#--------------------------
+# (these functions are deprecated)
+#---------------------------------
 def run(configObj):
 
     coordfile = util.check_blank(configObj['coordfile'])

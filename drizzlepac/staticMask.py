@@ -13,8 +13,7 @@ import os
 import sys
 
 import numpy as np
-from stsci.tools import fileutil, teal, logutil
-import astropy
+from stsci.tools import fileutil, logutil
 from astropy.io import fits
 from stsci.imagestats import ImageStats
 from . import util
@@ -53,7 +52,10 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj
     if not editpars:
         run(configObj)
 
-# this is called by the TEAL interface
+#--------------------------------
+# TEAL Interface functions
+# (these functions are deprecated)
+#---------------------------------
 def run(configObj):
 
     #now we really just need the imageObject list created for the dataset
