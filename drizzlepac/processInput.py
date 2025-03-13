@@ -18,7 +18,7 @@ Files can be in GEIS or MEF format (but not waiver fits).
 
 Runs some sanity checks on the input files.
 If necessary converts files to MEF format (this should not be left to ``makewcs``
-because ``updatewcs`` may be ``False``\ ).
+because ``updatewcs`` may be ``False``).
 Runs makewcs.
 The function ``process_input`` returns an association table, ivmlist, output name
 
@@ -181,10 +181,12 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
                                         configObj[step3name]['driz_sep_bits']
     )
     step4name = util.getSectionName(configObj,4)
-    if len(files) > 5 and 'minmed' in configObj[step4name]['combine_type']:
-        msg = '“minmed” is highly recommended for three images, \n'+\
-        ' and is good for four to six images, \n'+\
-        ' but should be avoided for ten or more images.\n'
+    if len(files) > 5 and "minmed" in configObj[step4name]["combine_type"]:
+        msg = (
+            """'minmed' is highly recommended for three images, \n
+            and is good for four to six images, \n
+            but should be avoided for ten or more images.\n"""
+        )
         print(textutil.textbox(msg))
 
     step7name = util.getSectionName(configObj,7)
@@ -195,20 +197,20 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
     # Verify any refimage parameters to be used
     step3aname = util.getSectionName(configObj,'3a')
     if not util.verifyRefimage(configObj[step3aname]['driz_sep_refimage']):
-        msg = 'No refimage with WCS found!\n '+\
-        ' This could be caused by one of 2 problems:\n'+\
-        '   * filename does not specify an extension with a valid WCS.\n'+\
-        '   * can not find the file.\n'+\
-        'Please check the filename specified in the "refimage" parameter.'
+        msg = """No refimage with WCS found!\n
+            This could be caused by one of 2 problems:\n
+               * filename does not specify an extension with a valid WCS.\n
+               * can not find the file.\n
+               Please check the filename specified in the "refimage" parameter."""
         print(textutil.textbox(msg))
         return None,None
     step7aname = util.getSectionName(configObj,'7a')
     if not util.verifyRefimage(configObj[step7aname]['final_refimage']):
-        msg = 'No refimage with WCS found!\n '+\
-        ' This could be caused by one of 2 problems:\n'+\
-        '   * filename does not specify an extension with a valid WCS.\n'+\
-        '   * can not find the file.\n'+\
-        'Please check the filename specified in the "refimage" parameter.'
+        msg = """No refimage with WCS found!\n 
+             This could be caused by one of 2 problems:\n
+               * filename does not specify an extension with a valid WCS.\n
+               * can not find the file.\n
+            Please check the filename specified in the 'refimage' parameter."""
         print(textutil.textbox(msg))
         return None,None
 
@@ -488,11 +490,10 @@ def processFilenames(input=None,output=None,infilesOnly=False):
         # Only perform duplication check if not already completed...
         dupcheck = asnhdr.get('DUPCHECK',default="PERFORM") == "PERFORM"
 
-        #filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
+        # filelist = [fileutil.buildRootname(fname) for fname in oldasndict['order']]
         filelist = buildASNList(oldasndict['order'],input,check_for_duplicates=dupcheck)
 
-    elif (not isinstance(input, list)) and \
-       (input[0] == '@') :
+    elif (not isinstance(input, list)) and (input[0] == "@"):
         # input is an @ file
         f = open(input[1:])
         # Read the first line in order to determine whether
@@ -511,7 +512,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
             else:
                 output = 'final'
     else:
-        #input is a string or a python list
+        # input is a string or a python list
         try:
             filelist, output = parseinput.parseinput(input, outputname=output)
             if output in ['',None,"None"]:
@@ -521,14 +522,13 @@ def processFilenames(input=None,output=None,infilesOnly=False):
                     output = 'final'
             if not isinstance(input, list):
                 filelist.sort()
-        except IOError: raise
+        except IOError:
+            raise
 
     # sort the list of input files
     # this ensures the list of input files has the same order on all platforms
     # it can have ifferent order because listdir() uses inode order, not unix type order
-    #filelist.sort()
-
-
+    # filelist.sort()
 
     return filelist, output, ivmlist, oldasndict
 
@@ -661,9 +661,9 @@ def buildFileList(input, output=None,
     Builds a file list which has undergone various instrument-specific
     checks for input to MultiDrizzle, including splitting STIS associations.
     """
-    newfilelist, ivmlist, output, oldasndict, filelist = \
-        buildFileListOrig(input=input, output=output,
-                    wcskey=wcskey, updatewcs=updatewcs, **workinplace)
+    newfilelist, ivmlist, output, oldasndict, filelist = buildFileListOrig(
+        input=input, output=output, wcskey=wcskey, updatewcs=updatewcs, **workinplace
+    )
     return newfilelist, ivmlist, output, oldasndict
 
 
@@ -937,8 +937,9 @@ def manageInputCopies(filelist, **workinplace):
                 printMsg = False # We only need to print this one time...
             copymade = True
 
-        if (workinplace['preserve'] and not os.path.exists(copyname)) \
-                and not workinplace['overwrite']:
+        if (
+            workinplace["preserve"] and not os.path.exists(copyname)
+        ) and not workinplace["overwrite"]:
             # Preserving a copy of the input, but only if not already archived
             print('Preserving original of: ',fname, 'as ',short_copyname)
             # make a copy of the file in the sub-directory
