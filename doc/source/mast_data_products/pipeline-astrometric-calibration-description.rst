@@ -702,7 +702,7 @@ considered compromised. These checks include:
 
 
   * **radial_offset_check**: Ensures that the image alignment source magnitudes 
-    and astrometric catalog magnitudes have a pearsons correlation coefficient 
+    and astrometric catalog magnitudes have a Pearsons correlation coefficient 
     of greater than 0.5.
 
 
@@ -716,7 +716,7 @@ considered compromised. These checks include:
 
 
   * **cross_match_check**: Ensures that if the number of cross matches is less 
-    than 100, it does a check to ensure a pearsons correlation coefficient of 
+    than 100, it does a check to ensure a Pearsons correlation coefficient of 
     greater than 0.5; this appears to duplicate the *radial_offset_check*.
 
 
