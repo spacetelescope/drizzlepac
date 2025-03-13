@@ -34,12 +34,11 @@ Functions to build mask files for PyDrizzle.
 #
 import os
 
-from stsci.tools import fileutil, readgeis
+from stsci.tools import fileutil
 from stsci.tools.bitmask import bitfield_to_boolean_mask
 
 from astropy.io import fits
 import numpy as np
-from scipy import ndimage
 
 from . import processInput, util
 
@@ -55,8 +54,7 @@ __taskname__ = 'buildmask'
 def run(configObj=None, input_dict={}, loadOnly=False):
     """ Build DQ masks from all input images, then apply static mask(s).
     """
-    # If called from interactive user-interface, configObj will not be
-    # defined yet, so get defaults using EPAR/TEAL.
+    # gets configObj defaults using EPAR/TEAL.
     #
     # Also insure that the input_dict (user-specified values) are folded in
     # with a fully populated configObj instance.

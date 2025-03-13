@@ -23,6 +23,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Added documentation for the alignment logic and the selection of the SVM
   reference image. [#1967]
 
+- Deprecated the TEAL GUI; TEAL is still used for loading configuration 
+  files. [#1975]
+
 - Fixed the crfactor designation for the WFPC2 detector (PC) which caused the
   the computation for rejecting catalog creation based on expected cosmic ray
   detections to fail ONLY for WFPC2.  Also, updated the WFPC2 cr_residual factor

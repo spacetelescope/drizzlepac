@@ -6,8 +6,6 @@ Class used to model ACS specific instrument data.
 :License: :doc:`/LICENSE`
 
 """
-from stsci.tools import fileutil
-import numpy as np
 from .imageObject import imageObject
 
 

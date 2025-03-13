@@ -3,9 +3,6 @@
     :License: :doc:`/LICENSE`
 
 """
-
-import os
-
 import numpy as np
 from astropy.io import fits
 
@@ -107,11 +104,10 @@ def replace(input, **pars):
         fimg.close()
 
 
-##############################
-#
-# TEAL Interfaces
-#
-##############################
+#--------------------------------
+# TEAL Interface functions
+# (these functions are deprecated)
+#---------------------------------
 def run(configobj):
 
     ext = util.check_blank(configobj['ext'])
