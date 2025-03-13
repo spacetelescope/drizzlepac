@@ -17,7 +17,7 @@ This process involves a number of steps, such as:
   *  Cleaning-up of temporary files (when applicable)
 
 A full description of this process can be found
-in the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_.
+in the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_\ .
 
 The primary output from this task is the distortion-corrected,
 cosmic-ray cleaned, and combined image as a FITS file.
@@ -144,9 +144,8 @@ def run(configobj, wcsmap=None, input_dict=None):
     # also, initialize timing of processing steps
     #
     # We need to define a default logfile name from the user's parameters
-    input_list, output, ivmlist, odict = processInput.processFilenames(
-        configobj["input"]
-    )
+    input_list, output, ivmlist, odict = \
+            processInput.processFilenames(configobj['input'])
 
     if output is not None:
         def_logname = output
