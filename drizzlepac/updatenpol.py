@@ -228,9 +228,10 @@ def find_npolfile(flist,detector,filters):
                 npolfile = f
     return npolfile
 
-#
-#### Interfaces used by TEAL
-#
+#--------------------------------
+# TEAL Interface functions
+# (these functions are deprecated)
+#---------------------------------
 def run(configobj=None,editpars=False):
     """ Teal interface for running this code.
     """

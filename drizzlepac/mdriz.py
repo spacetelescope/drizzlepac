@@ -8,10 +8,9 @@ Main program for running MultiDrizzle from the command line.
 
 """
 import getopt
-import sys, os
+import sys
 from drizzlepac.astrodrizzle import AstroDrizzle
 from drizzlepac import __version__
-from drizzlepac import util
 
 
 ruler = '-' * 80
@@ -34,13 +33,14 @@ def main() :
 
     # read options
     help = False
-    editpars = False
+    editpars = False # deprecated parameter left over from TEAL
     long_help = False
     for opt, value in optlist:
         if opt == '-h':
             help = True
         elif opt == '-g':
             editpars = True
+            raise ValueError('The -g option and TEAL GUI are no longer supported.')
         elif opt == '-?':
             long_help = True
 
@@ -50,7 +50,7 @@ def main() :
     if help:
         print('Syntax: mdriz.py -[h|g|?] [name=value,...]')
         print('  Options: -h: help')
-        print('           -g: edit parameters with TEAL')
+        print('           -g: deprecated parameter left over from TEAL')
         print('           -?: extended help message')
         print('  Parameters should be given as "name=value" pairs for all parameters')
         print('      understood by MultiDrizzle. These values will ALWAYS override')

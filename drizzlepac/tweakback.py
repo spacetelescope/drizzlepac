@@ -837,9 +837,10 @@ def update_chip_wcs(chip_wcs, drz_old_wcs, drz_new_wcs,
         chip_wcs.wcs.crder = np.array([xrms,yrms])
 
 
-#### TEAL Interfaces to run this task
-
-
+#--------------------------------
+# TEAL Interface functions
+# (these functions are deprecated)
+#---------------------------------
 def run(configobj):
     # Interpret user-input from TEAL GUI and call function
     tweakback(configobj['drzfile'], newname = configobj['newname'],

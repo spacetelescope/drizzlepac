@@ -7,15 +7,12 @@ import os, sys
 import copy
 
 import numpy as np
-import astropy
 from astropy import wcs as pywcs
 import astropy.coordinates as coords
 from astropy import units as u
 from stsci.tools import logutil, textutil
 from stsci.skypac.utils import basicFITScheck, get_extver_list
 
-import stwcs
-from stwcs import wcsutil
 from astropy.io import fits
 import stsci.imagestats as imagestats
 import stregion as pyregion
