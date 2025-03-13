@@ -981,7 +981,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
     drizlog_copy = drizlog.replace('.log', '_copy.log')
     if os.path.exists(drizlog):
         shutil.copy(drizlog, drizlog_copy)
-    _appendTrlFile(trlfile, drizlog_copy)
+
     # clean up log files
     if RM_LOGFILES and os.path.exists(drizlog):
         os.remove(drizlog)
@@ -1231,7 +1231,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             refname = os.path.abspath(os.path.join('..', prodname))
             align_ref = fits.getdata(refname, ext=1)
 
-            super_logger.info("Computing sim_indx for: {} ".format(os.path.join(tmpdir, prodname)))
+            super_logger.info(f"Computing sim_indx for: {os.path.join(tmpdir, prodname)}")
             sim_indx = amutils.compute_similarity(alignprod, align_ref)
             align_sim_fail = sim_indx > 1
 
@@ -1256,13 +1256,9 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             _ = [shutil.copy(f, parent_dir) for f in headerlet_files]
 
         super_logger.info('Verification of alignment completed ')
-
     finally:
         if tmpdir:
-            _appendTrlFile(os.path.join(parent_dir, trlfile), trlfile)
-            # Return to main processing dir
             os.chdir(parent_dir)
-
     return focus_dicts, full_table
 
 
@@ -1421,7 +1417,7 @@ def restore_pipeline_default(files):
                     del fhdu[('sci', sciext + 1)].header['hdrname']
 
 
-def reset_idctab_kw(files, files_flc, logfile=None):
+def reset_idctab_kw(files, files_flc):
     """Insure IDCTAB in files are the same as those in RAW files"""
 
     raw_files = [f.replace('_flt', '_raw') for f in files]
@@ -1438,12 +1434,7 @@ def reset_idctab_kw(files, files_flc, logfile=None):
         if flt_idctab == raw_idctab:
             # We don't need to update anything
             continue
-        newmsg = "Updating IDCTAB {} in {}\n".format(flt_idctab, flt)
-        if logfile:
-            # Write message out to temp file and append it to full trailer file
-            _updateTrlFile(logfile, newmsg)
-        else:
-            super_logger.info(f"Updating IDCTAB {flt_idctab} in {flt}")
+        super_logger.info(f"Updating IDCTAB {flt_idctab} in {flt}")
 
         # Get info from all hdrlet extensions in file
         wnames = headerlet.get_headerlet_kw_names(flt, 'wcsname')
