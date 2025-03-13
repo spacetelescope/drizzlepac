@@ -176,7 +176,7 @@ FILTER_NAMES = {'WFPC2': ['FILTNAM1', 'FILTNAM2'],
                 'ACS': ['FILTER1', 'FILTER2'],
                 'WFC3': ['FILTER']}
 
-__trlmarker__ = '*** Drizzlepac Processing Version ' + drizzlepac.__version__ + '***\n'
+__trlmarker__ = '*** Drizzlepac Processing Version ' + drizzlepac.__version__ + '***'
 
 envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
 envvar_dict = {'off': 'off', 'on': 'on', 'yes': 'on', 'no': 'off', 'true': 'on', 'false': 'off'}
@@ -570,6 +570,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
         # Integrate user-specified drizzle parameters into pipeline_pars
         super_logger.debug('Starting alignment with bad-pixel identification')
+        super_logger.debug(__trlmarker__)
 
         if align_with_apriori or force_alignment or align_to_gaia:
             # Generate initial default products and perform verification
@@ -582,6 +583,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
         if align_with_apriori:
             super_logger.debug('Starting alignment with a priori solutions')
+            super_logger.debug(__trlmarker__)
             if align_dicts is not None:
                 find_crs = not align_dicts[0]['alignment_verified']
             else:
@@ -666,6 +668,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         aposteriori_table=None
         if align_to_gaia:
             super_logger.debug("Starting a posteriori alignment")
+            super_logger.debug(__trlmarker__)
 
             #
             # Start by creating the 'default' product using a priori/pipeline WCS
@@ -712,6 +715,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         super_logger.debug(
             "Creating final combined,corrected product based on best alignment"
         )
+        super_logger.debug(__trlmarker__)
 
         # Generate final pipeline products based on 'best' alignment
         pipeline_pars['in_memory'] = inmemory
@@ -755,6 +759,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # and other reference images.
         # Start by building up the message...
         super_logger.debug("astrodrizzle skipped ")
+        super_logger.debug(__trlmarker__)
         super_logger.debug(f"{_getTime()}: astrodrizzle processing not requested for {inFile}.")
         super_logger.debug("       astrodrizzle will not be run at this time.")
 
@@ -922,6 +927,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
         # Create trailer marker message for start of astrodrizzle processing
         super_logger.debug('astrodrizzle started ')
         super_logger.info(f'{_getTime()}: Processing {infile} with astrodrizzle Version {pyver}')
+        super_logger.debug(__trlmarker__)
         
         try:
             drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
