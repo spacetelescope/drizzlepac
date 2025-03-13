@@ -685,13 +685,11 @@ These manifest as a series of checks done in the align.py function
 *determine_fit_quality()*. Checks must return True, otherwise the solution is 
 considered compromised. These checks include:
   
-  * **consistency_check** (pipeline processing only): Ensures that the 
+  * **consistency_check**: Ensures that the 
     combination of the standard deviation of the X and Y shifts is less than one 
     of two values, whichever is larger. The limit is either the value defined 
     in align_pars["determine_fit_quality"]["MAX_FIT_RMS"] (default is 20 pixels) 
     or the mean of the *fit_rms* values for all observations, whichever is larger. 
-    This check is disabled for SVM and MVM processing, as there can be large 
-    offsets between higher level products like filter level-products. 
 
 
   * **large_rms_check**: Ensures that both the *fit_rms* and the *max_rms* are less 
@@ -702,8 +700,7 @@ considered compromised. These checks include:
 
 
   * **radial_offset_check**: Ensures that the image alignment source magnitudes 
-    and astrometric catalog magnitudes have a Pearsons correlation coefficient 
-    of greater than 0.5.
+    and astrometric catalog magnitudes have a *fit_rms* greater than 0.5.
 
 
   * **nmatches_check**: Ensures that the number of matches between the image 
