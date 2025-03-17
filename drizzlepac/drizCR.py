@@ -13,7 +13,7 @@ import re
 import numpy as np
 from scipy import signal
 from astropy.io import fits
-from stsci.tools import fileutil, logutil, mputil, teal
+from stsci.tools import fileutil, logutil, mputil
 
 
 from . import quickDeriv
@@ -44,8 +44,10 @@ def drizCR(input=None, configObj=None, editpars=False, **inputDict):
     if not editpars:
         run(configObj)
 
-
-# this is the function that will be called from TEAL
+#--------------------------------
+# TEAL Interface functions
+# (these functions are deprecated)
+#---------------------------------
 def run(configObj):
     # outwcs is not neaded here
     imgObjList, outwcs = processInput.setCommonInput(configObj,

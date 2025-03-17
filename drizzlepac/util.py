@@ -709,8 +709,8 @@ def getDefaultConfigObj(taskname, configObj, input_dict={}, loadOnly=True):
             what gets loaded in from the .cfg file for the task
 
         loadOnly : bool
-            Setting 'loadOnly' to False causes the TEAL GUI to start allowing the
-            user to edit the values further and then run the task if desired.
+            Deprecated parameter left over from TEAL. The teal.load function is 
+            still used for loading configuration files. 
 
     """
     if configObj is None:
@@ -741,12 +741,6 @@ def getDefaultConfigObj(taskname, configObj, input_dict={}, loadOnly=True):
 
         # If everything looks good, merge user inputs with configObj and continue
         cfgpars.mergeConfigObj(configObj, input_dict)
-
-    if not loadOnly:
-    # We want to run the GUI AFTER merging in any parameters
-    # specified by the user on the command-line and provided in
-    # input_dict
-        configObj = teal.teal(configObj, loadOnly=False)
 
     return configObj
 
