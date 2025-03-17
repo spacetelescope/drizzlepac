@@ -230,19 +230,27 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     formatter = logging.Formatter('[%(levelname)-8s] %(message)s')
     file_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
-    file_handler.setLevel(logging.NOTSET)
-    stream_handler.setLevel(logging.NOTSET)
+    # file_handler.setLevel(logging.NOTSET)
+    # stream_handler.setLevel(logging.NOTSET)
+    # cannot switch trailer files unless you first remove previous handlers
+    for hdlr in super_logger.handlers[:]:
+        super_logger.removeHandler(hdlr)
     super_logger.addHandler(file_handler)
     super_logger.addHandler(stream_handler)
-    super_logger.setLevel(logging.NOTSET)
+    if debug:
+        super_logger.setLevel(logging.DEBUG)
+    else:
+        super_logger.setLevel(logging.INFO)
 
-    msg = (f"""Calibration pipeline processing of {inFile} started. 
+
+    msg = (f"""Calibration pipeline processing of {inFile} started.
+                 {__trlmarker__} 
                  drizzlepac version {drizzlepac.__version__}
                  tweakwcs version {tweakwcs.__version__}
                  stwcs version {stwcs.__version__}
                  numpy version {np.__version__}
                  photutils version {photutils.__version__}""")
-    super_logger.debug(msg)
+    super_logger.info(msg)
 
     init_time = time.time()
     pipeline_pars = PIPELINE_PARS.copy()
@@ -942,6 +950,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
 
         except Exception as errorobj:
             super_logger.error(f"ERROR: Could not complete astrodrizzle processing of {infile}.")
+            super_logger.error(str(errorobj))
             raise Exception(str(errorobj))
 
         # For singletons, there is no need to perform focus check since there is only 1 input exposure
