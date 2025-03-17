@@ -27,7 +27,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   values is ultimately used for further computation.  Removed the obsolete
   "bthresh" variable in instrument/detector "catalog" JSON files.  Updated
   the "bthresh" variable in only the ACS WFC "quality" JSON file to be "5.0",
-  matching the other detector files. [#nnnn]
+  matching the other detector files. [#1978]
 
 - Deprecated the TEAL GUI; TEAL is still used for loading configuration 
   files. [#1975]
