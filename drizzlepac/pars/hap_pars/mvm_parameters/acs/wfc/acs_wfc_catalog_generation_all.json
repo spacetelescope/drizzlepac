@@ -25,8 +25,7 @@
         "bkgsig_sf": 4.0,
         "kernel_sd_aspect_ratio": 0.8,
         "TWEAK_FWHMPSF": 0.076,
-        "TWEAK_THRESHOLD": null,
-        "bthresh": 1.5
+        "TWEAK_THRESHOLD": null
     },
     "sourcex": {
         "fwhm": 0.13,
