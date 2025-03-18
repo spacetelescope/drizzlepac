@@ -18,12 +18,15 @@ Anomalous sources fall into several categories:
 ========== ============
 Flag Value Flag Meaning
 ---------- ------------
-0          Stellar Source
-1          Extended Source (Concentration Index > CI Upper Limit)
-4          Saturated Source
-16         Concentration Index < CI Lower Limit (i.e. Hot Pixels)
-32         Swarm Detection
-64         Nexp filtered detections, i.e. edge detections
+0          Stellar Source (CI_Lower_Limit < Concetration Index < CI_Upper_Limit)
+1          Extended Source (Concentration Index > CI_Upper_Limit)
+2          Questionable Photometry (Single-Pixel Saturation)
+4          Questionable Photometry (Multi-Pixel Saturation)
+8          Faint Detection Limit
+16         Concentration Index < CI_Lower_Limit (i.e., Hot Pixels)
+32         False Detection Swarm Around Saturated Source
+64         Nexp filtered detections (i.e., False Detections near image edge)
+128        Bleeding and Cosmic Rays
 ========== ============
 
 Where the concentration index (CI) = mag1 - mag2

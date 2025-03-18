@@ -23,6 +23,15 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Added documentation for the alignment logic and the selection of the SVM
   reference image. [#1967]
 
+- Implemented an additional RMS determination for the background based
+  upon the Median Absolute Deviation (MAD) algorithm. The MAD algorithm
+  is now one of three ways the RMS is computed under the umbrella of
+  computing the background of the input image.  The largest of the RMS
+  values is ultimately used for further computation.  Removed the obsolete
+  "bthresh" variable in instrument/detector "catalog" JSON files.  Updated
+  the "bthresh" variable in only the ACS WFC "quality" JSON file to be "5.0",
+  matching the other detector files. [#1978]
+
 - Deprecated the TEAL GUI; TEAL is still used for loading configuration 
   files. [#1975]
 
