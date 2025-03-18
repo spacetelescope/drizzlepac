@@ -225,23 +225,24 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     _calfiles_flc = []
 
     # logging
+    # cannot switch trailer files unless you first remove previous handlers
+    for hdlr in super_logger.handlers: # removes stream to other trailer files. 
+        if hdlr.__class__.__name__ == 'FileHandler':
+            super_logger.removeHandler(hdlr)
+            
     file_handler = logging.FileHandler(f'{_trlfile}')
     stream_handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter('[%(levelname)-8s] %(message)s')
+    file_handler.setLevel(logging.NOTSET)
+    if debug:
+        stream_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('[%(levelname)s:%(name)s] %(message)s')
+    else:
+        stream_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('[%(levelname)-8s] %(message)s')
     file_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
-    # file_handler.setLevel(logging.NOTSET)
-    # stream_handler.setLevel(logging.NOTSET)
-    # cannot switch trailer files unless you first remove previous handlers
-    for hdlr in super_logger.handlers[:]:
-        super_logger.removeHandler(hdlr)
     super_logger.addHandler(file_handler)
     super_logger.addHandler(stream_handler)
-    if debug:
-        super_logger.setLevel(logging.DEBUG)
-    else:
-        super_logger.setLevel(logging.INFO)
-
 
     msg = (f"""Calibration pipeline processing of {inFile} started.
                  {__trlmarker__} 
@@ -545,7 +546,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     - copy updated input exposures to parent directory
             5. Remove all processing sub-directories
         """
-        inst_mode = "{}/{}".format(infile_inst, infile_det)
+        inst_mode = f"{infile_inst}/{infile_det}"
         _good_images = [f for f in _calfiles if fits.getval(f, 'exptime') > 0.]
         _good_images = [f for f in _good_images if fits.getval(f, goodpix_name, ext=("SCI", 1)) > 0.]
         if len(_good_images) == 0:
@@ -615,7 +616,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     super_logger.warning(f'WARNING: WCS reference pixel is {sep.value:.2f} degrees '+
                                    'from target position. The astrometry database solution is suspect!')
 
-            super_logger.debug("Adding apriori WCS solutions to {_calfiles}")
+            super_logger.debug(f"Adding apriori WCS solutions to {_calfiles}")
             super_logger.debug(verify_gaia_wcsnames(_calfiles))
             _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in _calfiles]
             super_logger.debug("Verifying apriori WCSNAMEs:")
@@ -813,7 +814,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 try:
                     wcsname = fits.getval(fname, 'wcsname', ext=1)
                     wcstype = updatehdr.interpret_wcsname_type(wcsname)
-                    hdrname = "{}_hlet.fits".format(fname.replace('.fits', ''))
+                    hdrname = f"{fname.replace('.fits', '')}_hlet.fits"
                     headerlet.write_headerlet(fname, hdrname, output='flt',
                                               wcskey='PRIMARY',
                                               author="OPUS",
@@ -971,12 +972,12 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
                 drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
                                                      **pipeline_pars)
 
-            instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
+            instr_det = f"{fits.getval(sfile, 'instrume')}/{fits.getval(sfile, 'detector')}"
             focus_sigma = focus_pars[instr_det]['sigma']
-            super_logger.info("Measuring similarity and focus for: \n{} \n    {}".format(single_files, drz_product))
+            super_logger.info(f"Measuring similarity and focus for: \n{single_files} \n    {drz_product}")
             focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
             if debug:
-                json_name = drz_product.replace('.fits', '_{}_focus.json'.format(mode))
+                json_name = drz_product.replace('.fits', f'_{mode}_focus.json')
                 with open(json_name, mode='w') as json_file:
                     json.dump(focus_dicts, json_file)
 
@@ -1047,7 +1048,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             tmpmode = mode
             break
     if tmpmode is None:
-        super_logger.error("Invalid alignment mode {} requested.".format(tmpdir))
+        super_logger.error(f"Invalid alignment mode {tmpdir} requested.")
         raise ValueError
 
     full_table = None
@@ -1146,7 +1147,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 if 'aposteriori' not in repr(err):
                     traceback.print_exc()
                 else:
-                    super_logger.warning("WARNING: {}".format(err))
+                    super_logger.warning(f"WARNING: {err}")
                 return None, None
 
             # Check to see whether there are any additional input files that need to
@@ -1529,7 +1530,7 @@ def update_wcs_in_list(exp_list, logfile=None):
     if len(primary_wcs_set) == 0:
         # Simply rely on WCS solutions already in the headers
         super_logger.info(f"NO Common WCS solutions for images: {final_wcs_set}")
-        super_logger.info(" for the latest calibration IDCTAB: {primary_idctabs}")
+        super_logger.info(f" for the latest calibration IDCTAB: {primary_idctabs}")
     final_wcs_set = set(primary_wcs_set)
 
     # There is a preference for the active WCS for the viable images in the visit
@@ -1811,7 +1812,7 @@ def confirm_aposteriori_hdrlets(filename, logfile=None):
             # also remove this solution from SCI headers
             if extn['key']:
                 wcsutil.altwcs.deleteWCS(filename, extname_list, wcskey=extn['key'])
-            super_logger.debug("Delete duplicate headerlet extension {extn} in filename {filename}.")
+            super_logger.debug(f"Delete duplicate headerlet extension {extn} in filename {filename}.")
 
 
 def _update_wcs_fit_keywords(fltfile, flcfile):
