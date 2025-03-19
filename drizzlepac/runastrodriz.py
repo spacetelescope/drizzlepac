@@ -589,8 +589,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                                                         force_alignment=force_alignment,
                                                         find_crs=True, **adriz_pars)
         if align_with_apriori:
-            super_logger.debug('Starting alignment with a priori solutions')
-            super_logger.debug(__trlmarker__)
+            super_logger.info('Starting alignment with a priori solutions')
+            super_logger.info(__trlmarker__)
             if align_dicts is not None:
                 find_crs = not align_dicts[0]['alignment_verified']
             else:
