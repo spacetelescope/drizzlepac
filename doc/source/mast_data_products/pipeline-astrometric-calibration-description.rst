@@ -699,9 +699,12 @@ considered compromised. These checks include:
     exposures in the association.
 
 
-  * **radial_offset_check**: Ensures that the image alignment source magnitudes 
-    and astrometric catalog magnitudes have a *fit_rms* greater than 0.5.
-
+  * **radial_offset_check**: Ensures that the radial offset between the 
+    image alignment sources and astrometric catalog sources is reasonable. The 
+    radial offset is computed as the square root of shifts in the tangent plane
+    squared; these shifts are calculated in tweakwcs. This radial offset 
+    (in arcseconds) divided by 10 and raised to the 8th power (+ 0.8), must be 
+    more than the number of cross matches (+ 2) times 0.36 (see align.py).
 
   * **nmatches_check**: Ensures that the number of matches between the image 
     alignment sources and the astrometric catalog is greater than the value 
@@ -709,12 +712,12 @@ considered compromised. These checks include:
     (e.g. acs_hrc_alignment_all.json). The required number of cross matchs 
     (nmatches) are those next to each geometry in the mosaic_fitgeom_list and 
     mosaic_relgeom_list parameters. Alternatively, the check passes so long as 
-    the number of cross matches is at least 2, and the *fit_rms* is less than 0.5. 
+    the number of cross matches is at least 2, and the *fit_rms* is greater than 0.5. 
 
 
   * **cross_match_check**: Ensures that if the number of cross matches is less 
     than 100, it does a check to ensure a Pearsons correlation coefficient of 
-    greater than 0.5; this appears to duplicate the *radial_offset_check*.
+    greater than 0.5.
 
 
 Creation of Final Aligned Products

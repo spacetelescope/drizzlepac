@@ -421,8 +421,10 @@ processing is to refine this alignment so that all exposures in the visit for
 the same detector (those exposures which contribute to each **total product**)
 share the same WCS (pixels on the sky).
 
-Alignment of all the exposures for a **total product** uses the same alignment
-code as the standard calibration pipeline.  The basic steps it follows is:
+Alignment of all the exposures for a **total product** uses some of the same 
+low-level alignment code as the standard calibration pipeline, the command 
+sequencing and specific process is done by the align_to_gaia() method in the 
+HAPProduct base class in the product.py module. The basic steps it follows is:
 
   * generate a source catalog for each exposure (using :ref:`amutils_api`)
   * obtain the WCS from each exposure
