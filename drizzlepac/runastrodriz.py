@@ -231,7 +231,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             super_logger.removeHandler(hdlr)
     file_handler = logging.FileHandler(f'{_trlfile}')
     stream_handler = logging.StreamHandler(sys.stdout)
-    file_handler.setLevel(logging.NOTSET)
+    file_handler.setLevel(logging.DEBUG)
     if debug:
         stream_handler.setLevel(logging.DEBUG)
         formatter = logging.Formatter('[%(levelname)s:%(name)s] %(message)s')
@@ -588,7 +588,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                                                         tmpdir=None, debug=debug,
                                                         force_alignment=force_alignment,
                                                         find_crs=True, **adriz_pars)
-
         if align_with_apriori:
             super_logger.debug('Starting alignment with a priori solutions')
             super_logger.debug(__trlmarker__)
@@ -600,7 +599,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # run updatewcs with use_db=True to insure all products have
             # have a priori solutions as extensions
             # FIX: This should probably only be done in the apriori sub-directory!
-            updatewcs.updatewcs(_calfiles)
+            updatewcs.updatewcs(_calfiles, verbose=True)
             for _file in _calfiles:
                 confirm_aposteriori_hdrlets(_file)
 
@@ -615,19 +614,19 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     super_logger.warning(f'WARNING: WCS reference pixel is {sep.value:.2f} degrees '+
                                    'from target position. The astrometry database solution is suspect!')
 
-            super_logger.debug(f"Adding apriori WCS solutions to {_calfiles}")
-            super_logger.debug(verify_gaia_wcsnames(_calfiles))
+            super_logger.info(f"Adding apriori WCS solutions to {_calfiles}")
+            super_logger.info(verify_gaia_wcsnames(_calfiles))
             _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in _calfiles]
-            super_logger.debug("Verifying apriori WCSNAMEs:")
+            super_logger.info("Verifying apriori WCSNAMEs:")
             for (_cname, _wname) in _wnames_calfiles:
-                super_logger.debug(f"   {_cname}: {_wname}")
+                super_logger.info(f"   {_cname}: {_wname}")
             if _calfiles_flc:
-                super_logger.debug(f"Adding apriori WCS solutions to {_calfiles_flc}")
+                super_logger.info(f"Adding apriori WCS solutions to {_calfiles_flc}")
                 updatewcs.updatewcs(_calfiles_flc)
                 for _file in _calfiles_flc:
                     confirm_aposteriori_hdrlets(_file)
 
-                super_logger.debug(verify_gaia_wcsnames(_calfiles_flc))
+                super_logger.info(verify_gaia_wcsnames(_calfiles_flc))
 
             try:
                 tmpname = "_".join([_trlroot, 'apriori'])
@@ -646,10 +645,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 # Reset to state prior to applying a priori solutions
                 traceback.print_exc()
                 align_apriori = None
-                super_logger.debug("ERROR in applying a priori solution.")
-
+                super_logger.info("ERROR in applying a priori solution.")
             if align_apriori is None or (not align_apriori[0]['alignment_verified']):
-                super_logger.debug("Resetting WCS to pipeline-default solutions...")
+                super_logger.info("Resetting WCS to pipeline-default solutions...")
                 # This operation replaces the PRIMARY WCS with one from the attached
                 # headerlet extensions that corresponds to the distortion-model
                 # solution created in the first place with 'updatewcs(use_db=False)'
@@ -664,19 +662,19 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             else:
                 align_dicts = align_apriori
                 if align_dicts[0]["alignment_quality"] == 0:
-                    super_logger.debug("A priori alignment SUCCESSFUL.")
+                    super_logger.info("A priori alignment SUCCESSFUL.")
                 if align_dicts[0]["alignment_quality"] == 1:
-                    super_logger.debug("A priori alignment potentially compromised.")
-                    super_logger.debug("Please review final product!")
+                    super_logger.info("A priori alignment potentially compromised.")
+                    super_logger.info("Please review final product!")
                 if align_dicts[0]["alignment_quality"] > 1:
-                    super_logger.debug(
+                    super_logger.info(
                         "A priori alignment FAILED! No a priori astrometry correction applied."
                     )
 
         aposteriori_table=None
         if align_to_gaia:
-            super_logger.debug("Starting a posteriori alignment")
-            super_logger.debug(__trlmarker__)
+            super_logger.info("Starting a posteriori alignment")
+            super_logger.info(__trlmarker__)
 
             #
             # Start by creating the 'default' product using a priori/pipeline WCS
@@ -704,26 +702,26 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 align_dicts = align_aposteriori
                 align_qual = align_dicts[0]["alignment_quality"]
                 if align_qual == 0:
-                    super_logger.debug("A posteriori alignment SUCCESSFUL.")
+                    super_logger.info("A posteriori alignment SUCCESSFUL.")
                 elif align_qual == 1:
-                    super_logger.debug(
+                    super_logger.info(
                         "A posteriori alignment potentially COMPROMISED with bad focus."
                     )
-                    super_logger.debug("  Please review final product for alignment!")
+                    super_logger.info("  Please review final product for alignment!")
                 elif align_dicts[0]["alignment_quality"] == 2:
-                    super_logger.debug(
+                    super_logger.info(
                         "A posteriori alignment potentially COMPROMISED."
                     )
-                    super_logger.debug("Please review final product!")
+                    super_logger.info("Please review final product!")
                 else:
-                    super_logger.debug(
+                    super_logger.info(
                         "A posteriori alignment FAILED! No a posteriori astrometry correction applied."
                     )
 
-        super_logger.debug(
+        super_logger.info(
             "Creating final combined,corrected product based on best alignment"
         )
-        super_logger.debug(__trlmarker__)
+        super_logger.info(__trlmarker__)
 
         # Generate final pipeline products based on 'best' alignment
         pipeline_pars['in_memory'] = inmemory
@@ -766,10 +764,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # run on a file.  This will typically apply only to BIAS,DARK
         # and other reference images.
         # Start by building up the message...
-        super_logger.debug("astrodrizzle skipped ")
-        super_logger.debug(__trlmarker__)
-        super_logger.debug(f"{_getTime()}: astrodrizzle processing not requested for {inFile}.")
-        super_logger.debug("       astrodrizzle will not be run at this time.")
+        super_logger.info("astrodrizzle skipped ")
+        super_logger.info(__trlmarker__)
+        super_logger.info(f"{_getTime()}: astrodrizzle processing not requested for {inFile}.")
+        super_logger.info("       astrodrizzle will not be run at this time.")
 
     # If we created a new ASN table, we need to remove it
     if _new_asn is not None:
@@ -801,15 +799,15 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # do NOT write out this version of the headerlets
     if headerlets:
         # Generate headerlets for each updated FLT image
-        super_logger.debug("Writing Headerlets started")
+        super_logger.info("Writing Headerlets started")
         for fname in _calfiles:
-            super_logger.debug(f"Creating new headerlet from {fname}")
+            super_logger.info(f"Creating new headerlet from {fname}")
             frootname = fileutil.buildNewRootname(fname)
             hname = f"{frootname}_flt_hlet.fits"
             # Write out headerlet file used by astrodrizzle, however,
             # do not overwrite any that was already written out by align
             if not os.path.exists(hname):
-                super_logger.debug(f"Created Headerlet file {hname} ")
+                super_logger.info(f"Created Headerlet file {hname} ")
                 try:
                     wcsname = fits.getval(fname, 'wcsname', ext=1)
                     wcstype = updatehdr.interpret_wcsname_type(wcsname)
@@ -824,10 +822,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     # Keep track of headerlet files written out to disk
                     manifest_list.append(hdrname)
                 except ValueError:
-                    super_logger.debug(f"SKIPPED: Headerlet not created for {fname}")
+                    super_logger.info(f"SKIPPED: Headerlet not created for {fname}")
                     # update trailer file to log creation of headerlet files
 
-        super_logger.debug("Writing Headerlets completed")
+        super_logger.info("Writing Headerlets completed")
 
     # Keep track of headerlet files written out to disk.
     # Those headerlets would have been written out by 'updatewcs.updatewcs()'
@@ -897,7 +895,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     end_time = _getTime()
     _delta_time = time.time() - init_time
     super_logger.info(f"{end_time}: Finished processing {inFilename} in {_delta_time:.2f} seconds \n")
-    super_logger.debug("astrodrizzle completed")
+    super_logger.info("astrodrizzle completed")
 
     # Look to see whether we have products which can be evaluated
     # wcsname = fits.getval(drz_products[0], 'wcsname', ext=1)
@@ -1108,14 +1106,13 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
             instdet_pars = align.get_default_pars(inst, det)
 
-            alignlog = trlfile.replace('.tra', '_align.log')
-            alignlog_copy = alignlog.replace('_align', '_align_copy')
+            # alignlog = trlfile.replace('.tra', '_align.log')
             try:
 
                 full_table = align.perform_align(alignfiles,
                                                  catalog_list=instdet_pars['run_align']['catalog_list'],
                                                  num_sources=instdet_pars['general']['MAX_SOURCES_PER_CHIP'],
-                                                 update_hdr_wcs=True, runfile=alignlog,
+                                                 update_hdr_wcs=True, runfile=trlfile,
                                                  clobber=False, output=debug,
                                                  debug=debug, sat_flags=sat_flags)
                 if full_table is None:
@@ -2035,7 +2032,7 @@ def main():
     num_cores = None
     headerlets = True
     align_to_gaia = True
-    debug = False
+    debug = True
     force_alignment = False
     do_verify_guiding = False
     make_manifest = False
