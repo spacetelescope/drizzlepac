@@ -704,7 +704,7 @@ considered compromised. These checks include:
     radial offset is computed as the square root of shifts in the tangent plane
     squared; these shifts are calculated in tweakwcs. This radial offset 
     (in arcseconds) divided by 10 and raised to the 8th power (+ 0.8), must be 
-    more than the number of cross matches (+ 2) times 0.36 (see align.py).
+    less than the number of cross matches (+ 2) times 0.36 (see align.py).
 
   * **nmatches_check**: Ensures that the number of matches between the image 
     alignment sources and the astrometric catalog is greater than the value 
@@ -717,7 +717,8 @@ considered compromised. These checks include:
 
   * **cross_match_check**: Ensures that if the number of cross matches is less 
     than 100, it does a check to ensure a Pearsons correlation coefficient of 
-    greater than 0.5.
+    greater than 0.5 is achieved between the magnitudes of the image sources 
+    and the catalog sources.
 
 
 Creation of Final Aligned Products
