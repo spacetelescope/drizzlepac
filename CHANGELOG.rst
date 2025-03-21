@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.9.2 (unreleased)
 ==================
 
+- Added documentation for the alignment logic and the selection of the SVM
+  reference image. [#1967]
+
 - Implemented an additional RMS determination for the background based
   upon the Median Absolute Deviation (MAD) algorithm. The MAD algorithm
   is now one of three ways the RMS is computed under the umbrella of
