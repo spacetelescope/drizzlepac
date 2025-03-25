@@ -17,8 +17,13 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.9.2 (unreleased)
-==================
+3.10.0 (24-Mar-2025)
+====================
+
+- Dropped support for python 3.10 due to conflict with photutils. [1987]
+
+- Added documentation for the alignment logic and the selection of the SVM
+  reference image. [#1967]
 
 - Implemented an additional RMS determination for the background based
   upon the Median Absolute Deviation (MAD) algorithm. The MAD algorithm
