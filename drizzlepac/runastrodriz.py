@@ -133,7 +133,7 @@ from drizzlepac import photeq
 __taskname__ = "runastrodriz"
 
 # logging
-super_logger = logging.getLogger()
+super_logger = logging.getLogger("drizzlepac")
 
 # Local variables
 
@@ -229,15 +229,18 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     for hdlr in super_logger.handlers: # removes stream to other trailer files. 
         if hdlr.__class__.__name__ == 'FileHandler':
             super_logger.removeHandler(hdlr)
-    file_handler = logging.FileHandler(f'{_trlfile}')
-    stream_handler = logging.StreamHandler(sys.stdout)
-    file_handler.setLevel(logging.DEBUG)
     if debug:
-        stream_handler.setLevel(logging.DEBUG)
+        default_log_level = logging.DEBUG
         formatter = logging.Formatter('[%(levelname)s:%(name)s] %(message)s')
     else:
-        stream_handler.setLevel(logging.INFO)
+        default_log_level = logging.INFO
         formatter = logging.Formatter('[%(levelname)-8s] %(message)s')
+    
+    file_handler = logging.FileHandler(f'{_trlfile}')
+    stream_handler = logging.StreamHandler(sys.stdout)
+    
+    file_handler.setLevel(default_log_level)
+    stream_handler.setLevel(default_log_level)
     file_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
     super_logger.addHandler(file_handler)
