@@ -360,6 +360,9 @@ Finally, convert STmag to ABmag:
 where
     * :math:`{photplam}` is the bandpass pivot wavelength, in Angstroms
 
+Some additional citations for the magnitude systems are the following: `ACS Data Handbook <https://hst-docs.stsci.edu/acsdhb/chapter-5-acs-data-analysis/5-1-photometry>`_, analysis of the
+relationship between *photflam*, *photzpt*, and *photplam* to the *STmag* and *ABmag* zeropoints (`Bohlin et al. 2011 <https://ui.adsabs.harvard.edu/abs/2011AJ....141..173B/abstract>`_), discussion of *STmag* (`Koornneef, J. et al. 1986 <https://ui.adsabs.harvard.edu/abs/1986HiA.....7..833K/abstract>`_), and a discussion of *ABmag* (`Oke, J.B. 1964 <https://ui.adsabs.harvard.edu/abs/1964ApJ...140..689O/abstract>`_).
+
 2.2.3: Aperture Corrections
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 HAP (and HSC) photometry is measured in small apertures in order to reduce errors due to source crowding or 
@@ -397,7 +400,6 @@ are available the WFC3 website and described in
 `WFC3 ISR 2021-04 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2021/WFC3_ISR_2021-04.pdf>`_, and the 
 `WFC3/IR EE tables <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/ir-encircled-energy>`_ are described in 
 `WFC3 ISR 2009-37 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2009/WFC3-2009-37.pdf>`_.
-
 
 2.2.4: Hubble Source Catalog
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -462,7 +464,7 @@ where
 
 We use the concentration index to classify automatically each identified photometric source as either a point source
 (i.e. stars), an extended source (i.e. galaxies, nebulosity, etc.), or as an “anomalous” source (i.e. saturation,
-hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column
+hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column.
 
 .. _flag_generation:
 
