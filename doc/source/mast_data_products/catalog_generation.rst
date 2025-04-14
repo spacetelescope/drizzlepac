@@ -27,8 +27,7 @@ aperture**.  For details, see Section 2.2.3 "Aperture Corrections".
      <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/uvis-encircled-energy>`_ and 
      `WFC3/IR EE tables <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/ir-encircled-energy>`_ are also available for download.
    * For ACS, see `Section 5.1.2 "Aperture and Color Corrections" 
-     <https://hst-docs.stsci.edu/acsdhb/chapter-5-acs-data-analysis/5-1-photometry#id-5.1Photometry-5.1.25.1.2ApertureandColorCorrections>`_ in the `ACS Data Handbook <https://hst-docs.stsci.edu/acsdhb>`_ 
-     (Lucas & Ryan et al. 2022). 
+     <https://hst-docs.stsci.edu/acsdhb/chapter-5-acs-data-analysis/5-1-photometry#id-5.1Photometry-5.1.25.1.2ApertureandColorCorrections>`_ in the ACS Data Handbook (Lucas & Ryan et al. 2022). 
      `ACS EE tables <https://www.stsci.edu/hst/instrumentation/acs/data-analysis/aperture-corrections>`_ are available for download from the website.
    * For a discussion of HAP drizzled data products, see the 
      `DrizzlePac Handbook <https://hst-docs.stsci.edu/drizzpac>`_ (Anand, Mack et al. 2025).
