@@ -14,25 +14,19 @@ supported by this package include:
 cosmic-ray cleaned, and combined image as a FITS file.
 
 """
+import logging
+
+# suppress dependency logs if no handler is added. 
+logging.getLogger().addHandler(logging.NullHandler())
+
 import os
 import re
 import sys
+import contextlib
 
 from .version import __version__
 
-#if sys.version_info < (3, 8):
-#    raise ImportError("Drizzlepac requires Python 3.8 and above.")
-
-class hide_printed_output:
-    def __enter__(self):
-        self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stdout.close()
-        sys.stdout = self._original_stdout
-
-with hide_printed_output():        
+with contextlib.redirect_stdout(None):     
   import stsci.skypac
 
 from . import ablot
