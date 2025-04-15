@@ -1969,7 +1969,7 @@ def rmtree2(path, n=3):
                              even after {n} attempts.""")
         raise OSError
     else:
-        log.info(f"""(f"Path {path} successfully removed.""")
+        log.info(f"Path {path} successfully removed.")
 
 
 def handle_remove_readonly(func, path, exc):
