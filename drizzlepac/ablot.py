@@ -21,8 +21,8 @@ try:
     from . import cdriz
 except ImportError:
     cdriz = None
-    print('\n Coordinate transformation and image resampling library NOT found!')
-    print('\n Please check the installation of this package to insure C code was built successfully.')
+    log.error('\n Coordinate transformation and image resampling library NOT found!')
+    log.error('\n Please check the installation of this package to insure C code was built successfully.')
     raise ImportError
 
 from . import __version__
@@ -33,7 +33,6 @@ __taskname__ = 'ablot'
 _blot_step_num_ = 5
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
-
 
 
 def blot(data, reference, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
@@ -99,7 +98,7 @@ def run(configObj,wcsmap=None):
     # read in WCS from source (drizzled) image
     source_wcs = stwcs.wcsutil.HSTWCS(configObj['data'])
     if source_wcs.wcs.is_unity():
-        print("WARNING: No valid WCS found for input drizzled image: {}!".format(configObj['data']))
+        log.warning("WARNING: No valid WCS found for input drizzled image: {}!".format(configObj['data']))
 
     # define blot_wcs
     blot_wcs = None
@@ -108,7 +107,7 @@ def run(configObj,wcsmap=None):
         # read in WCS from pre-existing output image
         blot_wcs = stwcs.wcsutil.HSTWCS(configObj['reference'])
         if blot_wcs.wcs.is_unity():
-            print("WARNING: No valid WCS found for output image: {} !".format(configObj['reference']))
+            log.warning("No valid WCS found for output image: {} !".format(configObj['reference']))
 
     # define blot WCS based on input images or specified reference WCS values
     if user_wcs_pars['user_wcs']:
@@ -135,7 +134,7 @@ def run(configObj,wcsmap=None):
             #_outscale = _expin
         else:
             _outscale = float(scale_pars['expout'])
-        print("Output blotted images scaled by exptime of {}".format(_outscale))
+        log.info("Output blotted images scaled by exptime of {}".format(_outscale))
         np.multiply(_outsci, _outscale, _outsci)
 
     # Add sky back in to the blotted image, as specified by the user
@@ -143,7 +142,7 @@ def run(configObj,wcsmap=None):
         skyval = _scihdu.header['MDRIZSKY']
     else:
         skyval = configObj['skyval']
-    print("Added {} counts back in to blotted image as sky.".format(skyval))
+    log.info("Added {} counts back in to blotted image as sky.".format(skyval))
     _outsci += skyval
 
     del _scihdu
@@ -251,7 +250,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
 
         for chip in img.returnAllChips(extname=img.scienceExt):
 
-            print('    Blot: creating blotted image: ',chip.outputNames['data'])
+            log.info('    Blot: creating blotted image: ',chip.outputNames['data'])
 
             #### Check to see what names need to be included here for use in _hdrlist
             chip.outputNames['driz_version'] = _versions['AstroDrizzle']
@@ -384,7 +383,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         """
         Use default C mapping function.
         """
-        print('Using default C-based coordinate transformation...')
+        log.info('Using default C-based coordinate transformation...')
         mapping = cdriz.DefaultWCSMapping(
             blot_wcs, source_wcs,
             blot_wcs.pixel_shape[0], blot_wcs.pixel_shape[1],
@@ -396,7 +395,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         ##Using the Python class for the WCS-based transformation
         #
         # Use user provided mapping function
-        print('Using coordinate transformation defined by user...')
+        log.info('Using coordinate transformation defined by user...')
         if wcsmap is None:
             wcsmap = wcs_functions.WCSMap
         wmap = wcsmap(blot_wcs,source_wcs)

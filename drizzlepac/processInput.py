@@ -124,7 +124,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
     # This can be done here because MDRIZTAB does not include values for
     # input, output, or updatewcs.
     if 'mdriztab' in configObj and configObj['mdriztab']:
-        print("Reading in MDRIZTAB parameters for {} files".format(len(files)))
+        log.info("Reading in MDRIZTAB parameters for {} files".format(len(files)))
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
 
         # Update configObj with values from mpars
@@ -184,7 +184,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
         msg = '“minmed” is highly recommended for three images, \n'+\
         ' and is good for four to six images, \n'+\
         ' but should be avoided for ten or more images.\n'
-        print(textutil.textbox(msg))
+        log.info(textutil.textbox(msg))
 
     step7name = util.getSectionName(configObj,7)
     configObj[step7name]['final_bits'] = interpret_bit_flags(
@@ -199,7 +199,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
         '   * filename does not specify an extension with a valid WCS.\n'+\
         '   * can not find the file.\n'+\
         'Please check the filename specified in the "refimage" parameter.'
-        print(textutil.textbox(msg))
+        log.info(textutil.textbox(msg))
         return None,None
     step7aname = util.getSectionName(configObj,'7a')
     if not util.verifyRefimage(configObj[step7aname]['final_refimage']):
@@ -208,7 +208,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
         '   * filename does not specify an extension with a valid WCS.\n'+\
         '   * can not find the file.\n'+\
         'Please check the filename specified in the "refimage" parameter.'
-        print(textutil.textbox(msg))
+        log.info(textutil.textbox(msg))
         return None,None
 
     # Build imageObject list for all the valid, shift-updated input files
@@ -296,17 +296,17 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
                 chip_mem = cmem
     max_mem = (input_mem + output_mem*pool_size + chip_mem*2)//(1024*1024)
 
-    print('*'*80)
-    print('*')
-    print('*  Estimated memory usage:  up to %d Mb.'%(max_mem))
-    print('*  Output image size:       {:d} X {:d} pixels. '.format(*owcs.pixel_shape))
-    print('*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024)))
-    print('*  Cores available:         %d'%(pool_size))
-    print('*')
-    print('*'*80)
+    log.info('*'*80)
+    log.info('*')
+    log.info('*  Estimated memory usage:  up to %d Mb.'%(max_mem))
+    log.info('*  Output image size:       {:d} X {:d} pixels. '.format(*owcs.pixel_shape))
+    log.info('*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024)))
+    log.info('*  Cores available:         %d'%(pool_size))
+    log.info('*')
+    log.info('*'*80)
 
     if interactive:
-        print('Continue with processing?')
+        log.info('Continue with processing?')
         while True:
             if sys.version_info[0] >= 3:
                 k = input("(y)es or (n)o").strip()[0].lower()
@@ -330,7 +330,7 @@ def getMdriztabPars(input):
     try:
         mdrizdict = mdzhandler.getMdriztabParameters(filelist)
     except KeyError:
-        print('No MDRIZTAB found for "%s". Parameters remain unchanged.'%(filelist[0]))
+        log.warning('No MDRIZTAB found for "%s". Parameters remain unchanged.'%(filelist[0]))
         mdrizdict = {}
 
     return mdrizdict
@@ -376,7 +376,7 @@ def createImageObjectList(files, instrpars, output=None, group=None,
             mtflag = False
 
         if mtflag:
-            print("#####\nProcessing Moving Target Observations using reference image as WCS for all inputs!\n#####\n")
+            log.info("#####\nProcessing Moving Target Observations using reference image as WCS for all inputs!\n#####\n")
             if mt_refimg is None:
                 mt_refimg = image
             else:
@@ -471,7 +471,7 @@ def processFilenames(input=None,output=None,infilesOnly=False):
     oldasndict = None
 
     if input is None:
-        print("No input files provided to processInput")
+        log.error("No input files provided to processInput")
         raise ValueError
 
     if not isinstance(input, list) and ('_asn' in input or '_asc' in input):
@@ -750,7 +750,7 @@ def buildASNList(rootnames, asnname, check_for_duplicates=True):
                    'use widlcards for the input to only select one type of '
                    'input file.' % (dupasn, origasn))
 
-        print(textutil.textbox(errstr), file=sys.stderr)
+        log.error(textutil.textbox(errstr))
 
         # generate new ASN files for each case,
         # report this case of duplicate inputs to the user then quit
@@ -926,20 +926,20 @@ def manageInputCopies(filelist, **workinplace):
         copyname = os.path.join(origdir, os.path.basename(fname))
         short_copyname = os.path.join('OrIg_files', os.path.basename(fname))
         if workinplace['overwrite']:
-            print('Forcibly archiving original of: ',fname, 'as ',short_copyname)
+            log.info('Forcibly archiving original of: ',fname, 'as ',short_copyname)
             # make a copy of the file in the sub-directory
             if os.path.exists(copyname): os.chmod(copyname, 438) # octal 666
             shutil.copy(fname,copyname)
             os.chmod(copyname,292) # octal 444 makes files read-only
             if printMsg:
-                print('\nTurning OFF "preserve" and "restore" actions...\n')
+                log.info('\nTurning OFF "preserve" and "restore" actions...\n')
                 printMsg = False # We only need to print this one time...
             copymade = True
 
         if (workinplace['preserve'] and not os.path.exists(copyname)) \
                 and not workinplace['overwrite']:
             # Preserving a copy of the input, but only if not already archived
-            print('Preserving original of: ',fname, 'as ',short_copyname)
+            log.info('Preserving original of: ',fname, 'as ',short_copyname)
             # make a copy of the file in the sub-directory
             shutil.copy(fname,copyname)
             os.chmod(copyname,292) # octal 444 makes files read-only
@@ -947,7 +947,7 @@ def manageInputCopies(filelist, **workinplace):
 
         if 'restore' in workinplace and not copymade:
             if (os.path.exists(copyname) and workinplace['restore']) and not workinplace['overwrite']:
-                print('Restoring original input for ',fname,' from ',short_copyname)
+                log.info('Restoring original input for ',fname,' from ',short_copyname)
                 # replace current files with original version
                 os.chmod(fname, 438) # octal 666
                 shutil.copy(copyname, fname)
@@ -979,12 +979,12 @@ def buildEmptyDRZ(input, output):
     # Identify the first input image
     inputfile = parseinput.parseinput(input)[0]
     if not inputfile:
-        print('\n******* ERROR *******', file=sys.stderr)
-        print(
+        log.error('\n******* ERROR *******')
+        log.error(
               'No input file found!  Check specification of parameter '
-              '"input". ', file=sys.stderr)
-        print('Quitting...',  file=sys.stderr)
-        print('******* ***** *******\n',  file=sys.stderr)
+              '"input". )
+        log.error('Quitting...')
+        log.error('******* ***** *******\n')
         return # raise IOError, "No input file found!"
 
     # Set up output file here...
@@ -998,7 +998,7 @@ def buildEmptyDRZ(input, output):
         if '_drz' not in output:
             output = fileutil.buildNewRootname(output, extn='_drz.fits')
 
-    print('Building empty DRZ file with output name: %s' % output)
+    log.info('Building empty DRZ file with output name: %s' % output)
 
     # Open the first image (of the excludedFileList?) to use as a template to build
     # the DRZ file.
@@ -1065,10 +1065,10 @@ def buildEmptyDRZ(input, output):
     # Write out the empty DRZ file
     fitsobj.writeto(output)
 
-    print(textutil.textbox(
+    log.error(textutil.textbox(
         'ERROR:\nAstroDrizzle has created an empty DRZ product because all '
         'input images were excluded from processing or a user requested the '
-        'program to stop.') + '\n', file=sys.stderr)
+        'program to stop.') + '\n')
 
     return
 
@@ -1242,7 +1242,7 @@ def _setDefaults(input_dict={}):
 
     paramDict.update(input_dict)
 
-    print('\nUser Input Parameters for Init Step:')
+    log.info('\nUser Input Parameters for Init Step:')
     util.printParams(paramDict)
 
     return paramDict

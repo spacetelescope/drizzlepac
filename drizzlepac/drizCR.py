@@ -162,7 +162,7 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
             try:
                 blot_data = fits.getdata(blot_image_name, ext=0)
             except IOError:
-                print("Problem opening blot images")
+                log.warning("Problem opening blot images")
                 raise
         # Scale blot image, as needed, to match original input data units.
         blot_data *= sci_chip._conversionFactor
@@ -276,7 +276,7 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
         # Save the cosmic ray mask file to disk
         cr_mask_image = sci_chip.outputNames["crmaskImage"]
         if paramDict['inmemory']:
-            print('Creating in-memory(virtual) FITS file...')
+            log.info('Creating in-memory(virtual) FITS file...')
             _pf = util.createFile(cr_mask.astype(np.uint8),
                                   outfile=None, header=None)
             cr_mask_dict[cr_mask_image] = _pf
@@ -290,9 +290,9 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
             # Remove the existing mask file if it exists
             if os.path.isfile(cr_mask_image):
                 os.remove(cr_mask_image)
-                print("Removed old cosmic ray mask file: '{:s}'"
+                log.info("Removed old cosmic ray mask file: '{:s}'"
                       .format(cr_mask_image))
-            print("Creating output: {:s}".format(cr_mask_image))
+            log.info("Creating output: {:s}".format(cr_mask_image))
             util.createFile(cr_mask.astype(np.uint8),
                             outfile=cr_mask_image, header=None)
 
@@ -311,7 +311,7 @@ def createCorrFile(outfile, arrlist, template):
     # Remove the existing cor file if it exists
     if os.path.isfile(outfile):
         os.remove(outfile)
-        print("Removing old corr file: '{:s}'".format(outfile))
+        log.info("Removing old corr file: '{:s}'".format(outfile))
 
     with fits.open(template, memmap=False) as ftemplate:
         for arr in arrlist:
@@ -319,7 +319,7 @@ def createCorrFile(outfile, arrlist, template):
             if arr['dqext'][0] != arr['sciext'][0]:
                 ftemplate[arr['dqext']].data = arr['dqMask']
         ftemplate.writeto(outfile)
-        print("Created CR corrected file: '{:s}'".format(outfile))
+        log.info("Created CR corrected file: '{:s}'".format(outfile))
 
 
 def setDefaults(configObj={}):

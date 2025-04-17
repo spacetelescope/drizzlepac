@@ -827,12 +827,12 @@ class baseImageObject:
                 # Print a generic warning message and continue on with the
                 # final drizzle step.
 
-                print(textutil.textbox(
-                    'WARNING: No ERR weighting will be applied to the mask '
-                    'used in the final drizzle step!  Weighting will be only '
-                    'by exposure time.\n\nThe data provided as input does not '
-                    'contain an ERR extension'), file=sys.stderr)
-                print('\n Continue with final drizzle step...', sys.stderr)
+                log.warning("""
+                    No ERR weighting will be applied to the mask\n
+                    used in the final drizzle step!  Weighting will be only\n
+                    by exposure time.\n\nThe data provided as input does not\n
+                    contain an ERR extension""")
+                log.info('\n Continue with final drizzle step...')
         else:
             # If we were unable to find an 'ERR' extension to apply, one
             # possible reason was that the input was a 'standard' WFPC2 data
@@ -840,16 +840,15 @@ class baseImageObject:
             # this condition and issue a Warning to the user and continue on to
             # the final drizzle.
 
-            print(textutil.textbox(
-                "WARNING: No ERR weighting will be applied to the mask used "
-                "in the final drizzle step!  Weighting will be only by "
-                "exposure time.\n\nThe WFPC2 data provided as input does not "
-                "contain ERR arrays.  WFPC2 data is not supported by this "
-                "weighting type.\n\nA workaround would be to create inverse "
-                "variance maps and use 'IVM' as the final_wht_type.  See the "
-                "HELP file for more details on using inverse variance maps."),
-                file=sys.stderr)
-            print("\n Continue with final drizzle step...", file=sys.stderr)
+            log.warning("""
+                No ERR weighting will be applied to the mask used
+                in the final drizzle step!  Weighting will be only by
+                exposure time.\n\nThe WFPC2 data provided as input does not
+                contain ERR arrays.  WFPC2 data is not supported by this
+                weighting type.\n\nA workaround would be to create inverse
+                variance maps and use 'IVM' as the final_wht_type.  See the
+                HELP file for more details on using inverse variance maps.""")
+            log.info("\n Continue with final drizzle step...", file=sys.stderr)
 
         return errmask.astype(np.float32)
 

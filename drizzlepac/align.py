@@ -313,7 +313,7 @@ def perform_align(
     global module_fh
     global module_logfile
     if module_fh is not None:
-        print("Removing old file handler for logging.")
+        log.info("Removing old file handler for logging.")
         log.removeHandler(module_fh)
 
     module_logfile = runfile.upper()

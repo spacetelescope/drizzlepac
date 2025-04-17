@@ -106,7 +106,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
         util.applyUserPars_steps(configObj, input_dict, step='7a')
 
     except ValueError:
-        print("Problem with input parameters. Quitting...", file=sys.stderr)
+        log.error("Problem with input parameters. Quitting...", file=sys.stderr)
         return
 
     # add flag to configObj to indicate whether or not to use mdriztab
@@ -152,8 +152,8 @@ def run(configobj, wcsmap=None, input_dict=None):
     elif len(input_list) > 0:
         def_logname = input_list[0]
     else:
-        print(textutil.textbox(
-            "ERROR:\nNo valid input files found!   Please restart the task "
+        log.error(textutil.textbox(
+            "No valid input files found!   Please restart the task "
             "and check the value for the 'input' parameter."), file=sys.stderr)
         def_logname = None
         return
@@ -162,12 +162,12 @@ def run(configobj, wcsmap=None, input_dict=None):
     logging_handlers = logging.getLogger().handlers
     log_name = [lh.name for lh in logging_handlers if lh.level > 0]
     logfile = log_name[0] if log_name else "{}.tra".format(def_logname)
-    print("AstroDrizzle log file: {}".format(logfile))
+    log.info("AstroDrizzle log file: {}".format(logfile))
 
     clean = configobj['STATE OF INPUT FILES']['clean']
     procSteps = util.ProcSteps()
 
-    print("AstroDrizzle Version {:s} started at: {:s}\n"
+    log.info("AstroDrizzle Version {:s} started at: {:s}\n"
           .format(__version__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
@@ -192,9 +192,9 @@ def run(configobj, wcsmap=None, input_dict=None):
             errmsg = "No valid images found for processing!\n"
             errmsg += "Check log file for full details.\n"
             errmsg += "Exiting AstroDrizzle now..."
-            print(textutil.textbox(errmsg, width=65))
-            print(textutil.textbox(
-                'ERROR:\nAstroDrizzle Version {:s} encountered a problem!  '
+            log.error(textutil.textbox(errmsg, width=65))
+            log.error(textutil.textbox(
+                '\nAstroDrizzle Version {:s} encountered a problem!  '
                 'Processing terminated at {:s}.'
                 .format(__version__, util._ptime()[0])), file=sys.stderr)
             return
@@ -234,17 +234,15 @@ def run(configobj, wcsmap=None, input_dict=None):
                            logfile=logfile,
                            procSteps=procSteps)
 
-        print()
-        print("AstroDrizzle Version {:s} is finished processing at {:s}.\n"
+        log.info("AstroDrizzle Version {:s} is finished processing at {:s}.\n"
               .format(__version__, util._ptime()[0]))
-        print("", flush=True)
 
     except Exception:
         clean = False
-        print(textutil.textbox(
-            "ERROR:\nAstroDrizzle Version {:s} encountered a problem!  "
+        log.error(textutil.textbox(
+            "AstroDrizzle Version {:s} encountered a problem!  "
             "Processing terminated at {:s}."
-            .format(__version__, util._ptime()[0])), file=sys.stderr)
+            .format(__version__, util._ptime()[0])))
         raise
 
     finally:

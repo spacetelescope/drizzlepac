@@ -143,7 +143,7 @@ def build(outname, wcsname, refimage, undistort=False,
     """
     ### Build WCS from refimage and/or user pars
     if util.is_blank(refimage) and not userwcs:
-        print('WARNING: No WCS specified... No WCS created!')
+        log.warning('No WCS specified... No WCS created!')
         return
     customwcs = None
     if util.is_blank(refimage) and userwcs:
@@ -159,7 +159,7 @@ def build(outname, wcsname, refimage, undistort=False,
                 user_wcs_pars['naxis1'],user_wcs_pars['naxis2'],
                 user_wcs_pars['pscale'],user_wcs_pars['orientat'])
         else:
-            print('WARNING: Not enough WCS information provided by user!')
+            log.warning('Not enough WCS information provided by user!')
             raise ValueError
 
     if not util.is_blank(refimage):
@@ -201,7 +201,7 @@ def build(outname, wcsname, refimage, undistort=False,
 
     # create default WCSNAME if None was given
     wcsname = create_WCSname(wcsname)
-    print('Creating final headerlet with name ',wcsname,' using template ',template)
+    log.info('Creating final headerlet with name ',wcsname,' using template ',template)
     outhdr = generate_headerlet(outwcs,template,wcsname,outname=outname)
 
     # synchronize this new WCS with the rest of the chips in the image
@@ -301,9 +301,9 @@ def replace_model(refwcs, newcoeffs):
     """ Replace the distortion model in a current WCS with a new model
         Start by creating linear WCS, then run
     """
-    print('WARNING:')
-    print('    Replacing existing distortion model with one')
-    print('    not necessarily matched to the observation!')
+    log.warning('WARNING:')
+    log.warning('    Replacing existing distortion model with one')
+    log.warning('    not necessarily matched to the observation!')
     # create linear version of WCS to be updated by new model
     wcslin = stwcs.distortion.utils.undistortWCS(refwcs)
     outwcs = refwcs.deepcopy()
@@ -359,7 +359,7 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
 
     # create headerlet object in memory; either from a file or from scratch
     if template is not None and siphdr:
-        print('Creating headerlet from template...')
+        log.info('Creating headerlet from template...')
         fname,extn = fileutil.parseFilename(template)
         extnum = fileutil.parseExtn(extn)
         extname = ('sipwcs',extnum[1])
@@ -368,7 +368,7 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         hdrlet[extname].header.update(outwcs_hdr)
         hdrlet[extname].header['WCSNAME'] = wcsname
     else:
-        print('Creating headerlet from scratch...')
+        log.info('Creating headerlet from scratch...')
         hdrlet = fits.HDUList()
         hdrlet.append(fits.PrimaryHDU())
         siphdr = fits.ImageHDU(header=outwcs_hdr)
@@ -381,10 +381,10 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         if outname.find('_hdr.fits') < 0:
             outname += '_hdr.fits'
         if os.path.exists(outname):
-            print('Overwrite existing file "%s"'%outname)
+            log.info('Overwrite existing file "%s"'%outname)
             os.remove(outname)
         hdrlet.writeto(outname)
-        print('Wrote out headerlet :',outname)
+        log.info('Wrote out headerlet :',outname)
 
 
 util._def_help_functions(
