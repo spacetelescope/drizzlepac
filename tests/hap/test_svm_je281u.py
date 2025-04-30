@@ -166,6 +166,42 @@ def test_svm_wcs(gather_output_data):
         assert WCS_SUB_NAME in wcsname, f"WCSNAME is not as expected for file {tdp}."
 
 
+def test_svm_point_cat_cols(gather_output_data):
+    # Check the total catalog product does not contain any unexpected, non-filter dependent columns
+    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("point-cat.ecsv")]
+
+    ref_strings = ["ID", "Center", "RA", "DEC"]
+    for tdp in tdp_files:
+        table = ascii.read(tdp, format="ecsv")
+        sub_columns = []
+        for c in table.colnames:
+            if "_f" not in c:
+                strip_c = c.lstrip("XY-")
+                sub_columns.append(strip_c)
+
+        for c in sub_columns:
+            if c not in ref_strings:
+                assert 0, f"Unexpected column, {c}, found in Total Point Catalog file"
+
+
+def test_svm_segment_cat_cols(gather_output_data):
+    # Check the total catalog product does not contain any unexpected, non-filter dependent columns
+    tdp_files = [files for files in gather_output_data if files.lower().find("total") > -1 and files.lower().endswith("segment-cat.ecsv")]
+
+    ref_strings = ["ID", "Centroid", "RA", "DEC"]
+    for tdp in tdp_files:
+        table = ascii.read(tdp, format="ecsv")
+        sub_columns = []
+        for c in table.colnames:
+            if "_f" not in c:
+                strip_c = c.lstrip("XY-")
+                sub_columns.append(strip_c)
+
+        for c in sub_columns:
+            if c not in ref_strings:
+                assert 0, f"Unexpected column, {c}, found in Total Segment Catalog file"
+
+
 def test_svm_cat_sources(gather_output_data):
     # Check the output catalogs should contain > 0 measured sources
     cat_files = [files for files in gather_output_data if files.lower().endswith("-cat.ecsv")]

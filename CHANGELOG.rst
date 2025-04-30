@@ -20,6 +20,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.10.0 (24-Mar-2025)
 ====================
 
+- Removed the extra column in the Point source identifcation table when using the
+  DAOStarFinder or IRAFStarFinder utilities.  The extra column, daofind_mag, was
+  added in Photutils 2.0. [#nnnn]
+
 - Dropped support for Python v3.10 due to conflict with upgrading to
   Photutils v2.2.0. [#1987]
 

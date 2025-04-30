@@ -1164,8 +1164,6 @@ class HAPPointCatalog(HAPCatalogBase):
                         daofind = DAOStarFinder(fwhm=source_fwhm,
                                                 threshold=self.param_dict['nsigma'] * reg_rms_median)
                         reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
-                        reg_sources = Table(reg_sources)  # Insure 'reg_sources' is NOT a QTable
-
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
                     log.error(err_msg)
@@ -1173,6 +1171,14 @@ class HAPPointCatalog(HAPCatalogBase):
                 log.info("{}".format("=" * 80))
                 # Concatenate sources found in each region.
                 if reg_sources is not None:
+                    # Convert the QTable to an Astropy Table
+                    reg_sources = Table(reg_sources)
+
+                    # Remove the extra column added in Photutils v2.0.  A "daofind_mag"
+                    # column was added for comparison to the original IRAF DAOFIND algorithm.
+                    #if "daofind_mag" in reg_sources.colnames:
+                    #    reg_sources.remove_column("daofind_mag")
+
                     if sources is None:
                         sources = reg_sources
                     else:
