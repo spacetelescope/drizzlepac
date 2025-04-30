@@ -44,11 +44,6 @@ number of the code change for that issue.  These PRs can be viewed at:
   from 0.0 to 0.05 as it had never be set correctly.  Created a PyTest for
   WFPC2 SVM processing. [#1969]
 
-- Added a check on the EXPFLAG keyword to eliminate any images from being
-  processed as part of a mosaic if the value EXPFLAG is not equal to NORMAL.
-  Any value other than NORMAL indicates there was an issue during the exposure.
-  [#1968]
-
 - Updated the Pyproject.toml file to force use of Photutils v2.0.0 or greater.
   This update is in support of the change addressed by #1950. [#1966]
 
