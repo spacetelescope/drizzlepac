@@ -1176,8 +1176,8 @@ class HAPPointCatalog(HAPCatalogBase):
 
                     # Remove the extra column added in Photutils v2.0.  A "daofind_mag"
                     # column was added for comparison to the original IRAF DAOFIND algorithm.
-                    #if "daofind_mag" in reg_sources.colnames:
-                    #    reg_sources.remove_column("daofind_mag")
+                    if "daofind_mag" in reg_sources.colnames:
+                        reg_sources.remove_column("daofind_mag")
 
                     if sources is None:
                         sources = reg_sources
