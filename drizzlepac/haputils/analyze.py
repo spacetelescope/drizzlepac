@@ -515,9 +515,9 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
             no_proc_value = chinject
 
         # Exposure flag indicates a "issue" happened during an exposure
-        elif (expflag != 'NORMAL'):
-            no_proc_key = hdr_keys['QUALKEY']
-            no_proc_value = expflag
+        # elif (expflag != 'NORMAL'):
+        #     no_proc_key = hdr_keys['QUALKEY']
+        #     no_proc_value = expflag
 
         # Ramp filter images should not be processed for MVM products.
         #
