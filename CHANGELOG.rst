@@ -19,6 +19,14 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.10.0 (24-Mar-2025)
 ====================
+- Resolved the issue of duplicate "ID"s in the rows of the Total Point catalog.
+  For "point" source identification, looping is done over a list of weight masks,
+  tp_masks, when invoking the "finder" algorithms. Tables are returned with a
+  unique "id" number for each row/source in the table. When tp_masks > 1, the
+  returned tables are stacked to generate a final table. The "id" number was not
+  updated to reflect the stacking of the tables which created rows with the same
+  "id".  This error did not cause the code to fail, but it did generate a garbled
+  table. [#2007]
 
 - Removed the extra column in the Point source identifcation table when using the
   DAOStarFinder or IRAFStarFinder utilities.  The extra column, daofind_mag, was
