@@ -26,7 +26,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   returned tables are stacked to generate a final table. The "id" number was not
   updated to reflect the stacking of the tables which created rows with the same
   "id".  This error did not cause the code to fail, but it did generate a garbled
-  table. [#nnnn]
+  table. [#2007]
 
 - Removed the extra column in the Point source identifcation table when using the
   DAOStarFinder or IRAFStarFinder utilities.  The extra column, daofind_mag, was
