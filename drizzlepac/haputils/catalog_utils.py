@@ -1080,6 +1080,7 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
 
             sources = None
+            last_used_id = 0
             for masknum, mask in enumerate(self.tp_masks):
                 # apply mask for each separate range of WHT values
                 region = image * mask['mask']
@@ -1170,6 +1171,8 @@ class HAPPointCatalog(HAPCatalogBase):
                     raise ValueError(err_msg)
                 log.info("{}".format("=" * 80))
                 # Concatenate sources found in each region.
+                # NOTE: The unique "id" column must be updated manually so when the sources
+                # and reg_sources are "vstacked", all the rows stil have a unique id.
                 if reg_sources is not None:
                     # Convert the QTable to an Astropy Table
                     reg_sources = Table(reg_sources)
@@ -1180,9 +1183,12 @@ class HAPPointCatalog(HAPCatalogBase):
                         reg_sources.remove_column("daofind_mag")
 
                     if sources is None:
+                        last_used_id = reg_sources['id'][-1]
                         sources = reg_sources
                     else:
+                        reg_sources['id'][:] +=  last_used_id
                         sources = vstack([sources, reg_sources])
+                        last_used_id = sources['id'][-1]
 
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
