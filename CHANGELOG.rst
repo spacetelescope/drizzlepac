@@ -22,7 +22,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Force use of Astropy 6.1.7 in pyproject.toml at this time. Significant
   upgrades in the underlying functionality, particularly in astropy.modelling.fitting
   have not been accommodated resulting in a degradation of measurement results
-  for the output Point product catalogs. [#nnnn]
+  for the output Point product catalogs. [#2009]
 
 - Resolved the issue of duplicate "ID"s in the rows of the Total Point catalog.
   For "point" source identification, looping is done over a list of weight masks,
