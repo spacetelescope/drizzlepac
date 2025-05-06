@@ -1080,6 +1080,7 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
 
             sources = None
+            last_used_id = 0
             for masknum, mask in enumerate(self.tp_masks):
                 # apply mask for each separate range of WHT values
                 region = image * mask['mask']
@@ -1164,19 +1165,30 @@ class HAPPointCatalog(HAPCatalogBase):
                         daofind = DAOStarFinder(fwhm=source_fwhm,
                                                 threshold=self.param_dict['nsigma'] * reg_rms_median)
                         reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
-                        reg_sources = Table(reg_sources)  # Insure 'reg_sources' is NOT a QTable
-
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
                     log.error(err_msg)
                     raise ValueError(err_msg)
                 log.info("{}".format("=" * 80))
                 # Concatenate sources found in each region.
+                # NOTE: The unique "id" column must be updated manually so when the sources
+                # and reg_sources are "vstacked", all the rows stil have a unique id.
                 if reg_sources is not None:
+                    # Convert the QTable to an Astropy Table
+                    reg_sources = Table(reg_sources)
+
+                    # Remove the extra column added in Photutils v2.0.  A "daofind_mag"
+                    # column was added for comparison to the original IRAF DAOFIND algorithm.
+                    if "daofind_mag" in reg_sources.colnames:
+                        reg_sources.remove_column("daofind_mag")
+
                     if sources is None:
+                        last_used_id = reg_sources['id'][-1]
                         sources = reg_sources
                     else:
+                        reg_sources['id'][:] +=  last_used_id
                         sources = vstack([sources, reg_sources])
+                        last_used_id = sources['id'][-1]
 
             # If there are no detectable sources in the total detection image, return as there is nothing more to do.
             if not sources:
