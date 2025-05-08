@@ -19,10 +19,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 3.10.0 (24-Mar-2025)
 ====================
-- Force use of Astropy 6.1.7 in pyproject.toml at this time. Significant
-  upgrades in the underlying functionality, particularly in astropy.modelling.fitting
-  have not been accommodated resulting in a degradation of measurement results
-  for the output Point product catalogs. [#2009]
+- Added parameter setting, sub_shape, to the IterativePSFPhotometry invocation
+  to ensure a rectangular shape around the center of a star is defined when
+  subtracting PSF models. [#nnnn]
 
 - Resolved the issue of duplicate "ID"s in the rows of the Total Point catalog.
   For "point" source identification, looping is done over a list of weight masks,
