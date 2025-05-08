@@ -879,6 +879,7 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
                                               aperture_radius=aperture_radius,
                                               fitter=fitter,
                                               fit_shape=(11, 11),
+                                              sub_shape=(11, 11),
                                               maxiters=2)
 
         phot_results = itr_phot_obj(psf)
