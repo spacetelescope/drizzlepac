@@ -21,7 +21,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 ====================
 - Added parameter setting, sub_shape, to the IterativePSFPhotometry invocation
   to ensure a rectangular shape around the center of a star is defined when
-  subtracting PSF models. [#nnnn]
+  subtracting PSF models. [#2014]
 
 - Resolved the issue of duplicate "ID"s in the rows of the Total Point catalog.
   For "point" source identification, looping is done over a list of weight masks,
