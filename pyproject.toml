@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-    "astropy>=5.0.4,<7",
+    "astropy>=5.0.4",
     "fitsblender>=0.4.2",
     "scipy",
     "matplotlib",
@@ -99,7 +99,7 @@ requires = [
     "setuptools_scm[toml]>=3.4",
     "wheel",
     "numpy>=2.0.0rc2",
-    "astropy>=5.0.4,<7",
+    "astropy>=5.0.4",
     "markupsafe<=2.0.1",
 ]
 build-backend = "setuptools.build_meta"
