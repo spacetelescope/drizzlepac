@@ -1294,7 +1294,7 @@ def build_poller_table(
     if not is_poller_file:
         for filename in filenames:
             # Look for dataset in local directory.
-            if "_asn" in filename or not os.path.exists(filename):
+            if "_asn" in filename.lower() or not os.path.exists(filename):
                 # This retrieval will NOT overwrite any ASN members already on local disk
                 # Return value will still be list of all members
                 files = aqutils.retrieve_observation(

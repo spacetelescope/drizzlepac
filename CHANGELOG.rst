@@ -24,7 +24,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   routine of the poller_utils.py module as these characters are
   a valid portion of the root of an ipppssoot filename (e.g., j6kasn01q).
   The comparison is now done against "_asn" when looking for association
-  names in order to perform the proper actions. [#nnnn]
+  names in order to perform the proper actions. [#2019]
 
 - Added parameter setting, sub_shape, to the IterativePSFPhotometry invocation
   to ensure a rectangular shape around the center of a star is defined when
