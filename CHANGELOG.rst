@@ -25,7 +25,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   The "TWEAK_FWHMPSF" variable/value now resides in the general section of the
   file as it applies to both catalogs.  Modified the catalog_utils.py module
   so the Segmentation catalog now reports the proper value for the Gaussian
-  Filter FWHM which is used to smooth the total detection image. [#nnnn]
+  Filter FWHM which is used to smooth the total detection image. [#2024]
 
 - Corrected the use of a string comparison to "asn" in the build_poller_table
   routine of the poller_utils.py module as these characters are
