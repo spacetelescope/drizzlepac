@@ -17,8 +17,15 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.10.0 (24-Mar-2025)
+3.10.0 (21-May-2025)
 ====================
+
+- Updated the multiplicative values in the catalog configuration files
+  which are used in conjunction with the computed image RMS to derive
+  a threshold above which sources are detected. The Point catalog uses
+  the variable "nsigma".  The Segmentation catalog uses the variables
+  "segm_nsigma" and "rw2d_nsigma" when using the Gaussian or
+  RickerWavelet smoothing kernels, respectively. [#2026]
 
 - Updated the catalog configuration files to remove obsolete variables,
   "fwhm" and "TWEAK_THRESHOLD", from the sourcex and dao sections, respectively.
