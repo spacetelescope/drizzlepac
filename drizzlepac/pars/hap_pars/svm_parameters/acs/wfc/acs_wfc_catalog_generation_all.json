@@ -21,14 +21,12 @@
     "nsigma_clip": 3.0,
     "maxiters": 3,
     "bkg_skew_threshold": 0.5,
+    "TWEAK_FWHMPSF": 0.076,
     "dao": {
         "bkgsig_sf": 4.0,
-        "kernel_sd_aspect_ratio": 0.8,
-        "TWEAK_FWHMPSF": 0.076,
-        "TWEAK_THRESHOLD": null
+        "kernel_sd_aspect_ratio": 0.8
     },
     "sourcex": {
-        "fwhm": 0.13,
         "source_box": 6,
         "segm_nsigma": 3.0,
         "nlevels": 64,

@@ -658,7 +658,7 @@ class HAPCatalogs:
                                       maxiters=self.param_dict['maxiters'])
 
         self.image.build_kernel(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'],
-                                self.param_dict['dao']['TWEAK_FWHMPSF'],
+                                self.param_dict['TWEAK_FWHMPSF'],
                                 self.param_dict['simple_bkg'],
                                 self.param_dict['bkg_skew_threshold'],
                                 self.param_dict['zero_percent'],
@@ -1600,7 +1600,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         super().__init__(image, param_dict, param_dict_qc, diagnostic_mode, tp_sources)
 
         # Get the instrument/detector-specific values from the self.param_dict
-        self._fwhm = self.param_dict["sourcex"]["fwhm"]
         self._size_source_box = self.param_dict["sourcex"]["source_box"]
         self._nlevels = self.param_dict["sourcex"]["nlevels"]
         self._contrast = self.param_dict["sourcex"]["contrast"]
@@ -1669,7 +1668,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("SExtractor-like source finding settings - Photutils segmentation")
             log.info("Total Detection Product - Input Parameters")
             log.info("Image: {}".format(self.imgname))
-            log.info("FWHM: {}".format(self._fwhm))
+            log.info("Gaussian FWHM (Filter for source detection in arcseconds): {}".format(self.param_dict['TWEAK_FWHMPSF']))
             log.info("size_source_box (no. of connected pixels needed for a detection): {}".format(self._size_source_box))
             log.info("nsigma (threshold = nsigma * background_rms): {}".format(self._nsigma))
             log.info("nlevels (no. of multi-thresholding levels for deblending): {}".format(self._nlevels))
@@ -1682,7 +1681,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Percentage limit on biggest source deblending limit: {}".format(100.0 * self._bs_deblend_limit))
             log.info("Percentage limit on source fraction deblending limit: {}".format(100.0 * self._sf_deblend_limit))
             log.info("Scaling parameter of the Kron radius: {}".format(self._kron_scaling_radius))
-            log.info("Kron minimum circular radius: {}".format(self._kron_minimum_radius))
+            log.info("Kron minimum circular radius (pixels): {}".format(self._kron_minimum_radius))
             log.info("")
             log.info("{}".format("=" * 80))
 
@@ -1795,7 +1794,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # Need to remake image kernel as it has a dependence on self.bkg_rms_ra
                         self.image.build_kernel(self.param_dict['bkg_box_size'],
                                                 self.param_dict['bkg_filter_size'],
-                                                self.param_dict['dao']['TWEAK_FWHMPSF'])
+                                                self.param_dict['TWEAK_FWHMPSF'])
 
                         # Reset the local version of the Gaussian kernel and the RickerWavelet
                         # kernel when the background type changes
@@ -2326,8 +2325,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("SExtractor-like source property measurements based on Photutils segmentation")
         log.info("Filter Level Product - Input Parameters")
         log.info("image name: {}".format(self.imgname))
-        log.info("FWHM: {}".format(self._fwhm))
-        log.info("size_source_box: {}".format(self._size_source_box))
+        log.info("Gaussian FWHM (Filter for source detection in arcseconds): {}".format(self.param_dict['TWEAK_FWHMPSF']))
+        log.info("size_source_box (pixels): {}".format(self._size_source_box))
         log.info("")
 
         # This is the filter science data and its computed background
