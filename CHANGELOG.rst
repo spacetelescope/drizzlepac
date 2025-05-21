@@ -25,7 +25,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   a threshold above which sources are detected. The Point catalog uses
   the variable "nsigma".  The Segmentation catalog uses the variables
   "segm_nsigma" and "rw2d_nsigma" when using the Gaussian or
-  RickerWavelet smoothing kernels, respectively. [#nnnn]
+  RickerWavelet smoothing kernels, respectively. [#2026]
 
 - Updated the catalog configuration files to remove obsolete variables,
   "fwhm" and "TWEAK_THRESHOLD", from the sourcex and dao sections, respectively.
