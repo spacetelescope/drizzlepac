@@ -1041,7 +1041,7 @@ def find_hap_point_sources(filt_obj, log_level=logutil.logging.NOTSET):
                                filt_obj.configobj_pars.get_pars("catalog generation")['bkg_filter_size'])
     img_obj.build_kernel(filt_obj.configobj_pars.get_pars("catalog generation")['bkg_box_size'],
                          filt_obj.configobj_pars.get_pars("catalog generation")['bkg_filter_size'],
-                         filt_obj.configobj_pars.get_pars("catalog generation")['dao']['TWEAK_FWHMPSF'])
+                         filt_obj.configobj_pars.get_pars("catalog generation")['TWEAK_FWHMPSF'])
 
     # Perform background subtraction
     image = img_obj.data.copy()

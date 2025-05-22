@@ -2,6 +2,7 @@
 import pdb
 import sys
 
+# This file is deprecated.
 
 from drizzlepac.haputils import config_utils
 from drizzlepac.haputils import poller_utils
