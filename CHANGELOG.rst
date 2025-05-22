@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.10.0 (21-May-2025)
 ====================
 
+- Overwrote the MVM "alignment" configuration files with the SVM
+  files to keep the information in-sync.  [#2028]
+
 - Clarified the sigma value used to compute the threshold above which
   sources are detected for the segmentation catalog when using the
   Gaussian or RickerWavelet smoothing kernel.  The value has corrected
