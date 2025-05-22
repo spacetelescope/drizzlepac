@@ -20,6 +20,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.10.0 (21-May-2025)
 ====================
 
+- Clarified the sigma value used to compute the threshold above which
+  sources are detected for the segmentation catalog when using the
+  Gaussian or RickerWavelet smoothing kernel.  The value has corrected
+  in the output Segmentation catalogs and given greater visibility in
+  the trailer log files.  [#2027]
+
 - Updated the multiplicative values in the catalog configuration files
   which are used in conjunction with the computed image RMS to derive
   a threshold above which sources are detected. The Point catalog uses
