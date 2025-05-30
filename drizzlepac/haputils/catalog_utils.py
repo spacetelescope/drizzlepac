@@ -658,7 +658,7 @@ class HAPCatalogs:
                                       maxiters=self.param_dict['maxiters'])
 
         self.image.build_kernel(self.param_dict['bkg_box_size'], self.param_dict['bkg_filter_size'],
-                                self.param_dict['dao']['TWEAK_FWHMPSF'],
+                                self.param_dict['TWEAK_FWHMPSF'],
                                 self.param_dict['simple_bkg'],
                                 self.param_dict['bkg_skew_threshold'],
                                 self.param_dict['zero_percent'],
@@ -956,9 +956,9 @@ class HAPCatalogBase:
         data_table.meta["Aper1 (arcsec)"] = self.aper_radius_arcsec[0]
         data_table.meta["Aper2 (arcsec)"] = self.aper_radius_arcsec[1]
         if proc_type == "segment":
-             data_table.meta["Threshold (sigma)"] = self._nsigma
+             data_table.meta["Threshold (sigma)"] = self.final_nsigma
         else:
-             data_table.meta["Theshold (sigma)"] = self.param_dict['nsigma']
+             data_table.meta["Threshold (sigma)"] = self.param_dict['nsigma']
 
         data_table.meta["Exposure Start"] = self.image.keyword_dict["expo_start"]
         data_table.meta["Total Exposure Time"] = self.image.keyword_dict["texpo_time"]
@@ -1600,7 +1600,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         super().__init__(image, param_dict, param_dict_qc, diagnostic_mode, tp_sources)
 
         # Get the instrument/detector-specific values from the self.param_dict
-        self._fwhm = self.param_dict["sourcex"]["fwhm"]
         self._size_source_box = self.param_dict["sourcex"]["source_box"]
         self._nlevels = self.param_dict["sourcex"]["nlevels"]
         self._contrast = self.param_dict["sourcex"]["contrast"]
@@ -1638,6 +1637,9 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # is deemed to be of poor quality, make sure to add documentation to the output catalog.
         self.is_big_island = False
 
+        # Final sigma value used based upon Gaussian or RickerWavelet processing
+        self.final_nsigma = None
+
 
     def identify_sources(self, **pars):
         """Use photutils to find sources in image based on segmentation.
@@ -1669,12 +1671,12 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("SExtractor-like source finding settings - Photutils segmentation")
             log.info("Total Detection Product - Input Parameters")
             log.info("Image: {}".format(self.imgname))
-            log.info("FWHM: {}".format(self._fwhm))
+            log.info("Gaussian FWHM (Filter for source detection in arcseconds): {}".format(self.param_dict['TWEAK_FWHMPSF']))
             log.info("size_source_box (no. of connected pixels needed for a detection): {}".format(self._size_source_box))
-            log.info("nsigma (threshold = nsigma * background_rms): {}".format(self._nsigma))
+            log.info("Gaussian nsigma (threshold = nsigma * background_rms): {} (Round 1), {} (Round2 for Bkg2D)".format(self._nsigma, 2.0 * self._nsigma))
             log.info("nlevels (no. of multi-thresholding levels for deblending): {}".format(self._nlevels))
             log.info("contrast (frac. flux for peak to be separate object, 0=max. deblend, 1=no deblend): {}".format(self._contrast))
-            log.info("RickerWavelet nsigma (threshold = nsigma * background_rms): {}".format(self._rw2d_nsigma))
+            log.info("RickerWavelet nsigma (threshold = nsigma * background_rms): {} (Round 1), {} (Round 2 for Bkg2D)".format(self._rw2d_nsigma, 2.0 * self._rw2d_nsigma))
             log.info("RickerWavelet kernel X- and Y-dimension: {}".format(self._rw2d_size))
             log.info("Pixel limit on biggest source (criterion for  RickerWavelet kernel): {}".format(self._rw2d_biggest_pixels))
             log.info("Percentage limit on biggest source (criterion for  RickerWavelet kernel): {}".format(100.0 * self._rw2d_biggest_source))
@@ -1682,7 +1684,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Percentage limit on biggest source deblending limit: {}".format(100.0 * self._bs_deblend_limit))
             log.info("Percentage limit on source fraction deblending limit: {}".format(100.0 * self._sf_deblend_limit))
             log.info("Scaling parameter of the Kron radius: {}".format(self._kron_scaling_radius))
-            log.info("Kron minimum circular radius: {}".format(self._kron_minimum_radius))
+            log.info("Kron minimum circular radius (pixels): {}".format(self._kron_minimum_radius))
             log.info("")
             log.info("{}".format("=" * 80))
 
@@ -1795,7 +1797,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         # Need to remake image kernel as it has a dependence on self.bkg_rms_ra
                         self.image.build_kernel(self.param_dict['bkg_box_size'],
                                                 self.param_dict['bkg_filter_size'],
-                                                self.param_dict['dao']['TWEAK_FWHMPSF'])
+                                                self.param_dict['TWEAK_FWHMPSF'])
 
                         # Reset the local version of the Gaussian kernel and the RickerWavelet
                         # kernel when the background type changes
@@ -1889,6 +1891,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             self.kernel = rw2d_kernel
                             segm_img = copy.deepcopy(rw_segm_img)
                             del rw_segm_img
+                            self.final_nsigma = rw2d_sigma_for_threshold
                         # The field was found to be crowded, but the biggest source second criterion is deemed OK.
                         elif (rw_is_big_crowded and (ratio_cg2rw_bigsource > self._ratio_bigsource_limit)):
                             log.info("The Round 2 of segmentation images may still contain big sources/islands.\n"
@@ -1898,6 +1901,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                             self.kernel = rw2d_kernel
                             segm_img = copy.deepcopy(rw_segm_img)
                             del rw_segm_img
+                            self.final_nsigma = rw2d_sigma_for_threshold
                         # The segmentation image is problematic and the big island/source fraction limits are exceeded,
                         # so deblending could take days, and the results would not be viable in any case.
                         else:
@@ -1915,6 +1919,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                         self.kernel = g2d_kernel
                         segm_img = copy.deepcopy(g_segm_img)
                         del g_segm_img
+                        self.final_nsigma = sigma_for_threshold
 
                 # The first round RickerWavelet segmentation image is good, continue with the processing
                 elif not rw_is_big_crowded and rw_segm_img:
@@ -1922,6 +1927,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     segm_img = copy.deepcopy(rw_segm_img)
                     del rw_segm_img
                     del g_segm_img
+                    self.final_nsigma = self._rw2d_nsigma
 
                 # No segments were detected in the total data product - no further processing done for this TDP,
                 # but processing of another TDP should proceed.
@@ -1934,12 +1940,16 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 self.kernel = g2d_kernel
                 segm_img = copy.deepcopy(g_segm_img)
                 del g_segm_img
+                self.final_nsigma = self._nsigma
 
             # No segments were detected in the total data product - no further processing done for this TDP,
             # but processing of another TDP should proceed.
             elif not g_segm_img:
                 self._define_empty_table(g_segm_img)
                 return
+
+            # Report the final nsigma value used to compute the threshold above which sources are detected
+            log.info("*** Final nsigma used (threshold = nsigma * background_rms): {}".format(self.final_nsigma))
 
             # If appropriate, deblend the segmentation image. Otherwise, use the current segmentation image
             ncount += 1
@@ -2001,13 +2011,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("{}".format("=" * 80))
             log.info("")
 
-        # This is the filter product section -  use sources identified in total detection product 
-        # previously generated
+        # This is the filter product section -  use sources and other information identified in
+        # the total detection product previously generated
         else:
             self.sources = self.tp_sources['segment']['sources']                   # segmentation image
-            self.kernel = self.tp_sources['segment']['kernel']                  
+            self.kernel = self.tp_sources['segment']['kernel']                     # image smoothing kernel
             self.total_source_table = self.tp_sources['segment']['source_cat']     # source catalog as a table
             self.total_source_cat = self.tp_sources['segment']['total_source_cat'] # SourceCatalog datatype
+            self.final_nsigma = self.tp_sources['segment']['final_nsigma']         # final sigma multiplicative factor used
 
         # For debugging purposes only, create a "regions" files to use for ds9 overlay of the segm_img.
         # Create the image regions file here in case there is a failure.  This diagnostic portion of the
@@ -2326,8 +2337,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         log.info("SExtractor-like source property measurements based on Photutils segmentation")
         log.info("Filter Level Product - Input Parameters")
         log.info("image name: {}".format(self.imgname))
-        log.info("FWHM: {}".format(self._fwhm))
-        log.info("size_source_box: {}".format(self._size_source_box))
+        log.info("Gaussian FWHM (Filter for source detection in arcseconds): {}".format(self.param_dict['TWEAK_FWHMPSF']))
+        log.info("size_source_box (pixels): {}".format(self._size_source_box))
         log.info("")
 
         # This is the filter science data and its computed background
