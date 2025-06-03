@@ -17,6 +17,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
+3.xx.x (unreleased)
+====================
+
+- Fixed scipy deprecations in catalog_utils.py and hap_flag_filter.py.
+  [#2032]
+
 3.10.0 (21-May-2025)
 ====================
 
