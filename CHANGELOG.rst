@@ -20,6 +20,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.xx.x (unreleased)
 ====================
 
+- Ignore the RMS comparison between a Background2D and the sigma-clipped
+  algorithm when the background is being "forced" to be a "Background2D"
+  as indicated by the bkg_skew_threshold=0.0 and the negative_percent=100.0.
+  This is done for the case of Round 2 for identification of sources for
+  the HAPSegmentCatalog. [#nnnn]
+
 - Fixed scipy deprecations in catalog_utils.py and hap_flag_filter.py.
   [#2032]
 
