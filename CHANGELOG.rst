@@ -17,6 +17,15 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
+3.xx.x (unreleased)
+===================
+
+- Ignore the RMS comparison between a Background2D and the sigma-clipped
+  algorithm when the background is being "forced" to be a "Background2D"
+  as indicated by the bkg_skew_threshold=0.0 and the negative_percent=100.0.
+  This is done for the case of Round 2 for identification of sources for
+  the HAPSegmentCatalog. [#2033]
+
 3.10.0 (21-May-2025)
 ====================
 
