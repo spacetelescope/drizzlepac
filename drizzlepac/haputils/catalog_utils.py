@@ -461,7 +461,13 @@ class CatalogImage:
                     # for the sigma-clipped algorithm, use the sigma-clipped algorithm instead.
                     # The sigma-clipped values have already been set in BACKGROUND COMPUTATION 2
                     # as the class attributes.
-                    elif bkg_rms_median > self.bkg_rms_median:
+                    #
+                    # Ignore the following criterion if the background is being "forced" to be a
+                    # Background2D computation as indicated by the bkg_skew_threshold = 0.0 and
+                    # the negative_percent = 100.0.  This is done for the case of Round 2 in the
+                    # identify_sources() method for the HAPSegmentCatalog.
+                    elif (bkg_rms_median > self.bkg_rms_median) and (bkg_skew_threshold > 0.0) and \
+                          (negative_percent < 100.0):
                         log.info(f"Background2D rms, {bkg_rms_median:.6f}, is greater than sigma-clipped rms, {self.bkg_rms_median:.6f}.")
                         log.info("*** Use the background image determined from the sigma_clip algorithm. ***")
 
