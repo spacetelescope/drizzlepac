@@ -183,6 +183,138 @@ argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` f
     *strongly* discouraged as there is no way to revert these values back to their defaults once
     they have been changed.
 
+1.3.2: Description of the variables in the catalog JSON files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Default values for the numeric configuration parameters are detector-dependent.  In the actual configuration files
+the parameters are split into three sections: General (which is unlabeled), DAO (for the Point algorithm), and SOURCEX (for the Segmentation algorithm). The variables listed in the General section apply to both the Point and Segmentation algorithms.
+
+GENERAL 
+    * bkg_box_size: int (pixels)
+        For Background2D, the size of the box within which the background is estimated using the sigma-clipped statistics algorithm.
+
+    * bkg_filter_size: int (pixels)
+        Window size of the 2D median filter to apply to the low resolution background map
+
+    * good_fwhm: 
+        DEPRECATED
+
+    * skyannulus_arcsec: float (arcseconds)
+        Photometry measurement: inner radius of the circular annulus
+
+    * dskyannulus_arcsec: float (arcseconds)
+        Photometry measurement: outer radius of the circular annulus
+
+    * aperture_1: float (arcseconds)
+        Photometry measurement: inner aperture radius
+
+    * aperture_2: float (arcseconds)
+        Photometry measurement: outer aperture radius
+
+    * salgorithm: string (default = "mode")
+        Photometry measurement: Statistic to use to calculate the background ("mean", "median", "mode"). All measurements are sigma-clipped.
+
+    * scale: float
+        Used as a scaling factor on a limit threshod for computation of weight masks
+
+    * sensitivity: float
+        Used for computation of weight masks to preserve the attribute of similarity
+
+    * block_size: int
+        Size of the block used by the FFT to deconvolve the drizzled image with the PSF
+
+    * cr_residual: float
+        Factor used to account for the influence of single-image cosmic-ray identification.  Single filter single-image exposures are only used to compute total detection image when there are only single exposures for *all* of the input filters.
+
+    * flag_trim_value: int
+        The value which is the high limit for good detected sources.  Sources with lower flag values are deemed good. Flags above the default limit represent:  multi-pixel saturation, faint magnitude, hot pixels, swarm detection, edge/chip gap, bleeding, and cosmic rays.
+
+    * simple_bkg: bool (default = False)
+        Forces use of the sigma_clipped_stats algorithm to compute the background of the input image.
+
+    * zero_percent: float
+        Percentage limit of the pure zero values in the illuminated portion of an input image.  If there are more zero values than the zero_percent limit, then the background is set to zero and the background rms is computed based on the pixels which are non-zero in the illuminated portion of the input image.
+
+    * negative_percent: float
+        If the background were determined by Background2D, but the background-subtracted image has more than the allowed limit of negative_percent, then the background should be determined by the sigma-clipped statistics algorithm.
+
+    * nsigma_clip: float
+        Parameter for the sigma_clipped_stats algorithm in the determination of the background of the input image. This is the number of standard deviations to use for both the lower and upper clipping limit.
+
+    * maxiters: int
+        The number of sigma-clipping iterations to perform when using the sigma_clipped_stats algorithm to compute the background of the input image.
+
+    * background_skew_threshold: float
+        Pearson’s second coefficient of skewness - this is a criterion for possibly computing a two-dimensional background fit.  If the skew is larger than this threshold, this implies a crowded field and a more complex background determination algorithm is warranted.
+
+    * TWEAK_FWHMPSF: float
+        Gaussian FWHM for source detection
+
+DAO
+    * bigsig_sf: 
+        DEPRECATED
+
+    * kernel_sd_aspect_ratio: 
+        DEPRECATED
+
+    * nsigma: float
+        The "sigma" in threshold=(sigma * background_rms). Threshold is an image greater than the background which defines, on a pixel-by-pixel basis, the low signal limit above which sources are detected.  
+
+    * starfinder_algorithm: string (default = "psf")
+        Algorithm to use for source detection: "dao" (DAOStarFinder), "iraf" (IRAFStarFinder), and "psf" (UserStarFinder).
+
+    * region_size: int
+        Size of the box used to recognize a point source. Also, the kernel size for the maximum filter window when computing weight masks.
+
+SOURCEX
+    * source_box: int (pixels)
+        Number of connected pixels needed for a source detection
+
+    * segm_nsigma: float
+        The "sigma" in threshold=(sigma * background_rms). Threshold is an image greater than the background which defines, on a pixel-by-pixel basis, the low signal limit above which sources are detected.  The value is applicable for the Gaussian smoothing kernel.
+
+    * nlevels: int
+        Number of multi-thresholding levels for deblending 
+
+    * contrast: float
+        Fraction of the total source flux that a local peak must have to be deblended as a separate object
+
+    * border: 
+        DEPRECATED
+
+    * rw2d_size: int
+        RickerWavelet kernel X- and Y-dimension in pixels
+
+    * rw2d_nsigma: float
+        The "sigma" in threshold=(sigma * background_rms). Threshold is an image greater than the background which defines, on a pixel-by-pixel basis, the low signal limit above which sources are detected.  The value is applicable for the RickerWavelet smoothing kernel.
+
+    * rw2d_biggest_pixels: int (pixels)
+        Pixel limit on biggest source for RickerWavelet kernel
+
+    * rw2d_biggest_source: float
+        Percentage limit on biggest source for RickerWavelet kernel
+
+    * rw2d_source_fraction: float
+        Percentage limit on source fraction over the image for RickerWavelet kernel
+
+    * biggest_source_deblend_limit: float
+        Percentage limit on biggest source deblending limit
+
+    * source_fraction_deblend_limit: float
+        Percentage limit on source fraction deblending limit
+
+    * ratio_bigsource_limit: int
+        Limit on the ratio of the "big sources" found with the Gaussian vs the RickerWavelent kernel.  The ratio is interpreted as indicative of overlapping PSFs vs nebulousity.  If the ratio is larger than this limit, the processing is allowed to proceed.
+
+    * ratio_bigsource_deblend_limit: int
+        Limit used to filter out prohibitively large segments as it a resource consuming task to try and deblend very large segments.  If the ratio of the area of the largest segment to the area of the next smaller segment is larger than this limit, segment is not deblended.
+
+    * kron_scaling_radius: float
+        Scaling parameter of the unscaled Kron radius
+
+    * kron_minimum_radius: float (pixels)
+        Minimum value for the unscaled Kron radius
+
+
 1.4: Image Kernel
 -----------------
 By default, the software uses a 
