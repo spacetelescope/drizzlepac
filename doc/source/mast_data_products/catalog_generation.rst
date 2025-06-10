@@ -12,12 +12,26 @@ referred to as the Point and Segment catalogs.  Both catalogs are generated usin
 utilities from `Photutils <https://photutils.readthedocs.io/en/stable/>`_
 with the Point catalog created based upon functionality similar to DAOPhot-style photometry,
 and the Segment catalog created with Source Extractor segmentation capabilities and output
-in mind.
+in mind.  The HAP catalogs are intended to replicate the Hubble Source Catalog (HSC) by
+`Whitmore et al. 2016 AJ, 151, 134W <http://adsabs.harvard.edu/abs/2016AJ....151..134W>`_.
 
-These catalogs provide aperture photometry in the ABmag system and are calibrated using the photometric zeropoints
-corresponding to an 'infinite' aperture. To convert to total magnitudes, aperture corrections must be applied to
-account for flux falling outside of the selected aperture. For details, see
-`Whitmore et al., 2016 AJ, 151, 134W <http://adsabs.harvard.edu/abs/2016AJ....151..134W>`_.
+The HAP catalogs provide aperture photometry in the ABmag system in two small apertures, but they are
+calibrated using the photometric zeropoints corresponding to an 'infinite' aperture. To convert to total
+magnitudes, **aperture corrections must be applied to account for flux falling outside of the selected 
+aperture**.  For details, see Section 2.2.3 "Aperture Corrections".
+
+   * For WFC3, see `Section 9.1.3 "Aperture and Encircled Energy Corrections" 
+     <https://hst-docs.stsci.edu/wfc3dhb/chapter-9-wfc3-data-analysis/9-1-photometry#id-9.1Photometry-9.1.3ApertureandEncircledEnergyCorrections>`_ 
+     in the `WFC3 Data Handbook <https://hst-docs.stsci.edu/wfc3dhb>`_ (Pagul & Rivera et. al. 2024). 
+     The latest `WFC3/UVIS EE tables 
+     <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/uvis-encircled-energy>`_ and 
+     `WFC3/IR EE tables <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/ir-encircled-energy>`_ are also available for download.
+   * For ACS, see `Section 5.1.2 "Aperture and Color Corrections" 
+     <https://hst-docs.stsci.edu/acsdhb/chapter-5-acs-data-analysis/5-1-photometry#id-5.1Photometry-5.1.25.1.2ApertureandColorCorrections>`_ in the ACS Data Handbook (Lucas & Ryan et al. 2022). 
+     `ACS EE tables <https://www.stsci.edu/hst/instrumentation/acs/data-analysis/aperture-corrections>`_ are available for download from the website.
+   * For a discussion of HAP drizzled data products, see the 
+     `DrizzlePac Handbook <https://hst-docs.stsci.edu/drizzpac>`_ (Anand, Mack et al. 2025).
+
 
 1: Support Infrastructure for Catalog Generation
 ================================================
@@ -261,25 +275,31 @@ many false detections as possible for saturated sources.
 
 2.2.1: Flux Determination
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-Aperture photometry is then preformed on the previously identified sources using a pair of concentric
-photometric apertures. The sizes of these apertures depend on the specific detector being used, and are
-listed below in table 1:
+Aperture photometry is then computed for the identified sources using a pair of small, concentric 
+apertures listed in Table 1 for each instrument/detector. The radii for the two aperture measurements 
+(MagAper1 and MagAper2) are 1 and 3 pixels for ACS/WFC, 1.25 and 3.75 pixels for WFC3/UVIS, and 1.2 
+and 3.5 pixels for WFC3/IR. See Table 1 for the corresponding sizes in arcsec. Both the Point and
+Segment source catalogs contain aperture photometry in two small apertures (Aper1 and Aper2) which are 
+listed in units of arcseconds and in pixels. Users must manually apply aperture corrections in order to 
+correct HAP magnitude values to infinite aperture. 
 
-.. table:: Table 1: Aperture photometry aperture sizes
+.. table:: Table 1: For each HST Instrument/Detector, the scale of the HAP drizzled (drc/drz) image is given in column 2.
 
-    +---------------------+----------------+----------------+
-    | Instrument/Detector | Aper1 (arcsec) | Aper2 (arcsec) |
-    +=====================+================+================+
-    | ACS/HRC             | 0.03           | 0.125          |
-    +---------------------+----------------+----------------+
-    | ACS/SBC             | 0.07           | 0.125          |
-    +---------------------+----------------+----------------+
-    | ACS/WFC	          | 0.05           | 0.15           |
-    +---------------------+----------------+----------------+
-    | WFC3/IR	          | 0.15           | 0.45           |
-    +---------------------+----------------+----------------+
-    | WFC3/UVIS           | 0.05           | 0.15           |
-    +---------------------+----------------+----------------+
+    +-------------+----------+--------+--------+-------+-------+
+    | Instrument/ | Drizzled | Aper1  | Aper2  | Aper1 | Aper2 |
+    | Detector    | Scale    | (")    | (")    | (pix) | (pix) |
+    |             | ("/pix)  |        |        |       |       |
+    +=============+==========+========+========+=======+=======+
+    | WFC3/IR	  |  0.128   | 0.15   | 0.45   |  1.2  |  3.5  |
+    +-------------+----------+--------+--------+-------+-------+
+    | WFC3/UVIS   |  0.040   | 0.05   | 0.15   |  1.25 |  3.75 |
+    +-------------+----------+--------+--------+-------+-------+
+    | ACS/WFC	  |  0.050   | 0.05   | 0.15   |  1.0  |  3.0  |
+    +-------------+----------+--------+--------+-------+-------+
+    | ACS/HRC     |  0.025   | 0.03   | 0.125  |  1.2  |  5.0  |
+    +-------------+----------+--------+--------+-------+-------+
+    | ACS/SBC     |  0.025   | 0.07   | 0.125  |  2.8  |  5.0  |
+    +-------------+----------+--------+--------+-------+-------+
 
 Raw (non-background-subtracted) flux values are computed by summing up the enclosed flux within the two specified
 apertures using the `photutils.aperture.aperture_photometry
@@ -339,6 +359,57 @@ Finally, convert STmag to ABmag:
 where
     * :math:`{photplam}` is the bandpass pivot wavelength, in Angstroms
 
+Some additional citations for the magnitude systems are the following: `ACS Data Handbook <https://hst-docs.stsci.edu/acsdhb/chapter-5-acs-data-analysis/5-1-photometry>`_, analysis of the
+relationship between *photflam*, *photzpt*, and *photplam* to the *STmag* and *ABmag* zeropoints (`Bohlin et al. 2011 <https://ui.adsabs.harvard.edu/abs/2011AJ....141..173B/abstract>`_), discussion of *STmag* (`Koornneef, J. et al. 1986 <https://ui.adsabs.harvard.edu/abs/1986HiA.....7..833K/abstract>`_), and a discussion of *ABmag* (`Oke, J.B. 1964 <https://ui.adsabs.harvard.edu/abs/1964ApJ...140..689O/abstract>`_).
+
+2.2.3: Aperture Corrections
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+HAP (and HSC) photometry is measured in small apertures in order to reduce errors due to source crowding or 
+background variations. The photometric header keywords, on the other hand, correspond to an ‘infinite’ 
+aperture enclosing all of the light from a source.  Aperture corrections are not applied to the point and 
+segment catalogs and must be applied by the user to determine the total magnitude of the source. Blind 
+application of aperture corrections using the EE tables should be avoided, since the measured 
+photometry (and the EE fraction) in small apertures is strongly dependent on the telescope focus and 
+orbital breathing effects.   
+
+To convert aperture magnitudes to total magnitudes, a two-step process is recommended.  First small 
+aperture photometry is corrected to a larger ‘standard’ aperture for each instrument, beyond which 
+the fraction of enclosed light is insensitive to changes in telescope focus, orbital breathing 
+effects, or spatial variations in the PSF 
+(see `Mack et al. 2022 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2022/WFC3-ISR-2022-06.pdf>`_).  This correction may be 
+measured from isolated stars in the drizzled science frames, when possible.  Alternatively, the MAST PSF 
+search tool can be used to download PSFs extracted from archival data at a similar focus level 
+and detector position, and the appropriate aperture corrections can be calculated using these. For 
+example, `WFC3 Observed PSFs <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/psf/psf-search>`_  
+can be accessed on the 
+`MAST Portal interface <https://mast.stsci.edu/portal/Mashup/Clients/Mast/Portal.html>`_
+by choosing the 'Select a collection' to 'WFC3 PSF'. For details, see 
+`WFC3 ISR 2021-12 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2021/ISR_2021_12.pdf>`_. 
+
+Next, the ‘standard’ aperture is corrected to ‘infinite’ aperture using the encircled energy (EE) 
+tables provided by the HST instrument teams. These tables are derived from high signal-to-noise ratio
+observations of isolated stars out to large radii, where the EE fraction is converted to magnitude units.  
+`ACS EE Tables <https://www.stsci.edu/hst/instrumentation/acs/data-analysis/aperture-corrections>`_ 
+and interactive plots are available on the ACS website. The latest solutions are described in 
+`Bohlin (2016 AJ....152) <https://ui.adsabs.harvard.edu/abs/2016AJ....152...60B/abstract>`_
+for the WFC and HRC detectors and in 
+`ACS ISR 2016-05 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/acs/documentation/instrument-science-reports-isrs/_documents/isr1605.pdf>`_ for the SBC detector.  
+`WFC3/UVIS EE tables <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/uvis-encircled-energy>`_
+are available the WFC3 website and described in 
+`WFC3 ISR 2021-04 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2021/WFC3_ISR_2021-04.pdf>`_, and the 
+`WFC3/IR EE tables <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/ir-encircled-energy>`_ are described in 
+`WFC3 ISR 2009-37 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2009/WFC3-2009-37.pdf>`_.
+
+2.2.4: Hubble Source Catalog
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The legacy `HSC FAQ page <https://archive.stsci.edu/hst/hscv1/help/HSC_faq.html>`_ 
+links to an older set of 
+`Aperture Corrections Tables <https://archive.stsci.edu/hst/hscv1/help/FAQ/aperture_corrections.txt>`_
+recommended by `Whitmore et al. 2016 <https://ui.adsabs.harvard.edu/abs/2016AJ....151..134W/abstract>`_
+for each HST detector. While these represented the best solutions at the time 
+(e.g. `Sirianni et al. 2005 <https://iopscience.iop.org/article/10.1086/444553/pdf>`_ 
+for ACS; `Hartig 2009 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2009/WFC3-2009-37.pdf>`_ for WFC3), 
+the updated encircled energy solutions from the instrument webpages should be used instead. See Section 2.2.3.
 
 2.3: Calculation of Photometric Errors
 --------------------------------------
@@ -392,7 +463,7 @@ where
 
 We use the concentration index to classify automatically each identified photometric source as either a point source
 (i.e. stars), an extended source (i.e. galaxies, nebulosity, etc.), or as an “anomalous” source (i.e. saturation,
-hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column
+hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column.
 
 .. _flag_generation:
 

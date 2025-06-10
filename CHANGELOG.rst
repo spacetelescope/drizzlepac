@@ -17,8 +17,66 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.10.0 (24-Mar-2025)
+3.xx.x (unreleased)
 ====================
+
+- Ignore the RMS comparison between a Background2D and the sigma-clipped
+  algorithm when the background is being "forced" to be a "Background2D"
+  as indicated by the bkg_skew_threshold=0.0 and the negative_percent=100.0.
+  This is done for the case of Round 2 for identification of sources for
+  the HAPSegmentCatalog. [#2033]
+
+- Fixed scipy deprecations in catalog_utils.py and hap_flag_filter.py.
+  [#2032]
+
+3.10.0 (21-May-2025)
+====================
+
+- Overwrote the MVM "alignment" configuration files with the SVM
+  files to keep the information in-sync.  [#2028]
+
+- Clarified the sigma value used to compute the threshold above which
+  sources are detected for the segmentation catalog when using the
+  Gaussian or RickerWavelet smoothing kernel.  The value has corrected
+  in the output Segmentation catalogs and given greater visibility in
+  the trailer log files.  [#2027]
+
+- Updated the multiplicative values in the catalog configuration files
+  which are used in conjunction with the computed image RMS to derive
+  a threshold above which sources are detected. The Point catalog uses
+  the variable "nsigma".  The Segmentation catalog uses the variables
+  "segm_nsigma" and "rw2d_nsigma" when using the Gaussian or
+  RickerWavelet smoothing kernels, respectively. [#2026]
+
+- Updated the catalog configuration files to remove obsolete variables,
+  "fwhm" and "TWEAK_THRESHOLD", from the sourcex and dao sections, respectively.
+  The "TWEAK_FWHMPSF" variable/value now resides in the general section of the
+  file as it applies to both catalogs.  Modified the catalog_utils.py module
+  so the Segmentation catalog now reports the proper value for the Gaussian
+  Filter FWHM which is used to smooth the total detection image. [#2024]
+
+- Corrected the use of a string comparison to "asn" in the build_poller_table
+  routine of the poller_utils.py module as these characters are
+  a valid portion of the root of an ipppssoot filename (e.g., j6kasn01q).
+  The comparison is now done against "_asn" when looking for association
+  names in order to perform the proper actions. [#2019]
+
+- Added parameter setting, sub_shape, to the IterativePSFPhotometry invocation
+  to ensure a rectangular shape around the center of a star is defined when
+  subtracting PSF models. [#2014]
+
+- Resolved the issue of duplicate "ID"s in the rows of the Total Point catalog.
+  For "point" source identification, looping is done over a list of weight masks,
+  tp_masks, when invoking the "finder" algorithms. Tables are returned with a
+  unique "id" number for each row/source in the table. When tp_masks > 1, the
+  returned tables are stacked to generate a final table. The "id" number was not
+  updated to reflect the stacking of the tables which created rows with the same
+  "id".  This error did not cause the code to fail, but it did generate a garbled
+  table. [#2007]
+
+- Removed the extra column in the Point source identifcation table when using the
+  DAOStarFinder or IRAFStarFinder utilities.  The extra column, daofind_mag, was
+  added in Photutils 2.0. [#2006]
 
 - Dropped support for Python v3.10 due to conflict with upgrading to
   Photutils v2.2.0. [#1987]

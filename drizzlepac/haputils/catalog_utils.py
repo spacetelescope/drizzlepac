@@ -3100,7 +3100,7 @@ def make_wht_masks(
     """
     # uses scipy maximum filter on image. Maximum filter selects the largest value within an ordered 
     # window of pixel values and replaces the central pixel with the largest value.
-    maxwht = ndimage.filters.maximum_filter(whtarr, size=kernel)
+    maxwht = ndimage.maximum_filter(whtarr, size=kernel)
     
     # normalized weight array
     rel_wht = maxwht / maxwht.max()
