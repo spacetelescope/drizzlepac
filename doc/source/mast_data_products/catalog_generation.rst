@@ -263,7 +263,7 @@ DAO
         Algorithm to use for source detection: "dao" (DAOStarFinder), "iraf" (IRAFStarFinder), and "psf" (UserStarFinder).
 
     * region_size: int
-        Size of the box used to recognize a point source. Also, the kernel size for the maximum filter window when computing weight masks.
+        Size of the box used to recognize a point source. Also, the kernel size for the maximum filter window when computing weight masks. In the latter case of "kernel size", the variable applies to both algorithms.
 
 SOURCEX
     * source_box: int (pixels)
