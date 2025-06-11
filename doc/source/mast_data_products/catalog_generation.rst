@@ -185,7 +185,7 @@ argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` f
 
 1.3.2: Description of the variables in the catalog JSON files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Default values for the numeric configuration parameters are detector-dependent.  In the actual configuration files
+Default values for the numeric configuration parameters are detector-dependent, though many of the values may be the same from detector to detector.  In the actual configuration files
 the parameters are split into three sections: General (which is unlabeled), DAO (for the Point algorithm), and SOURCEX (for the Segmentation algorithm). The variables listed in the General section apply to both the Point and Segmentation algorithms.
 
 GENERAL 
