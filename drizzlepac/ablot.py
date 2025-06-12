@@ -30,7 +30,8 @@ from . import __version__
 __all__ = ['blot', 'runBlot', 'help']
 
 __taskname__ = 'ablot'
-_blot_step_num_ = 5
+STEP_NUM = 5
+PROCSTEPS_NAME = "Blot"
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
@@ -164,31 +165,34 @@ def runBlot(imageObjectList, output_wcs, configObj={},
             wcsmap=wcs_functions.WCSMap, procSteps=None)
     """
     if procSteps is not None:
-        procSteps.addStep('Blot')
+        procSteps.addStep(PROCSTEPS_NAME)
+        if not imageObjectList:
+            procSteps.endStep(PROCSTEPS_NAME, reason="skipped", delay_msg=True)
 
-    blot_name = util.getSectionName(configObj, _blot_step_num_)
+    blot_name = util.getSectionName(configObj, STEP_NUM)
 
     # This can be called directly from MultiDrizle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[blot_name]['blot']:
         paramDict = buildBlotParamDict(configObj)
 
-        log.info('USER INPUT PARAMETERS for Blot Step:')
+        log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
         util.printParams(paramDict, log=log)
 
         run_blot(imageObjectList, output_wcs.single_wcs, paramDict,
                  wcsmap=wcsmap)
     else:
         log.info('Blot step not performed.')
+        return
 
     if procSteps is not None:
-        procSteps.endStep('Blot')
+        procSteps.endStep(PROCSTEPS_NAME)
 
 
 # Run 'drizzle' here...
 #
 def buildBlotParamDict(configObj):
-    blot_name = util.getSectionName(configObj,_blot_step_num_)
+    blot_name = util.getSectionName(configObj, STEP_NUM)
 
     paramDict = {'blot_interp':configObj[blot_name]['blot_interp'],
                 'blot_sinscl':configObj[blot_name]['blot_sinscl'],

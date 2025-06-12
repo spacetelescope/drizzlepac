@@ -8,6 +8,7 @@ A library of utility functions
 :License: :doc:`/LICENSE`
 
 """
+from enum import Enum
 import logging
 import functools
 import os
@@ -31,8 +32,11 @@ from . import __version__
 __fits_version__ = astropy.__version__
 __numpy_version__ = np.__version__
 
+
 _cpu_count = 1
 can_parallel = False
+
+
 if 'ASTRODRIZ_NO_PARALLEL' not in os.environ and platform.system() != "Windows":
     try:
         import multiprocessing
@@ -46,6 +50,19 @@ if 'ASTRODRIZ_NO_PARALLEL' not in os.environ and platform.system() != "Windows":
     except ImportError:
         print('Could not import multiprocessing, will only take advantage '
               'of a single CPU core')
+
+
+class StepStatus(Enum):
+    STEP_STARTED = 1
+    STEP_ENDED = 2
+    STEP_ABORTED = 3
+    STEP_SKIPPED = 4
+    STEP_OFF = 5
+
+
+class StepAbortedError(RuntimeError):
+    """ Exception used to indicate that a step is aborted. """
+    pass
 
 
 def get_pool_size(usr_config_value, num_tasks):
@@ -300,11 +317,19 @@ class ProcSteps:
     __report_header += '   %20s          %s\n' % ('Step', 'Elapsed time')
     __report_header += '   %20s          %s\n' % ('-' * 20, '-' * 20)
 
+    _status_map = {
+        "off": (StepStatus.STEP_OFF, "turned off"),
+        "aborted": (StepStatus.STEP_ABORTED, "aborted"),
+        "skipped": (StepStatus.STEP_SKIPPED, "skipped"),
+        "ended": (StepStatus.STEP_ENDED, "finished"),
+    }
+
     def __init__(self):
         self.steps = {}
         self.order = []
         self.start = _ptime()
         self.end = None
+        self.delayed_msg = None
 
     def addStep(self, key):
         """
@@ -314,12 +339,16 @@ class ProcSteps:
         step.
         """
         ptime = _ptime()
-        print('==== Processing Step ', key, ' started at ', ptime[0])
-        print("", flush=True)
-        self.steps[key] = {'start': ptime}
+        print(f"\n==== Processing Step '{key}' started at {ptime[0]}", flush=True)
+        self.steps[key] = {
+            'start': ptime,
+            'end': ptime,
+            'elapsed': 0,
+            'status': StepStatus.STEP_STARTED,
+        }
         self.order.append(key)
 
-    def endStep(self, key):
+    def endStep(self, key, reason="ended", delay_msg=False):
         """
         Record the end time for the step.
 
@@ -330,29 +359,56 @@ class ProcSteps:
         if key is not None:
             self.steps[key]['end'] = ptime
             self.steps[key]['elapsed'] = ptime[1] - self.steps[key]['start'][1]
+        else:
+            key = self.order[-1]
+
+        status, msg = self._status_map[reason]
+        self.steps[key]["status"] = status
         self.end = ptime
 
-        print('==== Processing Step {} finished at {}'.format(key, ptime[0]), flush=True)
+        if reason == "ended":
+            msg = f"==== Processing Step '{key}'' finished at {ptime[0]}"
+        else:
+            msg = f"==== Step '{key}' was {msg} at {ptime[0]}"
+        if delay_msg:
+            self.delayed_msg = msg
+        else:
+            self.delayed_msg = None
+            print(msg, flush=True)
+
+    def flush(self):
+        if self.delayed_msg is not None:
+            print(self.delayed_msg, flush=True)
+            self.delayed_msg = None
+
 
     def reportTimes(self):
         """
         Print out a formatted summary of the elapsed times for all the
         performed steps.
         """
+        self.flush()  # print any delayed messages
 
         self.end = _ptime()
         total_time = 0
         print(ProcSteps.__report_header)
-        for step in self.order:
-            if 'elapsed' in self.steps[step]:
-                _time = self.steps[step]['elapsed']
-            else:
-                _time = 0.0
-            total_time += _time
-            print('   %20s          %0.4f sec.' % (step, _time))
 
-        print('   %20s          %s' % ('=' * 20, '=' * 20))
-        print('   %20s          %0.4f sec.' % ('Total', total_time))
+        for step in self.order:
+            _time = self.steps[step]['elapsed']
+            total_time += _time
+
+            if self.steps[step]['status'] is StepStatus.STEP_ABORTED:
+                note = "(aborted)"
+            elif self.steps[step]['status'] == StepStatus.STEP_SKIPPED:
+                note = "(skipped)"
+            elif self.steps[step]['status'] == StepStatus.STEP_OFF:
+                note = "(off)"
+            else:
+                note = ''
+            print(f"   {step:20s}          {_time:0.4f} sec {note}")
+
+        print(f"   {'=' * 20:20s}          {'=' * 20:s}")
+        print(f"   {'Total':20s}          {total_time:0.4f} sec")
         print("", flush=True)
 
 
@@ -442,21 +498,21 @@ def count_sci_extensions(filename, return_ind=False):
     Parameters
     ----------
     filename : str
-        Filename of the file you would like to count the extensions of. 
+        Filename of the file you would like to count the extensions of.
     return_ind : bool, optional
-        Whether to return a list of the indices of the true "SCI" science extensions, 
+        Whether to return a list of the indices of the true "SCI" science extensions,
         by default False.
 
     Returns
     -------
     tuple
-        Science extension and number of extensions. 
-    
+        Science extension and number of extensions.
+
     or (if return_ind=True)
-    
+
     list
-        indices of the "SCI" science extensions. 
-    """    
+        indices of the "SCI" science extensions.
+    """
 
     num_sci = 0
     index=[]
@@ -477,7 +533,7 @@ def count_sci_extensions(filename, return_ind=False):
 
     if return_ind:
         return index
-    
+
     else:
         return num_sci, extname
 
@@ -709,8 +765,8 @@ def getDefaultConfigObj(taskname, configObj, input_dict={}, loadOnly=True):
             what gets loaded in from the .cfg file for the task
 
         loadOnly : bool
-            Deprecated parameter left over from TEAL. The teal.load function is 
-            still used for loading configuration files. 
+            Deprecated parameter left over from TEAL. The teal.load function is
+            still used for loading configuration files.
 
     """
     if configObj is None:

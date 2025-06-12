@@ -37,8 +37,11 @@ __all__ = ['drizzle', 'run', 'drizSeparate', 'drizFinal', 'mergeDQarray',
 
 
 __taskname__ = "adrizzle"
-_single_step_num_ = 3
-_final_step_num_ = 7
+
+STEP_NUM_SINGLE = 3
+STEP_NUM_FINAL = 7
+PROCSTEPS_NAME_SINGLE = "Separate Drizzle"
+PROCSTEPS_NAME_FINAL = "Final Drizzle"
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
@@ -327,10 +330,10 @@ def run(configObj, wcsmap=None):
 def drizSeparate(imageObjectList, output_wcs, configObj,
                  logfile=None, wcsmap=None, procSteps=None):
     if procSteps is not None:
-        procSteps.addStep('Separate Drizzle')
+        procSteps.addStep(PROCSTEPS_NAME_SINGLE)
 
     # ConfigObj needs to be parsed specifically for driz_separate set of parameters
-    single_step = util.getSectionName(configObj, _single_step_num_)
+    single_step = util.getSectionName(configObj, STEP_NUM_SINGLE)
     # This can be called directly from MultiDrizle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
     if configObj[single_step]['driz_separate']:
@@ -346,7 +349,7 @@ def drizSeparate(imageObjectList, output_wcs, configObj,
         paramDict['num_cores'] = configObj.get('num_cores')
         paramDict['rules_file'] = configObj['rules_file'] if configObj['rules_file'] != "" else None
 
-        log.info('USER INPUT PARAMETERS for Separate Drizzle Step:')
+        log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME_SINGLE} Step:")
         util.printParams(paramDict, log=log)
 
         paramDict['logfile'] = logfile
@@ -360,16 +363,16 @@ def drizSeparate(imageObjectList, output_wcs, configObj,
         log.info('Single drizzle step not performed.')
 
     if procSteps is not None:
-        procSteps.endStep('Separate Drizzle')
+        procSteps.endStep(PROCSTEPS_NAME_SINGLE)
 
 
 def drizFinal(imageObjectList, output_wcs, configObj,
               build=None, wcsmap=None, logfile=None, procSteps=None):
 
     if procSteps is not None:
-        procSteps.addStep('Final Drizzle')
+        procSteps.addStep(PROCSTEPS_NAME_FINAL)
     # ConfigObj needs to be parsed specifically for driz_final set of parameters
-    final_step = util.getSectionName(configObj, _final_step_num_)
+    final_step = util.getSectionName(configObj, STEP_NUM_FINAL)
 
     # This can be called directly from MultiDrizle, so only execute if
     # switch has been turned on (no guarantee MD will check before calling).
@@ -390,7 +393,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,
 
         paramDict['logfile'] = logfile
 
-        log.info('USER INPUT PARAMETERS for Final Drizzle Step:')
+        log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME_FINAL} Step:")
         util.printParams(paramDict, log=log)
 
         run_driz(imageObjectList, output_wcs.final_wcs, paramDict, single=False,
@@ -399,7 +402,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,
         log.info('Final drizzle step not performed.')
 
     if procSteps is not None:
-        procSteps.endStep('Final Drizzle')
+        procSteps.endStep(PROCSTEPS_NAME_FINAL)
 
 # Run 'drizzle' here...
 #
