@@ -29,6 +29,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Fixed scipy deprecations in catalog_utils.py and hap_flag_filter.py.
   [#2032]
 
+- Updated alignment configuration parameters json files and removed those that 
+  were obsolete; updated documentation for these files. [#2037]
+
 3.10.0 (21-May-2025)
 ====================
 
