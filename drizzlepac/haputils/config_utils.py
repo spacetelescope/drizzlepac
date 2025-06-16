@@ -175,10 +175,8 @@ class HapConfig(object):
                             if n_exp > 1:
                                 self.conditions.append("acs_hrc_any_n2")
                         if self.hap_pipeline_name == 'svm':
-                            if n_exp in [2, 3]:
+                            if n_exp in [2, 3, 4, 5]:
                                 self.conditions.append("acs_hrc_any_n2")
-                            if n_exp in [4, 5]:
-                                self.conditions.append("acs_hrc_any_n4")
                             if n_exp >= 6:
                                 self.conditions.append("acs_hrc_any_n6")
                     elif self.detector == "sbc":
@@ -194,10 +192,8 @@ class HapConfig(object):
                             if n_exp > 1:
                                 self.conditions.append("acs_wfc_any_n2")
                         if self.hap_pipeline_name == 'svm':
-                            if n_exp in [2, 3]:
+                            if n_exp in [2, 3, 4, 5]:
                                 self.conditions.append("acs_wfc_any_n2")
-                            if n_exp in [4, 5]:
-                                self.conditions.append("acs_wfc_any_n4")
                             if n_exp >= 6:
                                 self.conditions.append("acs_wfc_any_n6")
                     else:
@@ -229,10 +225,8 @@ class HapConfig(object):
                             # granular enough.
                             mjdutc = prod_obj.edp_list[0].mjdutc
                             if mjdutc >= thresh_time:
-                                if n_exp in [2, 3]:
+                                if n_exp in [2, 3, 4, 5]:
                                     self.conditions.append("wfc3_uvis_any_post_n2")
-                                if n_exp in [4, 5]:
-                                    self.conditions.append("wfc3_uvis_any_post_n4")
                                 if n_exp >= 6:
                                     self.conditions.append("wfc3_uvis_any_post_n6")
                             else:

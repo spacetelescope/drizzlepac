@@ -1,0 +1,8 @@
+﻿,ACS,ACS,ACS,WFC3,WFC3,WFC3,WFPC2
+Nexposures,HRC,SBC,WFC,IR,UVIS (post2012),UVIS (pre2012),PC
+1,acs_hrc_any_n1,acs_sbc_blue_n1,acs_wfc_any_n1,wfc3_ir_any_n1,wfc3_uvis_any_post_n1,wfc3_uvis_any_pre_n1,wfpc2_pc_any_n1
+2,acs_hrc_any_n2,acs_sbc_blue_n2,acs_wfc_any_n2,wfc3_ir_any_n2,wfc3_uvis_any_post_n2,wfc3_uvis_any_pre_n2,wfpc2_pc_any_n2
+3,acs_hrc_any_n2,acs_sbc_blue_n2,acs_wfc_any_n2,wfc3_ir_any_n2,wfc3_uvis_any_post_n2,wfc3_uvis_any_pre_n2,wfpc2_pc_any_n3
+4,acs_hrc_any_n2,acs_sbc_blue_n2,acs_wfc_any_n2,wfc3_ir_any_n4,wfc3_uvis_any_post_n2,wfc3_uvis_any_pre_n4,wfpc2_pc_any_n4
+5,acs_hrc_any_n2,acs_sbc_blue_n2,acs_wfc_any_n2,wfc3_ir_any_n4,wfc3_uvis_any_post_n2,wfc3_uvis_any_pre_n4,wfpc2_pc_any_n4
+6+,acs_hrc_any_n6,acs_sbc_blue_n6,acs_wfc_any_n6,wfc3_ir_any_n4,wfc3_uvis_any_post_n6,wfc3_uvis_any_pre_n6,wfpc2_pc_any_n4
