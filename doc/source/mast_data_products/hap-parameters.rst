@@ -5,6 +5,7 @@ HAP Parameters
 
 In the high-level svm_parameters or mvm_parameters directories, the instrument/detector-dependent configuration index files (e.g., acs_sbc_index.json) provide a map to the configuration files used for the major HAP processing steps. The svm_parameter configuration files are also used for pipeline products.
 
+.. _detector_configuration_files:
 
 Detector Configuration Files
 ****************************
