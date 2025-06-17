@@ -419,6 +419,12 @@ driz_separate : bool (Default = Yes)
     ``WCS`` as the final combined output frame. These images are used to create
     the median image, needed for cosmic ray rejection.
 
+    .. note::
+       This parameter may be ignored and the step be turned on if a
+       higher-numbered step needing separate drizzled images is turned on *and*
+       if there are more than one input images. These steps are:
+       "Create Median", "Blot", and "Remove Cosmic Rays".
+
 driz_sep_kernel : str {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'turbo')
     Used for the initial separate drizzling operation only, this parameter
     specifies the form of the kernel function used to distribute flux onto
@@ -444,16 +450,16 @@ driz_sep_kernel : str {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Defa
         effective for resampling single images when ``scale=pixfrac=1``.
         It leads to less resolution loss than other kernels, and typically
         results in reduced correlated noise in outputs.
-        
+
         .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
-           produce reasonable results and can be useful in certain cases, they do not 
-           conserve flux; understand the effects of these kernels before using them. 
+           produce reasonable results and can be useful in certain cases, they do not
+           conserve flux; understand the effects of these kernels before using them.
 
         .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
            processing as compared to other kernel options. This option should
            never be used for ``pixfrac!=1.0``, and is not recommended
            for ``scale!=1.0``.
-        
+
     The default for this step is ``'turbo'`` since it is much faster
     than ``'square'``, and it is quite satisfactory for the purposes
     of generating the median image. More information about the different
@@ -547,7 +553,23 @@ driz_sep_dec : float (Default = None)
 median : bool (Default = Yes)
     This parameter specifies whether or not to create a median image. This
     median image will be used as the comparison 'truth' image in the cosmic ray
-    rejection step.
+    rejection step. If this step is turned on (either by ``median`` parameter
+    value or automatically -- see notes below), it will also turn on
+    "Step 3: Drizzle Separate".
+
+    .. note::
+       This parameter may be ignored and the step be turned on if a
+       higher-numbered step that depends on the median image is turned on *and*
+       if there are more than one input images. These steps are:
+       "Blot", and "Remove Cosmic Rays".
+
+    .. note::
+       This parameter may be ignored and the step be turned off either
+       when there is only one input image or the combination of input images'
+       overlap and ``combine_*`` parameters is such that there are not enough
+       overlapping pixels to create a median image. When this will occur,
+       all other higher-numbered step that depends on the median image will
+       also be turned off.
 
 median_newmasks : bool (Default = Yes)
     This parameter specifies whether or not new mask files will be created when
@@ -648,6 +670,20 @@ blot : bool (Default = Yes)
     Perform the blot operation on the median image? If set to ``'Yes'``
     (`True`), the output will be median smoothed images that match each input
     chips location, and will be used in the cosmic ray rejection step.
+    If this step is turned on (either by ``blot`` parameter
+    value or automatically -- see notes below), it will also turn on
+    "Step 3: Drizzle Separate" and "Step 4: Create Median".
+
+    .. note::
+       This parameter may be ignored and the step be turned on if
+       "Step 6: Remove Cosmic Rays", which depends on the blot image,
+       is turned on *and* if there are more than one input images.
+
+    .. note::
+       This parameter may be ignored and the step be turned off if
+       "Create Median" step was aborted. When this will occur
+       "Step 6: Remove Cosmic Rays" that depends on blot images
+       will also be turned off.
 
 blot_interp : str{'nearest', 'linear', 'poly3', 'poly5', 'sinc'} (Default = 'poly5')
     This parameter defines the method of interpolation to be used when blotting
@@ -688,7 +724,14 @@ blot_skyval : float (Default = 0.0)
 driz_cr : bool (Default = Yes)
     Perform cosmic-ray detection? If set to ``'Yes'`` (`True`), cosmic-rays
     will be detected and used to create cosmic-ray masks based on the
-    algorithms from 'deriv' and ``driz_cr``.
+    algorithms from 'deriv' and ``driz_cr``. If this step is turned on
+    it will also turn on steps "Step 3: Drizzle Separate",
+    "Step 4: Create Median", and "Step 5: Blot" regardless of their parameter
+    settings.
+
+    .. note::
+       This parameter may be ignored and the step be turned off if
+       "Create Median" step was aborted.
 
 driz_cr_corr : bool (Default = No)
     Create a cosmic-ray cleaned input image? If set to ``'Yes'`` (`True`),
@@ -1032,4 +1075,4 @@ Help can be accessed via the "Help" pulldown menu in the ``TEAL`` GUI.
 
    or
 
-    >>> astrodrizzle.help(file='help.txt')    
+    >>> astrodrizzle.help(file='help.txt')
