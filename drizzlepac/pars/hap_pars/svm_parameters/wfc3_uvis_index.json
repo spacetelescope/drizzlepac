@@ -12,7 +12,6 @@
         "wfc3_uvis_any_pre_n4": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_pre2012_n4.json",
         "wfc3_uvis_any_pre_n6": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_pre2012_n6.json",
         "wfc3_uvis_any_post_n2": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_n2.json",
-        "wfc3_uvis_any_post_n4": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_n4.json",
         "wfc3_uvis_any_post_n6": "wfc3/uvis/wfc3_uvis_astrodrizzle_any_n6.json"
     },
     "catalog generation": {
