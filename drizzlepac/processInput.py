@@ -981,8 +981,7 @@ def buildEmptyDRZ(input, output):
     if not inputfile:
         log.error('\n******* ERROR *******')
         log.error(
-              'No input file found!  Check specification of parameter '
-              '"input". )
+              'No input file found!  Check specification of parameter input')
         log.error('Quitting...')
         log.error('******* ***** *******\n')
         return # raise IOError, "No input file found!"
