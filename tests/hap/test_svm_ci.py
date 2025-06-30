@@ -7,7 +7,6 @@ from drizzlepac.haputils import astroquery_utils as aqutils
 import glob
 import numpy as np
 import os
-import subprocess
 
 # Nominal acceptable CI value for a good solution
 CI_REF = 1.209
