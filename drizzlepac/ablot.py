@@ -135,7 +135,7 @@ def run(configObj,wcsmap=None):
             #_outscale = _expin
         else:
             _outscale = float(scale_pars['expout'])
-        log.info("Output blotted images scaled by exptime of {}".format(_outscale))
+        log.debug("Output blotted images scaled by exptime of {}".format(_outscale))
         np.multiply(_outsci, _outscale, _outsci)
 
     # Add sky back in to the blotted image, as specified by the user
@@ -143,7 +143,7 @@ def run(configObj,wcsmap=None):
         skyval = _scihdu.header['MDRIZSKY']
     else:
         skyval = configObj['skyval']
-    log.info("Added {} counts back in to blotted image as sky.".format(skyval))
+    log.debug("Added {} counts back in to blotted image as sky.".format(skyval))
     _outsci += skyval
 
     del _scihdu
@@ -175,13 +175,13 @@ def runBlot(imageObjectList, output_wcs, configObj={},
     if configObj[blot_name]['blot']:
         paramDict = buildBlotParamDict(configObj)
 
-        log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
+        log.debug(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
         util.printParams(paramDict, log=log)
 
         run_blot(imageObjectList, output_wcs.single_wcs, paramDict,
                  wcsmap=wcsmap)
     else:
-        log.info('Blot step not performed.')
+        log.debug('Blot step not performed.')
         return
 
     if procSteps is not None:
@@ -254,7 +254,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
 
         for chip in img.returnAllChips(extname=img.scienceExt):
 
-            log.info('    Blot: creating blotted image: ',chip.outputNames['data'])
+            log.debug('    Blot: creating blotted image: ',chip.outputNames['data'])
 
             #### Check to see what names need to be included here for use in _hdrlist
             chip.outputNames['driz_version'] = _versions['AstroDrizzle']
@@ -300,7 +300,7 @@ def run_blot(imageObjectList,output_wcs,paramDict,wcsmap=wcs_functions.WCSMap):
             _outsci /= chip._conversionFactor
             if skyval is not None:
                 _outsci += skyval
-                log.info('Applying sky value of %0.6f to blotted image %s'%
+                log.debug('Applying sky value of %0.6f to blotted image %s'%
                             (skyval,chip.outputNames['data']))
 
             # Write output Numpy objects to a PyFITS file
@@ -387,7 +387,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         """
         Use default C mapping function.
         """
-        log.info('Using default C-based coordinate transformation...')
+        log.debug('Using default C-based coordinate transformation...')
         mapping = cdriz.DefaultWCSMapping(
             blot_wcs, source_wcs,
             blot_wcs.pixel_shape[0], blot_wcs.pixel_shape[1],
@@ -399,7 +399,7 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
         ##Using the Python class for the WCS-based transformation
         #
         # Use user provided mapping function
-        log.info('Using coordinate transformation defined by user...')
+        log.debug('Using coordinate transformation defined by user...')
         if wcsmap is None:
             wcsmap = wcs_functions.WCSMap
         wmap = wcsmap(blot_wcs,source_wcs)

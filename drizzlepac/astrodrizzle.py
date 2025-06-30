@@ -162,12 +162,12 @@ def run(configobj, wcsmap=None, input_dict=None):
     logging_handlers = logging.getLogger().handlers
     log_name = [lh.name for lh in logging_handlers if lh.level > 0]
     logfile = log_name[0] if log_name else "{}.tra".format(def_logname)
-    log.info("AstroDrizzle log file: {}".format(logfile))
+    log.debug("AstroDrizzle log file: {}".format(logfile))
 
     clean = configobj['STATE OF INPUT FILES']['clean']
     procSteps = util.ProcSteps()
 
-    log.info("AstroDrizzle Version {:s} started at: {:s}\n"
+    log.debug("AstroDrizzle Version {:s} started at: {:s}\n"
           .format(__version__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
@@ -199,7 +199,7 @@ def run(configobj, wcsmap=None, input_dict=None):
                 .format(__version__, util._ptime()[0])), file=sys.stderr)
             return
 
-        log.info("USER INPUT PARAMETERS common to all Processing Steps:")
+        log.debug("USER INPUT PARAMETERS common to all Processing Steps:")
         util.printParams(configobj, log=log)
 
         step_name_single = util.getSectionName(configobj, adrizzle.STEP_NUM_SINGLE)
@@ -346,7 +346,7 @@ def run(configobj, wcsmap=None, input_dict=None):
                            logfile=logfile,
                            procSteps=procSteps)
 
-        log.info("AstroDrizzle Version {:s} is finished processing at {:s}.\n"
+        log.debug("AstroDrizzle Version {:s} is finished processing at {:s}.\n"
               .format(__version__, util._ptime()[0]))
 
     except Exception:
@@ -379,18 +379,18 @@ def _dbg_dump_virtual_outputs(imgObjList):
     """ dump some helpful information.  strictly for debugging """
     global _fidx
     tag = 'virtual'
-    log.info((tag+'  ')*7)
+    log.debug((tag+'  ')*7)
     for iii in imgObjList:
-        log.info('-'*80)
-        log.info(tag+'  orig nm: '+iii._original_file_name)
-        log.info(tag+'  names.data: '+str(iii.outputNames["data"]))
-        log.info(tag+'  names.orig: '+str(iii.outputNames["origFilename"]))
-        log.info(tag+'  id: '+str(id(iii)))
-        log.info(tag+'  in.mem: '+str(iii.inmemory))
-        log.info(tag+'  vo items...')
+        log.debug('-'*80)
+        log.debug(tag+'  orig nm: '+iii._original_file_name)
+        log.debug(tag+'  names.data: '+str(iii.outputNames["data"]))
+        log.debug(tag+'  names.orig: '+str(iii.outputNames["origFilename"]))
+        log.debug(tag+'  id: '+str(id(iii)))
+        log.debug(tag+'  in.mem: '+str(iii.inmemory))
+        log.debug(tag+'  vo items...')
         for vok in sorted(iii.virtualOutputs.keys()):
             FITSOBJ = iii.virtualOutputs[vok]
-            log.info(tag+': '+str(vok)+' = '+str(FITSOBJ))
+            log.debug(tag+': '+str(vok)+' = '+str(FITSOBJ))
             if vok.endswith('.fits'):
                 if not hasattr(FITSOBJ, 'data'):
                     FITSOBJ = FITSOBJ[0] # list of PrimaryHDU ?
@@ -400,17 +400,17 @@ def _dbg_dump_virtual_outputs(imgObjList):
                 dbgname+=os.path.basename(vok)
                 _fidx+=1
                 FITSOBJ.writeto(dbgname)
-                log.info(tag+'  wrote: '+dbgname)
-                log.info('\n'+vok)
+                log.debug(tag+'  wrote: '+dbgname)
+                log.debug('\n'+vok)
                 if hasattr(FITSOBJ, 'data'):
-                    log.info(str(FITSOBJ._summary()))
-                    log.info('min and max are: '+str( (FITSOBJ.data.min(),
+                    log.debug(str(FITSOBJ._summary()))
+                    log.debug('min and max are: '+str( (FITSOBJ.data.min(),
                                                        FITSOBJ.data.max()) ))
-                    log.info('avg and sum are: '+str( (FITSOBJ.data.mean(),
+                    log.debug('avg and sum are: '+str( (FITSOBJ.data.mean(),
                                                        FITSOBJ.data.sum()) ))
-#                    log.info(str(FITSOBJ.data)[:75])
+#                    log.debug(str(FITSOBJ.data)[:75])
                 else:
-                    log.info(vok+' has no .data attr')
-                    log.info(str(type(FITSOBJ)))
-                log.info(vok+'\n')
-    log.info('-'*80)
+                    log.debug(vok+' has no .data attr')
+                    log.debug(str(type(FITSOBJ)))
+                log.debug(vok+'\n')
+    log.debug('-'*80)

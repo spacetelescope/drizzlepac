@@ -201,7 +201,7 @@ def build(outname, wcsname, refimage, undistort=False,
 
     # create default WCSNAME if None was given
     wcsname = create_WCSname(wcsname)
-    log.info('Creating final headerlet with name ',wcsname,' using template ',template)
+    log.debug('Creating final headerlet with name ',wcsname,' using template ',template)
     outhdr = generate_headerlet(outwcs,template,wcsname,outname=outname)
 
     # synchronize this new WCS with the rest of the chips in the image
@@ -359,7 +359,7 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
 
     # create headerlet object in memory; either from a file or from scratch
     if template is not None and siphdr:
-        log.info('Creating headerlet from template...')
+        log.debug('Creating headerlet from template...')
         fname,extn = fileutil.parseFilename(template)
         extnum = fileutil.parseExtn(extn)
         extname = ('sipwcs',extnum[1])
@@ -368,7 +368,7 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         hdrlet[extname].header.update(outwcs_hdr)
         hdrlet[extname].header['WCSNAME'] = wcsname
     else:
-        log.info('Creating headerlet from scratch...')
+        log.debug('Creating headerlet from scratch...')
         hdrlet = fits.HDUList()
         hdrlet.append(fits.PrimaryHDU())
         siphdr = fits.ImageHDU(header=outwcs_hdr)
@@ -381,10 +381,10 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         if outname.find('_hdr.fits') < 0:
             outname += '_hdr.fits'
         if os.path.exists(outname):
-            log.info('Overwrite existing file "%s"'%outname)
+            log.debug('Overwrite existing file "%s"'%outname)
             os.remove(outname)
         hdrlet.writeto(outname)
-        log.info('Wrote out headerlet :',outname)
+        log.debug('Wrote out headerlet :',outname)
 
 
 util._def_help_functions(

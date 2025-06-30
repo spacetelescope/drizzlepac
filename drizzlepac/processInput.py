@@ -124,7 +124,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
     # This can be done here because MDRIZTAB does not include values for
     # input, output, or updatewcs.
     if 'mdriztab' in configObj and configObj['mdriztab']:
-        log.info("Reading in MDRIZTAB parameters for {} files".format(len(files)))
+        log.debug("Reading in MDRIZTAB parameters for {} files".format(len(files)))
         mdriztab_dict = mdzhandler.getMdriztabParameters(files)
 
         # Update configObj with values from mpars
@@ -184,7 +184,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
         msg = '“minmed” is highly recommended for three images, \n'+\
         ' and is good for four to six images, \n'+\
         ' but should be avoided for ten or more images.\n'
-        log.info(textutil.textbox(msg))
+        log.debug(textutil.textbox(msg))
 
     step7name = util.getSectionName(configObj,7)
     configObj[step7name]['final_bits'] = interpret_bit_flags(
@@ -199,7 +199,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
         '   * filename does not specify an extension with a valid WCS.\n'+\
         '   * can not find the file.\n'+\
         'Please check the filename specified in the "refimage" parameter.'
-        log.info(textutil.textbox(msg))
+        log.debug(textutil.textbox(msg))
         return None,None
     step7aname = util.getSectionName(configObj,'7a')
     if not util.verifyRefimage(configObj[step7aname]['final_refimage']):
@@ -208,11 +208,11 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
         '   * filename does not specify an extension with a valid WCS.\n'+\
         '   * can not find the file.\n'+\
         'Please check the filename specified in the "refimage" parameter.'
-        log.info(textutil.textbox(msg))
+        log.debug(textutil.textbox(msg))
         return None,None
 
     # Build imageObject list for all the valid, shift-updated input files
-    log.info('-Creating imageObject List as input for processing steps.')
+    log.debug('-Creating imageObject List as input for processing steps.')
     if 'in_memory' in configObj:
         virtual = configObj['in_memory']
     else:
@@ -239,7 +239,7 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
     addIVMInputs(imageObjectList, ivmlist)
 
     if createOutwcs:
-        log.info('-Creating output WCS.')
+        log.debug('-Creating output WCS.')
 
         # Build output WCS and update imageObjectList with output WCS info
         outwcs = wcs_functions.make_outputwcs(imageObjectList, output,
@@ -296,17 +296,17 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
                 chip_mem = cmem
     max_mem = (input_mem + output_mem*pool_size + chip_mem*2)//(1024*1024)
 
-    log.info('*'*80)
-    log.info('*')
-    log.info('*  Estimated memory usage:  up to %d Mb.'%(max_mem))
-    log.info('*  Output image size:       {:d} X {:d} pixels. '.format(*owcs.pixel_shape))
-    log.info('*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024)))
-    log.info('*  Cores available:         %d'%(pool_size))
-    log.info('*')
-    log.info('*'*80)
+    log.debug('*'*80)
+    log.debug('*')
+    log.debug('*  Estimated memory usage:  up to %d Mb.'%(max_mem))
+    log.debug('*  Output image size:       {:d} X {:d} pixels. '.format(*owcs.pixel_shape))
+    log.debug('*  Output image file:       ~ %d Mb. '%(output_mem//(1024*1024)))
+    log.debug('*  Cores available:         %d'%(pool_size))
+    log.debug('*')
+    log.debug('*'*80)
 
     if interactive:
-        log.info('Continue with processing?')
+        log.debug('Continue with processing?')
         while True:
             if sys.version_info[0] >= 3:
                 k = input("(y)es or (n)o").strip()[0].lower()
@@ -376,7 +376,7 @@ def createImageObjectList(files, instrpars, output=None, group=None,
             mtflag = False
 
         if mtflag:
-            log.info("#####\nProcessing Moving Target Observations using reference image as WCS for all inputs!\n#####\n")
+            log.debug("#####\nProcessing Moving Target Observations using reference image as WCS for all inputs!\n#####\n")
             if mt_refimg is None:
                 mt_refimg = image
             else:
@@ -578,7 +578,7 @@ def process_input(input, output=None, updatewcs=True,
             output = fileutil.buildNewRootname(output, extn=drz_extn)
 
 
-    log.info('Setting up output name: %s' % output)
+    log.debug('Setting up output name: %s' % output)
 
     return asndict, ivmlist, output
 
@@ -603,12 +603,12 @@ def _process_input_wcs(infiles, wcskey, updatewcs):
     # do the WCS updating
     if wcskey in ['', ' ', 'INDEF', None]:
         if updatewcs:
-            log.info('Updating input WCS using "updatewcs"')
+            log.debug('Updating input WCS using "updatewcs"')
     else:
-        log.info('Resetting input WCS to be based on WCS key = %s' % wcskey)
+        log.debug('Resetting input WCS to be based on WCS key = %s' % wcskey)
 
     if pool_size > 1:
-        log.info('Executing %d parallel workers' % pool_size)
+        log.debug('Executing %d parallel workers' % pool_size)
         subprocs = []
         mp_ctx = multiprocessing.get_context('fork')
 
@@ -621,7 +621,7 @@ def _process_input_wcs(infiles, wcskey, updatewcs):
             subprocs.append(p)
         mputil.launch_and_wait(subprocs, pool_size) # blocks till all done
     else:
-        log.info('Executing serially')
+        log.debug('Executing serially')
         for fname in outfiles:
             _process_input_wcs_single(fname, wcskey, updatewcs)
 
@@ -926,20 +926,20 @@ def manageInputCopies(filelist, **workinplace):
         copyname = os.path.join(origdir, os.path.basename(fname))
         short_copyname = os.path.join('OrIg_files', os.path.basename(fname))
         if workinplace['overwrite']:
-            log.info('Forcibly archiving original of: ',fname, 'as ',short_copyname)
+            log.debug('Forcibly archiving original of: ',fname, 'as ',short_copyname)
             # make a copy of the file in the sub-directory
             if os.path.exists(copyname): os.chmod(copyname, 438) # octal 666
             shutil.copy(fname,copyname)
             os.chmod(copyname,292) # octal 444 makes files read-only
             if printMsg:
-                log.info('\nTurning OFF "preserve" and "restore" actions...\n')
+                log.debug('\nTurning OFF "preserve" and "restore" actions...\n')
                 printMsg = False # We only need to print this one time...
             copymade = True
 
         if (workinplace['preserve'] and not os.path.exists(copyname)) \
                 and not workinplace['overwrite']:
             # Preserving a copy of the input, but only if not already archived
-            log.info('Preserving original of: ',fname, 'as ',short_copyname)
+            log.debug('Preserving original of: ',fname, 'as ',short_copyname)
             # make a copy of the file in the sub-directory
             shutil.copy(fname,copyname)
             os.chmod(copyname,292) # octal 444 makes files read-only
@@ -947,7 +947,7 @@ def manageInputCopies(filelist, **workinplace):
 
         if 'restore' in workinplace and not copymade:
             if (os.path.exists(copyname) and workinplace['restore']) and not workinplace['overwrite']:
-                log.info('Restoring original input for ',fname,' from ',short_copyname)
+                log.debug('Restoring original input for ',fname,' from ',short_copyname)
                 # replace current files with original version
                 os.chmod(fname, 438) # octal 666
                 shutil.copy(copyname, fname)
@@ -997,12 +997,12 @@ def buildEmptyDRZ(input, output):
         if '_drz' not in output:
             output = fileutil.buildNewRootname(output, extn='_drz.fits')
 
-    log.info('Building empty DRZ file with output name: %s' % output)
+    log.debug('Building empty DRZ file with output name: %s' % output)
 
     # Open the first image (of the excludedFileList?) to use as a template to build
     # the DRZ file.
     try :
-        log.info('Building empty DRZ file from %s' % inputfile[0])
+        log.debug('Building empty DRZ file from %s' % inputfile[0])
         img = fits.open(inputfile[0], memmap=False)
     except:
         raise IOError('Unable to open file %s \n' % inputfile)
@@ -1059,7 +1059,7 @@ def buildEmptyDRZ(input, output):
     dirfiles = os.listdir(os.curdir)
     if dirfiles.count(output) > 0:
         os.remove(output)
-        log.info("       Replacing %s..." % output)
+        log.debug("       Replacing %s..." % output)
 
     # Write out the empty DRZ file
     fitsobj.writeto(output)
@@ -1241,7 +1241,7 @@ def _setDefaults(input_dict={}):
 
     paramDict.update(input_dict)
 
-    log.info('\nUser Input Parameters for Init Step:')
+    log.debug('\nUser Input Parameters for Init Step:')
     util.printParams(paramDict)
 
     return paramDict
