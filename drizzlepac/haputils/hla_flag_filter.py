@@ -1639,8 +1639,8 @@ def make_mask_array(drz_image):
     """
     with fits.open(drz_image) as fh:
         mask = numpy.isfinite(fh[1].data) & (fh[1].data != 0)
-    dilate = scipy.ndimage.morphology.binary_dilation
-    erode = scipy.ndimage.morphology.binary_erosion
+    dilate = scipy.ndimage.binary_dilation
+    erode = scipy.ndimage.binary_erosion
     kernel1 = numpy.ones((25, 25), dtype=int)
     kernel2 = numpy.ones((31, 31), dtype=int)
     # add padding around the edge so pixels close to image boundary are correct

@@ -4,17 +4,34 @@
 Catalog Generation
 ==================
 
-The Hubble Advanced Products (HAP) project generates two source list catalogs, colloquially
+The Hubble Advanced Products (HAP) project generates, by default, two types of catalogs for each
+detection image (i.e., all the images in the visit from the same detector drizzled together), and each
+filter-product image (i.e., all the images in the visit acquired with the same detector and filter
+drizzled together). The two types of catalogs are colloquially
 referred to as the Point and Segment catalogs.  Both catalogs are generated using
 utilities from `Photutils <https://photutils.readthedocs.io/en/stable/>`_
 with the Point catalog created based upon functionality similar to DAOPhot-style photometry,
 and the Segment catalog created with Source Extractor segmentation capabilities and output
-in mind.
+in mind.  The HAP catalogs are intended to replicate the Hubble Source Catalog (HSC) by
+`Whitmore et al. 2016 AJ, 151, 134W <http://adsabs.harvard.edu/abs/2016AJ....151..134W>`_.
 
-These catalogs provide aperture photometry in the ABMAG system and are calibrated using the photometric zeropoints
-corresponding to an 'infinite' aperture. To convert to total magnitudes, aperture corrections must be applied to
-account for flux falling outside of the selected aperture. For details, see
-`Whitmore et al., 2016 AJ, 151, 134W <http://adsabs.harvard.edu/abs/2016AJ....151..134W>`_.
+The HAP catalogs provide aperture photometry in the ABmag system in two small apertures, but they are
+calibrated using the photometric zeropoints corresponding to an 'infinite' aperture. To convert to total
+magnitudes, **aperture corrections must be applied to account for flux falling outside of the selected 
+aperture**.  For details, see Section 2.2.3 "Aperture Corrections".
+
+   * For WFC3, see `Section 9.1.3 "Aperture and Encircled Energy Corrections" 
+     <https://hst-docs.stsci.edu/wfc3dhb/chapter-9-wfc3-data-analysis/9-1-photometry#id-9.1Photometry-9.1.3ApertureandEncircledEnergyCorrections>`_ 
+     in the `WFC3 Data Handbook <https://hst-docs.stsci.edu/wfc3dhb>`_ (Pagul & Rivera et. al. 2024). 
+     The latest `WFC3/UVIS EE tables 
+     <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/uvis-encircled-energy>`_ and 
+     `WFC3/IR EE tables <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/ir-encircled-energy>`_ are also available for download.
+   * For ACS, see `Section 5.1.2 "Aperture and Color Corrections" 
+     <https://hst-docs.stsci.edu/acsdhb/chapter-5-acs-data-analysis/5-1-photometry#id-5.1Photometry-5.1.25.1.2ApertureandColorCorrections>`_ in the ACS Data Handbook (Lucas & Ryan et al. 2022). 
+     `ACS EE tables <https://www.stsci.edu/hst/instrumentation/acs/data-analysis/aperture-corrections>`_ are available for download from the website.
+   * For a discussion of HAP drizzled data products, see the 
+     `DrizzlePac Handbook <https://hst-docs.stsci.edu/drizzpac>`_ (Anand, Mack et al. 2025).
+
 
 1: Support Infrastructure for Catalog Generation
 ================================================
@@ -22,9 +39,9 @@ account for flux falling outside of the selected aperture. For details, see
 1.1: Important Clarifications
 -----------------------------
 As previously discussed in :ref:`singlevisit`, AstroDrizzle creates a single multi-filter, detector-level
-drizzle-combined image for source identification and one or more detector/filter-level drizzle-combined images
+drizzle-combined image for *source identification* and one or more detector/filter-level drizzle-combined images
 (depending on
-which filters were used in the dataset) for photometry. The same set of sources identified in the
+which filters were used in the dataset) for *photometry measurements*. The same set of sources identified in the
 multi-filter detection image is used to measure photometry for each filter. We use this method to maximize the
 signal across all available wavelengths at the source detection stage, thus providing photometry with the
 best quality source list across all available input filters.
@@ -33,9 +50,17 @@ It should also be stressed here that the point and segment photometry source lis
 identify source catalogs independently of each other and DO NOT use a shared common source catalog for
 photometry.
 
+While the detection image for a specific catalog type is used to identify potential sources, 
+unless the Flags entry for a source in all of the corresponding filter catalogs is 
+less than the value of 5, the source will be removed from the associated total detection 
+catalog. Finally, if somehow all measured values for a source in all the filter catalogs are marked as
+invalid (value of -9999.0), then the source will be removed from the total detection catalog.  A
+discussion of the flag values is found in Section 2.4.2.
+
 .. note::
  A catalog file will always be written out for each type of catalog whether or not there are
- any identified sources in the exposure.
+ any identified sources in the exposure.  If there are no identified viable sources, the file will only
+ contain header information and no source rows.
 
 
 1.2: Generation of Pixel Masks
@@ -158,6 +183,138 @@ argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` f
     *strongly* discouraged as there is no way to revert these values back to their defaults once
     they have been changed.
 
+1.3.2: Description of the variables in the catalog JSON files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Default values for the numeric configuration parameters are detector-dependent, though many of the values may be the same from detector to detector.  In the actual configuration files
+the parameters are split into three sections: General (which is unlabeled), DAO (for the Point algorithm), and SOURCEX (for the Segmentation algorithm). The variables listed in the General section apply to both the Point and Segmentation algorithms.
+
+GENERAL 
+    * bkg_box_size: int (pixels)
+        For Background2D, the size of the box within which the background is estimated using the sigma-clipped statistics algorithm.
+
+    * bkg_filter_size: int (pixels)
+        Window size of the 2D median filter to apply to the low resolution background map
+
+    * good_fwhm: 
+        DEPRECATED
+
+    * skyannulus_arcsec: float (arcseconds)
+        Photometry measurement: inner radius of the circular annulus
+
+    * dskyannulus_arcsec: float (arcseconds)
+        Photometry measurement: outer radius of the circular annulus
+
+    * aperture_1: float (arcseconds)
+        Photometry measurement: inner aperture radius
+
+    * aperture_2: float (arcseconds)
+        Photometry measurement: outer aperture radius
+
+    * salgorithm: string (default = "mode")
+        Photometry measurement: Statistic to use to calculate the background ("mean", "median", "mode"). All measurements are sigma-clipped.
+
+    * scale: float
+        Used as a scaling factor on a limit threshod for computation of weight masks
+
+    * sensitivity: float
+        Used for computation of weight masks to preserve the attribute of similarity
+
+    * block_size: int
+        Size of the block used by the FFT to deconvolve the drizzled image with the PSF
+
+    * cr_residual: float
+        Factor used to account for the influence of single-image cosmic-ray identification.  Single filter single-image exposures are only used to compute total detection image when there are only single exposures for *all* of the input filters.
+
+    * flag_trim_value: int
+        The value which is the high limit for good detected sources.  Sources with lower flag values are deemed good. Flags above the default limit represent:  multi-pixel saturation, faint magnitude, hot pixels, swarm detection, edge/chip gap, bleeding, and cosmic rays.
+
+    * simple_bkg: bool (default = False)
+        Forces use of the sigma_clipped_stats algorithm to compute the background of the input image.
+
+    * zero_percent: float
+        Percentage limit of the pure zero values in the illuminated portion of an input image.  If there are more zero values than the zero_percent limit, then the background is set to zero and the background rms is computed based on the pixels which are non-zero in the illuminated portion of the input image.
+
+    * negative_percent: float
+        If the background were determined by Background2D, but the background-subtracted image has more than the allowed limit of negative_percent, then the background should be determined by the sigma-clipped statistics algorithm.
+
+    * nsigma_clip: float
+        Parameter for the sigma_clipped_stats algorithm in the determination of the background of the input image. This is the number of standard deviations to use for both the lower and upper clipping limit.
+
+    * maxiters: int
+        The number of sigma-clipping iterations to perform when using the sigma_clipped_stats algorithm to compute the background of the input image.
+
+    * background_skew_threshold: float
+        Pearson’s second coefficient of skewness - this is a criterion for possibly computing a two-dimensional background fit.  If the skew is larger than this threshold, this implies a crowded field and a more complex background determination algorithm is warranted.
+
+    * TWEAK_FWHMPSF: float
+        Gaussian FWHM for source detection
+
+DAO
+    * bigsig_sf: 
+        DEPRECATED
+
+    * kernel_sd_aspect_ratio: 
+        DEPRECATED
+
+    * nsigma: float
+        The "sigma" in threshold=(sigma * background_rms). Threshold is an image greater than the background which defines, on a pixel-by-pixel basis, the low signal limit above which sources are detected.  
+
+    * starfinder_algorithm: string (default = "psf")
+        Algorithm to use for source detection: "dao" (DAOStarFinder), "iraf" (IRAFStarFinder), and "psf" (UserStarFinder).
+
+    * region_size: int
+        Size of the box used to recognize a point source. Also, the kernel size for the maximum filter window when computing weight masks. In the latter case of "kernel size", the variable applies to both algorithms.
+
+SOURCEX
+    * source_box: int (pixels)
+        Number of connected pixels needed for a source detection
+
+    * segm_nsigma: float
+        The "sigma" in threshold=(sigma * background_rms). Threshold is an image greater than the background which defines, on a pixel-by-pixel basis, the low signal limit above which sources are detected.  The value is applicable for the Gaussian smoothing kernel.
+
+    * nlevels: int
+        Number of multi-thresholding levels for deblending 
+
+    * contrast: float
+        Fraction of the total source flux that a local peak must have to be deblended as a separate object
+
+    * border: 
+        DEPRECATED
+
+    * rw2d_size: int
+        RickerWavelet kernel X- and Y-dimension in pixels
+
+    * rw2d_nsigma: float
+        The "sigma" in threshold=(sigma * background_rms). Threshold is an image greater than the background which defines, on a pixel-by-pixel basis, the low signal limit above which sources are detected.  The value is applicable for the RickerWavelet smoothing kernel.
+
+    * rw2d_biggest_pixels: int (pixels)
+        Pixel limit on biggest source for RickerWavelet kernel
+
+    * rw2d_biggest_source: float
+        Percentage limit on biggest source for RickerWavelet kernel
+
+    * rw2d_source_fraction: float
+        Percentage limit on source fraction over the image for RickerWavelet kernel
+
+    * biggest_source_deblend_limit: float
+        Percentage limit on biggest source deblending limit
+
+    * source_fraction_deblend_limit: float
+        Percentage limit on source fraction deblending limit
+
+    * ratio_bigsource_limit: int
+        Limit on the ratio of the "big sources" found with the Gaussian vs the RickerWavelent kernel.  The ratio is interpreted as indicative of overlapping PSFs vs nebulousity.  If the ratio is larger than this limit, the processing is allowed to proceed.
+
+    * ratio_bigsource_deblend_limit: int
+        Limit used to filter out prohibitively large segments as it a resource consuming task to try and deblend very large segments.  If the ratio of the area of the largest segment to the area of the next smaller segment is larger than this limit, segment is not deblended.
+
+    * kron_scaling_radius: float
+        Scaling parameter of the unscaled Kron radius
+
+    * kron_minimum_radius: float (pixels)
+        Minimum value for the unscaled Kron radius
+
+
 1.4: Image Kernel
 -----------------
 By default, the software uses a 
@@ -176,7 +333,7 @@ Astropy tool.
 ==================================================
 
 2.1: Source Identification Options
-------------------------------------
+----------------------------------
 A number of options have been implemented within the catalog generation code in order
 to best match the contents of the exposure, including presence of saturated sources and
 cosmic-rays.  The available options include:
@@ -190,7 +347,7 @@ These options are selected through the "starfinder_algorithm" parameter in the J
 
 
 2.1.1: Source Identification using DAOStarFinder
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We use the `photutils.detection.DAOStarFinder <https://photutils.readthedocs.io/en/stable/api/photutils.detection.DAOStarFinder.html>`_ Astropy tool to identify sources in the background-subtracted
 multi-filter detection image. Here, the background computed using one of the algorithms discussed in Section 1.3 is
 applied to the science data to initialize point-source detection processing. This algorithm works by identifying local
@@ -218,7 +375,7 @@ fed into DAOStarFinder is detector-dependent. The parameters can be found in the
     +---------------------+--------------+
 
 2.1.2: Source Identification using PSFs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This option, introduced in Drizzlepac v3.3.0, drizzles model PSFs created using TinyTim to match the orientation and plate
 scale of the observation to look for sources in the image.  Where DAOFind convolves the image with a perfect Gaussian whose
 FWHM has been specified by the user, this option convolves the image with the model PSF to identify all sources which most
@@ -245,27 +402,36 @@ at least 3.0" in radius in order to recognize the features of the diffraction sp
 many false detections as possible for saturated sources.
 
 
-2.2: Aperture Photometry Measurement - Flux Determination
------------------------------------------------------------
-Aperture photometry is then preformed on the previously identified sources using a pair of concentric
-photometric apertures. The sizes of these apertures depend on the specific detector being used, and are
-listed below in table 1:
+2.2: Aperture Photometry Measurements
+-------------------------------------
 
-.. table:: Table 1: Aperture photometry aperture sizes
+2.2.1: Flux Determination
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Aperture photometry is then computed for the identified sources using a pair of small, concentric 
+apertures listed in Table 1 for each instrument/detector. The radii for the two aperture measurements 
+(MagAper1 and MagAper2) are 1 and 3 pixels for ACS/WFC, 1.25 and 3.75 pixels for WFC3/UVIS, and 1.2 
+and 3.5 pixels for WFC3/IR. See Table 1 for the corresponding sizes in arcsec. Both the Point and
+Segment source catalogs contain aperture photometry in two small apertures (Aper1 and Aper2) which are 
+listed in units of arcseconds and in pixels. Users must manually apply aperture corrections in order to 
+correct HAP magnitude values to infinite aperture. 
 
-    +---------------------+----------------+----------------+
-    | Instrument/Detector | Aper1 (arcsec) | Aper2 (arcsec) |
-    +=====================+================+================+
-    | ACS/HRC             | 0.03           | 0.125          |
-    +---------------------+----------------+----------------+
-    | ACS/SBC             | 0.07           | 0.125          |
-    +---------------------+----------------+----------------+
-    | ACS/WFC	          | 0.05           | 0.15           |
-    +---------------------+----------------+----------------+
-    | WFC3/IR	          | 0.15           | 0.45           |
-    +---------------------+----------------+----------------+
-    | WFC3/UVIS           | 0.05           | 0.15           |
-    +---------------------+----------------+----------------+
+.. table:: Table 1: For each HST Instrument/Detector, the scale of the HAP drizzled (drc/drz) image is given in column 2.
+
+    +-------------+----------+--------+--------+-------+-------+
+    | Instrument/ | Drizzled | Aper1  | Aper2  | Aper1 | Aper2 |
+    | Detector    | Scale    | (")    | (")    | (pix) | (pix) |
+    |             | ("/pix)  |        |        |       |       |
+    +=============+==========+========+========+=======+=======+
+    | WFC3/IR	  |  0.128   | 0.15   | 0.45   |  1.2  |  3.5  |
+    +-------------+----------+--------+--------+-------+-------+
+    | WFC3/UVIS   |  0.040   | 0.05   | 0.15   |  1.25 |  3.75 |
+    +-------------+----------+--------+--------+-------+-------+
+    | ACS/WFC	  |  0.050   | 0.05   | 0.15   |  1.0  |  3.0  |
+    +-------------+----------+--------+--------+-------+-------+
+    | ACS/HRC     |  0.025   | 0.03   | 0.125  |  1.2  |  5.0  |
+    +-------------+----------+--------+--------+-------+-------+
+    | ACS/SBC     |  0.025   | 0.07   | 0.125  |  2.8  |  5.0  |
+    +-------------+----------+--------+--------+-------+-------+
 
 Raw (non-background-subtracted) flux values are computed by summing up the enclosed flux within the two specified
 apertures using the `photutils.aperture.aperture_photometry
@@ -282,14 +448,100 @@ background-subtracted inner and outer aperture flux values found in the output .
     f_{bgs} = f_{raw} - f_{bg} \cdot a
 
 where
-    * :math:`f_{bgs}` is the background-subtracted flux, in electrons per second
-    * :math:`f_{raw}` is the raw, non-background-subtracted flux, in electrons per second
-    * :math:`f_{bg}` is the per-pixel background flux, in electrons per second per pixel
+    * :math:`f_{bgs}` is the background-subtracted flux, in electrons second\ :sup:`-1`
+    * :math:`f_{raw}` is the raw, non-background-subtracted flux, in electrons second\ :sup:`-1`
+    * :math:`f_{bg}` is the per-pixel background flux, in electrons second \ :sup:`-1` pixel\ :sup:`-1`
     * :math:`a` is the area of the photometric aperture, in pixels
 
 The overall standard deviation and mode values of pixels in the background annulus are also reported for each
 identified source in the output .ecsv catalog file in the “STDEV” and “MSKY” columns respectively (see Section 3 for
 more details).
+
+2.2.2: Computation of ABmag 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The conversion of the flux to ABmag is a two-step process.  The computations involve **photflam** and **photplam**
+which are FITS keywords stored in the science extension header of the input drizzled image. References for these 
+equations are: Whitmore et al. 2016 (https://iopscience.iop.org/article/10.3847/0004-6256/151/6/134/pdf), and  
+Sirianni et al. 2005 (https://iopscience.iop.org/article/10.1086/444553/pdf).
+
+First, convert flux according to the formula:
+
+.. math::
+    f_{lambda} = f \cdot photflam
+
+where
+    * :math:`{f_{lambda}}` is the mean flux density, in ergs cm\ :sup:`-2` A :sup:`-1` second\ :sup:`-1`
+    * :math:`{f}` is the flux, in electrons second\ :sup:`-1`
+    * :math:`{photflam}` is the inverse sensitivity, in ergs cm\ :sup:`-2` A :sup:`-1` electrons\ :sup:`-1`
+
+Now convert the :math:`{f}_{lambda}` to STmag:
+
+.. math::
+    STmag = -2.5 \cdot log({f}_{lambda}) - 21.10
+
+where
+    * :math:`-2.5` is the ratio of brightness between two stars differing by one magnitude (Pogson's ratio)
+    * :math:`21.10` is the STmag permanently set zeropoint stored in the FITS **photzpt** keyword in the science extension header
+
+Finally, convert STmag to ABmag:
+
+.. math::
+    ABmag = STmag - 5.0 \cdot log(photplam) + 18.6921
+
+where
+    * :math:`{photplam}` is the bandpass pivot wavelength, in Angstroms
+
+Some additional citations for the magnitude systems are the following: `ACS Data Handbook <https://hst-docs.stsci.edu/acsdhb/chapter-5-acs-data-analysis/5-1-photometry>`_, analysis of the
+relationship between *photflam*, *photzpt*, and *photplam* to the *STmag* and *ABmag* zeropoints (`Bohlin et al. 2011 <https://ui.adsabs.harvard.edu/abs/2011AJ....141..173B/abstract>`_), discussion of *STmag* (`Koornneef, J. et al. 1986 <https://ui.adsabs.harvard.edu/abs/1986HiA.....7..833K/abstract>`_), and a discussion of *ABmag* (`Oke, J.B. 1964 <https://ui.adsabs.harvard.edu/abs/1964ApJ...140..689O/abstract>`_).
+
+2.2.3: Aperture Corrections
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+HAP (and HSC) photometry is measured in small apertures in order to reduce errors due to source crowding or 
+background variations. The photometric header keywords, on the other hand, correspond to an ‘infinite’ 
+aperture enclosing all of the light from a source.  Aperture corrections are not applied to the point and 
+segment catalogs and must be applied by the user to determine the total magnitude of the source. Blind 
+application of aperture corrections using the EE tables should be avoided, since the measured 
+photometry (and the EE fraction) in small apertures is strongly dependent on the telescope focus and 
+orbital breathing effects.   
+
+To convert aperture magnitudes to total magnitudes, a two-step process is recommended.  First small 
+aperture photometry is corrected to a larger ‘standard’ aperture for each instrument, beyond which 
+the fraction of enclosed light is insensitive to changes in telescope focus, orbital breathing 
+effects, or spatial variations in the PSF 
+(see `Mack et al. 2022 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2022/WFC3-ISR-2022-06.pdf>`_).  This correction may be 
+measured from isolated stars in the drizzled science frames, when possible.  Alternatively, the MAST PSF 
+search tool can be used to download PSFs extracted from archival data at a similar focus level 
+and detector position, and the appropriate aperture corrections can be calculated using these. For 
+example, `WFC3 Observed PSFs <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/psf/psf-search>`_  
+can be accessed on the 
+`MAST Portal interface <https://mast.stsci.edu/portal/Mashup/Clients/Mast/Portal.html>`_
+by choosing the 'Select a collection' to 'WFC3 PSF'. For details, see 
+`WFC3 ISR 2021-12 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2021/ISR_2021_12.pdf>`_. 
+
+Next, the ‘standard’ aperture is corrected to ‘infinite’ aperture using the encircled energy (EE) 
+tables provided by the HST instrument teams. These tables are derived from high signal-to-noise ratio
+observations of isolated stars out to large radii, where the EE fraction is converted to magnitude units.  
+`ACS EE Tables <https://www.stsci.edu/hst/instrumentation/acs/data-analysis/aperture-corrections>`_ 
+and interactive plots are available on the ACS website. The latest solutions are described in 
+`Bohlin (2016 AJ....152) <https://ui.adsabs.harvard.edu/abs/2016AJ....152...60B/abstract>`_
+for the WFC and HRC detectors and in 
+`ACS ISR 2016-05 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/acs/documentation/instrument-science-reports-isrs/_documents/isr1605.pdf>`_ for the SBC detector.  
+`WFC3/UVIS EE tables <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/uvis-encircled-energy>`_
+are available the WFC3 website and described in 
+`WFC3 ISR 2021-04 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2021/WFC3_ISR_2021-04.pdf>`_, and the 
+`WFC3/IR EE tables <https://www.stsci.edu/hst/instrumentation/wfc3/data-analysis/photometric-calibration/ir-encircled-energy>`_ are described in 
+`WFC3 ISR 2009-37 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2009/WFC3-2009-37.pdf>`_.
+
+2.2.4: Hubble Source Catalog
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The legacy `HSC FAQ page <https://archive.stsci.edu/hst/hscv1/help/HSC_faq.html>`_ 
+links to an older set of 
+`Aperture Corrections Tables <https://archive.stsci.edu/hst/hscv1/help/FAQ/aperture_corrections.txt>`_
+recommended by `Whitmore et al. 2016 <https://ui.adsabs.harvard.edu/abs/2016AJ....151..134W/abstract>`_
+for each HST detector. While these represented the best solutions at the time 
+(e.g. `Sirianni et al. 2005 <https://iopscience.iop.org/article/10.1086/444553/pdf>`_ 
+for ACS; `Hartig 2009 <https://www.stsci.edu/files/live/sites/www/files/home/hst/instrumentation/wfc3/documentation/instrument-science-reports-isrs/_documents/2009/WFC3-2009-37.pdf>`_ for WFC3), 
+the updated encircled energy solutions from the instrument webpages should be used instead. See Section 2.2.3.
 
 2.3: Calculation of Photometric Errors
 --------------------------------------
@@ -307,24 +559,24 @@ file using the following formula:
     \Delta f = \sqrt{\frac{\sigma^2 }{g}+(a\cdot\sigma_{bg}^{2})\cdot (1+\frac{a}{n_{sky}})}
 
 where
-    * :math:`{\Delta} f`  is the flux uncertainty, in electrons per second
-    * :math:`{\sigma}` is the standard deviation of photometric aperture signal, in counts per second
-    * :math:`{g}` is effective gain in electrons per count
+    * :math:`{\Delta} f`  is the flux uncertainty, in electrons second\ :sup:`-1`
+    * :math:`{\sigma}` is the standard deviation of photometric aperture signal, in counts second\ :sup:`-1`
+    * :math:`{g}` is effective gain in electrons count\ :sup:`-1`
     * :math:`{a}` is the photometric aperture area, in pixels
     * :math:`{\sigma_{bg}}` is standard deviation of the background
     * :math:`{n_{sky}}` is the sky annulus area, in pixels
 
 2.3.2: Calculation of ABmag Uncertainties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Magnitude error calculation comes from computing :math:`{\frac{d(ABMAG)}{d(flux)}}`. We use the following formula:
+Magnitude error calculation comes from computing :math:`{\frac{d(ABmag)}{d(flux)}}`. We use the following formula:
 
 .. math::
-    \Delta mag_{AB} = 1.0857 \cdot  \frac{\Delta f}{f}
+    \Delta {ABmag} = 1.0857 \cdot  \frac{\Delta f}{f}
 
 where
-    * :math:`{\Delta mag_{AB}}` is the uncertainty in AB magnitude
-    * :math:`{\Delta f}` is the flux uncertainty, in electrons per second
-    * :math:`{f}` is the flux, in electrons per second
+    * :math:`{\Delta {ABmag}}` is the uncertainty in ABmag
+    * :math:`{\Delta f}` is the flux uncertainty, in electrons second\ :sup:`-1`
+    * :math:`{f}` is the flux, in electrons second\ :sup:`-1`
 
 2.4: Calculation of Concentration Index (CI) Values and Flag Values
 -------------------------------------------------------------------
@@ -337,13 +589,13 @@ formula:
     CI = m_{inner} - m_{outer}
 
 where
-    * :math:`{CI}` is the concentration index, in AB magnitude
-    * :math:`{m_{inner}}` is the inner aperture AB magnitude
-    * :math:`{m_{outer}}` is the outer aperture AB magnitude
+    * :math:`{CI}` is the concentration index, in ABmag
+    * :math:`{m_{inner}}` is the inner aperture ABmag
+    * :math:`{m_{outer}}` is the outer aperture ABmag
 
 We use the concentration index to classify automatically each identified photometric source as either a point source
 (i.e. stars), an extended source (i.e. galaxies, nebulosity, etc.), or as an “anomalous” source (i.e. saturation,
-hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column
+hot pixels, cosmic ray hits, etc.). This designation is described by the value in the "flags" column.
 
 .. _flag_generation:
 
@@ -447,7 +699,7 @@ being above the faint object limit if the following is true:
     \Delta ABmag_{outer} \leq  \frac{2.5}{snr \cdot log(10))}
 
 Where
-    * :math:`{\Delta ABmag_{outer}}` is the outer aperture AB magnitude uncertainty
+    * :math:`{\Delta ABmag_{outer}}` is the outer aperture ABmag uncertainty
     * :math:`{snr}` is the signal-to-noise ratio, which is 1.5 for ACS/WFC and 5.0 for all other detectors.
 
 2.4.2.4: Assignment of Flag Value 32 (False Detection: Swarm Around Saturated Source)
@@ -526,7 +778,7 @@ apertures used, concentration index definition and flag value definitions:
 
     * X, Y coordinates listed below use are zero-indexed (origin = 0,0)
     * RA and Dec values in this table are in sky coordinates (i.e. coordinates at the epoch of observation and fit to GAIADR1 (2015.0) or GAIADR2 (2015.5)).
-    * Magnitude values in this table are in the ABMAG system.
+    * Magnitude values in this table are in the ABmag system.
     * Inner aperture radius in pixels and arcseconds (based on detector platescale)
     * Outer aperture radius in pixels and arcseconds (based on detector platescale)
     * Concentration index (CI) formulaic definition
@@ -543,14 +795,14 @@ ordering in the .ecsv file as well):
     * RA: Right ascension (sky coordinates), in degrees
     * DEC: Declination (sky coordinates), in degrees
     * ID: Object catalog index number
-    * MagAp1: Inner aperture brightness, in AB magnitude
-    * MagErrAp1: Inner aperture brightness uncertainty, in AB magnitude
-    * MagAp2: Outer aperture brightness, in AB magnitude
-    * MagErrAp2: Outer aperture brightness uncertainty, in AB magnitude
-    * MSkyAp2: Outer aperture background brightness, in AB magnitude
-    * StdevAp2: Standard deviation of the outer aperture background brightness, in AB magnitude
+    * MagAp1: Inner aperture brightness, in ABmag
+    * MagErrAp1: Inner aperture brightness uncertainty, in ABmag
+    * MagAp2: Outer aperture brightness, in ABmag
+    * MagErrAp2: Outer aperture brightness uncertainty, in ABmag
+    * MSkyAp2: Outer aperture background brightness, in ABmag
+    * StdevAp2: Standard deviation of the outer aperture background brightness, in ABmag
     * FluxAp2: Outer aperture flux, in electrons/sec
-    * CI: Concentration index (MagAp1 – MagAp2), in AB magnitude
+    * CI: Concentration index (MagAp1 – MagAp2), in ABmag
     * Flags: See Section 2.4.2 for flag value definitions
 
 3.3 Rejection of Cosmic-Ray Dominated Catalogs
@@ -792,7 +1044,7 @@ and the filter catalog filename will be:
 ------------------------------------
 The multi-filter detection level (aka total) catalog contains the fundamental position measurements of
 the detected source: ID, X-Centroid, Y-Centroid, RA, and DEC, supplemented by some of the
-aperture photometry measurements from *each* of the filter catalogs (ABMAG of the outer aperture, Concentration
+aperture photometry measurements from *each* of the filter catalogs (ABmag of the outer aperture, Concentration
 Index, and Flags).  Effectively, the output Total Detection Segment Catalog is a distilled version of all of
 the Filter Segment Catalogs.
 
@@ -830,29 +1082,29 @@ in the .ecsv:
     +----------------+------------------+---------------------------------------------+---------------+
     | Flags          | FLAGS            |                                             |               |
     +----------------+------------------+---------------------------------------------+---------------+
-    | MagAp1         | MAG_APER1        | ABMAG of source, inner (smaller) aperture   | ABMAG         |
+    | MagAp1         | MAG_APER1        | ABmag of source, inner (smaller) aperture   | ABmag         |
     +----------------+------------------+---------------------------------------------+---------------+
-    | MagErrAp1      | MAGERR_APER1     | Error of MagAp1                             | ABMAG         |
+    | MagErrAp1      | MAGERR_APER1     | Error of MagAp1                             | ABmag         |
     +----------------+------------------+---------------------------------------------+---------------+
     | FluxAp1        | FLUX_APER1       | Flux of source, inner (smaller) aperture    | electrons/s   |
     +----------------+------------------+---------------------------------------------+---------------+
     | FluxErrAp1     | FLUXERR_APER1    | Error of FluxAp1                            | electrons/s   |
     +----------------+------------------+---------------------------------------------+---------------+
-    | MagAp2         | MAG_APER2        | ABMAG of source, outer (larger) aperture    | ABMAG         |
+    | MagAp2         | MAG_APER2        | ABmag of source, outer (larger) aperture    | ABmag         |
     +----------------+------------------+---------------------------------------------+---------------+
-    | MagErrAp2      | MAGERR_APER2     | Error of MagAp2                             | ABMAG         |
+    | MagErrAp2      | MAGERR_APER2     | Error of MagAp2                             | ABmag         |
     +----------------+------------------+---------------------------------------------+---------------+
     | FluxAp2        | FLUX_APER2       | Flux of source, outer (larger) aperture     | electrons/s   |
     +----------------+------------------+---------------------------------------------+---------------+
     | FluxErrAp2     | FLUXERR_APER2    | Error of FluxAp2                            | electrons/s   |
     +----------------+------------------+---------------------------------------------+---------------+
-    | MSkyAp2        |                  | ABMAG of sky, outer (larger) aperture       | ABMAG         |
+    | MSkyAp2        |                  | ABmag of sky, outer (larger) aperture       | ABmag         |
     +----------------+------------------+---------------------------------------------+---------------+
     | Bck            | BACKGROUND       | Background, position of source centroid     | electrons/s   |
     +----------------+------------------+---------------------------------------------+---------------+
     | Area           |                  | Total unmasked area of the source segment   | pixels^2      |
     +----------------+------------------+---------------------------------------------+---------------+
-    | MagIso         | MAG_ISO          | Magnitude corresponding to FluxIso          | ABMAG         |
+    | MagIso         | MAG_ISO          | Magnitude corresponding to FluxIso          | ABmag         |
     +----------------+------------------+---------------------------------------------+---------------+
     | FluxIso        | FLUX_ISO         | Sum of unmasked data in source segment      | electrons/s   |
     +----------------+------------------+---------------------------------------------+---------------+

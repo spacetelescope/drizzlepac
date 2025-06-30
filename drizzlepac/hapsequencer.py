@@ -171,11 +171,14 @@ def create_catalog_products(total_obj_list, log_level, diagnostic_mode=False, ph
                 sources_dict[cat_type] = {}
                 sources_dict[cat_type]['sources'] = total_product_catalogs.catalogs[cat_type].sources
                 # For the segmentation source finding, both the segmentation image AND the segmentation catalog
-                # computed for the total object need to be provided to the filter objects
+                # computed for the total object need to be provided to the filter objects as well as other
+                # information (smoothing kernel and final sigma used to compute threshold above which sources
+                # have been detected).
                 if cat_type == "segment":
                     sources_dict['segment']['kernel'] = total_product_catalogs.catalogs['segment'].kernel
                     sources_dict['segment']['source_cat'] = total_product_catalogs.catalogs['segment'].source_cat
                     sources_dict['segment']['total_source_cat'] = total_product_catalogs.catalogs['segment'].total_source_cat
+                    sources_dict['segment']['final_nsigma'] = total_product_catalogs.catalogs['segment'].final_nsigma
 
             # Get parameter from config files for CR rejection of catalogs
             cr_residual = total_product_obj.configobj_pars.get_pars('catalog generation')['cr_residual']

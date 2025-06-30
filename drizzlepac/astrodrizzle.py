@@ -111,7 +111,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
 
     # add flag to configObj to indicate whether or not to use mdriztab
     configObj['mdriztab'] = mdriztab
-    
+
     run(configObj, wcsmap=wcsmap, input_dict=input_dict)
 
 ##############################
@@ -135,7 +135,7 @@ def run(configobj, wcsmap=None, input_dict=None):
         teal.teal('astrodrizzle')
 
         The example config files are in drizzlepac/pars
-        
+
     input_dict is a dictionary of user-specified parameters
 
     """
@@ -202,6 +202,72 @@ def run(configobj, wcsmap=None, input_dict=None):
         log.info("USER INPUT PARAMETERS common to all Processing Steps:")
         util.printParams(configobj, log=log)
 
+        step_name_single = util.getSectionName(configobj, adrizzle.STEP_NUM_SINGLE)
+        do_single = configobj[step_name_single]["driz_separate"]
+
+        step_name_crrej = util.getSectionName(configobj, drizCR.STEP_NUM)
+        do_crrej = configobj[step_name_crrej]["driz_cr"]
+        skip_crrej = False
+
+        step_name_median = util.getSectionName(configobj, createMedian.STEP_NUM)
+        do_median = configobj[step_name_median]["median"]
+        skip_median = False
+
+        step_name_blot = util.getSectionName(configobj, ablot.STEP_NUM)
+        do_blot = configobj[step_name_blot]["blot"]
+        skip_blot = False
+
+        if len(imgObjList) > 1:
+            if do_crrej and not do_blot:
+                log.warning(
+                    "Turning blot step on as it is required by 'driz_cr'."
+                )
+                configobj[step_name_blot]["blot"] = True
+                do_blot = True
+
+            if do_blot and not do_median:
+                log.warning(
+                    "Turning median step on as it is required by 'blot'."
+                )
+                configobj[step_name_median]["median"] = True
+                do_median = True
+
+            if do_median and not do_single:
+                log.warning(
+                    "Turning single drizzle step on as it is required by "
+                    "'median'."
+                )
+                configobj[step_name_single]["driz_separate"] = True
+                do_single = True
+
+        else:
+            if do_crrej:
+                log.warning(
+                    "Turning CR rejection step off as it requires two or more "
+                    "input images."
+                )
+                configobj[step_name_crrej]["driz_cr"] = False
+                do_crrej = False
+                skip_crrej = True
+
+            if do_blot:
+                log.warning(
+                    "Turning blot step off as it is requires two or more "
+                    "input images."
+                )
+                configobj[step_name_blot]["blot"] = False
+                do_blot = False
+                skip_blot = True
+
+            if do_median:
+                log.warning(
+                    "Turning median step off as it requires two or more "
+                    "input images."
+                )
+                configobj[step_name_median]["median"] = False
+                do_median = False
+                skip_median = True
+
         # Call rest of MD steps...
         # create static masks for each image
         staticMask.createStaticMask(imgObjList, configobj,
@@ -220,14 +286,60 @@ def run(configobj, wcsmap=None, input_dict=None):
         #       _dbg_dump_virtual_outputs(imgObjList)
 
         # create the median images from the driz sep images
-        createMedian.createMedian(imgObjList, configobj, procSteps=procSteps)
+        try:
+            createMedian.createMedian(
+                imgObjList,
+                configobj,
+                procSteps=procSteps
+            )
+
+            if skip_median:
+                procSteps.endStep(createMedian.PROCSTEPS_NAME, reason="skipped")
+            elif not do_median:
+                procSteps.endStep(createMedian.PROCSTEPS_NAME, reason="off")
+
+        except util.StepAbortedError as e:
+            if str(e).startswith("Rejecting all pixels"):
+                log.warning(
+                    "Create median step was aborted due the following error:"
+                )
+                log.warning(
+                    f"ERROR: {str(e)}"
+                )
+
+                if do_blot:
+                    log.warning(
+                        "Turning blot step off due to aborted median step."
+                    )
+                    configobj[step_name_blot]['median'] = False
+                    skip_blot = True
+                    do_blot = False
+
+                if do_crrej:
+                    log.warning(
+                        "Turning CR rejection step off due to aborted "
+                        "median step."
+                    )
+                    configobj[step_name_crrej]['driz_cr'] = False
+                    skip_crrej = True
+                    do_crrej = False
+            else:
+                raise e
 
         # blot the images back to the original reference frame
         ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap,
                       procSteps=procSteps)
+        if skip_blot:
+            procSteps.endStep(ablot.PROCSTEPS_NAME, reason="skipped")
+        elif not do_blot:
+            procSteps.endStep(ablot.PROCSTEPS_NAME, reason="off")
 
         # look for cosmic rays
         drizCR.rundrizCR(imgObjList, configobj, procSteps=procSteps)
+        if skip_crrej:
+            procSteps.endStep(drizCR.PROCSTEPS_NAME, reason="skipped")
+        elif not do_crrej:
+            procSteps.endStep(drizCR.PROCSTEPS_NAME, reason="off")
 
         # Make your final drizzled image
         adrizzle.drizFinal(imgObjList, outwcs, configobj, wcsmap=wcsmap,
@@ -242,7 +354,8 @@ def run(configobj, wcsmap=None, input_dict=None):
         log.error(textutil.textbox(
             "AstroDrizzle Version {:s} encountered a problem!  "
             "Processing terminated at {:s}."
-            .format(__version__, util._ptime()[0])))
+            .format(__version__, util._ptime()[0])), file=sys.stderr)
+        procSteps.endStep(None, reason="aborted")
         raise
 
     finally:

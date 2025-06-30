@@ -26,7 +26,7 @@ import contextlib
 
 from .version import __version__
 
-with contextlib.redirect_stdout(None):     
+with contextlib.redirect_stdout(None):  
   import stsci.skypac
 
 from . import ablot

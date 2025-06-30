@@ -95,7 +95,6 @@ except ImportError:
     Process = None
 
 # THIRD-PARTY
-import logging
 import numpy as np
 import astropy.units as u
 from astropy.io import fits
@@ -129,6 +128,9 @@ from drizzlepac import wcs_functions
 from drizzlepac.haputils import config_utils
 from drizzlepac import wfpc2Data
 from drizzlepac import photeq
+
+from drizzlepac import __version__
+
 
 __taskname__ = "runastrodriz"
 root_logger = logging.getLogger('drizzlepac')

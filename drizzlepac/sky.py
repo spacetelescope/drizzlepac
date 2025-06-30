@@ -29,7 +29,8 @@ from . import __version__
 
 
 __taskname__= "drizzlepac.sky" #looks in drizzlepac for sky.cfg
-_step_num_ = 2  #this relates directly to the syntax in the cfg file
+STEP_NUM = 2  #this relates directly to the syntax in the cfg file
+PROCSTEPS_NAME = "Subtract Sky"
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
@@ -133,10 +134,10 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     # is specified, subtractSky will call the old _skysub.
 
     if procSteps is not None:
-        procSteps.addStep('Subtract Sky')
+        procSteps.addStep(PROCSTEPS_NAME)
 
-    #General values to use
-    step_name=util.getSectionName(configObj,_step_num_)
+    # General values to use
+    step_name = util.getSectionName(configObj, STEP_NUM)
     paramDict = configObj[step_name]
 
     if not util.getConfigObjPar(configObj, 'skysub'):
@@ -170,7 +171,7 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
                     chip.computedSky = None
 
         if procSteps is not None:
-            procSteps.endStep('Subtract Sky')
+            procSteps.endStep(PROCSTEPS_NAME)
         return
 
     #get the sub-dictionary of values for this step alone and print them out
@@ -196,7 +197,7 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
         _skymatch(imageObjList, paramDict, inmemory, clean, log)
 
     if procSteps is not None:
-        procSteps.endStep('Subtract Sky')
+        procSteps.endStep(PROCSTEPS_NAME)
 
 
 def _skymatch(imageList, paramDict, in_memory, clean, logfile):

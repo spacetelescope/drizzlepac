@@ -2,6 +2,8 @@ from configobj import ConfigObj
 from validate import Validator
 import os
 
+# This file is deprecated.  Various variable entries are now stored in a
+# number of different configuration files and many values here are outdated.
 param_dict = {
     "ACS HRC": {
         "astrodrizzle": {
