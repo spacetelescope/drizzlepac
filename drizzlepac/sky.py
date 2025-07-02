@@ -93,7 +93,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         inputDict['updatewcs']=False
         inputDict['group']=group
     else:
-        print("Please supply an input image", file=sys.stderr)
+        log.error("Please supply an input image")
         raise ValueError
 
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
@@ -122,7 +122,7 @@ def run(configObj,outExt=None):
             if outExt not in outsky:
                 outsky = outsky.replace("sky",outExt)
                 image.outputNames['outSky']=outsky
-                log.info(outsky)
+                log.debug(outsky)
 
     subtractSky(imageObjList,configObj,saveFile=saveFile)
 
@@ -141,23 +141,23 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     paramDict = configObj[step_name]
 
     if not util.getConfigObjPar(configObj, 'skysub'):
-        log.info('Sky Subtraction step not performed.')
+        log.debug('Sky Subtraction step not performed.')
         _addDefaultSkyKW(imageObjList)
         if 'skyuser' in paramDict and not util.is_blank(paramDict['skyuser']):
             kwd = paramDict['skyuser'].lstrip()
             if kwd[0] == '@':
                 # user's sky values are in a file:
-                log.info("Retrieving user computed sky values from file '{}'"
+                log.debug("Retrieving user computed sky values from file '{}'"
                          .format(kwd[1:]))
                 _skyUserFromFile(imageObjList, kwd[1:],apply_sky=False)
             else:
                 # user's sky values are stored in a header keyword:
-                log.info("Retrieving user computed sky values from image "
+                log.debug("Retrieving user computed sky values from image "
                          "headers ")
-                log.info("recorded in the '{:s}' header keywords."
+                log.debug("recorded in the '{:s}' header keywords."
                          .format(paramDict['skyuser']))
                 for image in imageObjList:
-                    log.info('Working on sky for: %s' % image._filename)
+                    log.debug('Working on sky for: %s' % image._filename)
                     _skyUserFromHeaderKwd(image, paramDict)
         else:
             # reset "computedSky" chip's attribute:
@@ -175,7 +175,7 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
         return
 
     #get the sub-dictionary of values for this step alone and print them out
-    log.info('USER INPUT PARAMETERS for Sky Subtraction Step:')
+    log.debug('USER INPUT PARAMETERS for Sky Subtraction Step:')
     util.printParams(paramDict, log=log)
     if 'skyfile' in paramDict and not util.is_blank(paramDict['skyfile']):
         _skyUserFromFile(imageObjList,paramDict['skyfile'])
@@ -212,7 +212,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
 
     nimg = len(imageList)
     if nimg == 0:
-        log.info("Skymatch needs at least one image to perform{0} \
+        log.debug("Skymatch needs at least one image to perform{0} \
                     sky matching. Nothing to be done.",os.linesep)
         return
 
@@ -497,7 +497,7 @@ def _skyUserFromFile(imageObjList, skyFile, apply_sky=None):
             appliedstr = line.split(linesep)[1].strip()
             if appliedstr.lower() in ['yes','true','y','t']:
                 skyapplied = True
-                print('...Sky values already applied by user...')
+                log.debug('...Sky values already applied by user...')
 
         if not util.is_blank(line) and line[0] != '#':
             lspl = line.split()
@@ -512,7 +512,7 @@ def _skyUserFromFile(imageObjList, skyFile, apply_sky=None):
         numchips=imageSet._numchips
         sciExt=imageSet.scienceExt
         if fname in skyvals:
-            print("    ...updating MDRIZSKY with user-supplied value.")
+            log.debug("    ...updating MDRIZSKY with user-supplied value.")
             for chip in range(1,numchips+1,1):
                 if len(skyvals[fname]) == 1:
                     _skyValue = skyvals[fname][0]
@@ -533,15 +533,11 @@ def _skyUserFromFile(imageObjList, skyFile, apply_sky=None):
                 else:
                     imageSet[chipext].computedSky = _skyValue
                 imageSet[chipext].subtractedSky = _skyValue
-                print("Setting ",skyKW,"=",_skyValue)
+                log.debug("Setting ",skyKW,"=",_skyValue)
         else:
-            print("*"*40)
-            print("*")
-            print("WARNING:")
-            print("    .... NO user-supplied sky value found for ",fname)
-            print("    .... Setting sky to a value of 0.0! ")
-            print("*")
-            print("*"*40)
+            log.warning(f"NO user-supplied sky value found for {fname}")
+            log.warning("Setting sky to a value of 0.0!")
+
 
 def _skyUserFromHeaderKwd(imageSet,paramDict):
     """
@@ -573,10 +569,10 @@ def _skyUserFromHeaderKwd(imageSet,paramDict):
     skyuser=paramDict["skyuser"]
 
     if skyuser != '':
-        print("User has computed their own sky values...")
+        log.debug("User has computed their own sky values...")
 
         if skyuser != skyKW:
-            print("    ...updating MDRIZSKY with supplied value.")
+            log.debug("    ...updating MDRIZSKY with supplied value.")
             for chip in range(1,numchips+1,1):
                 chipext = '%s,%d'%(sciExt,chip)
                 if not imageSet[chipext].group_member:
@@ -585,11 +581,7 @@ def _skyUserFromHeaderKwd(imageSet,paramDict):
                 try:
                     _skyValue = imageSet[chipext].header[skyuser]
                 except:
-                    print("**************************************************************")
-                    print("*")
-                    print("*  Cannot find keyword ",skyuser," in ",imageSet._filename)
-                    print("*")
-                    print("**************************************************************\n\n\n")
+                    log.error(f"Cannot find keyword: {skyuser} in {imageSet._filename}")
                     raise KeyError
 
                 _updateKW(imageSet[sciExt+','+str(chip)],
@@ -598,7 +590,7 @@ def _skyUserFromHeaderKwd(imageSet,paramDict):
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
                 imageSet[chipext].computedSky = None
-                print("Setting ",skyKW,"=",_skyValue)
+                log.debug(f"Setting {skyKW} = {_skyValue}")
 
 #this is the main function that does all the real work in computing the
 # statistical sky value for each image (set of chips)
@@ -640,21 +632,17 @@ def _skySub(imageSet,paramDict,saveFile=False):
     skyuser=paramDict["skyuser"]
 
     if skyuser != '':
-        print("User has computed their own sky values...")
+        log.debug("User has computed their own sky values...")
 
         if skyuser != skyKW:
-            print("    ...updating MDRIZSKY with supplied value.")
+            log.debug("    ...updating MDRIZSKY with supplied value.")
             for chip in range(1,numchips+1,1):
                 try:
                     chipext = '%s,%d'%(sciExt,chip)
                     _skyValue = imageSet[chipext].header[skyuser]
 
                 except:
-                    print("**************************************************************")
-                    print("*")
-                    print("*  Cannot find keyword ",skyuser," in ",imageSet._filename)
-                    print("*")
-                    print("**************************************************************\n\n\n")
+                    log.error(f"Cannot find keyword: {skyuser} in {imageSet._filename}")
                     raise KeyError
 
                 _updateKW(imageSet[sciExt+','+str(chip)],imageSet._filename,(sciExt,chip),skyKW,_skyValue)
@@ -662,14 +650,14 @@ def _skySub(imageSet,paramDict,saveFile=False):
                 # Update internal record with subtracted sky value
                 imageSet[chipext].subtractedSky = _skyValue
                 imageSet[chipext].computedSky = None
-                print("Setting ",skyKW,"=",_skyValue)
+                log.debug(f"Setting {skyKW} = {_skyValue}")
 
     else:
         # Compute our own sky values and record the values for use later.
         # The minimum sky value from all the  science chips in the exposure
         # is used as the reference sky for each chip
 
-        log.info("Computing minimum sky ...")
+        log.debug("Computing minimum sky ...")
         minSky=[] #store the sky for each chip
         minpscale = []
 
@@ -697,7 +685,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
         _skyValue = min(minSky)
 
         _reportedSky = _skyValue*(minpscale[minSky.index(_skyValue)]**2)
-        log.info("Minimum sky value for all chips %s" % _reportedSky)
+        log.debug("Minimum sky value for all chips %s" % _reportedSky)
 
         #now subtract that value from all the chips in the exposure
         #and update the chips header keyword with the sub
@@ -711,7 +699,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             _scaledSky=_skyValue * (idcscale**2)
             image.subtractedSky = _scaledSky
             image.computedSky = _scaledSky
-            log.info("Using sky from chip %d: %f\n" % (chip,_scaledSky))
+            log.debug("Using sky from chip %d: %f\n" % (chip,_scaledSky))
             ###_subtractSky(image,(_scaledSky))
             # Update the header so that the keyword in the image is
             #the sky value which should be subtracted from the image
@@ -744,7 +732,7 @@ def _computeSky(image, skypars, memmap=False):
             )
 
     _skyValue = _extractSkyValue(_tmp,skypars['skystat'].lower())
-    log.info("    Computed sky value/pixel for %s: %s "%
+    log.debug("    Computed sky value/pixel for %s: %s "%
              (image.rootname, _skyValue))
 
     del _tmp
@@ -773,7 +761,7 @@ def _subtractSky(image,skyValue,memmap=False):
         np.subtract(image.data,skyValue,image.data)
 
     except IOError:
-        print("Unable to perform sky subtraction on data array")
+        log.error("Unable to perform sky subtraction on data array")
         raise IOError
 
 
@@ -787,7 +775,7 @@ def _updateKW(image, filename, exten, skyKW, Value):
         strexten = '[%s,%s]'%(exten[0],str(exten[1]))
     else:
         strexten = '[%s]'%(exten)
-    log.info('Updating keyword %s in %s' % (skyKW, filename + strexten))
+    log.debug('Updating keyword %s in %s' % (skyKW, filename + strexten))
     fobj = fileutil.openImage(filename, mode='update', memmap=False)
     fobj[exten].header[skyKW] = (Value, 'Sky value computed by AstroDrizzle')
     fobj.close()
@@ -810,9 +798,9 @@ def _addDefaultSkyKW(imageObjList):
                 continue
             if skyKW not in fobj[ext].header:
                 fobj[ext].header[skyKW] = (Value, 'Sky value computed by AstroDrizzle')
-                log.info("MDRIZSKY keyword not found in the %s[%s,%d] header."%(
+                log.debug("MDRIZSKY keyword not found in the %s[%s,%d] header."%(
                             fname,sciExt,chip))
-                log.info("    Adding MDRIZSKY to header with default value of 0.")
+                log.debug("    Adding MDRIZSKY to header with default value of 0.")
         fobj.close()
 
 #this is really related to each individual chip

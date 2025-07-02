@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.xx.x (unreleased)
 ====================
 
+- Updated logging for runastrodriz and functions called by it. [#2041]
+
 - Ignore the RMS comparison between a Background2D and the sigma-clipped
   algorithm when the background is being "forced" to be a "Background2D"
   as indicated by the bkg_skew_threshold=0.0 and the negative_percent=100.0.
