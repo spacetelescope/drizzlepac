@@ -299,8 +299,9 @@ latex_elements = {
 
 latex_documents = [
   ('index', 'drizzlepac.tex', u'DrizzlePac Documentation',
-   u'Warren Hack, \\and Nadia Dencheva, \\and Chris Sontag, '
-   u'\\and Megan Sosey, \\and Michael Droettboom, \\and Mihai Cara', 'manual'),
+   u'Steven Goldman, \\and Michele De La Pena, \\and Warren Hack, '
+   u'Nadia Dencheva, \\and Mihai Cara, \\and Chris Sontag, '
+   u'\\and Megan Sosey, \\and Michael Droettboom', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
