@@ -13,6 +13,7 @@ reference catalog. ::
                                 sky coordinates, and magnitudes.
 
 """
+import pdb
 import os
 from io import BytesIO
 import requests
@@ -43,7 +44,7 @@ from astropy.stats import (gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm,
                            sigma_clipped_stats, SigmaClip)
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
-from astropy.modeling.fitting import LMLSQFitter
+from astropy.modeling.fitting import LMLSQFitter, TRFLSQFitter, DogBoxLSQFitter
 from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
@@ -869,7 +870,8 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
     # The LevMarLSQFitter fitter is no longer recommended. To use the
     # Levenberg-Marquardt algorithm without bounds, use LMLSQFitter.
-    fitter = LMLSQFitter()
+    fitter = TRFLSQFitter(calc_uncertainties=True)
+    #fitter = DogBoxLSQFitter()
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
     gaussian_prf = CircularGaussianSigmaPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
@@ -897,10 +899,18 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
         log.warning("The PHOT_RESULTS table has no rows. Trying again.")
         return None
 
+    # Check the 'flags' column has at least one row with a flag value of zero
+    if (phot_results['flags'] == 0).sum() == 0:
+        log.warn("The PHOT_RESULTS table has no good rows. Trying again.")
+        return None
+
     # Insure none of the fluxes determined by photutils is np.nan
     phot_results['flux_fit'] = np.nan_to_num(phot_results['flux_fit'].data, nan=0)
 
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
+    log.info(f"psf_row: {psf_row}")
+    phot_results.pprint_include_names = ['x_err', 'y_err', 'flux_init', 'flux_fit', 'flux_err', 'qfit', 'cfit', 'flags']
+    phot_results.pprint(max_width=-1)
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
     log.debug("Found FWHM: {}".format(fwhm))
