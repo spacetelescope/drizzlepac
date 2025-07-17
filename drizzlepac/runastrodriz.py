@@ -1653,9 +1653,6 @@ def update_wcs_in_list(exp_list, logfile=None):
                 print(msg)
                 update_msg += msg
                 update_active_wcs(filename, final_wcsname, logfile=logfile)
-                # msg = "filename %s , idcscale is %s" % (filename, idcscale)
-                # print(msg)
-                # update_msg = msg
     else:
         # Do nothing
         pass
@@ -1804,7 +1801,7 @@ def update_active_wcs(filename, wcsname, logfile=None):
     key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wcsname)
     keyword_wcs_list = [key]  # Initialize to a default value
 
-    # # No need to keep this file handle open anymore
+    # No need to keep this file handle open anymore
     hdu.close()
     del hdu
 
@@ -1852,7 +1849,6 @@ def update_active_wcs(filename, wcsname, logfile=None):
             #
             # This returns the first matching instance
             hdrname = headerlet_hdrnames[headerlet_wcsnames.index(wcsname)]
-            # extensions = []
             extensions = wcsutil.headerlet.find_headerlet_HDUs(filename, hdrname=hdrname)
 
             # It is possible the hdrname is not unique, so need to delete the dups
@@ -2225,7 +2221,7 @@ def _update_idcscale(filename):
     num_sci = fileutil.countExtn(hdul)
     # get IDCTAB name
     itabroot = hdul[0].header['idctab'].split('$')[1].split('_')[0]
-    hdu_idscale = None
+    fhdu_idscale = None
     # pull a value from one of the other headerlet extensions
     extvers = headerlet.get_headerlet_kw_names(hdul, kw='extver')
     for sciext in range(num_sci):
