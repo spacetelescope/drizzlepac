@@ -43,7 +43,7 @@ from astropy.stats import (gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm,
                            sigma_clipped_stats, SigmaClip)
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
-from astropy.modeling.fitting import LMLSQFitter, TRFLSQFitter
+from astropy.modeling.fitting import TRFLSQFitter
 from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
