@@ -1575,11 +1575,6 @@ def update_wcs_in_list(exp_list, logfile=None):
     print(msg)
     update_msg = msg
     primary_wcsnames = set([fits.getval(fname, 'wcsname', ext=('SCI',1)) for fname in exp_list])
-    fyq_ind = exp_list.index('j9pb20fyq_flt.fits')
-    idcscale = fits.getval(exp_list[fyq_ind], ext=1, keyword="IDCSCALE")
-    msg = "\nfyq idcscale is %s " % idcscale
-    print(msg)
-    update_msg = msg
     if len(primary_wcsnames) == 1:
         msg = "\nAll Primary WCS's confirmed as consistent as {}.".format(primary_wcsnames)
         print(msg)
