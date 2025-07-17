@@ -209,18 +209,21 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     Parameters
     ----------
     inFile : str
+        Input.
     force : bool
         If True make a product even if verification fails.
     newpath : str
         If provided processing will be done in ``newpath`` directory.
-    num_cores : int (?)
+    num_cores : int
         Number of cores to use.
     inmemory : bool
+        Process the inputs in memory (default=True).
     headerlets : bool
         Whether to generate headerlets or not.
     align_to_gaia : bool
         Whether to align to an external catalog.
     force_alignment : bool
+        When ``False`` (default) turn off alignment to GAIA if there were problems with guiding.
     do_verify_guiding : bool
         Whether to check for guiding problems. If True and force=True,
         a product will be generated even if issues with guiding are found.
@@ -1101,7 +1104,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
     alignment_mode : str
         Alignment mode, one of 'apriori', 'aposteriori', 'default-pipeline'.
     force_alignment : bool
-        Default is False.
+        If False (default) turn off alignment to GAIA if there were problems with guiding.
     pipeline_pars : dict
         Drizzle parameters.
     """

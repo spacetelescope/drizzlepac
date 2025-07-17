@@ -33,6 +33,8 @@ number of the code change for that issue.  These PRs can be viewed at:
   drizzle separate, create median, blot, and cosmic ray rejection steps based
   on the number of input images and/or requested top level step. [#2036]
 
+- Fix aposteriori alignment for cases when headerlets are missing IDCSCALE. [#2047]
+
 3.10.0 (21-May-2025)
 ====================
 
