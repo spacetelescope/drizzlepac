@@ -35,6 +35,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Fix aposteriori alignment for cases when headerlets are missing IDCSCALE. [#2047]
 
+- Fixed DeprecationWarnings. [#2050]
+
 3.10.0 (21-May-2025)
 ====================
 
