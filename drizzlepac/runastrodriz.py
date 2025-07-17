@@ -1575,6 +1575,11 @@ def update_wcs_in_list(exp_list, logfile=None):
     print(msg)
     update_msg = msg
     primary_wcsnames = set([fits.getval(fname, 'wcsname', ext=('SCI',1)) for fname in exp_list])
+    fyq_ind = exp_list.index('j9pb20fyq_flt.fits')
+    idcscale = fits.getval(exp_list[fyq_ind], ext=1, keyword="IDCSCALE")
+    msg = "\nfyq idcscale is %s " % idcscale
+    print(msg)
+    update_msg = msg
     if len(primary_wcsnames) == 1:
         msg = "\nAll Primary WCS's confirmed as consistent as {}.".format(primary_wcsnames)
         print(msg)
@@ -1653,6 +1658,9 @@ def update_wcs_in_list(exp_list, logfile=None):
                 print(msg)
                 update_msg += msg
                 update_active_wcs(filename, final_wcsname, logfile=logfile)
+                # msg = "filename %s , idcscale is %s" % (filename, idcscale)
+                # print(msg)
+                # update_msg = msg
     else:
         # Do nothing
         pass
@@ -1801,7 +1809,7 @@ def update_active_wcs(filename, wcsname, logfile=None):
     key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wcsname)
     keyword_wcs_list = [key]  # Initialize to a default value
 
-    # No need to keep this file handle open anymore
+    # # No need to keep this file handle open anymore
     hdu.close()
     del hdu
 
