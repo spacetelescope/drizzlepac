@@ -43,7 +43,7 @@ from astropy.stats import (gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm,
                            sigma_clipped_stats, SigmaClip)
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
-from astropy.modeling.fitting import TRFLSQFitter
+from astropy.modeling.fitting import LMLSQFitter
 from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
@@ -868,8 +868,8 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
     # 2.5 x the background value can be considered part of a source.
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
     # The LevMarLSQFitter fitter is no longer recommended. To use the
-    # Levenberg-Marquardt algorithm without bounds, use TRFLSQFitter.
-    fitter = TRFLSQFitter()
+    # Levenberg-Marquardt algorithm without bounds, use LMLSQFitter.
+    fitter = LMLSQFitter()
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
     gaussian_prf = CircularGaussianSigmaPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
