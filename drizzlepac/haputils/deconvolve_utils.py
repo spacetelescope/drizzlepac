@@ -1004,6 +1004,6 @@ def determine_input_image(image):
     if calimg:
         calimg = calimg.split('[')[0]
     else:
-        log.warn('No input image found in "D001DATA" keyword for {}'.format(image))
+        log.warning('No input image found in "D001DATA" keyword for {}'.format(image))
 
     return calimg
