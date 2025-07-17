@@ -1068,7 +1068,7 @@ class RefImage:
                     if self.wcs.instrument == 'DEFAULT':
                         raise ValueError("Distorted non-HST reference images "
                                          "are not supported.")
-                    log.warn("\nReference image contains a distorted WCS.\n"
+                    log.warning("\nReference image contains a distorted WCS.\n"
                              "Using the undistorted version of this WCS.\n")
                     self.wcs = utils.output_wcs([self.wcs], undistort=True)
             except KeyError as e:
@@ -1110,7 +1110,7 @@ class RefImage:
                     if self.wcs.instrument == 'DEFAULT':
                         raise ValueError("Distorted non-HST reference images "
                                          "are not supported.")
-                    log.warn("\nReference image contains a distorted WCS.\n"
+                    log.warning("\nReference image contains a distorted WCS.\n"
                              "Using the undistorted version of this WCS.\n")
                     self.wcs = utils.output_wcs([self.wcs], undistort=True)
                     self.wcs.filename = froot
