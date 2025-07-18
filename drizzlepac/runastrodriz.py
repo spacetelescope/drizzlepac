@@ -203,8 +203,35 @@ wcs_preference = ['IDC_?????????-FIT_REL_GAIA*3', 'IDC_?????????-FIT_IMG_GAIA*3'
 def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             headerlets=True, align_to_gaia=True, force_alignment=False,
             do_verify_guiding=False, debug=False, make_manifest=False):
-    """ Run astrodrizzle on input file/ASN table
-        using default values for astrodrizzle parameters.
+    """
+    Run astrodrizzle on input file/ASN table using default values for astrodrizzle parameters.
+
+    Parameters
+    ----------
+    inFile : str
+        Input.
+    force : bool
+        If True make a product even if verification fails.
+    newpath : str
+        If provided processing will be done in ``newpath`` directory.
+    num_cores : int
+        Number of cores to use.
+    inmemory : bool
+        Process the inputs in memory (default=True).
+    headerlets : bool
+        Whether to generate headerlets or not.
+    align_to_gaia : bool
+        Whether to align to an external catalog.
+    force_alignment : bool
+        When ``False`` (default) turn off alignment to GAIA if there were problems with guiding.
+    do_verify_guiding : bool
+        Whether to check for guiding problems. If True and force=True,
+        a product will be generated even if issues with guiding are found.
+    debug : bool
+        Debug logging on/off. Additional debug logging is saved in a json file.
+    make_manifest : bool
+        Whether to generate a MANIFEST file.
+
     """
     init_time = time.time()
     trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(init_time, inFile)
@@ -466,7 +493,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             updatewcs.updatewcs(_calfiles_flc, use_db=False, checkfiles=False)
 
         # adds skycell keyword to science header of all flt(c) and drz(c,w) files.
-        # the SKYCELL value for IPPPSSOOT and SVM products may be different as the 
+        # the SKYCELL value for IPPPSSOOT and SVM products may be different as the
         # current computation is based upon the WCSNAME of the input images.
         for filename in _calfiles+_calfiles_flc:
             processing_utils.add_skycell_to_header(filename)
@@ -543,7 +570,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             else:
                 _good_images = _calfiles
                 # Turn off alignment to GAIA since there is no valid data in the exposure.
-                align_to_gaia = False        
+                align_to_gaia = False
 
         if not wfpc2_input:
             adriz_pars = mdzhandler.getMdriztabParameters(_good_images)
@@ -592,7 +619,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             updatewcs.updatewcs(_calfiles)
             for _file in _calfiles:
                 confirm_aposteriori_hdrlets(_file, logfile=_trlfile)
-            
+
                 # verify WCS solution (CRVALs) near target coordinates
                 warning_separation_threshold = 0.05*u.deg # value determine by Rick White from experience
                 header_ex0 = fits.getheader(_file, ext=0)
@@ -907,6 +934,26 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
 def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
             debug=False, good_bits=512, **pipeline_pars):
+    """
+    Parameters
+    ----------
+
+    inlist : list
+        List of input files to process
+    trlfile : str
+        Trailer file.
+    calfiles : list of str
+        Original file names of input
+    mode : str
+        One of ['apriori', 'aposteriori', 'default-pipeline']
+    verify_alignment : bool
+    debug : bool
+        Debug logging on/off
+    good_bits : int
+        Good bits to use in drizzle
+    pipeline_pars : dict
+        Drizzle parameters
+    """
 
     import drizzlepac
     pyver = drizzlepac.astrodrizzle.__version__
@@ -916,7 +963,11 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
 
     pipeline_pars['runfile'] = trlfile.replace('.tra', '_pydriz')
     drizlog = pipeline_pars['runfile'] + ".log"  # the '.log' gets added automatically by astrodrizzle
+    _trlmsg = "In run_driz"
+    _trlmsg += "inlist is, %s\n" % (inlist,)
+    print(_trlmsg)
     for infile in inlist:  # Run astrodrizzle for all inputs
+
         asndict, ivmlist, drz_product = processInput.process_input(infile, updatewcs=False,
                                                         preserve=False,
                                                         overwrite=False)
@@ -1032,6 +1083,31 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                      find_crs=True, tmpdir=None, debug=False, good_bits=512,
                      alignment_mode=None, force_alignment=False,
                      **pipeline_pars):
+    """
+
+    Parameters
+    ----------
+    inlist : list
+        List of files to process
+    calfiles : list
+    calfiles_flc : list
+    trlfile : str
+        Trailer file name
+    find_crs : bool
+        Whether to run code detecting cosmic rays. Default is True.
+    tmpdir : str
+        Temporary directory for processing mode.
+    debug : bool
+        Debug logging on/off.
+    good_bits : int
+        Good bits to use with drizzle.
+    alignment_mode : str
+        Alignment mode, one of 'apriori', 'aposteriori', 'default-pipeline'.
+    force_alignment : bool
+        If False (default) turn off alignment to GAIA if there were problems with guiding.
+    pipeline_pars : dict
+        Drizzle parameters.
+    """
 
     headerlet_files = []
     for infile in inlist:
@@ -1108,6 +1184,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             # This is necessary in order to avoid imprinting zero point differences between
             # coordinate systems into the final fit which would result in mis-alignment of the
             # sources in the final combined output images.
+
             if len(alignfiles) > 1:
                 update_wcs_in_list(alignfiles, logfile=trlfile)
 
@@ -1123,6 +1200,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                                                  update_hdr_wcs=True, runfile=alignlog,
                                                  clobber=False, output=debug,
                                                  debug=debug, sat_flags=sat_flags)
+
                 if full_table is None:
                     raise Exception("No successful aposteriori fit determined.")
 
@@ -1410,27 +1488,10 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                                                          force=True,
                                                          hdrname=most_recent_wcs[1],
                                                          archive=False)
-                        # insure IDCSCALE is still present
+                        # Ensure IDCSCALE is still present
                         if 'idcscale' not in fhdu[('sci', 1)].header:
                             msg += "Headerlet {} was missing IDCSCALE keyword".format(most_recent_wcs[1])
-                            # get IDCTAB name
-                            itabroot = fhdu[0].header['idctab'].split('$')[1].split('_')[0]
-                            fhdu_idscale = None
-                            # pull a value from one of the other headerlet extensions
-                            for extn in extvers:
-                                if itabroot in fhdu[('HDRLET', extn)].header['wcsname']:
-                                    _hdrlet = fhdu[('HDRLET', extn)].headerlet
-                                    if 'idcscale' in _hdrlet[('SIPWCS', 1)].header:
-                                        fhdu_idscale = _hdrlet[('SIPWCS', 1)].header['idcscale']
-                                        break
-                            if fhdu_idscale is None:
-                                cd11 = fhdu[('sci', sciext + 1)].header['CD1_1']
-                                cd21 = fhdu[('sci', sciext + 1)].header['CD2_1']
-                                fhdu_idscale = round(np.sqrt(np.power(cd11, 2) + np.power(cd21, 2)) * 3600., 3)
-                            # Set the value of the IDCSCALE keyword
-                            for extn in range(num_sci):
-                                msg +=  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, fhdu.filename(), extn + 1)
-                                fhdu[('sci', extn + 1)].header['idcscale'] = fhdu_idscale
+                            _update_idcscale(fhdu)
     return msg
 
 
@@ -1514,7 +1575,6 @@ def update_wcs_in_list(exp_list, logfile=None):
     print(msg)
     update_msg = msg
     primary_wcsnames = set([fits.getval(fname, 'wcsname', ext=('SCI',1)) for fname in exp_list])
-
     if len(primary_wcsnames) == 1:
         msg = "\nAll Primary WCS's confirmed as consistent as {}.".format(primary_wcsnames)
         print(msg)
@@ -1597,6 +1657,7 @@ def update_wcs_in_list(exp_list, logfile=None):
         # Do nothing
         pass
     # Update trailer file with log messages
+
     if logfile:
         _updateTrlFile(logfile, update_msg)
 
@@ -1788,7 +1849,6 @@ def update_active_wcs(filename, wcsname, logfile=None):
             #
             # This returns the first matching instance
             hdrname = headerlet_hdrnames[headerlet_wcsnames.index(wcsname)]
-            extensions = []
             extensions = wcsutil.headerlet.find_headerlet_HDUs(filename, hdrname=hdrname)
 
             # It is possible the hdrname is not unique, so need to delete the dups
@@ -1815,6 +1875,7 @@ def update_active_wcs(filename, wcsname, logfile=None):
                     fhdu[(extname, sciext)].header['nmatches'] = nm
                 fhdu.close()
                 del fhdu
+
             except ValueError as err:
                 msg = "WARNING: Trapped ValueError - attempting recovery: {}\n".format(str(err))
                 print(msg)
@@ -1848,7 +1909,14 @@ def update_active_wcs(filename, wcsname, logfile=None):
         msg = "No need to update active WCS solution of {} for {} as it is already the active solution.\n".format(wcsname, filename)
         print(msg)
         update_msg += msg
-
+    try:
+        idcscale = fits.getval(filename, ext=1, keyword='IDCSCALE')
+    except KeyError:
+        msg += "Headerlet {} was missing IDCSCALE keyword".format(wcsname)
+        print(msg)
+        update_msg += msg
+        _update_idcscale(filename)
+    print(msg)
     if logfile:
         _updateTrlFile(logfile, update_msg)
 
@@ -2131,6 +2199,52 @@ def _analyze_exposure(filename):
         process_exposure = False
 
     return process_exposure
+
+
+def _update_idcscale(filename):
+    """
+    Update IDCSCALE if a headerlet does not include it.
+
+    Parameters
+    ----------
+    filename : str or fits.HDUList
+        The science file to be updated.
+        If HDUList it must be opened in "update" mode.
+
+    """
+
+    if isinstance(filename, str):
+        hdul = fits.open(filename, mode='update')
+    else:
+        # Assume it's an HDUList object in "update" mode.
+        hdul = filename
+    num_sci = fileutil.countExtn(hdul)
+    # get IDCTAB name
+    itabroot = hdul[0].header['idctab'].split('$')[1].split('_')[0]
+    fhdu_idscale = None
+    # pull a value from one of the other headerlet extensions
+    extvers = headerlet.get_headerlet_kw_names(hdul, kw='extver')
+    for sciext in range(num_sci):
+        for extn in extvers:
+            if itabroot in hdul[('HDRLET', extn)].header['wcsname']:
+                _hdrlet = hdul[('HDRLET', extn)].headerlet
+                if 'idcscale' in _hdrlet[('SIPWCS', sciext + 1)].header:
+                    fhdu_idscale = _hdrlet[('SIPWCS', sciext + 1)].header['idcscale']
+                    break
+        if fhdu_idscale is None:
+            cd11 = hdul[('sci', sciext + 1)].header['CD1_1']
+            cd21 = hdul[('sci', sciext + 1)].header['CD2_1']
+            fhdu_idscale = round(np.sqrt(np.power(cd11, 2) + np.power(cd21, 2)) * 3600., 3)
+        # Set the value of the IDCSCALE keyword
+        for extn in range(num_sci):
+            msg =  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, hdul.filename(), extn + 1)
+            hdul[('sci', extn + 1)].header['idcscale'] = fhdu_idscale
+            print(msg)
+            update_msg = msg
+    # No need to keep this file handle open anymore
+    if isinstance(filename, str):
+        hdul.close()
+    del hdul
 
 
 # Functions to support execution from the shell.
