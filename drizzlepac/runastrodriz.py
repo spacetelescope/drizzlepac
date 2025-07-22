@@ -1653,9 +1653,6 @@ def update_wcs_in_list(exp_list, logfile=None):
                 print(msg)
                 update_msg += msg
                 update_active_wcs(filename, final_wcsname, logfile=logfile)
-                # msg = "filename %s , idcscale is %s" % (filename, idcscale)
-                # print(msg)
-                # update_msg = msg
     else:
         # Do nothing
         pass
@@ -1804,7 +1801,7 @@ def update_active_wcs(filename, wcsname, logfile=None):
     key = wcsutil.altwcs.getKeyFromName(hdu['SCI', 1].header, wcsname)
     keyword_wcs_list = [key]  # Initialize to a default value
 
-    # # No need to keep this file handle open anymore
+    # No need to keep this file handle open anymore
     hdu.close()
     del hdu
 
