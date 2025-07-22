@@ -203,7 +203,7 @@ the general situation, but users can tune these values to optimize for their own
 
 The safest way for users to tune
 configuration settings is to first utilize the module, `~drizzlepac.haputils.generate_custom_svm_mvm_param_file`, to generate a
-custom parameter .json file. The parameter file, which is written into the user's current working directory by default,
+custom parameter JSON file. The parameter file, which is written into the user's current working directory by default,
 contains all default pipeline parameters and allows users to adjust any/or all of these parameters as they wish without
 overwriting the hard-coded default values stored in /drizzlepac/pars/hap_pars/svm_parameters/<instrument>/<detector>.
 To use this utility, you must have the files you want processed available on disk (i.e., the FLT/FLC files),
@@ -258,7 +258,7 @@ GENERAL
         Photometry measurement: Statistic to use to calculate the background ("mean", "median", "mode"). All measurements are sigma-clipped.
 
     * scale: float
-        Used as a scaling factor on a limit threshod for computation of weight masks
+        Used as a scaling factor on a limit threshold for computation of weight masks
 
     * sensitivity: float
         Used for computation of weight masks to preserve the attribute of similarity
@@ -279,7 +279,7 @@ GENERAL
         Forces use of the sigma_clipped_stats algorithm to compute the background of the input image.
 
     * zero_percent: float
-        Percentage limit of the pure zero values in the illuminated portion of an input image.  If there are more zero values than the zero_percent limit, then the background is set to zero and the background rms is computed based on the pixels which are non-zero in the illuminated portion of the input image.
+        Percentage limit of the pure zero values in the illuminated portion of an input image.  If there are more zero values than the zero_percent limit, then the background is set to zero and the background RMS is computed based on the pixels which are non-zero in the illuminated portion of the input image.
 
     * negative_percent: float
         If the background were determined by Background2D, but the background-subtracted image has more than the allowed limit of negative_percent, then the background should be determined by the sigma-clipped statistics algorithm.
@@ -350,7 +350,7 @@ SOURCEX
         Percentage limit on source fraction deblending limit
 
     * ratio_bigsource_limit: int
-        Limit on the ratio of the "big sources" found with the Gaussian vs the RickerWavelet kernel.  The ratio is interpreted as indicative of overlapping PSFs vs nebulousity.  If the ratio is larger than this limit, the processing is allowed to proceed.
+        Limit on the ratio of the "big sources" found with the Gaussian vs the RickerWavelet kernel.  The ratio is interpreted as indicative of overlapping PSFs vs nebulosity.  If the ratio is larger than this limit, the processing is allowed to proceed.
 
     * ratio_bigsource_deblend_limit: int
         Limit used to filter out prohibitively large segments as it a resource consuming task to try and deblend very large segments.  If the ratio of the area of the largest segment to the area of the next smaller segment is larger than this limit, segment is not deblended.
@@ -765,7 +765,7 @@ The source identification routine has been shown to identify false sources in re
 sources, and in image artifacts associated with bright or saturated sources, such as diffraction spikes, and in the
 pixels surrounding saturated PSF where the brightness level “plateaus” at saturation. We identify impacted sources by
 locating all sources within a predefined radius of a given source and checking if the brightness of each of these
-surrounding sources is less than a radially-dependent minimum brightness value defined by a pre-defined stepped
+surrounding sources is less than a radially-dependent minimum brightness value defined by a predefined stepped
 encircled energy curve. The parameters used to determine assignment of this flag are instrument-dependent, can be found
 in the “swarm filter” section of the \*_quality_control_all.json files in the path described above in section 1.3.
 
@@ -821,7 +821,7 @@ and a filter catalog filename will be:
 **This section applies to both the Point and Segmentation Catalogs.**
 
 The total detection and all individual single filter-level catalogs contain a significant amount
-of metadata at the beginning of the file which is also pre-dominantly the same between the
+of metadata at the beginning of the file which is also predominantly the same between the
 catalogs, where the differences arise with respect to the specific columns present in the
 catalog.  The lines essentially beginning with the literal *name*
 contain the names of the columns in the catalog with associated units, datatype, units, formatting,
@@ -883,7 +883,7 @@ the Concentration index (CI) formulaic definition and the Flag value definitions
 The multi-filter detection level (aka total) catalog contains the fundamental position measurements of
 the detected sources: ID, X-Center, Y-Center, RA, and DEC, supplemented by some of the
 aperture photometry measurements from *each* of the filter catalogs (ABmag of the outer aperture, Concentration
-Index, and Flags).  The column names for the aperture measurements are contructed
+Index, and Flags).  The column names for the aperture measurements are constructed
 based upon the contributing Point Filter Catalogs and have the following names:
 MagAP2_<filter>, CI_<filter>, and Flags_<filter>.
 Effectively, the output Total Detection Catalog is a distilled version of all of
@@ -1067,7 +1067,7 @@ by segments, ``source_fraction_deblend_limit``.
 If the evaluation of the Round 2 segmentation maps still fails to be acceptable, there is a
 *last ditch* effort to salvage a viable solution.  A ratio is computed for the *large island* values
 calculated using the Gaussian and RickerWavelet kernels.  This ratio is believed
-to be indicative of overlapping PSFs versus large areas of nebulousity.  If this ratio is greater
+to be indicative of overlapping PSFs versus large areas of nebulosity.  If this ratio is greater
 than the value of ``ratio_bigsource_limit`` (default = 2), then it is deemed the deblending process
 can be successful, and processing proceeds using the segmentation image generated with the
 RickerWavelet kernel smoothing.
@@ -1094,7 +1094,7 @@ and the `watershed technique <https://en.wikipedia.org/wiki/Watershed_(image_pro
     single source in the final catalog.
 
 The segmentation
-map/image is the same shape as the input image, source regions (aka segments) are labelled with
+map/image is the same shape as the input image, source regions (aka segments) are labeled with
 positive integer values, and the background (non-segment pixels) has a value of zero.
 The segmentation map, deblended as necessary, derived from and used with the
 multi-filter detection image for measuring source properties is used to determine 
@@ -1215,7 +1215,7 @@ Similar to the Point Total Detection Catalog, the Segmentation Total Detection C
 contains the fundamental position measurements of
 the detected sources: ID, X-Centroid, Y-Centroid, RA, and DEC, supplemented by some of the
 aperture photometry measurements from *each* of the filter catalogs (ABmag of the outer aperture,
-Concentration Index, and Flags).  The column names for the aperture measurements are contructed
+Concentration Index, and Flags).  The column names for the aperture measurements are constructed
 based upon the contributing Segmentation Filter Catalogs and have the following names:
 MagAP2_<filter>, CI_<filter>, and Flags_<filter>.
 The fundamental difference between the Point and Segmentation Total
