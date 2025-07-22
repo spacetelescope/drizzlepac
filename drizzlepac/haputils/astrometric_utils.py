@@ -465,9 +465,9 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
 
     # If we still have an error returned by the web-service, report the exact error
     if rstr[0].startswith('Error'):
-        log.warning("Astrometric catalog generation FAILED with: \n{}." 
+        log.warning("Astrometric catalog generation FAILED with: \n{}."
                     " No output table has been generated.".format(rstr))
-         
+
         # More information is still needed for the user. Regardless of the
         # portion of the the specification which is incorrect, the returned
         # error is still "Cannot find table 0".
@@ -884,17 +884,17 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
 
         phot_results = itr_phot_obj(psf)
     except Exception as x_cept:
-        log.warn(f"The find_fwhm() failed due to problem with fitting. Trying again. Exception: {x_cept}")
+        log.warning(f"The find_fwhm() failed due to problem with fitting. Trying again. Exception: {x_cept}")
         return None
 
     # Check the phot_results table was generated successfully
     if isinstance(phot_results, (type(None))):
-        log.warn("The PHOT_RESULTS table was not generated successfully. Trying again.")
+        log.warning("The PHOT_RESULTS table was not generated successfully. Trying again.")
         return None
 
     # Check the table actually has rows
     if len(phot_results['flux_fit']) == 0:
-        log.warn("The PHOT_RESULTS table has no rows. Trying again.")
+        log.warning("The PHOT_RESULTS table has no rows. Trying again.")
         return None
 
     # Insure none of the fluxes determined by photutils is np.nan
@@ -2509,4 +2509,3 @@ def evaluate_overlap_diffs(diff_dict, limit=1.0):
         log.info("Alignment NOT verified based on overlap...")
 
     return verified, max_diff
-
