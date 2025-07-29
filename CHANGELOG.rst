@@ -21,7 +21,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 ===================
 
 - Replaced LMLSQFitter with TRLSQFitter for use with IterativepPSFPhotometry
-  class due to deprecation of LMLSQFitter since astropy 7.0. [#nnnn]
+  class due to deprecation of LMLSQFitter since astropy 7.0. [#2054]
 
 - Ignore the RMS comparison between a Background2D and the sigma-clipped
   algorithm when the background is being "forced" to be a "Background2D"
