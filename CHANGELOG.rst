@@ -26,7 +26,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   of the data, and it was found to remove too many useful datasets from processing.
   This implemented change was previously reverted on a release branch and was never
   part of a publically released version. This update completely removes its use.
-  [#nnnn]
+  [#2055]
 
 - Replaced LMLSQFitter with TRLSQFitter for use with IterativepPSFPhotometry
   class due to deprecation of LMLSQFitter since astropy 7.0. [#2054]
