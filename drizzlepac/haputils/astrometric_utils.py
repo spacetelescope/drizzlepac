@@ -13,7 +13,6 @@ reference catalog. ::
                                 sky coordinates, and magnitudes.
 
 """
-import pdb
 import os
 from io import BytesIO
 import requests
