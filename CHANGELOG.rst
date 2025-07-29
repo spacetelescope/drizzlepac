@@ -18,7 +18,10 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 3.xx.x (unreleased)
-====================
+===================
+
+- Replaced LMLSQFitter with TRLSQFitter for use with IterativepPSFPhotometry
+  class due to deprecation of LMLSQFitter since astropy 7.0. [#nnnn]
 
 - Ignore the RMS comparison between a Background2D and the sigma-clipped
   algorithm when the background is being "forced" to be a "Background2D"
@@ -37,7 +40,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Fixed DeprecationWarnings. [#2050]
 
-3.10.0 (21-May-2025)
+3.10.0 (14-Jul-2025)
 ====================
 
 - Overwrote the MVM "alignment" configuration files with the SVM
