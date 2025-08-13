@@ -43,7 +43,7 @@ from astropy.stats import (gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm,
                            sigma_clipped_stats, SigmaClip)
 from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
-from astropy.modeling.fitting import LMLSQFitter
+from astropy.modeling.fitting import TRFLSQFitter
 from astropy.time import Time
 from astropy.utils.decorators import deprecated
 
@@ -867,9 +867,7 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
     # mmm_bkg(psf) will compute a background value of the array, where any pixel
     # 2.5 x the background value can be considered part of a source.
     iraffind = DAOStarFinder(threshold=2.5 * mmm_bkg(psf), fwhm=default_fwhm)
-    # The LevMarLSQFitter fitter is no longer recommended. To use the
-    # Levenberg-Marquardt algorithm without bounds, use LMLSQFitter.
-    fitter = LMLSQFitter()
+    fitter = TRFLSQFitter(calc_uncertainties=True)
     sigma_psf = gaussian_fwhm_to_sigma * default_fwhm
     gaussian_prf = CircularGaussianSigmaPRF(sigma=sigma_psf)
     gaussian_prf.sigma.fixed = False
@@ -897,9 +895,18 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
         log.warning("The PHOT_RESULTS table has no rows. Trying again.")
         return None
 
+    # Check the 'flags' column has at least one row with a flag value of zero
+    if (phot_results['flags'] == 0).sum() == 0:
+        log.warn("The PHOT_RESULTS table has no good rows. Trying again.")
+        return None
+
     # Insure none of the fluxes determined by photutils is np.nan
     phot_results['flux_fit'] = np.nan_to_num(phot_results['flux_fit'].data, nan=0)
 
+    # The "best" solution is based upon the flux_fit maximum value, and it looks like
+    # this is the original implementation.  It is not understood why the "quality of fit"
+    # metrics, qfit or cfit, or some combination of returned variables were not used,
+    # and this should be investigated for a more robust determination.
     psf_row = np.where(phot_results['flux_fit'] == phot_results['flux_fit'].max())[0][0]
     sigma_fit = phot_results['sigma_fit'][psf_row]
     fwhm = gaussian_sigma_to_fwhm * sigma_fit
