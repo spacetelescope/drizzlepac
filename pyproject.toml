@@ -23,14 +23,14 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-    "astropy>=5.0.4",
+    "astropy>=6.1",
     "fitsblender>=0.4.2",
-    "scipy",
+    "scipy>=1.11",
     "matplotlib",
     "stsci.tools>=4.0",
     "stsci.image>=2.3.7",
     "stsci.imagestats>=1.8.2",
-    "stsci.skypac>=1.0.9",
+    "stsci.skypac>=1.0.11",
     "stsci.stimage",
     "stwcs>=1.7.4",
     "tweakwcs>=0.8.7",
