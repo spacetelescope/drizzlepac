@@ -18,7 +18,21 @@ number of the code change for that issue.  These PRs can be viewed at:
     https://github.com/spacetelescope/drizzlepac/pulls
 
 3.xx.x (unreleased)
-====================
+===================
+
+- Improved compatibility with Python 3.15 and numpy 2.0. Updated requirement
+  for ``stsci.skypac``. [#2059]
+
+- Removed use of EXPFLAG keyword from being employed to evaluate the quality of the
+  data and potentially indicate the data should not be used for SVM/MVM processing.
+  EXPFLAG, when not set to NORMAL, was not necessarily accurate regarding the quality
+  of the data, and it was found to remove too many useful datasets from processing.
+  This implemented change was previously reverted on a release branch and was never
+  part of a publically released version. This update completely removes its use.
+  [#2055]
+
+- Replaced LMLSQFitter with TRLSQFitter for use with IterativepPSFPhotometry
+  class due to deprecation of LMLSQFitter since astropy 7.0. [#2054]
 
 - Ignore the RMS comparison between a Background2D and the sigma-clipped
   algorithm when the background is being "forced" to be a "Background2D"
@@ -33,7 +47,11 @@ number of the code change for that issue.  These PRs can be viewed at:
   drizzle separate, create median, blot, and cosmic ray rejection steps based
   on the number of input images and/or requested top level step. [#2036]
 
-3.10.0 (21-May-2025)
+- Fix aposteriori alignment for cases when headerlets are missing IDCSCALE. [#2047]
+
+- Fixed DeprecationWarnings. [#2050]
+
+3.10.0 (14-Jul-2025)
 ====================
 
 - Overwrote the MVM "alignment" configuration files with the SVM
