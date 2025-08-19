@@ -433,7 +433,7 @@ STScI Regression Tests
 In addition to unit tests, ``drizzlepac`` has a set of regression tests. 
 Many of tests must be run on the STScI system and are not available to the 
 public. These internal tests can be run using the following command, and as the
-names suggest, require storage space (~8 GB) and time (~3-4 hours) to run.  
+names suggest, require storage space (~7 GB) and time (~2 hours) to run.  
 
 ::
 
@@ -443,7 +443,16 @@ names suggest, require storage space (~8 GB) and time (~3-4 hours) to run.
 Running the pytests without these options will result in a number of tests being 
 skipped and labeled as expected failures (xfails).
 
+After making a code change, we encourage testing it uses our `Github Actions workflow 
+<https://github.com/spacetelescope/RegressionTests/actions/workflows/drizzlepac.yml>`__.
+This tool is configured using a GUI and allows for testing code changes with various 
+operating systems, dependencies, and branches. 
 
+For STScI users, the tests can also be run locally. In order for these tests to run, 
+environmental variables need to be set on your machine for TEST_BIGDATA, crrefer, 
+iref, jref, jtab, lref, mtab, nref, ntab, oref, orab, and uref; the location of 
+these variables is listed in STScI internal documentation. The user must be on 
+the STScI network (or VPN). 
 
 Simultaneously developing ``drizzlepac`` and one of its dependencies
 --------------------------------------------------------------------
