@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.xx.x (unreleased)
 ===================
 
+- Removed rounding of IDCSCALE values. [#2063]
+
 - Improved compatibility with Python 3.15 and numpy 2.0. Updated requirement
   for ``stsci.skypac``. [#2059]
 
