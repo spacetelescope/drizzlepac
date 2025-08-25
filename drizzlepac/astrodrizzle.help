@@ -565,10 +565,10 @@ median : bool (Default = Yes)
 
     .. note::
        This parameter may be ignored and the step be turned off either
-       when there is only one input image or the combination of input images'
+       when there is only one input image or the combination of input images
        overlap and ``combine_*`` parameters is such that there are not enough
        overlapping pixels to create a median image. When this will occur,
-       all other higher-numbered step that depends on the median image will
+       all other higher-numbered steps that depend on the median image will
        also be turned off.
 
 median_newmasks : bool (Default = Yes)

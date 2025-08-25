@@ -743,7 +743,7 @@ void cdriz_log_func(const char *format, ...) {
   va_start(args, format);
 
   if (logging == NULL) {
-    logging = PyImport_ImportModuleNoBlock("logging");
+    logging = PyImport_ImportModule("logging");
     if (logging == NULL) return;
   }
 
