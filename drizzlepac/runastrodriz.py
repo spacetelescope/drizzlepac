@@ -633,7 +633,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # FIX: This should probably only be done in the apriori sub-directory!
             updatewcs.updatewcs(_calfiles, verbose=True)
             for _file in _calfiles:
-                confirm_aposteriori_hdrlets(_file, logfile=_trlfile)
+                confirm_aposteriori_hdrlets(_file)
 
                 # verify WCS solution (CRVALs) near target coordinates
                 warning_separation_threshold = 0.05*u.deg # value determine by Rick White from experience
