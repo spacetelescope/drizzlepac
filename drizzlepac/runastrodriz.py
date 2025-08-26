@@ -1604,13 +1604,10 @@ def update_wcs_in_list(exp_list):
         for filename in exp_list:
             if filename not in skip_direct_list:
                 log.debug(f"Setting the primary WCS for direct image {filename} to {final_wcsname}.")
-                update_active_wcs(filename, final_wcsname, logfile=logfile)
+                update_active_wcs(filename, final_wcsname)
     else:
         # Do nothing
         pass
-    # Update trailer file with log messages
-    if logfile:
-        _updateTrlFile(logfile, update_msg)
 
 # ------------------------------------------------------------------------------
 
