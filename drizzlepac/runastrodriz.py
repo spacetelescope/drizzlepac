@@ -1604,7 +1604,7 @@ def update_wcs_in_list(exp_list):
         for filename in exp_list:
             if filename not in skip_direct_list:
                 log.debug(f"Setting the primary WCS for direct image {filename} to {final_wcsname}.")
-                update_active_wcs(filename, final_wcsname)
+                update_active_wcs(filename, final_wcsname, logfile=logfile)
     else:
         # Do nothing
         pass
@@ -1837,9 +1837,6 @@ def update_active_wcs(filename, wcsname):
         as it is already the active solution."""
         log.debug(msg)
         update_msg += msg
-
-    if logfile:
-        _updateTrlFile(logfile, update_msg)
 
 
 def confirm_aposteriori_hdrlets(filename):
