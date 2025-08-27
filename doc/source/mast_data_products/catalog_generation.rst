@@ -84,10 +84,12 @@ For consistency, the same background and background RMS images are used by both 
 segment algorithms.
 To ensure optimal source detection, the multi-filter detection image must be background-subtracted.
 In order to accommodate the different types of detectors, disparate signal levels, and highly varying
-astronomical image content, three background computations are used as applicable.  
+astronomical image content, three background computations are used as appropriate.  
 The background determination algorithms are: Zero, Constant, and Conformal.
 
-The first category of background definition is a special case situation.
+1.3.1: Special Case - Zero Background Algorithm
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The first category of background definition is a special case situation only used for ACS SBC images.
 It has been observed that some background regions of ACS SBC drizzle-combined
 detection images are measured to have values identically
 equal to zero.  If the number of identically zero pixels in the footprint portion of the detection image
@@ -95,8 +97,9 @@ exceeds a configurable percentage threshold value (default is 25%), then a two-d
 is constructed and set to the value of zero, hence the moniker of **Zero Background Algorithm**. Its companion
 constructed RMS image set to the RMS
 value computed for the non-zero pixels which reside within the footprint portion of the image.
-The **Zero Background Algorithm** is only used for ACS SBC images.
 
+1.3.2: Constant Background Algorithm (aka sigma-clipped statistics)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 When the **Zero Background Algorithm** is not applicable, then sigma-clipped statistics are
 computed for the detection image using the
 `astropy.stats.sigma_clipped_stats <https://docs.astropy.org/en/stable/api/astropy.stats.sigma_clipped_stats.html>`_
@@ -106,7 +109,7 @@ as a specification for the number of standard deviations and the maximum number 
 to compute the mean, median, and RMS of the
 sigma-clipped data.  The specification for the number of standard deviations and the maximum number
 of iterations are configurable values which are set to 3.0 and 3 by default, respectively, in
-catalog configuration files discussed in Section 1.3.1.  If the median value is negative, the
+catalog configuration files discussed in Section 1.4.1.  If the median value is negative, the
 the input image data is adjusted by a combination of the negative median and the RMS so the entire 
 image is more positive.  This adjustment should correct for any gross over-subtraction 
 of the background from the image, and the sigma-clipped statistics are recomputed.
@@ -162,6 +165,8 @@ for each value.
  identically zero background data will always be evaluated and will supersede the user request when
  applicable.
 
+1.3.3: Conformal Background Algorithm (aka Background2D)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For the final background determination algorithm, **Conformal Background Algorithm**, the
 `photutils.background.Background2d <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html>`_
 Astropy utility is invoked, but *only* if the **Zero Background Algorithm** has not been applied,
@@ -195,9 +200,9 @@ with the associated updates, are chosen as the images to use for further computa
     successful source identification.
 
 
-1.3.1: Configurable Variables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Through-out this section variables have been mentioned which can be configured by the user.  The
+1.4: Catalog Configuration Variables 
+------------------------------------
+Through-out the previous section variables have been mentioned which can be configured by the user.  The
 values used for these variables for generating the default catalogs are deemed to be the best for
 the general situation, but users can tune these values to optimize for their own data.
 
@@ -227,8 +232,8 @@ you can modify the values in the appropriate section.
     they have been changed.  If you must change these specific files, a copy of the original files
     should be made and stored in a safe location in advance of any changes.
 
-1.3.2: Description of the variables in the catalog JSON files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1.4.1: Variables in the Catalog JSON Files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Default values for the numeric configuration parameters are detector-dependent, though many of the values may be the same from detector to detector.  In the actual configuration files
 the parameters are split into three sections: General (which is unlabeled), DAO (for the point algorithm), and SOURCEX (for the segmentation algorithm). The variables listed in the General section apply to both the point and segmentation algorithms.
 
@@ -362,7 +367,7 @@ SOURCEX
         Minimum value for the unscaled Kron radius
 
 
-1.4: Image Kernel
+1.5: Image Kernel
 -----------------
 By default, the software uses a 
 two-dimensional Gaussian smoothing kernel on the multi-filter detection image
@@ -1027,7 +1032,7 @@ counterpart.  Connectivity refers to how pixels are literally touching along the
 corners, and the threshold image is the background RMS image (Section 1.3)
 multiplied by a configurable n-sigma value, ``segm_nsigma``, and modulated by a weighting scheme based
 upon the WHT extension of the detection image. Before applying the threshold, the detection
-image is filtered by the image kernel (Section 1.4) to smooth the data and enhance the ability
+image is filtered by the image kernel (Section 1.5) to smooth the data and enhance the ability
 to identify signal which is similar in shape to the kernel. This process generates a two-dimensional
 segmentation image or map where a segment is defined to be a number of connected pixels which are
 all identified by a numeric label and are considered part of the same source.
@@ -1040,7 +1045,7 @@ exceeds a user-specified limit, ``rw2d_biggest_pixels``.
 If any of these scenarios are true, this is a strong indication the detection image is a
 crowded astronomical field. In such a crowded field, the Gaussian kernel
 (`astropy.convolution.Gaussian2DKernel <https://docs.astropy.org/en/stable/api/astropy.convolution.Gaussian2DKernel.html>`_, discussed in 
-Section 1.4) can blend objects in close proximity together, making it difficult to
+Section 1.5) can blend objects in close proximity together, making it difficult to
 differentiate between the independent objects.  In extreme cases, a large number of astronomical objects
 are blended together and are mistakenly identified as a single segment covering a large percent of the image.
 To address this situation an alternative kernel is derived using the
@@ -1207,7 +1212,7 @@ and a filter catalog filename will be:
 * hst_98765_43_acs_wfc_f606w_j65c43_segment-cat.ecsv
 
 The metadata contained in the catalogs represents the same observational parameters though
-eny measured values will probably be different.
+any measured values will probably be different.
 
 5.1: Segmentation Total Detection Catalog
 -----------------------------------------
