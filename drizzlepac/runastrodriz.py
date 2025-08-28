@@ -256,8 +256,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # logging
     # cannot switch trailer files unless you first remove previous handlers
     for hdlr in log.handlers: # removes stream to other trailer files. 
-        if hdlr.__class__.__name__ == 'FileHandler':
-            log.removeHandler(hdlr)
+        # if hdlr.__class__.__name__ == 'FileHandler':
+        log.removeHandler(hdlr)
+    for hdlr in log.parent.handlers: # removes stream to other trailer files. 
+        # if hdlr.__class__.__name__ == 'FileHandler':
+        log.parent.removeHandler(hdlr)
     if debug:
         default_log_level = logging.DEBUG
         formatter = logging.Formatter('[%(levelname)s:%(name)s] %(message)s')
