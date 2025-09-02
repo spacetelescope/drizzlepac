@@ -261,7 +261,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         default_log_level = logging.DEBUG
         formatter = logging.Formatter('[%(levelname)s:%(name)s] %(message)s')
     else:
-        default_log_level = logging.WARNING
+        default_log_level = logging.INFO
         formatter = logging.Formatter('[%(levelname)-8s] %(message)s')
     
     file_handler = logging.FileHandler(f'{_trlfile}')
