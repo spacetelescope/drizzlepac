@@ -253,14 +253,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     _manifest_filename = _trlroot + '_manifest.txt'
     _calfiles_flc = []
 
-    # logging
-    # cannot switch trailer files unless you first remove previous handlers
-    for hdlr in log.handlers: # removes stream to other trailer files. 
-        # if hdlr.__class__.__name__ == 'FileHandler':
-        log.removeHandler(hdlr)
-    for hdlr in log.parent.handlers: # removes stream to other trailer files. 
-        # if hdlr.__class__.__name__ == 'FileHandler':
-        log.parent.removeHandler(hdlr)
+    # remove previous file and stream handlers
+    log.handlers.clear()
+    log.parent.handlers.clear()
+    
     if debug:
         default_log_level = logging.DEBUG
         formatter = logging.Formatter('[%(levelname)s:%(name)s] %(message)s')
@@ -291,7 +287,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     pipeline_pars = PIPELINE_PARS.copy()
     _verify = True  # Switch to control whether to verify alignment or not
     manifest_list = []
-
+    
     # interpret envvar variable, if specified
     if envvar_compute_name in os.environ:
         val = os.environ[envvar_compute_name].lower()
