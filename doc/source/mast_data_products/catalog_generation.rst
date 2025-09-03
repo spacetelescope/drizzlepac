@@ -204,33 +204,22 @@ with the associated updates, are chosen as the images to use for further computa
 ------------------------------------
 Through-out the previous section variables have been mentioned which can be configured by the user.  The
 values used for these variables for generating the default catalogs are deemed to be the best for
-the general situation, but users can tune these values to optimize for their own data.
-
-The safest way for users to tune
-configuration settings is to first utilize the module, `~drizzlepac.haputils.generate_custom_svm_mvm_param_file`, to generate a
-custom parameter JSON file. The parameter file, which is written into the user's current working directory by default,
-contains all default pipeline parameters and allows users to adjust any/or all of these parameters as they wish without
-overwriting the hard-coded default values stored in /drizzlepac/pars/hap_pars/svm_parameters/<instrument>/<detector>.
-To use this utility, you must have the files you want processed available on disk (i.e., the FLT/FLC files),
-as well as a file containing the names of all the files you want processed, one filename per line.
-
-.. note::
- The custom configuration file generated contains all of the configuration variables used for
- SVM or MVM processing.  These variables cover the *alignment*, *astrodrizzle*, *catalog_generation*,
- and *quality_control* steps for SVM, and if applicable, MVM.
+the *general* situation, but users can tune these values to optimize for their own data.
+The easiest way for users to tune the catalog configuration settings is to copy the appropriate
+detector configuration parameter settings file (e.g., acs_wfc_catalog_generation_all.json) used by
+default during the catalog processing done by Drizzlepac to the local working directory and
+modify values appropriately. Please see Section 1.4.1 which discusses the variables in the catalog
+configuration file.  The default files are located in 
+``**rootpath**/drizzlepac/pars/hap_pars/svm_parameters/<instrument>/<detector>``, where **rootpath** in this
+instance could be the top level of the users's cloned working directory of Drizzlepac from the
+repository (e.g., ``/home/yourName/repository_code/drizzlepac``), or the
+Conda root in your home directory (e.g., ``/home/yourName/miniconda3/envs/currentCondaEnv/lib/python3.11/site-packages/drizzlepac``).
 
 To run the single-visit mosaic pipeline using the custom parameter file, users simply need to
 specify the name of the file with the '-c' optional command-line argument when using
 `~drizzlepac.runsinglehap` or set the 'input_custom_pars_file' optional input
-argument when executing ``run_hap_processing()`` in `~drizzlepac.hapsequencer` from Python
-or from another Python script.  Once the new configuration file template has been generated,
-you can modify the values in the appropriate section.
-
-.. warning::
-    Modification of values in the parameter files stored in /drizzlepac/pars/hap_pars/svm_parameters/ is
-    *strongly* discouraged as there is no way to revert these values back to their defaults once
-    they have been changed.  If you must change these specific files, a copy of the original files
-    should be made and stored in a safe location in advance of any changes.
+argument when executing the `run_hap_processing()` function in `~drizzlepac.hapsequencer` from Python
+or from another Python script.
 
 1.4.1: Variables in the Catalog JSON Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
