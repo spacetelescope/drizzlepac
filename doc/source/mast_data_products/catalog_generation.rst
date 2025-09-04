@@ -218,7 +218,7 @@ Conda root in your home directory (e.g., ``/home/yourName/miniconda3/envs/curren
 To run the single-visit mosaic pipeline using the custom parameter file, users simply need to
 specify the name of the file with the '-c' optional command-line argument when using
 `~drizzlepac.runsinglehap` or set the 'input_custom_pars_file' optional input
-argument when executing the `run_hap_processing()` function in `~drizzlepac.hapsequencer` from Python
+argument when executing the *run_hap_processing* function in `~drizzlepac.hapsequencer` from Python
 or from another Python script.
 
 1.4.1: Variables in the Catalog JSON Files
