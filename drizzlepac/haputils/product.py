@@ -261,7 +261,7 @@ class HAPProduct:
                     refname = (
                         self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
                     )
-
+                    self.refname = refname
                     log.info(
                         "Starting alignment to absolute astrometric reference frame '{}'.".format(
                             catalog_item
@@ -292,9 +292,6 @@ class HAPProduct:
                     else:
                         ref_weight = np.ones_like(ref_catalog["RA"])
                     ref_catalog.add_column(ref_weight, name="weight")
-                    self.refname = (
-                        refname  # Name of reference file actually used for alignment
-                    )
                     self.refcat_filenames.append(refname)
 
                     log.debug(
