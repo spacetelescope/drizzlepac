@@ -23,6 +23,8 @@ Exceptions:
     * ACS/SBC: if the filters "F115LP" or "F122M" are used, the alignment configuration file will end in "acs_sbc_blue_n2" for 2, 3, 4, or 5 exposures, and "acs_sbc_blue_n6" for 6 or more exposures.
     * WFC3/IR (grism): if the grism filters "G102" or "G141" are used, the alignment configuration file will end in "wfc3_ir_grism_n2" for two or three exposures, or "wfc3_ir_grism_n4" if there are 4 or more exposures.
     * WFC3/UVIS: As shown in the table, different configuration files are used "pre" and "post" November 8th, 2012. 
+    * Grism/Prism: Grism/prism images are not processed for MVM datasets. For SVM processing, the WCS is updated in order for datasets to match their corresponding direct images if they exist. 
+
 
 
 .. note:: 
