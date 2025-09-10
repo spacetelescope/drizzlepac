@@ -3,7 +3,6 @@
 
 """
 import pytest
-
 import numpy as np
 
 from drizzlepac.haputils import testutils
@@ -117,7 +116,10 @@ class TestAcsApriori(BaseACS):
     @pytest.mark.bigdata
     @pytest.mark.parametrize('dataset', ['jb1601020', 'J9I408010'])
     def test_apriori(self, dataset):
-        compare_apriori(dataset)
+        filenames = self.get_mast_data(dataset)
+        flcs = [x for x in filenames if "flc" in x]
+        for item in flcs:
+            compare_apriori(item)
 
 
 class TestWFC3Apriori(BaseWFC3):
@@ -137,4 +139,7 @@ class TestWFC3Apriori(BaseWFC3):
         'dataset', ['ic0g0l010', 'icnw34040']
     )
     def test_apriori(self, dataset):
-        compare_apriori(dataset)
+        filenames = self.get_mast_data(dataset)
+        flcs = [x for x in filenames if "flc" in x]
+        for item in flcs:
+            compare_apriori(item)

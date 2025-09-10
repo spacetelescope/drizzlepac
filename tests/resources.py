@@ -12,6 +12,7 @@ import pytest
 from astropy.io import fits
 from astropy.io.fits import FITSDiff
 from astropy.utils.data import conf
+from drizzlepac.haputils import astroquery_utils as aqutils
 
 import numpy as np
 import stwcs
@@ -97,6 +98,23 @@ class BaseCal:
         local_file = get_bigdata(self.inputs_root, self.tree, self.input_loc, *args)
 
         return local_file
+
+    def get_mast_data(self, dataset):
+        "Download data from MAST using astroquery"
+        try:
+            retrieve_list = aqutils.retrieve_observation(
+                dataset+'*',
+                suffix=["RAW", "FLC", "FLT", "ASN", "C0M", "C1M", "D0M"],
+                product_type="pipeline",
+                clobber=True,
+            )
+            if not retrieve_list:
+                raise ValueError("No files retrieved for {}".format(dataset))
+        except Exception as e:
+            print("ERROR retrieving {}: {}".format(dataset, str(e)))
+            raise e
+
+        return retrieve_list
 
     def get_input_file(self, *args, refsep='$'):
         """
