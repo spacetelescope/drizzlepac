@@ -99,12 +99,12 @@ class BaseCal:
 
         return local_file
 
-    def get_mast_data(self, dataset):
+    def get_mast_data(self, dataset, suffix):
         "Download data from MAST using astroquery"
         try:
             retrieve_list = aqutils.retrieve_observation(
                 dataset+'*',
-                suffix=["RAW", "FLC", "FLT", "ASN", "C0M", "C1M", "D0M"],
+                suffix=suffix,
                 product_type="pipeline",
                 clobber=True,
             )
