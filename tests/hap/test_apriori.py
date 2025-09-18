@@ -13,6 +13,9 @@ from ..resources import BaseACS, BaseWFC3
 def compare_apriori(dataset):
     """This test will perform fits between ALL a priori solutions and GAIA.
 
+    dataset: list of str
+        List of input filenames (FLCs/FLTs) to be aligned.
+
     Success criteria:
       * Successful fit to GAIA for dataset
       * Fit was not compromised (fit_qual != 5)

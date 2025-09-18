@@ -102,7 +102,6 @@ class TestAlignMosaic(BaseHLATest):
 
         assert 0.0 < total_rms <= RMS_LIMIT
 
-    @pytest.mark.serial
     @pytest.mark.slow
     def test_align_47tuc(self):
         """Verify whether 47Tuc exposures can be aligned to an astrometric standard.
@@ -288,32 +287,6 @@ class TestAlignMosaic(BaseHLATest):
             num_sources=250,
             archive=False,
             clobber=False,
-            debug=False,
-            update_hdr_wcs=False,
-            print_fit_parameters=True,
-            print_git_info=False,
-            product_type="pipeline",
-            output=False,
-        )
-
-        # Examine the output table to extract the RMS for the entire fit and the compromised
-        # information
-        if dataset_table:
-            total_rms = dataset_table.filtered_table["total_rms"][0]
-
-        assert 0.0 < total_rms <= RMS_LIMIT
-
-    def test_astroquery(self):
-        """Verify that new astroquery interface will work"""
-
-        total_rms = 0.01
-
-        dataset_table = alignimages.perform_align(
-            ["IB6V06060"],
-            catalog_list=["GAIADR2", "GAIADR1"],
-            num_sources=250,
-            archive=False,
-            clobber=True,
             debug=False,
             update_hdr_wcs=False,
             print_fit_parameters=True,

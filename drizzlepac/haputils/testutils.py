@@ -25,8 +25,8 @@ def compare_wcs_alignment(dataset, force=False):
 
         Parameters
         -----------
-        dataset : str
-            Rootname of either a single (un-associated) exposure or an ASN
+        dataset : list of str
+            List of input filenames (FLCs/FLTs) to be aligned.
 
         force : bool
             Specify whether or not to overwrite dataset files found locally
