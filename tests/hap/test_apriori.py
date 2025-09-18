@@ -113,6 +113,7 @@ class TestAcsApriori(BaseACS):
         * This test is also compatible with pytest-xdist.
     """
 
+    @pytest.mark.serial
     @pytest.mark.bigdata
     @pytest.mark.parametrize('dataset', ['jb1601020', 'J9I408010'])
     def test_apriori(self, dataset):
@@ -132,6 +133,7 @@ class TestWFC3Apriori(BaseWFC3):
 
     """
 
+    @pytest.mark.serial
     @pytest.mark.bigdata
     @pytest.mark.parametrize(
         'dataset', ['ic0g0l010', 'icnw34040']
