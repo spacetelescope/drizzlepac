@@ -397,7 +397,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
         try:
             tmp_HDUList = fits_cut(infile, sky_coord, cutout_size, correct_wcs=CORRECT_WCS,
                                    extension=EXTENSION, single_outfile=SINGLE_OUTFILE, cutout_prefix=OUTPUT_PREFIX,
-                                   output_dir=output_dir, memory_only=MEMORY_ONLY, verbose=True)
+                                   output_dir=output_dir, memory_only=MEMORY_ONLY, verbose=verbose)
    
             # Copy and append the first (and it turns out the only) entry/list in the list
             out_HDUList.append(copy.deepcopy(tmp_HDUList[0]))
