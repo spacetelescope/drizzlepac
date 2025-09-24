@@ -20,7 +20,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.xx.x (unreleased)
 ===================
 
-- Fixed metawcs ecsv filename issue and lingering files. [#2073]
+- Fixed metawcs ecsv filename issue and removed lingering files. [#2073]
 
 - Improved compatibility with Python 3.15 and numpy 2.0. Updated requirement
   for ``stsci.skypac``. [#2059]
