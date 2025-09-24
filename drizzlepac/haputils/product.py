@@ -85,6 +85,9 @@ class HAPProduct:
         self.basename = (
             "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector])) + "_"
         )
+        # reference catalog name (for ecsv file) used during alignment; 
+        # uses part of the base_name and is specified in align_to_gaia()
+        self.refname = None
 
         # exposure_name is the ipppssoo or a portion thereof
         self.exposure_name = filename[0:8]
