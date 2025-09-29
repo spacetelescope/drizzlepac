@@ -22,6 +22,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Fixed metawcs ecsv filename issue and removed lingering files. [#2073]
 
+- Removed deprecated functions in align.py and related HAP tests. [#2072]
+
 - Improved compatibility with Python 3.15 and numpy 2.0. Updated requirement
   for ``stsci.skypac``. [#2059]
 
