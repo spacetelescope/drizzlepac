@@ -897,7 +897,7 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
 
     # Check the 'flags' column has at least one row with a flag value of zero
     if (phot_results['flags'] == 0).sum() == 0:
-        log.warn("The PHOT_RESULTS table has no good rows. Trying again.")
+        log.warning("The PHOT_RESULTS table has no good rows. Trying again.")
         return None
 
     # Insure none of the fluxes determined by photutils is np.nan

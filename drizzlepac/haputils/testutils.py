@@ -25,8 +25,8 @@ def compare_wcs_alignment(dataset, force=False):
 
         Parameters
         -----------
-        dataset : str
-            Rootname of either a single (un-associated) exposure or an ASN
+        dataset : list of str
+            List of input filenames (FLCs/FLTs) to be aligned.
 
         force : bool
             Specify whether or not to overwrite dataset files found locally
@@ -66,7 +66,7 @@ def compare_wcs_alignment(dataset, force=False):
     try:
         # Step 1:
         #   Determine alignment for pipeline-defined WCS
-        align_table = align.perform_align([dataset],
+        align_table = align.perform_align(dataset,
                                           catalog_list=['GAIADR2', 'GAIADR1'],
                                           num_sources=250,
                                           clobber=force,
@@ -121,7 +121,7 @@ def compare_wcs_alignment(dataset, force=False):
                                                      archive=False, force=True)
         
             print("[testutils] Aligning: {} for WCSNAME: {}".format(dataset, wcs))
-            align_table = align.perform_align([dataset],
+            align_table = align.perform_align(dataset,
                                               catalog_list=['GAIADR2', 'GAIADR1'],
                                               num_sources=250,
                                               clobber=False,
