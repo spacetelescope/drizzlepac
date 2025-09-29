@@ -8,6 +8,5 @@ Primary User Interface: AstroDrizzle()
 
 .. automodule:: drizzlepac.astrodrizzle
    :members: AstroDrizzle
-   :exclude-members: getHelpAsString
 
 .. autofunction:: help
