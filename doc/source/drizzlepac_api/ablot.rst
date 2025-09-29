@@ -8,5 +8,4 @@ Median Image Blotting Step
 
 .. automodule:: drizzlepac.ablot
    :members:
-   :exclude-members: getHelpAsString
    :undoc-members:
