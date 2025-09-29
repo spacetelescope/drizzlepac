@@ -261,9 +261,7 @@ class HAPProduct:
 
                     # Override the default self.refname as it really needs to be
                     # catalog-specific to be useful
-                    refname = (
-                        self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
-                    )
+                    refname = self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
                     self.refname = refname
                     log.info(
                         "Starting alignment to absolute astrometric reference frame '{}'.".format(
