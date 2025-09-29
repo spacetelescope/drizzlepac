@@ -85,6 +85,9 @@ class HAPProduct:
         self.basename = (
             "hst_" + "_".join(map(str, [prop_id, obset_id, instrument, detector])) + "_"
         )
+        # reference catalog name (for ecsv file) used during alignment; 
+        # uses part of the base_name and is specified in align_to_gaia()
+        self.refname = None
 
         # exposure_name is the ipppssoo or a portion thereof
         self.exposure_name = filename[0:8]
@@ -258,10 +261,8 @@ class HAPProduct:
 
                     # Override the default self.refname as it really needs to be
                     # catalog-specific to be useful
-                    refname = (
-                        self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
-                    )
-
+                    refname = self.product_basename + "_" + catalog_item + "_ref_cat.ecsv"
+                    self.refname = refname
                     log.info(
                         "Starting alignment to absolute astrometric reference frame '{}'.".format(
                             catalog_item
@@ -292,9 +293,6 @@ class HAPProduct:
                     else:
                         ref_weight = np.ones_like(ref_catalog["RA"])
                     ref_catalog.add_column(ref_weight, name="weight")
-                    self.refname = (
-                        refname  # Name of reference file actually used for alignment
-                    )
                     self.refcat_filenames.append(refname)
 
                     log.debug(
