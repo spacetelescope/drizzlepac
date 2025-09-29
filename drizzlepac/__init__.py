@@ -17,11 +17,12 @@ cosmic-ray cleaned, and combined image as a FITS file.
 import os
 import re
 import sys
+import contextlib
 
 from .version import __version__
 
-#if sys.version_info < (3, 8):
-#    raise ImportError("Drizzlepac requires Python 3.8 and above.")
+with contextlib.redirect_stdout(None):  
+  import stsci.skypac
 
 from . import ablot
 from . import adrizzle
@@ -70,14 +71,6 @@ from . import pixreplace
 from . import haputils
 from . import align
 from . import runastrodriz
-
-# These lines allow TEAL to print out the names of TEAL-enabled tasks
-# upon importing this package.
-from stsci.tools import teal
-
-
-teal.print_tasknames(__name__, os.path.dirname(__file__),
-                     hidden=['adrizzle','ablot','buildwcs'])
 
 
 def help():

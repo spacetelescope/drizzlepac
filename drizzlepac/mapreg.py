@@ -12,8 +12,6 @@ from astropy.io import fits
 import stregion as pyregion
 import stwcs
 import os
-from stsci.tools.fileutil import findExtname
-from stsci.tools import teal
 from . import util
 from .regfilter import fast_filter_outer_regions
 
@@ -1063,9 +1061,10 @@ def _check_FITS_extensions(img, extensions):
     return all_present
 
 
-#--------------------------
+#--------------------------------
 # TEAL Interface functions
-#--------------------------
+# (these functions are deprecated)
+#---------------------------------
 def run(configObj):
     MapReg(input_reg   = configObj['input_reg'],
            images      = configObj['images'],

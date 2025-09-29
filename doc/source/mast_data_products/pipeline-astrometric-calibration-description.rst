@@ -656,6 +656,71 @@ these computations were being performed in based up to the parent directory to
 replace the previously updated versions of the input files.  This entire sub-directory
 then gets deleted, unless the processing was being run in debug mode.
 
+Fit quality and selection of WCS solution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The primary WCS selected will depends on several factors. These include the ``fit_rms``, 
+and whether a solution is deemed *compromised* (discussed below). The ``fit_quality`` is an integer value 
+between 1 and 5, where 1 is the best fit and 5 is the worst. As *a posteriori* WCS solutions 
+are fit with different catalogs (e.g. GAIADR3, GAIADR2, etc.), and different fit geometries 
+(e.g. rscale, shift, etc.), the code will only adopt the new solution if it has a 
+fit_quality less than or equal to the previous value AND a lower fit_rms. The fit_quality 
+value is determined as follows:
+
+  * 1 = Valid solution with fit_rms < 10 mas
+
+  * 2 = Valid but compromised solution with fit_rms < 10 mas
+
+  * 3 = Valid solution with fit_rms >= 10 mas
+
+  * 4 = Valid but compromised solution with fit_rms >= 10 mas
+
+  * 5 = No valid solution
+
+  * -1 = Alignment code failed altogether. 
+
+
+There are several ways in which a WCS solution can be considered compromised. 
+These manifest as a series of checks done in the align.py function 
+*determine_fit_quality()*. Checks must return True, otherwise the solution is 
+considered compromised. These checks include:
+  
+  * **consistency_check**: Ensures that the 
+    combination of the standard deviation of the X and Y shifts is less than one 
+    of two values, whichever is larger. The limit is either the value defined 
+    in align_pars["determine_fit_quality"]["MAX_FIT_RMS"] (default is 20 pixels) 
+    or the mean of the *fit_rms* values for all observations, whichever is larger. 
+
+
+  * **large_rms_check**: Ensures that both the *fit_rms* and the *max_rms* are less 
+    than the *max_fit_limit* (default is 150). The *fit_rms* is the RMS between the 
+    astrometric catalog and the image alignment sources for an individual 
+    exposure. The *max_rms* is the maximum of the *fit_rms* values for all of the 
+    exposures in the association.
+
+
+  * **radial_offset_check**: Ensures that the radial offset between the 
+    image alignment sources and astrometric catalog sources is reasonable. The 
+    radial offset is computed as the square root of shifts in the tangent plane
+    squared; these shifts are calculated in tweakwcs. This radial offset 
+    (in arcseconds) divided by 10 and raised to the 8th power (+ 0.8), must be 
+    less than the number of cross matches (+ 2) times 0.36 (see align.py).
+
+  * **nmatches_check**: Ensures that the number of matches between the image 
+    alignment sources and the astrometric catalog is greater than the value 
+    specified in the corresponding alignment parameter configuration files 
+    (e.g. acs_hrc_alignment_all.json). The required number of cross matchs 
+    (nmatches) are those next to each geometry in the mosaic_fitgeom_list and 
+    mosaic_relgeom_list parameters. Alternatively, the check passes so long as 
+    the number of cross matches is at least 2, and the *fit_rms* is greater than 0.5. 
+
+
+  * **cross_match_check**: Ensures that if the number of cross matches is less 
+    than 100, it does a check to ensure a Pearsons correlation coefficient of 
+    greater than 0.5 is achieved between the magnitudes of the image sources 
+    and the catalog sources.
+
+
 Creation of Final Aligned Products
 ----------------------------------
 The starting directory now contains updated input FLC/FLT files based on WCSs which

@@ -13,16 +13,15 @@ import os
 import sys
 
 import numpy as np
-from stsci.tools import fileutil, teal, logutil
-import astropy
+from stsci.tools import fileutil, logutil
 from astropy.io import fits
 from stsci.imagestats import ImageStats
 from . import util
 from . import processInput
 
 __taskname__ = "staticMask"
-_step_num_ = 1
-
+STEP_NUM = 1
+PROCSTEPS_NAME = "Static Mask"
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
@@ -53,7 +52,10 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj
     if not editpars:
         run(configObj)
 
-# this is called by the TEAL interface
+#--------------------------------
+# TEAL Interface functions
+# (these functions are deprecated)
+#---------------------------------
 def run(configObj):
 
     #now we really just need the imageObject list created for the dataset
@@ -66,21 +68,22 @@ def run(configObj):
 # this is the workhorse function called by MultiDrizzle
 def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
     if procSteps is not None:
-        procSteps.addStep('Static Mask')
+        procSteps.addStep(PROCSTEPS_NAME)
 
-    step_name = util.getSectionName(configObj,_step_num_)
+    step_name = util.getSectionName(configObj,STEP_NUM)
 
     if not configObj[step_name]['static']:
-        log.info('Static Mask step not performed.')
-        procSteps.endStep('Static Mask')
+        log.info(f"{PROCSTEPS_NAME} step not performed.")
+        procSteps.endStep(PROCSTEPS_NAME)
         return
 
-    if (not isinstance(imageObjectList,list) or (len(imageObjectList) ==0)):
+    if not isinstance(imageObjectList, list) or len(imageObjectList) == 0:
+        procSteps.skipStep(PROCSTEPS_NAME, reason="aborted")
         msg = "Invalid image object list given to static mask"
         print(msg, file=sys.stderr)
         raise ValueError(msg)
 
-    log.info('USER INPUT PARAMETERS for Static Mask Step:')
+    log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
     util.printParams(configObj[step_name], log=log)
 
     #create a static mask object
@@ -89,13 +92,12 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
     for image in imageObjectList:
         myMask.addMember(image) # create tmp filename here...
 
-
     #save the masks to disk for later access
     myMask.saveToFile(imageObjectList)
     myMask.close()
 
     if procSteps is not None:
-        procSteps.endStep('Static Mask')
+        procSteps.endStep(PROCSTEPS_NAME)
 
 def constructFilename(signature):
     """Construct an output filename for the given signature::
@@ -134,7 +136,7 @@ class staticMask:
 
         self.masklist={}
         self.masknames = {}
-        self.step_name=util.getSectionName(configObj,_step_num_)
+        self.step_name=util.getSectionName(configObj, STEP_NUM)
         if configObj is not None:
             self.static_sig = configObj[self.step_name]['static_sig']
         else:

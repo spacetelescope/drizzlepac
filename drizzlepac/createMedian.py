@@ -14,19 +14,19 @@ from astropy.io import fits
 
 from stsci.imagestats import ImageStats
 from stsci.image import numcombine
-from stsci.tools import iterfile, teal, logutil
+from stsci.tools import iterfile, logutil
 
-from . import imageObject
 from . import util
 from .minmed import min_med
 from . import processInput
-from .adrizzle import _single_step_num_
+from .adrizzle import STEP_NUM_SINGLE
 
 from . import __version__
 
 # look in drizzlepac for createMedian.cfg:
 __taskname__ = "createMedian"
-_step_num_ = 4  # this relates directly to the syntax in the cfg file
+STEP_NUM = 4  # this relates directly to the syntax in the cfg file
+PROCSTEPS_NAME = "Create Median"
 
 BUFSIZE = 1024*1024   # 1MB cache size
 
@@ -78,28 +78,40 @@ def createMedian(imgObjList, configObj, procSteps=None):
         raise ValueError(msg)
 
     if procSteps is not None:
-        procSteps.addStep('Create Median')
+        procSteps.addStep(PROCSTEPS_NAME)
 
-    step_name = util.getSectionName(configObj, _step_num_)
+    step_name = util.getSectionName(configObj, STEP_NUM)
     if not configObj[step_name]['median']:
         log.info('Median combination step not performed.')
+        if procSteps is not None:
+            procSteps.endStep(PROCSTEPS_NAME, reason="off", delay_msg=True)
         return
 
     paramDict = configObj[step_name]
     paramDict['proc_unit'] = configObj['proc_unit']
 
     # include whether or not compression was performed
-    driz_sep_name = util.getSectionName(configObj, _single_step_num_)
+    driz_sep_name = util.getSectionName(configObj, STEP_NUM_SINGLE)
     driz_sep_paramDict = configObj[driz_sep_name]
     paramDict['compress'] = driz_sep_paramDict['driz_sep_compress']
 
-    log.info('USER INPUT PARAMETERS for Create Median Step:')
+    log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
     util.printParams(paramDict, log=log)
 
-    _median(imgObjList, paramDict)
+    try:
+        _median(imgObjList, paramDict)
+    except ValueError as e:
+        # In cases when input has more than one image but they do not
+        # overlap:
+        if str(e).startswith("Rejecting all pixels"):
+            if procSteps is not None:
+                procSteps.endStep(PROCSTEPS_NAME, reason="aborted", delay_msg=True)
+            raise util.StepAbortedError(str(e))
+        else:
+            raise e
 
     if procSteps is not None:
-        procSteps.endStep('Create Median')
+        procSteps.endStep(PROCSTEPS_NAME)
 
 
 # this is the internal function, the user called function is below

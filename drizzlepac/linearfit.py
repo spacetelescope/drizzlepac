@@ -13,7 +13,6 @@
 
 """
 import numpy as np
-from numpy import linalg as npla
 from stsci.tools import logutil
 
 

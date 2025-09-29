@@ -17,19 +17,130 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.9.2 (unreleased)
-==================
+3.xx.x (unreleased)
+===================
+
+- Removed deprecated functions in align.py and related HAP tests. [#2072]
+
+- Improved compatibility with Python 3.15 and numpy 2.0. Updated requirement
+  for ``stsci.skypac``. [#2059]
+
+- Removed use of EXPFLAG keyword from being employed to evaluate the quality of the
+  data and potentially indicate the data should not be used for SVM/MVM processing.
+  EXPFLAG, when not set to NORMAL, was not necessarily accurate regarding the quality
+  of the data, and it was found to remove too many useful datasets from processing.
+  This implemented change was previously reverted on a release branch and was never
+  part of a publically released version. This update completely removes its use.
+  [#2055]
+
+- Replaced LMLSQFitter with TRLSQFitter for use with IterativepPSFPhotometry
+  class due to deprecation of LMLSQFitter since astropy 7.0. [#2054]
+
+- Ignore the RMS comparison between a Background2D and the sigma-clipped
+  algorithm when the background is being "forced" to be a "Background2D"
+  as indicated by the bkg_skew_threshold=0.0 and the negative_percent=100.0.
+  This is done for the case of Round 2 for identification of sources for
+  the HAPSegmentCatalog. [#2033]
+
+- Fixed scipy deprecations in catalog_utils.py and hap_flag_filter.py.
+  [#2032]
+
+- Added ability to automatically turn on/of some intermediate steps such as
+  drizzle separate, create median, blot, and cosmic ray rejection steps based
+  on the number of input images and/or requested top level step. [#2036]
+
+- Fix aposteriori alignment for cases when headerlets are missing IDCSCALE. [#2047]
+
+- Fixed DeprecationWarnings. [#2050]
+
+3.10.0 (14-Jul-2025)
+====================
+
+- Overwrote the MVM "alignment" configuration files with the SVM
+  files to keep the information in-sync.  [#2028]
+
+- Clarified the sigma value used to compute the threshold above which
+  sources are detected for the segmentation catalog when using the
+  Gaussian or RickerWavelet smoothing kernel.  The value has corrected
+  in the output Segmentation catalogs and given greater visibility in
+  the trailer log files.  [#2027]
+
+- Updated the multiplicative values in the catalog configuration files
+  which are used in conjunction with the computed image RMS to derive
+  a threshold above which sources are detected. The Point catalog uses
+  the variable "nsigma".  The Segmentation catalog uses the variables
+  "segm_nsigma" and "rw2d_nsigma" when using the Gaussian or
+  RickerWavelet smoothing kernels, respectively. [#2026]
+
+- Updated the catalog configuration files to remove obsolete variables,
+  "fwhm" and "TWEAK_THRESHOLD", from the sourcex and dao sections, respectively.
+  The "TWEAK_FWHMPSF" variable/value now resides in the general section of the
+  file as it applies to both catalogs.  Modified the catalog_utils.py module
+  so the Segmentation catalog now reports the proper value for the Gaussian
+  Filter FWHM which is used to smooth the total detection image. [#2024]
+
+- Corrected the use of a string comparison to "asn" in the build_poller_table
+  routine of the poller_utils.py module as these characters are
+  a valid portion of the root of an ipppssoot filename (e.g., j6kasn01q).
+  The comparison is now done against "_asn" when looking for association
+  names in order to perform the proper actions. [#2019]
+
+- Added parameter setting, sub_shape, to the IterativePSFPhotometry invocation
+  to ensure a rectangular shape around the center of a star is defined when
+  subtracting PSF models. [#2014]
+
+- Resolved the issue of duplicate "ID"s in the rows of the Total Point catalog.
+  For "point" source identification, looping is done over a list of weight masks,
+  tp_masks, when invoking the "finder" algorithms. Tables are returned with a
+  unique "id" number for each row/source in the table. When tp_masks > 1, the
+  returned tables are stacked to generate a final table. The "id" number was not
+  updated to reflect the stacking of the tables which created rows with the same
+  "id".  This error did not cause the code to fail, but it did generate a garbled
+  table. [#2007]
+
+- Removed the extra column in the Point source identifcation table when using the
+  DAOStarFinder or IRAFStarFinder utilities.  The extra column, daofind_mag, was
+  added in Photutils 2.0. [#2006]
+
+- Dropped support for Python v3.10 due to conflict with upgrading to
+  Photutils v2.2.0. [#1987]
+
+- Added documentation for the alignment logic and the selection of the SVM
+  reference image. [#1967]
+
+- Implemented an additional RMS determination for the background based
+  upon the Median Absolute Deviation (MAD) algorithm. The MAD algorithm
+  is now one of three ways the RMS is computed under the umbrella of
+  computing the background of the input image.  The largest of the RMS
+  values is ultimately used for further computation.  Removed the obsolete
+  "bthresh" variable in instrument/detector "catalog" JSON files.  Updated
+  the "bthresh" variable in only the ACS WFC "quality" JSON file to be "5.0",
+  matching the other detector files. [#1978]
+
+- Deprecated the TEAL GUI; TEAL is still used for loading configuration
+  files. [#1975]
+
+- Fixed the crfactor designation for the WFPC2 detector (PC) which caused the
+  the computation for rejecting catalog creation based on expected cosmic ray
+  detections to fail ONLY for WFPC2.  Also, updated the WFPC2 cr_residual factor
+  from 0.0 to 0.05 as it had never be set correctly.  Created a PyTest for
+  WFPC2 SVM processing. [#1969]
+
+- Added a check on the EXPFLAG keyword to eliminate any images from being
+  processed as part of a mosaic if the value EXPFLAG is not equal to NORMAL.
+  Any value other than NORMAL indicates there was an issue during the exposure.
+  [#1968]
 
 - Updated the Pyproject.toml file to force use of Photutils v2.0.0 or greater.
   This update is in support of the change addressed by #1950. [#1966]
 
-- Set non-positive catalog fluxes to nans to remove warnings for dividing by 
+- Set non-positive catalog fluxes to nans to remove warnings for dividing by
   zero and calculating the log of negative numbers. [#1959]
 
-- Added a check to make sure that the pre-alignment WCS solutions from the astrometry 
+- Added a check to make sure that the pre-alignment WCS solutions from the astrometry
   database are within a reasonable distance of the header target positions. [#1958]
 
-- Removed deprecated parameter, edge_method, from the instantiation of a 
+- Removed deprecated parameter, edge_method, from the instantiation of a
   Background2D.  The default for this value is now always equal to "pad"
   which was the setting in use in our code. [#1957]
 
@@ -66,7 +177,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Further updates done to address the deprecated Photutils functionality as the
   original changes did not produce results at least as good as the results
   generated by the previous Photutils functionality.  [#1934]
-  
+
 
 3.9.0 (16-Dec-2024)
 ===================
@@ -74,7 +185,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 - **This version used by operations but does not generate HAP products (SVM/MVM).**
 
 - Include a minimum RMS value for the SBC detector, as is done for the other
-  detectors, as there seems to be a lot of noise in the source catalogs due to 
+  detectors, as there seems to be a lot of noise in the source catalogs due to
   a low detection threshold. [#1908]
 
 - Force an exit with a return code, KEYWORD_UPDATE_PROBLEM, in try/exception block
@@ -82,7 +193,7 @@ number of the code change for that issue.  These PRs can be viewed at:
   If the FITS header keywords are not properly updated, this can cause errors during
   CAOM ingest. [#1911]
 
-- Introduce warnings for fits extensions with science data of all zeros, and ensure 
+- Introduce warnings for fits extensions with science data of all zeros, and ensure
   data with zeros in all science extensions are not processed. [#998]
 
 - Change to the algorithm which chooses which background determination algorithm to
@@ -117,12 +228,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.8.0
 =====
 
-- Version not released; internal testing only. 
+- Version not released; internal testing only.
 
 3.7.1.1 (1-Oct-2024)
 ====================
 
-- Improved S_REGION using simplify-polygon, eorions, and dilation. [#1323] 
+- Improved S_REGION using simplify-polygon, eorions, and dilation. [#1323]
 
 
 3.7.1 (12-Aug-2024)

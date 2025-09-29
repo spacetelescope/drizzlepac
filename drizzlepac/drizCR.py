@@ -13,7 +13,7 @@ import re
 import numpy as np
 from scipy import signal
 from astropy.io import fits
-from stsci.tools import fileutil, logutil, mputil, teal
+from stsci.tools import fileutil, logutil, mputil
 
 
 from . import quickDeriv
@@ -26,7 +26,8 @@ if util.can_parallel:
 
 
 __taskname__ = "drizCR"  # looks in drizzlepac for sky.cfg
-_STEP_NUM = 6  # this relates directly to the syntax in the cfg file
+STEP_NUM = 6  # this relates directly to the syntax in the cfg file
+PROCSTEPS_NAME = "Driz_CR"
 
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
@@ -44,8 +45,10 @@ def drizCR(input=None, configObj=None, editpars=False, **inputDict):
     if not editpars:
         run(configObj)
 
-
-# this is the function that will be called from TEAL
+#--------------------------------
+# TEAL Interface functions
+# (these functions are deprecated)
+#---------------------------------
 def run(configObj):
     # outwcs is not neaded here
     imgObjList, outwcs = processInput.setCommonInput(configObj,
@@ -55,18 +58,20 @@ def run(configObj):
 
 def rundrizCR(imgObjList, configObj, procSteps=None):
     if procSteps is not None:
-        procSteps.addStep('Driz_CR')
+        procSteps.addStep(PROCSTEPS_NAME)
 
-    step_name = util.getSectionName(configObj, _STEP_NUM)
+    step_name = util.getSectionName(configObj, STEP_NUM)
     if not configObj[step_name]['driz_cr']:
         log.info('Cosmic-ray identification (driz_cr) step not performed.')
+        if procSteps is not None:
+            procSteps.endStep(PROCSTEPS_NAME, reason="off", delay_msg=True)
         return
 
     paramDict = configObj[step_name]
     paramDict['crbit'] = configObj['crbit']
     paramDict['inmemory'] = imgObjList[0].inmemory
 
-    log.info("USER INPUT PARAMETERS for Driz_CR Step:")
+    log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
     util.printParams(paramDict, log=log)
 
     # if we have the cpus and s/w, ok, but still allow user to set pool size
@@ -97,7 +102,7 @@ def rundrizCR(imgObjList, configObj, procSteps=None):
             _driz_cr(image, image.virtualOutputs, paramDict)
 
     if procSteps is not None:
-        procSteps.endStep('Driz_CR')
+        procSteps.endStep(PROCSTEPS_NAME)
 
 
 def _driz_cr(sciImage, virtual_outputs, paramDict):
