@@ -36,6 +36,197 @@ __all__ = ['drizzle', 'run', 'drizSeparate', 'drizFinal', 'mergeDQarray',
            'get_data', 'create_output']
 
 
+"""
+Each input image gets drizzled onto a separate copy of the output frame.
+When stacked, these copies would correspond to the final combined product.
+As separate images, they allow for treatment of each input image separately
+in the undistorted, final WCS system. These images provide the information
+necessary for refining image registration for each of the input images.
+They also provide the images that will be succeedingly combined into
+a median image and then used for the subsequent blot and cosmic ray
+detection steps.
+
+Aside from the input parameters, this step requires:
+
+    * valid input images with SCI extensions
+    * valid distortion coefficients tables
+    * any optional secondary distortion correction images
+    * numpy object (in memory) for static mask
+
+This step produces:
+
+    * singly drizzled science image (simple FITS format)
+    * singly drizzled weight images (simple FITS format)
+
+These images all have the same WCS based on the original input parameters
+and those provided for this step; specifically, output shape, pixel size,
+and orientation, if any have been specified at all.
+
+Other Parameters
+----------------
+driz_separate : bool (Default = No)
+    This parameter specifies whether or not to drizzle each input image
+    onto separate output images. The separate output images will all have
+    the same WCS as the final combined output frame. These images are used
+    to create the median image, needed for cosmic ray rejection.
+
+driz_sep_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'turbo')
+    Used for the initial separate drizzling operation only, this parameter
+    specifies the form of the kernel function used to distribute flux onto
+    the separate output images. The current options are:
+
+    * **square**: original classic drizzling kernel
+    * **point**: this kernel is a point so each input pixel can only
+        contribute to the single pixel that is closest to the output
+        position. It is equivalent to the limit as ``pixfrac`` -> 0,
+        and is very fast.
+    * **gaussian**: this kernel is a circular gaussian with a FWHM equal
+        to the value of ``pixfrac``, measured in input pixels.
+    * **turbo**: this is similar to kernel="square" but the box is always
+        the same shape and size on the output grid, and is always aligned
+        with the X and Y axes. This may result in a significant speed
+        increase.
+    * **lanczos3**: a Lanczos style kernel, extending a radius of 3
+        pixels from the center of the detection. The Lanczos kernel
+        is a damped and bounded form of the "sinc" interpolator,
+        and is very effective for resampling single images
+        when ``scale``\ =\ ``pixfrac``\ =1. It leads to less resolution loss
+        than other kernels, and typically results in reduced correlated
+        noise in outputs.
+
+        .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
+            produce reasonable results, we cannot guarantee that they will properly 
+            conserve flux; understand the effects of these kernels before using them. 
+
+        .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
+        processing as compared to other kernel options. This option
+        should never be used for ``pixfrac``\ !=\ 1.0, and is not
+        recommended for ``scale`` != 1.0.
+
+    The default for this step is **"turbo"** since it is much faster
+    than **"square"**, and it is quite satisfactory for the purposes of
+    generating the median image. More information about the different
+    kernels can be found in the help file for the drizzle task.
+
+driz_sep_wt_scl : float (Default = exptime)
+    This parameter specifies the weighting factor for input image.
+    If ``driz_sep_wt_scl``\ =\ ``exptime``, then the scaling value will be set
+    equal to the exposure time found in the image header. The use of the
+    default value is recommended for producing optimal behavior for most
+    scenarious. It is possible to set ``wt_scl``\ =\ 'expsq' for weighting by
+    the square of the exposure time, which is optimal for read-noise
+    dominated images.
+
+driz_sep_pixfrac : float (Default = 1.0)
+    Fraction by which input pixels are "shrunk" before being drizzled onto
+    the output image grid, given as a real number between 0 and 1.
+    This specifies the size of the footprint, or "dropsize", of a pixel
+    in units of the input pixel size. If ``pixfrac`` is set to
+    less than 0.001, the kernel parameter will be reset to 'point'
+    for more efficient processing. In the step of drizzling each
+    input image onto a separate output image, the default value of 1.0
+    is best in order to ensure that each output drizzled image is fully
+    populated with pixels from the input image. For more information,
+    see the help for the ``drizzle`` task.
+
+driz_sep_fillval : int or INDEF (Default = INDEF)
+    Value to be assigned to output pixels that have zero weight,
+    or that receive flux from any input pixels during drizzling.
+    This parameter corresponds to the ``fillval`` parameter of the ``drizzle``
+    task. If the default of ``INDEF`` is used, and if the weight in
+    both the input and output images for a given pixel are zero,
+    then the output pixel will be set to the value it would have had if
+    the input had a non-zero weight. Otherwise, if a numerical value
+    is provided (e.g. 0), then these pixels will be set to that value.
+
+driz_sep_bits : int (Default = 0)
+    Integer sum of all the DQ bit values from the input image's DQ array
+    that should be considered 'good' when building the weighting mask.
+    This can also be used to reset pixels to good if they had been
+    flagged as cosmic rays during a previous run of ``AstroDrizzle``,
+    by adding the value 4096 for ACS and WFPC2 data. Please see the section
+    on Selecting the ``Bits`` Parameter for a more detailed discussion.
+
+driz_sep_wcs : bool (Default = No)
+    Define custom WCS for seperate output images?
+
+driz_sep_refimage : str (Default = '')
+    Reference image from which a WCS solution can be obtained.
+
+driz_sep_rot : float (Default = INDEF)
+    Position Angle of output image's Y-axis relative to North.
+    A value of 0.0 would orient the final output image to be North up.
+    The default of ``INDEF`` specifies that the images will not be rotated,
+    but will instead be drizzled in the default orientation for the camera
+    with the x and y axes of the drizzled image corresponding approximately
+    to the detector axes. This conserves disk space, as these single
+    drizzled images are only used in the intermediate step of creating
+    a median image.
+
+driz_sep_scale : float (Default = INDEF)
+    Linear size of the output pixels in arcseconds/pixel for each separate
+    drizzled image (used in creating the median for cosmic ray rejection).
+    The default value of ``INDEF`` specifies that the undistorted pixel
+    scale for the first input image will be used as the pixel scale for
+    all the output images.
+
+driz_sep_outnx : int (Default = INDEF)
+    Size, in pixels, of the X axis in the output images that each input
+    will be drizzled onto. If no value is specified, the smallest size that
+    can accommodate the full dithered field will be used.
+
+driz_sep_outny : int (Default = INDEF)
+    Size, in pixels, of the Y axis in the output images that each input
+    will be drizzled onto. If no value is specified, the smallest size
+    that can accommodate the full dithered field will be used.
+
+driz_sep_ra : float (Default = INDEF)
+    Right ascension (in decimal degrees) specifying the center of the output
+    image. If this value is not designated, the center will automatically
+    be calculated based on the distribution of image dither positions.
+
+driz_sep_dec : float (Default = INDEF)
+    Declination (in decimal degrees) specifying the center of the output
+    image. If this value is not designated, the center will automatically
+    be calculated based on the distribution of image dither positions.
+
+Notes
+-----
+These tasks are designed to work together seemlessly when run in the
+full ``AstroDrizzle`` interface. More advanced users may wish to create
+specialized scripts for their own datasets, making use of only a subset
+of the predefined ``AstroDrizzle`` tasks, or add additional processing,
+which may be usefull for their particular data. In these cases,
+individual access to the tasks is important.
+
+Something to keep in mind is that the full ``AstroDrizzle`` interface
+will make backup copies of your original files and place them in
+the ``OrIg/`` directory of your current working directory. If you are
+working with the stand alone interfaces, it is assumed that the user has
+already taken care of backing up their original datafiles as the input
+file with be directly altered.
+
+There are two user interface function for this task, one to allow you to
+create seperately drizzled images of each image in your list and the other
+to create one single output drizzled image, which is the combination of all
+of them::
+
+    def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap)
+    def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_functions.WCSMap)
+    if configObj[single_step]['driz_separate']:
+        drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+    else:
+        drizFinal(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+
+Examples
+--------
+Basic example of how to call static yourself from a Python command line,
+using the default parameters for the task.
+
+>>> from drizzlepac import adrizzle
+"""
+
+
 __taskname__ = "adrizzle"
 
 STEP_NUM_SINGLE = 3
