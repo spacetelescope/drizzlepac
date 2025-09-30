@@ -8,4 +8,3 @@ Region mapping for TweakReg
 
 .. autofunction:: MapReg
 .. autofunction:: map_region_files
-.. autofunction:: help
