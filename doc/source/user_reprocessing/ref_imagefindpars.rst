@@ -11,5 +11,3 @@ in the reference images.
 .. automodule:: drizzlepac.refimagefindpars
    :members:
    :undoc-members:
-
-.. autofunction:: help

@@ -8,6 +8,4 @@ This interface provides a mechanism for setting the parameters used by the built
 .. automodule:: drizzlepac.imagefindpars
    :members:
    :undoc-members:
-   :exclude-members: getHelpAsString
 
-.. autofunction:: help
