@@ -11,6 +11,3 @@ used in the input images of all negative (presumably bad) pixel values.
 .. automodule:: drizzlepac.staticMask
    :members:
    :undoc-members:
-   :exclude-members: getHelpAsString
-
-.. autofunction:: help

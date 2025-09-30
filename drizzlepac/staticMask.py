@@ -33,6 +33,83 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj
 
         The configObj.cfg file will set the defaults and then override them
         with the user options.
+
+        Create a static mask for all input images. The mask contains pixels that fall
+        more than ``static_sig`` RMS below the mode for a given chip or extension.
+        Those severely negative, or low pixels, might result from oversubtraction
+        of bad pixels in the dark image, or high sky levels during calibration.
+        For example, each ACS WFC image contains a separate image for each of 2 CCDs,
+        and seperate masks will be generated for each chip accordingly.
+
+        The final static mask for each chip contains all of the bad pixels that meet
+        this criteria from all of the input images along with any bad pixels that
+        satisfy the final_bits value specified by the user, and found in the images
+        DQ mask.
+
+        Users should consider the details of their science image and decide whether
+        or not creating this mask is appropriate for their resulting science.
+        For example, if your field is very crowded, or contains mostly nebulous
+        or extended objects, then the statistcs could be heavily skewed and the mask
+        could end up containing sources.
+
+        The generated static masks are saved to disk for use in later steps with
+        the following naming convention:
+
+            [Instrument][Detector]_[xsize]x[ysize]_[detector number]_staticMask.fits
+
+        so an ACS image would produce a static mask with the name:
+
+            ACSWFC_2048x4096_1_staticMask.fits
+
+        and this would be the only file saved to disk, storing the logic and of all
+        the badpixel masks created for each acs image in the set.
+
+        For more information on the science applications of the static mask task,
+        see the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_
+
+
+        Parameters
+        ----------
+        input : str, None (Default = None)
+            A list of images or associations you would like to use to compute
+            the mask.
+
+        static : bool (Default = True)
+            Create a static bad-pixel mask from the data?  This mask flags all pixels
+            that deviate by more than a value of ``static_sig`` sigma below the image
+            median, since these pixels are typically the result of bad pixel
+            oversubtraction in the dark image during calibration.
+
+        static_sig : float (Default = 4.0)
+            The number of sigma below the RMS to use as the clipping limit for
+            creating the static mask.
+
+        editpars : bool (Default = False)
+            Set to `True` if you would like to edit the parameters using the GUI
+            interface.
+
+
+        Examples
+        --------
+        These tasks are designed to work together seemlessly when run in the full
+        ``AstroDrizzle`` interface. More advanced users may wish to create specialized
+        scripts for their own datasets, making use of only a subset of the predefined
+        ``AstroDrizzle`` tasks, or add additional processing, which may be usefull for
+        their particular data. In these cases, individual access to the tasks is
+        important.
+
+        Something to keep in mind is that the full ``AstroDrizzle`` interface will
+        make backup copies of your original files and place them in
+        the ``OrIg/`` directory of your current working directory. If you are working
+        with the stand alone interfaces, it is assumed that the user has already
+        taken care of backing up their original datafiles as the input file with
+        be directly altered.
+
+        Basic example of how to call static yourself from a python command line,
+        using the default parameters for the task.
+
+        >>> from drizzlepac import staticMask
+        >>> staticMask.createMask('*flt.fits')
     """
 
     if input is not None:
