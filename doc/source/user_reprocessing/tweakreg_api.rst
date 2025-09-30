@@ -13,4 +13,3 @@ other and/or to and external astrometric reference frame or image.
 .. automodule:: drizzlepac.tweakreg
 
 .. autofunction:: TweakReg
-.. autofunction:: help

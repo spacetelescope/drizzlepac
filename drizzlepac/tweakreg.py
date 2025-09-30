@@ -752,11 +752,670 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
 def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
              refimagefindcfg=None, **input_dict):
     """
-    """
-    # support input of filenames from command-line without a parameter name
-    # then copy this into input_dict for merging with TEAL ConfigObj parameters
+    support input of filenames from command-line without a parameter name
+    then copy this into input_dict for merging with TEAL ConfigObj parameters
 
-    # Get default or user-specified configobj for primary task
+    Get default or user-specified configobj for primary task
+    
+    Tweakreg provides an automated interface for computing residual shifts
+    between input exposures being combined using ``AstroDrizzle``. The offsets
+    computed by Tweakreg correspond to pointing differences after applying the WCS
+    information from the input image's headers.  Such errors would, for example,
+    be due to errors in guide-star positions when combining observations from
+    different observing visits or from slight offsets introduced upon re-acquiring
+    the guide stars in a slightly different position.
+
+    Parameters
+    ----------
+    file : str or list of str  (Default = ``'*flt.fits'``)
+        Input files (passed in from *files* parameter)
+        This paramater can be provided in any of several forms:
+
+        - filename of a single image
+        - filename of an association (ASN)table
+        - wild-card specification for files in directory (using ``\*``, ``?`` etc.)
+        - comma-separated list of filenames
+        - ``@file`` filelist containing list of desired input filenames with one
+        filename on each line of the file.
+
+    editpars : bool (Default = False)
+        A parameter that allows user to edit input parameters by hand in the GUI.
+        ``True`` to use the GUI to edit parameters.
+
+    configobj : ConfigObjPars, ConfigObj, dict (Default = None)
+        An instance of ``stsci.tools.cfgpars.ConfigObjPars`` or
+        ``stsci.tools.configobj.ConfigObj`` which overrides default parameter
+        settings. When ``configobj`` is ``defaults``, default parameter values are
+        loaded from the user local configuration file usually located in
+        ``~/.teal/tweakreg.cfg`` or a matching configuration file in the
+        current directory. This configuration file stores most recent
+        settings that an user used when running ``TweakReg`` through the
+        `TEAL <https://stscitools.readthedocs.io/en/latest/teal_guide.html>`_
+        interface. When ``configobj`` is ``None``, ``TweakReg``
+        parameters not provided explicitly will be initialized with their
+        default values as described in the "Other Parameters" section.
+
+    imagefindcfg : dict, configObject (Default = None)
+        An instance of ``dict`` or ``configObject`` which overrides default source
+        finding (for input images) parameter settings. See help for
+        ``imagefindpars`` PSET for a list of available parameters. **Only** the
+        parameters that are different from default values  **need** to be specified
+        here.
+
+    refimagefindcfg : dict, configObject (Default = None)
+        An instance of ``dict`` or ``configObject`` which overrides default source
+        finding (for input reference image) parameter settings. See help for
+        ``refimagefindpars`` PSET for a list of available parameters. **Only** the
+        parameters that are different from default values **need** to be specified
+        here.
+
+    input_dict : dict, optional
+        An optional list of parameters specified by the user, which can also
+        be used to override the defaults.
+
+        .. note:: This list of parameters **can** include the ``updatewcs``
+        parameter, even though this parameter no longer can be set through
+        the TEAL GUI.
+
+        .. note:: This list of parameters **can** contain parameters specific
+        to the ``TweakReg`` task itself described here in the "Other Parameters"
+        section and **may not** contain parameters from the ``refimagefindpars``
+        PSET.
+
+        .. note:: For compatibility purpose with previous ``TweakReg`` versions,
+        ``input_dict`` may contain parameters from the the ``imagefindpars``
+        PSET. However, if ``imagefindcfg`` is not ``None``, then ``imagefindpars``
+        parameters specified through ``input_dict`` may not duplicate
+        parameters specified through ``imagefindcfg``.
+
+
+    Other Parameters
+    ----------------
+
+    refimage : str (Default = '')
+        Filename of reference image. Sources derived from this image will be
+        used as the reference for matching with sources from all input images
+        unless a separate catalog is provided through the ``refcat`` parameter.
+        In addition, this image file must contain a valid not distorted WCS that
+        will define the projection plane in which image alignment is performed
+        ("reference WCS"). When ``refimage`` is not provided, a reference WCS
+        will be derived from input images.
+
+    expand_refcat : bool (Default = False)
+        Specifies whether to add new sources from just matched images to
+        the reference catalog to allow next image to be matched against an
+        expanded reference catalog.
+
+    enforce_user_order : bool (Default = True)
+        Specifies whether images should be aligned in the order specified in
+        the ``file`` input parameter or ``TweakReg`` should optimize the order
+        of alignment by intersection area of the images. Default value (`True`)
+        will align images in the user specified order, except when some images
+        cannot be aligned in which case ``TweakReg`` will optimize the image
+        alignment order. Alignment order optimization is available *only*
+        when ``expand_refcat`` = ``True``.
+
+    exclusions: string (Default = '')
+        This parameter allows the user to specify a set of files which contain
+        regions in the image to ignore (or to include) when finding sources.
+        This file MUST have 1 line for each input image with the name of the input
+        file in the first column.  Subsequent columns would be used to specify an
+        inclusion and/or exclusion file for each chip in ``'SCI,<n>'`` index order.
+        If a chip does not require an exclusion file, the string ``None`` or ``INDEF``
+        can be used as a placeholder for that chip. Each exclusion file can be
+        either a mask provided as a simple FITS file or a region file in DS9-format.
+
+        When a mask file is provided, ``TweakReg`` will look for the first
+        image-like extension with image data of the same dimensions as the input
+        image. Zeros in the mask will be interpreted as "bad"
+        (excluded from search) pixels while non-zero pixels will be interpreted
+        as "good" pixels. It is recommended that mask files be FITS files without
+        extensions and mask data (preferably of integer type) reside in the
+        primary HDU.
+
+        If a region file is provided then it should conform to the 'region' file
+        format generated by DS9. The region files can contain both regular
+        ("include") regions as well as "exclude" regions. Regular ("include")
+        regions indicate the regions of the image that should be searched for
+        sources while "exclude" regions indicate parts of the image that should
+        not be used for source detection. The "ruler", "compass", and "projection"
+        regions are not supported (ignored). When **all regions**
+        in a region file are "exclude" regions, then it will be assumed that the
+        entire image is "good" before the exclude regions are processed. In other
+        words, an "include" region corresponding to the entire image will be
+        *prepended* to the list of exclude regions.
+
+        .. note::
+        Regions in a region file are processed in the order they appear in the
+        region file. Thus, when region files contain *both* "include" and
+        "exclude" regions, the order in which these regions appear may affect
+        the results.
+
+        .. warning::
+        ``TweakReg`` relies on ``pyregion`` package for work with region files.
+        At the time of writing, ``pyregion`` uses a different algorithm from DS9
+        for converting regions from sky coordinates to image coordinate
+        (this conversion is performed before regions are converted to masks).
+        For these reasons, regions provided in sky coordinates may not produce
+        the expected (from DS9) results. While in most instances these
+        discrepancies should be tolerable, it is important to keep this in mind.
+
+        During testing it was observed that conversion to image coordinates is
+        most accurate for polygonal regions and less accurate for other regions
+        Therefore, if one must provide regions in sky coordinates, it is
+        types. recommended to use polygonal and circular regions and to avoid
+        elliptical and rectangular regions as their conversion to image
+        coordinates is less accurate. One may use ``mapreg`` task in the
+        ``drizzlepac`` package to convert region files from sky coordinates to image
+        coordinates. This will allow one to see the actual regions that will be
+        used by source finding routine in ``TweakReg``.
+
+    updatewcs : bool (Default = No)
+        **NOT available through TEAL GUI interface.**
+        This parameter can only be set through the Python interface to Tweakreg by
+        passing it in as part of the input_dict in order to insure that running
+        ``updatewcs`` **does not overwrite** a previously determined solution written out
+        to the input file headers.
+
+    writecat : bool (Default = Yes)
+        Specify whether or not to write out the source catalogs generated for
+        each input image by the built-in source extraction algorithm.
+
+    clean : bool (Default = No)
+        Specify whether or not to remove the temporary files created by
+        ``TweakReg``, including any catalog files generated for the shift
+        determination.
+
+    interactive : bool (Default = Yes)
+        This switch controls whether the program stops and waits for the user to
+        examine any generated plots before continuing on to the next image.  If
+        turned off, plots will still be displayed, but they will also be saved to
+        disk automatically as a PNG image with an autogenerated name without
+        requiring any user input.
+
+    verbose : bool (Default = No)
+        Specify whether or not to print extra messages during
+        processing.
+
+    runfile : string (Default = 'tweakreg.log')
+        Specify the filename of the processing log.
+
+    *UPDATE HEADER*
+    updatehdr : bool (Default = No)
+        Specify whether or not to update the headers of each input image
+        directly with the shifts that were determined. This will allow the
+        input images to be combined by ``AstroDrizzle`` without having to provide
+        the shiftfile as well.
+
+    wcsname : str (Default = 'TWEAK')
+        Name of updated primary WCS.
+
+    reusename : bool (Default = False)
+        Allows overwriting of an existing primary WCS with the same name as
+        specified by ``wcsname`` parameter.
+
+    *HEADERLET CREATION*
+    headerlet: bool (Default = No)
+        Specify whether or not to generate a headerlet from the images at
+        the end of the task? If turned on, this will create a headerlet
+        from the images regardless of the value of the ``updatehdr``
+        parameter.
+
+    attach: bool (Default = Yes)
+        If creating a headerlet, choose whether or not to attach the new
+        headerlet to the input image as a new extension.
+
+
+    hdrfile: string (Default = '')
+        Filename to use for writing out headerlet to a separate file. If the name
+        does not contain ``.fits``, it will create a filename from the
+        rootname of the input image, the value of this string, and it will end
+        in ``'_hlet.fits'``. For example, if only ``'hdrlet1'`` is given, the
+        full filename created will be ``'j99da1f2q_hdrlet1_hlet.fits'`` when
+        creating a headerlet for image ``'j99da1f2q_flt.fits'``.
+
+    clobber: bool (Default = No)
+        If a headerlet with 'hdrfile' already exists on disk, specify
+        whether or not to overwrite that previous file.
+
+    hdrname: string (Default = '')
+        Unique name to give to headerlet solution. This name will be used to
+        identify this specific WCS alignment solution contained in the headerlet.
+
+    author: string, optional (Default = '')
+        Name of the creator of the headerlet.
+
+    descrip: string, optional (Default = '')
+        Short (1-line) description to be included in headerlet as ``DESCRIP`` keyword.
+        This can be used to provide a quick look description of the WCS alignment
+        contained in the headerlet.
+
+    catalog: string, optional (Default = '')
+        Name of reference catalog used as the basis for the image alignment.
+
+    history: string, optional (Default = '')
+        Filename of a file containing detailed information regarding the history
+        of the WCS solution contained in the headerlet. This can include information
+        on the catalog used for the alignment, or notes on processing that went
+        into finalizing the WCS alignment stored in this headerlet. This information
+        will be reformatted as 70-character wide FITS HISTORY keyword section.
+
+    *OPTIONAL SHIFTFILE OUTPUT*
+    shiftfile : bool (Default = No)
+        Create output shiftfile?
+
+    outshifts : str (Default = 'shifts.txt')
+        The name for the output shift file created by ``TweakReg``.  This
+        shiftfile will be formatted for use as direct input to ``AstroDrizzle``.
+
+
+    outwcs : str  (Default = 'shifts_wcs.fits')
+        Filename to be given to the OUTPUT reference WCS file created
+        by ``TweakReg``. This reference WCS defines the WCS from which the
+        shifts get measured, and will be used by ``AstroDrizzle`` to interpret
+        those shifts. This reference WCS file will be a FITS file that
+        only contains the WCS keywords in a Primary header with no image
+        data itself. The values will be derived from the FIRST input image
+        specified.
+
+    *COORDINATE FILE DESCRIPTION*
+    catfile : str (Default = '')
+        Name of file that contains a list of input images and associated
+        catalog files generated by the user. Each line of this file will
+        contain the name of an input image in the first column. The remaining
+        columns will provide the names of the source catalogs for each chip
+        in order of the science extension numbers ((SCI,1), (SCI,2), ...).
+
+        A sample catfile, with one line per image would look like::
+
+        image1_flt.fts  cat1_sci1.coo  cat1_sci2.coo
+        image2_flt.fts  cat2_sci1.coo  cat2_sci2.coo
+
+        .. note::
+        Catalog files themselves must be text files containing
+        "white space"-separated list of values (``xcol``, ``ycol``, etc.)
+
+    xcol : int (Default = 1)
+        Column number of X position from the user-generated catalog files
+        specified in the catfile.
+
+    ycol : int (Default = 2)
+        Column number of Y position from the user-generated catalog files
+        specified in the catfile.
+
+    fluxcol : int (Default = None)
+        Column number for the flux values from the user-generated catalog
+        files specified in the catfile. These values will only be used if
+        a flux limit has been specified by the user using the ``maxflux`` or
+        ``minflux`` parameters.
+
+    maxflux : float (Default = None)
+        Limiting flux value for selecting valid objects in the input image's
+        catalog.  If specified, this flux will serve as the upper limit of a
+        range for selecting objects to be used in matching with objects
+        identified in the reference image. If the value is set to ``None``, all
+        objects with fluxes brighter than the minimum specified in ``minflux``
+        will be used. If both values are set to ``None``, all objects will be used.
+
+    minflux : float (Default = None)
+        Limiting flux value for selecting valid objects in the input image's
+        catalog. If specified, this flux value will serve as the lower limit
+        of a range for selecting objects to be used in matching with objects
+        identified in the reference image. If the value is set to ``None``, all
+        objects fainter than the limit specified by ``maxflux`` will be used.
+        If both values are set to ``None``, all objects will be used.
+
+    fluxunits : str {'counts', 'cps', 'mag'} (Default = 'counts')
+        This allows the task to correctly interpret the flux limits specified
+        by ``maxflux`` and ``minflux`` when sorting the object list for trimming
+        of fainter objects.
+
+    xyunits : str {'pixels', 'degrees'} (Default = 'pixels')
+        Specifies whether the positions in this catalog are already sky pixel
+        positions, or whether they need to be transformed to the sky.
+
+    nbright : int (Default = None)
+        The number of brightest objects to keep after sorting the full object
+        list. If nbright is set equal to ``None``, all objects will be used.
+
+    *REFERENCE CATALOG DESCRIPTION*
+    refcat : str (Default = '')
+        Name of the external reference catalog file to be used in place of the
+        catalog extracted from one of the input images. When ``refimage`` is not
+        specified, reference WCS to be used with reference catalog will be
+        derived from input images.
+
+        .. note::
+        Reference catalog must be text file containing
+        "white space"-separated list of values (``xcol``, ``ycol``, etc.)
+
+    refxcol : int (Default = 1)
+        Column number of RA in the external catalog file specified by the
+        refcat.
+
+    refycol : int (Default = 2)
+        Column number of Dec in the external catalog file specified by the
+        refcat.
+
+    refxyunits : str {'pixels','degrees'} (Default = 'degrees')
+        Units of sky positions.
+
+    rfluxcol : int (Default = None)
+        Column number of flux/magnitude values in the external catalog file
+        specified by the refcat.
+
+    rmaxflux : float (Default = None)
+        Limiting flux value used to select valid objects in the external
+        catalog. If specified, the flux value will serve as the upper limit
+        of a range for selecting objects to be used in matching with objects
+        identified in the reference image. If the value is set to ``None``,
+        all objects with fluxes brighter than the minimum specified in
+        ``rminflux`` will be used. If both values are set to ``None``, all
+        objects will be used.
+
+    rminflux : float (Default = None)
+        Limiting flux value used to select valid objects in the external
+        catalog. If specified, the flux will serve as the lower limit
+        of a range for selecting objects to be used in matching with objects
+        identified in the reference image. If the value is set to ``None``,
+        all objects fainter than the limit specified by ``rmaxflux`` will be
+        used. If both values are set to ``None``, all objects will be used.
+
+    rfluxunits : {'counts', 'cps', 'mag'} (Default = 'mag')
+        This allows the task to correctly interpret the flux limits specified
+        by ``rmaxflux`` and ``rminflux`` when sorting the object list for trimming
+        of fainter objects.
+
+    refnbright : int (Default = None)
+        Number of brightest objects to keep after sorting the full object
+        list. If refnbright is set to ``None``, all objects will be used. Used in
+        conjunction with refcat.
+
+    *OBJECT MATCHING PARAMETERS*
+    minobj : int (Default = 15)
+        Minimum number of identified objects from each input image to use
+        in matching objects from other images.
+
+    searchrad : float (Default = 1.0)
+        The search radius for a match.
+
+    searchunits : str (Default = 'arcseconds')
+        Units for search radius.
+
+    use2dhist : bool (Default = Yes)
+        Use 2d histogram to find initial offset?
+
+    see2dplot : bool (Default = Yes)
+        See 2d histogram for initial offset?
+
+    tolerance : float (Default = 1.0)
+        The matching tolerance in pixels after applying an initial solution
+        derived from the 'triangles' algorithm.  This parameter gets passed
+        directly to ``xyxymatch`` for use in matching the object lists from each
+        image with the reference image's object list.
+
+    separation : float (Default = 0.0)
+        The  minimum  separation for objects in the input and reference
+        coordinate lists. Objects closer together than 'separation' pixels
+        are removed from the input and reference coordinate lists prior
+        to matching. This parameter gets passed directly to ``xyxymatch`` for
+        use in matching the object lists from each image with the reference
+        image's object list.
+
+    xoffset : float (Default = 0.0)
+        Initial estimate for the offset in X between the images and the
+        reference frame. This offset will be used for all input images
+        provided. If the parameter value is set to ``None``, no offset will
+        be assumed in matching sources in ``xyxymatch``.
+
+    yoffset : float (Default = 0.0)
+        Initial estimate for the offset in Y between the images and the
+        reference frame. This offset will be used for all input images
+        provided.If the parameter value is set to None, no offset will
+        be assumed in matching sources in ``xyxymatch``.
+
+    *CATALOG FITTING PARAMETERS*
+    fitgeometry : str {'shift', 'rscale', 'general'} (Default = 'rscale')
+        The fitting geometry to be used in fitting the matched object lists.
+        This parameter is used in fitting the offsets, rotations and/or scale
+        changes from the matched object lists. The 'general' fit geometry
+        allows for independent scale and rotation for each axis.
+
+    residplot : str {'No plot', 'vector', 'residuals', 'both'}  (Default = 'both')
+        Plot residuals from fit? If 'both' is selected, the 'vector'
+        and 'residuals' plots will be displayed in separate plotting windows at
+        the same time.
+
+    nclip : int (Default = 3)
+        Number of clipping iterations in fit.
+
+    sigma : float (Default = 3.0)
+        Clipping limit in sigma units.
+
+
+    *ADVANCED PARAMETERS AVAILABLE FROM COMMAND LINE*
+
+    updatewcs : bool  (Default = No)
+        This parameter specifies whether the WCS keywords are to be updated by
+        running updatewcs on the input data, or left alone. The update performed
+        by updatewcs not only recomputes the WCS based on the currently
+        used ``IDCTAB``, but also populates the header with
+        the ``SIP`` coefficients. For ``ACS/WFC`` images, the time-dependence
+        correction will also be applied to the ``WCS`` and ``SIP`` keywords.
+        This parameter should be set to 'No' (`False`) when the WCS keywords
+        have been carefully set by some other method, and need to be passed
+        through to drizzle 'as is', otherwise those updates will be over-written
+        by this update.
+
+        .. note::
+        This parameter was preserved in the API for compatibility purposes with
+        existing user processing pipe-lines. However, it has been removed from
+        the ``TEAL`` interface because it is easy to have it set to 'yes'
+        (especially between consecutive runs of ``AstroDrizzle``) with
+        potentially disastrous effects on input image WCS (for example it
+        could wipe-out previously aligned WCS).
+
+
+    Notes
+    -----
+    Tweakreg supports the use of calibrated, distorted images (such as FLT
+    images for ACS and WFC3, or ``_c0m.fits`` images for WFPC2) as input images.
+    All coordinates for sources derived from these images (either by this task
+    or as provided by the user directly) will be corrected for distortion using
+    the distortion model information specified in each image's header. This
+    eliminates the need to run ``AstroDrizzle`` on the input images prior to
+    running ``TweakReg``.
+
+    .. note:: All calibrated input images must have been updated using
+            ``updatewcs`` from the ``STWCS`` package, to include the full
+            distortion model in the header. Alternatively, one can set
+            ``updatewcs`` parameter to ``True`` when running either ``TweakReg``
+            or ``AstroDrizzle`` from command line (Python interpreter)
+            **the first time** on such images.
+
+    This task will use catalogs, and catalog-matching, based on the ``xyxymatch``
+    algorithm to determine the offset between the input images. The primary
+    mode of operation will be to extract a catalog of source positions from
+    each input image using either a 'DAOFIND-like' algorithm or ``SExtractor`` (if
+    the user has ``SExtractor`` installed). Alternatively, the user can provide
+    their catalogs of source positions derived from **each input chip**.
+
+    .. note::
+    Catalog files must be text files containing
+    "white space"-separated list of values (``xcol``, ``ycol``, etc.)
+
+    The reference frame will be defined either by:
+
+        * the image with the largest overlap with another input image AND
+        with the largest total overlap with the rest of the input images,
+        * a catalog derived from a reference image specified by the user, or
+        * a catalog of undistorted sky positions (RA/Dec) and fluxes
+        provided by the user.
+
+    For a given observation, the distortion model is applied to all distorted
+    input positions, and the sources from each chip are then combined into a
+    single catalog of undistorted positions.
+
+    The undistorted positions for each observation then get passed to
+    ``xyxymatch`` for matching to objects from the reference catalog.
+
+    The source lists from each image will generally include cosmic-rays as
+    detected sources, which can at times significantly confuse object
+    identification between images. Observations that include long exposures
+    often have more cosmic-ray events than source objects. As such, isolating
+    the cosmic-ray events in those cases would significantly improve the
+    efficiency of common source identification between images. One such method
+    for trimming potential false detections from each source list would be
+    to set a flux limit to exclude detections below that limit. As the fluxes
+    reported in the default source object lists are provided as magnitude
+    values, setting the ``maxflux`` or ``minflux`` parameter value to a magnitude-
+    based limit, and then setting the ``ascend`` parameter to ``True``, will allow
+    for the creations of catalogs trimmed of all sources fainter than the
+    provided limit. The trimmed source list can then be used in matching
+    sources between images and in establishing the final fitting for the shifts.
+
+    A fit can then be performed on the matched set of positions between the
+    input and the reference to produce the 'shiftfile'. If the user is
+    confident that the solution will be correct, the header of each input image
+    can be updated directly with the fit derived for that image. Otherwise,
+    the 'shiftfile' can be passed to AstroDrizzle for aligning the images.
+
+    .. note:: Because of the nature of the used algorithm it may be necessary
+            to run this task multiple time until new shifts, rotations,
+            and/or scales are small enough for the required precision.
+
+    New sources (that are not in the reference catalog) from the matched images
+    are added to the reference catalog in order to allow next image to be
+    matched to a larger reference catalog. This allows alignment of images
+    that do not overlap directly with the reference image and/or catalog and
+    it is particularly useful in image registration of large mosaics. Addition
+    of new sources to the reference catalog can be turned off by
+    setting ``expand_refcat`` to ``False`` when using an external reference catalog.
+    When an external catalog is not provided (``refcat``='') or when
+    using an external reference catalog with ``expand_refcat`` set to ``True``
+    (assuming ``writecat`` = ``True`` and ``clean`` = ``False``),
+    the list of all sources in the expanded reference catalog is saved
+    in a catalog file named ``cumulative_sky_refcat_###.coo`` where ### is the
+    base file name derived from either the external catalog (if provided) or
+    the name of the image used as the reference image.
+
+    When ``enforce_user_order`` is ``False``, image catalogs are matched to the
+    reference catalog in order of decreasing overlap area with the reference
+    catalog, otherwise user order of files specified in the ``file`` parameter
+    is used.
+
+
+    **Format of Exclusion Catalog**
+
+    The format for the exclusions catalog requires 1 line in the file for
+    every input image, regardless of whether or not that image has
+    any defined exclusion regions.  A sample file would look like::
+
+    j99da1emq_flt.fits
+    j99da1f2q_flt.fits test_exclusion.reg
+
+    This file specifies no exclusion files for the first image, and only
+    an regions file for SCI,1 of the second image.  NOTE: The first file can be
+    dropped completely from the exclusion catalog file.
+
+    In the above example, should an exclusion regions file only be needed for the
+    second chip in the second image, the file would need to look like::
+
+    j99da1emq_flt.fits
+    j99da1f2q_flt.fits None test_sci2_exclusion.reg
+
+    The value ``None`` could also be replaced by ``INDEF`` if desired, but either
+    string needs to be present to signify no regions file for that chip while
+    the code continues parsing the line to find a file for the second chip.
+
+
+    **Format of Region Files**
+
+    The format of the exclusions catalogs referenced in the 'exclusions'
+    file defaults to the format written out by DS9 using the 'DS9/Funtools'
+    region file format.  A sample file with circle() regions will look like::
+
+    # Region file format: DS9 version 4.1
+    # Filename: j99da1f2q_flt.fits[SCI]
+    global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman"
+    select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
+    image
+    circle(3170,198,20)
+    ellipse(3269,428,30,10,45) # a rotated ellipse
+    box(3241.1146,219.78132,20,20,15) # a rotated box
+    circle(200,200,50)  # outer circle
+    -circle(200,200,30) # inner circle
+
+    This region file will be interpreted as "find all sources in the image that
+    **are inside** the four regions above but **not inside** the
+    region -circle(200,200,30)". Effectively we will instruct ``TweakReg``
+    to find all the sources *inside* the following regions::
+
+    circle(3170,198,20)
+    ellipse(3269,428,30,10,45) # a rotated ellipse
+    box(3241.1146,219.78132,20,20,15) # a rotated box
+    annulus(200,200,30,50)  # outer circle(r=50) - inner circle(r=30)
+
+
+    Examples
+    --------
+    The tweakreg task can be run from either the TEAL GUI or from the command-line
+    using Python.
+    These examples illustrate the various syntax options available.
+
+    **Example 1:**  Align a set of calibrated (``_flt.fits``) images
+    using ``IMAGEFIND``, a built-in source
+    finding algorithm based on ``DAOPHOT``. Auto-detect the sky sigma value and select sources > 200
+    sigma.   (Auto-sigma is computed from the first input exposure
+    as:  ``1.5*imstat(image,nclip=3,fields='stddev')``. )
+    Set the convolution kernel width to ``~2x`` the value of the PSF FWHM.
+    Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``yfit_rms``) to a text file.
+
+    1. Run the task from Python using the command line while individually
+    specifying source finding parameters for the reference image and
+    input images:
+
+        >>> import drizzlepac
+        >>> from drizzlepac import tweakreg
+        >>> tweakreg.TweakReg('*flt.fits',
+        ...       imagefindcfg={'threshold' : 200, 'conv_width' : 3.5},
+        ...       refimagefindcfg={'threshold' : 400, 'conv_width' : 2.5},
+        ...       updatehdr=False, shiftfile=True, outshifts='shift.txt')
+
+    or, using ``dict`` constructor,
+
+        >>> import drizzlepac
+        >>> from drizzlepac import tweakreg
+        >>> tweakreg.TweakReg('*flt.fits',
+        ...       imagefindcfg=dict(threshold=200, conv_width=3.5),
+        ...       refimagefindcfg=dict(threshold=400, conv_width=2.5),
+        ...       updatehdr=False, shiftfile=True, outshifts='shift.txt')
+
+    Or, run the same task from the Python command line, but specify all parameters in
+    a config file named "myparam.cfg":
+
+        >>> tweakreg.TweakReg('*flt.fits', configobj='myparam.cfg')
+
+    Alternately, edit the imagefind parameters in a TEAL GUI window
+    prior to running the task:
+
+        >>> tweakreg.edit_imagefindpars()
+
+    2. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  It can also
+    be accessed from the Python command-line and saved to a text file:
+
+        >>> from drizzlepac import tweakreg
+        >>> tweakreg.help()
+    
+    or
+
+        >>> tweakreg.help(file='help.txt')   
+
+    See Also
+    --------
+    drizzlepac.astrodrizzle
+    
+    """
     if isinstance(configobj, (str, bytes)):
         if configobj == 'defaults':
             # load "TEAL"-defaults (from ~/.teal/):
