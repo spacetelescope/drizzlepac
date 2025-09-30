@@ -16,4 +16,3 @@ tweakreg.
 .. automodule:: drizzlepac.pixtosky
 
 .. autofunction:: xy2rd
-.. autofunction:: help
