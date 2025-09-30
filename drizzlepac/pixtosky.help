@@ -1,0 +1,101 @@
+``pixtosky`` transforms pixel positions given as X,Y values into
+positions on the sky based on the WCS information and any recognized
+distortion keywords from the input image header.
+
+:Authors: Warren Hack
+
+:License: :doc:`/LICENSE`
+
+
+Parameters
+----------
+    input : str
+        full filename with path of input image, an extension name
+        ['sci',1] should be provided if input is a multi-extension
+        FITS file.
+
+Optional Parameters
+-------------------
+    x : float, optional
+        X position from input image
+
+    y : float, optional
+        Y position from input image
+
+    coordfile : str, optional
+        full filename with path of file with x, y coordinates
+
+    colnames : str, optional
+        comma separated list of column names from 'coordfile' file
+        containing x, y coordinates. Will default to
+        first two columns if None are specified. Column names for ASCII
+        files will use 'c1','c2',... convention.
+
+    separator : str, optional
+        non-blank separator used as the column delimiter in the ``coordfile``
+
+    hms : bool, optional  (Default: False)
+        Produce output in ``HH:MM:SS.S`` format instead of decimal
+        degrees?
+
+    precision : int, optional
+        Number of floating-point digits in output values
+
+    output : str, optional
+        Name of output file with results, if desired
+
+    verbose : bool (Default: False)
+        Print out full list of transformation results
+
+Returns
+--------
+    ra : float
+        Right Ascension of pixel. If more than 1 input value, then it will be a
+        numpy array.
+
+    dec : float
+        Declination of pixel. If more than 1 input value, then it will be a
+        numpy array.
+
+
+Notes
+-----
+This task performs a full distortion-correction coordinate transformation
+based on all WCS keywords and any recognized distortion keywords from the
+input image header. The transformation recognizes the conventions for
+describing distortion implemented as part of the SIP and Paper IV conventions
+used with ``AstroDrizzle``. Input images can be updated to use these conventions
+through the use of the ``updatewcs`` module the STWCS package.
+
+
+See Also
+--------
+stwcs
+
+
+Examples
+--------
+These examples illustrate the syntax that can be used
+to run the task in a couple of common modes.
+
+
+1. Convert a single X,Y position (100,100) from an calibrated ACS image
+   (``j8bt06nyq_flt.fits``) into an undistorted sky position (RA,Dec):
+
+   >>> from drizzlepac import pixtosky
+   >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", 100, 100)
+
+2. Convert a list of X,Y positions from the file ``'xyfile.dat'`` for a
+   calibrated ACS image (``j8bt06nyq_flt.fits``) into undistorted sky
+   positions and write out the result to the file 'radec.dat':
+
+   >>> r,d = pixtosky.xy2rd("j8bt06nyq_flt.fits[sci,1]", coordfile="xyfile.dat",
+   ...       output="radec.dat")
+
+3. The set of X,Y positions from ``'input_flt.fits[sci,1]'`` stored as
+   the 3rd and 4th columns from the ASCII file ``'xy_sci1.dat'``
+   will be transformed and written out to ``'radec_sci1.dat'`` using:
+
+   >>> from drizzlepac import pixtosky
+   >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coordfile='xy_sci1.dat',
+   ...                      colnames=['c3','c4'], output="radec_sci1.dat")
