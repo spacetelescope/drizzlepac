@@ -16,13 +16,17 @@
     -------------------
     ra : string or list or array, optional
         RA from input image for a single or multiple positions
+        (with or without ``':'``)
+        like ``'19:10:50.337406303'`` or ``'19 10 50.337406303'``
     dec : string or list or array, optional
         Dec from input image for a single or multiple positions
+        (with or without ``':'``)
+        like ``'-60:2:22.186557409'`` or ``'-60 2 22.186557409'``
     coordfile : str, optional
         full filename with path of file with sky coordinates
     colnames : str, optional
         comma separated list of column names or list of column name strings
-        from 'coordfile' files containing x,y coordinates, respectively.
+        from 'coordfile' files containing sky coordinates, respectively.
         This parameter will default to first two columns if None are specified.
         Column names for ASCII files will use 'c1','c2',... convention.
         Valid syntax: ['c1','c3'] or 'c1,c3'

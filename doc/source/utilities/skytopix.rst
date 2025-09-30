@@ -17,4 +17,3 @@ tweakreg.
 .. automodule:: drizzlepac.skytopix
 
 .. autofunction:: rd2xy
-.. autofunction:: help
