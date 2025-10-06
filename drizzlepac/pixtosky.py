@@ -78,7 +78,7 @@
 
        >>> from drizzlepac import pixtosky
        >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coordfile='xy_sci1.dat',
-       ...                      colnames=['c3','c4'], output="radec_sci1.dat")
+       colnames=['c3','c4'], output="radec_sci1.dat")
 
 """
 import warnings

@@ -6,14 +6,13 @@
     :License: :doc:`/LICENSE`
 
     PARAMETERS
-    ----------
+
     input : str
         full filename with path of input image, an extension name
         ['sci',1] should be provided if input is a multi-extension
         FITS file
 
     Optional Parameters
-    -------------------
     ra : string or list or array, optional
         RA from input image for a single or multiple positions
         (with or without ``':'``)
@@ -40,7 +39,6 @@
         Print out full list of transformation results (default: False)
 
     RETURNS
-    -------
     x : float or array
         X position of pixel. If more than 1 input value, then it will be a
         numpy array.
@@ -50,14 +48,12 @@
 
 
     NOTES
-    -----
     This module performs a full distortion-corrected coordinate
     transformation based on all WCS keywords and any recognized
     distortion keywords from the input image header.
 
 
     EXAMPLES
-    --------
     1. The following command will transform the position 00:22:36.79 -72:4:9.0 into a
        position on the image 'input_flt.fits[sci,1]' using::
 
@@ -71,7 +67,7 @@
 
             >>> from drizzlepac import skytopix
             >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]", coordfile='radec_sci1.dat',
-                colnames=['c3','c4'], output="xy_sci1.dat")
+            colnames=['c3','c4'], output="xy_sci1.dat")
 
 """
 import numpy as np
