@@ -248,19 +248,21 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     # interpret envvar variable, if specified
     align_to_gaia = _get_envvar_switch(
-        envvar_compute_name, description="align_to_gaia", default=align_to_gaia
+        envvar_compute_name, description="'align to gaia'", default=align_to_gaia
     )
 
     # Insure os.environ ALWAYS contains an entry for envvar_new_apriori_name
     # and it will default to being 'on'
     align_with_apriori = _get_envvar_switch(
-        envvar_new_apriori_name, description="align_with_apriori", default=True
+        envvar_new_apriori_name, description="'align with apriori'", default=True
     )
 
     # Add support for environment variable switch to automatically
     # reset IDCTAB in FLT/FLC files if different from IDCTAB in RAW files.
     reset_idctab_switch = _get_envvar_switch(
-        envvar_reset_idctab_name, description="reset_idctab_switch", default=False
+        envvar_reset_idctab_name,
+        description="'reset idctab in flt if different from raw'",
+        default=False,
     )
 
     if headerlets or align_to_gaia:
@@ -915,7 +917,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # wcsname = fits.getval(drz_products[0], 'wcsname', ext=1)
 
     # interpret envvar variable, if specified
-    qa_switch = _get_envvar_switch(envvar_qa_stats_name, description="QA statistics", default=False)
+    qa_switch = _get_envvar_switch(envvar_qa_stats_name, description="'QA statistics'", default=False)
 
     if qa_switch and dcorr == 'PERFORM':
 
@@ -2105,6 +2107,27 @@ def _copyToNewWorkingDir(newdir, input):
 
 
 def _get_envvar_switch(envvar_name, description, default):
+    """Get the value of an environment variable as a boolean switch.
+
+    Parameters
+    ----------
+    envvar_name : str
+        The name of the environment variable to check.
+    description : str
+        A description of the environment variable's purpose.
+    default : bool
+        The default value to use if the environment variable is not set.
+
+    Returns
+    -------
+    bool
+        The value of the environment variable as a boolean.
+
+    Raises
+    ------
+    ValueError
+        If the environment variable is set to an invalid value.
+    """
     # interpret envvar variable, if specified
     if envvar_name in os.environ:
         val = os.environ[envvar_name].lower()
