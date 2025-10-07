@@ -36,6 +36,18 @@ __numpy_version__ = np.__version__
 _cpu_count = 1
 can_parallel = False
 
+envvar_bool_dict = {
+    "off": False,
+    "no": False,
+    "false": False,
+    "False": False,
+    False: False,
+    "yes": True,
+    "on": True,
+    "true": True,
+    "True": True,
+    True: True,
+}
 
 if 'ASTRODRIZ_NO_PARALLEL' not in os.environ and platform.system() != "Windows":
     try:
@@ -1427,3 +1439,44 @@ def _parse_ext_spec(hdulist, extno, extname=None):
     # return a list of extension versions corresponding to input 'extname'
     extvers = [extv for _, extv in groups]
     return extvers
+
+def get_envvar_switch(envvar_name, default, description=''):
+    """Get the value of an environment variable as a boolean switch.
+
+    Parameters
+    ----------
+    envvar_name : str
+        The name of the environment variable to check.
+    default : bool
+        The default value to use if the environment variable is not set.
+    description : str, optional
+        A description of the environment variable's purpose.
+
+    Returns
+    -------
+    bool
+        The value of the environment variable as a boolean.
+
+    Raises
+    ------
+    ValueError
+        If the environment variable is set to an invalid value.
+    """
+    # Format description for consistent spacing
+    description_text = f"{description} " if description else ""
+    
+    env_value = os.environ.get(envvar_name)
+    if env_value is not None:
+        val = env_value.strip().lower()
+        if val not in envvar_bool_dict:
+            valid_values = [k for k in envvar_bool_dict.keys() if isinstance(k, str)]
+            msg = f"Invalid value '{env_value}' for environment variable '{envvar_name}'. "
+            msg += f"Valid values: {', '.join(sorted(valid_values))}"
+            raise ValueError(msg)
+        result = envvar_bool_dict[val]
+        print(f"ENVVAR {envvar_name} found, setting {description_text}to {result}.")
+    else:
+        result = envvar_bool_dict[default]
+        print(f"ENVVAR {envvar_name} not found, setting {description_text}to default of {result}.")
+    
+    return result
