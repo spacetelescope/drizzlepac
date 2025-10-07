@@ -40,12 +40,10 @@ envvar_bool_dict = {
     "off": False,
     "no": False,
     "false": False,
-    "False": False,
     False: False,
     "yes": True,
     "on": True,
     "true": True,
-    "True": True,
     True: True,
 }
 
