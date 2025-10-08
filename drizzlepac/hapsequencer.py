@@ -632,8 +632,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
             # Need to delete the Ramp filter Exposure objects from the *Product lists as
             # these images should not be processed beyond the alignment to Gaia (run_align_to_gaia).
-            _ = delete_ramp_exposures(total_item.fdp_list, 'FILTER')
-            ramp_product_list = delete_ramp_exposures(total_item.edp_list, 'EXPOSURE')
+            _ = delete_ramp_and_quadrant_exposures(total_item.fdp_list, 'FILTER')
+            ramp_product_list = delete_ramp_and_quadrant_exposures(total_item.edp_list, 'EXPOSURE')
             product_list += ramp_product_list
 
             # If there are Grism/Prism images present in this visit, as well as corresponding direct images
@@ -1385,7 +1385,7 @@ def archive_alternate_wcs(filename):
 # ------------------------------------------------------------------------------
 
 
-def delete_ramp_exposures(obj_list, type_of_list):
+def delete_ramp_and_quadrant_exposures(obj_list, type_of_list):
     """Delete the Ramp filter objects from the Total Product internal lists
 
     The Total Data Product (tdp) object is comprised of a list of Filter Product objects,
@@ -1416,7 +1416,7 @@ def delete_ramp_exposures(obj_list, type_of_list):
     ramp_filenames_list = []
     while obj_list:
         obj = obj_list.pop()
-        if obj.filters.lower().find('fr') == -1:
+        if (obj.filters.lower().find('fr') == -1) or (obj.filters.lower().find('fq') == -1):
             temp.append(obj)
         else:
             # Add the Ramp images to the manifest as well as the Ramp trailer filename here.
