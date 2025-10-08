@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.xx.x (unreleased)
 ===================
 
+- Removed rounding of IDCSCALE values. [#2063]
+
 - Fixed metawcs ecsv filename issue and removed lingering files. [#2073]
 
 - Removed deprecated functions in align.py and related HAP tests. [#2072]

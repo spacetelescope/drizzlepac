@@ -2234,7 +2234,7 @@ def _update_idcscale(filename):
         if fhdu_idscale is None:
             cd11 = hdul[('sci', sciext + 1)].header['CD1_1']
             cd21 = hdul[('sci', sciext + 1)].header['CD2_1']
-            fhdu_idscale = round(np.sqrt(np.power(cd11, 2) + np.power(cd21, 2)) * 3600., 3)
+            fhdu_idscale = np.sqrt(np.power(cd11, 2) + np.power(cd21, 2)) * 3600
         # Set the value of the IDCSCALE keyword
         for extn in range(num_sci):
             msg =  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, hdul.filename(), extn + 1)
