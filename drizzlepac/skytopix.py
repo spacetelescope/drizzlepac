@@ -5,69 +5,76 @@ to pixel coordinates.
 
 :License: :doc:`/LICENSE`
 
-PARAMETERS
-
+Parameters
+----------
 input : str
-    full filename with path of input image, an extension name
+    Full filename with path of input image, an extension name
     ['sci',1] should be provided if input is a multi-extension
     FITS file
 
-Optional Parameters
 ra : string or list or array, optional
     RA from input image for a single or multiple positions
     (with or without ``':'``)
     like ``'19:10:50.337406303'`` or ``'19 10 50.337406303'``
+
 dec : string or list or array, optional
     Dec from input image for a single or multiple positions
     (with or without ``':'``)
     like ``'-60:2:22.186557409'`` or ``'-60 2 22.186557409'``
+
 coordfile : str, optional
-    full filename with path of file with sky coordinates
+    Full filename with path of file with sky coordinates
+
 colnames : str, optional
-    comma separated list of column names or list of column name strings
+    Comma separated list of column names or list of column name strings
     from 'coordfile' files containing sky coordinates, respectively.
     This parameter will default to first two columns if None are specified.
     Column names for ASCII files will use 'c1','c2',... convention.
     Valid syntax: ['c1','c3'] or 'c1,c3'
+
 separator : str, optional
-    non-blank separator used as the column delimiter in the coords file
+    Non-blank separator used as the column delimiter in the coords file
+
 precision : int, optional
     Number of floating-point digits in output values
+
 output : str, optional
     Name of output file with results, if desired
+
 verbose : bool
     Print out full list of transformation results (default: False)
 
-RETURNS
+Returns
+-------
 x : float or array
     X position of pixel. If more than 1 input value, then it will be a
     numpy array.
+
 y : float or array
     Y position of pixel. If more than 1 input value, then it will be a
     numpy array.
 
-
-NOTES
+Notes
+-----
 This module performs a full distortion-corrected coordinate
 transformation based on all WCS keywords and any recognized
 distortion keywords from the input image header.
 
-
-EXAMPLES
+Examples
+--------
 1. The following command will transform the position 00:22:36.79 -72:4:9.0 into a
    position on the image 'input_flt.fits[sci,1]' using::
 
-        >>> from drizzlepac import skytopix
-        >>> x,y = skytopix.rd2xy("input_file_flt.fits[sci,1]", "00:22:36.79","-72:4:9.0")
-
+    >>> from drizzlepac import skytopix
+    >>> x,y = skytopix.rd2xy("input_file_flt.fits[sci,1]", "00:22:36.79","-72:4:9.0")
 
 2. The set of sky positions from 'input_flt.fits[sci,1]' stored as
    the 3rd and 4th columns from the ASCII file 'radec_sci1.dat'
    will be transformed and written out to 'xy_sci1.dat' using::
 
-        >>> from drizzlepac import skytopix
-        >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]", coordfile='radec_sci1.dat',
-        colnames=['c3','c4'], output="xy_sci1.dat")
+    >>> from drizzlepac import skytopix
+    >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]", coordfile='radec_sci1.dat',
+    ...                     colnames=['c3','c4'], output="xy_sci1.dat")
 
 """
 
