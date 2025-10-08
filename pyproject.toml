@@ -61,14 +61,11 @@ content-type = "text/x-rst"
 [project.optional-dependencies]
 docs = [
     "sphinx",
-    "stsci_rtd_theme",
+    "sphinx_rtd_theme",
     "packaging",
-    "tomli",
     "numpydoc",
     "sphinx_automodapi",
     "graphviz",
-    "astrocut",
-    "tables",
 ]
 test = [
     "ci_watson",
@@ -95,8 +92,7 @@ requires = [
     "setuptools>=61",
     "setuptools_scm[toml]>=3.4",
     "wheel",
-    "numpy>=2.0.0rc2",
-    "astropy>=5.0.4",
+    "numpy>=2",
     "markupsafe<=2.0.1",
 ]
 build-backend = "setuptools.build_meta"

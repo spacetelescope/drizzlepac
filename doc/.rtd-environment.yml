@@ -1,32 +1,7 @@
 name: rtd311
 channels:
-    - defaults
+    - conda-forge
 dependencies:
-    - astropy
-    - numpy
-    - numpydoc
     - pip
     - python=3.11
-    - scipy
     - graphviz
-    - pip:
-      - astroquery
-      - fitsblender
-      - lxml
-      - matplotlib
-      - nictools
-      - photutils
-      - pyregion
-      - "spherical_geometry>=1.2.22"
-      - sphinx
-      - "sphinx_rtd_theme>1.2.0"
-      - sphinx_automodapi
-      - stwcs
-      - stsci.tools
-      - "stsci.image>=2.3.0"
-      - stsci.imagestats
-      - stsci.skypac
-      - stsci.stimage
-      - "tweakwcs>=0.8.0"
-      - stregion
-      - tables
