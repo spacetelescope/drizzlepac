@@ -1,86 +1,87 @@
-""" pixtosky - A module to perform coordinate transformation from pixel to sky coordinates.
+"""pixtosky - A module to perform coordinate transformation from pixel to sky coordinates.
 
-    :Authors: Warren Hack
+:Authors: Warren Hack
 
-    :License: :doc:`/LICENSE`
+:License: :doc:`/LICENSE`
 
-    PARAMETERS
-    ----------
-    input : str
-        full filename with path of input image, an extension name ['sci',1] should be
-        provided if input is a multi-extension FITS file
+PARAMETERS
+----------
+input : str
+    full filename with path of input image, an extension name ['sci',1] should be
+    provided if input is a multi-extension FITS file
 
-    Optional Parameters
-    -------------------
-    x : float or list or array, optional
-        X position from input image for a single or multiple sources
-    y : float or list or array, optional
-        Y position from input image for a single or multiple sources
-    coords : str, deprecated
-        [DEPRECATED] full filename with path of file with x,y coordinates
-        Filename given here will be *ignored* if a file has been specified
-        in ``coordfile`` parameter.
-    coordfile : str, optional
-        full filename with path of file with x,y coordinates
-    colnames : str, optional
-        comma separated list of column names or list of column name strings
-        from 'coordfile' files containing x,y coordinates, respectively.
-        This parameter will default to first two columns if None are specified.
-        Column names for ASCII files will use 'c1','c2',... convention.
-        Valid syntax: ['c1','c3'] or 'c1,c3'
-    separator : str, optional
-        non-blank separator used as the column delimiter in the coordfile file
-    hms : bool, optional
-        Produce output in HH:MM:SS.S format instead of decimal degrees? (default: False)
-    precision : int, optional
-        Number of floating-point digits in output values
-    output : str, optional
-        Name of output file with results, if desired
-    verbose : bool
-        Print out full list of transformation results (default: False)
+Optional Parameters
+-------------------
+x : float or list or array, optional
+    X position from input image for a single or multiple sources
+y : float or list or array, optional
+    Y position from input image for a single or multiple sources
+coords : str, deprecated
+    [DEPRECATED] full filename with path of file with x,y coordinates
+    Filename given here will be *ignored* if a file has been specified
+    in ``coordfile`` parameter.
+coordfile : str, optional
+    full filename with path of file with x,y coordinates
+colnames : str, optional
+    comma separated list of column names or list of column name strings
+    from 'coordfile' files containing x,y coordinates, respectively.
+    This parameter will default to first two columns if None are specified.
+    Column names for ASCII files will use 'c1','c2',... convention.
+    Valid syntax: ['c1','c3'] or 'c1,c3'
+separator : str, optional
+    non-blank separator used as the column delimiter in the coordfile file
+hms : bool, optional
+    Produce output in HH:MM:SS.S format instead of decimal degrees? (default: False)
+precision : int, optional
+    Number of floating-point digits in output values
+output : str, optional
+    Name of output file with results, if desired
+verbose : bool
+    Print out full list of transformation results (default: False)
 
-    RETURNS
-    -------
-    ra : float or array
-        Right Ascension of pixel. If more than 1 input value, then it will be a
-        numpy array.
-    dec : float or array
-        Declination of pixel. If more than 1 input value, then it will be a
-        numpy array.
+RETURNS
+-------
+ra : float or array
+    Right Ascension of pixel. If more than 1 input value, then it will be a
+    numpy array.
+dec : float or array
+    Declination of pixel. If more than 1 input value, then it will be a
+    numpy array.
 
-    NOTES
-    -----
-    This task performs a full distortion-correction coordinate transformation
-    based on all WCS keywords and any recognized distortion keywords from the
-    input image header. The transformation recognizes the conventions for
-    describing distortion implemented as part of the SIP and Paper IV
-    conventions used with ``AstroDrizzle``. Input images can be updated to use
-    these conventions through the use of the ``updatewcs`` module the ``STWCS``
-    package.
-
-
-    See Also
-    --------
-    `stwcs`
-
-    EXAMPLES
-    --------
-    1. The following command will transform the position 256,256 into a
-       position on the sky for the image 'input_flt.fits[sci,1]' using::
-
-       >>> from drizzlepac import pixtosky
-       >>> r,d = pixtosky.xy2rd("input_file_flt.fits[sci,1]", 256,256)
+NOTES
+-----
+This task performs a full distortion-correction coordinate transformation
+based on all WCS keywords and any recognized distortion keywords from the
+input image header. The transformation recognizes the conventions for
+describing distortion implemented as part of the SIP and Paper IV
+conventions used with ``AstroDrizzle``. Input images can be updated to use
+these conventions through the use of the ``updatewcs`` module the ``STWCS``
+package.
 
 
-    2. The set of X,Y positions from 'input_flt.fits[sci,1]' stored as
-       the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
-       will be transformed and written out to 'radec_sci1.dat' using::
+See Also
+--------
+`stwcs`
 
-       >>> from drizzlepac import pixtosky
-       >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coordfile='xy_sci1.dat',
-       colnames=['c3','c4'], output="radec_sci1.dat")
+EXAMPLES
+--------
+1. The following command will transform the position 256,256 into a
+   position on the sky for the image 'input_flt.fits[sci,1]' using::
+
+   >>> from drizzlepac import pixtosky
+   >>> r,d = pixtosky.xy2rd("input_file_flt.fits[sci,1]", 256,256)
+
+
+2. The set of X,Y positions from 'input_flt.fits[sci,1]' stored as
+   the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
+   will be transformed and written out to 'radec_sci1.dat' using::
+
+   >>> from drizzlepac import pixtosky
+   >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coordfile='xy_sci1.dat',
+   colnames=['c3','c4'], output="radec_sci1.dat")
 
 """
+
 import warnings
 import numpy as np
 
@@ -180,10 +181,10 @@ def xy2rd(input,x=None,y=None,coords=None, coordfile=None,colnames=None,separato
 
     return ra,dec
 
-#--------------------------------
+# --------------------------------
 # TEAL Interface functions
 # (these functions are deprecated)
-#---------------------------------
+# ---------------------------------
 def run(configObj):
 
     if 'coords' in configObj:
