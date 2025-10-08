@@ -68,7 +68,7 @@ package.
 
 See Also
 --------
-`stwcs`
+stwcs
 
 Examples
 --------
