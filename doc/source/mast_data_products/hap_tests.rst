@@ -77,23 +77,6 @@ test_align.py
     
     Tests alignment of all of the available a posteriori wcs solutions for a variety of datasets and scenarios.
 
-archival_test_run_svmpoller.py (*currently disabled*)
-
-    test_run_svmpoller
-     * Tests runsinglehap.perform using poller file as input. 
-
-archival_test_randomlist.py (*currently disabled*)
-
-    test_randomlist
-     * Tests SVM alignment (align.perform_align) on a random dataset from "ACSWFC3ListDefault50.csv". Success is marked by a statistical sample (70%) of ACS and WFC3 datasets aligned to within 10mas RMS.
-
-archival_test_alignpipe_randomlist.py (*currently disabled*)
-
-    test_alignpipe_randomlist
-     * Similar to test_randomlist but include pipeline processing (runastrodriz.process). 
-
-|
-
 **ACS**
 
 test_acs_narrowband.py

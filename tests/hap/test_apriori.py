@@ -3,7 +3,6 @@
 
 """
 import pytest
-
 import numpy as np
 
 from drizzlepac.haputils import testutils
@@ -13,6 +12,9 @@ from ..resources import BaseACS, BaseWFC3
 
 def compare_apriori(dataset):
     """This test will perform fits between ALL a priori solutions and GAIA.
+
+    dataset: list of str
+        List of input filenames (FLCs/FLTs) to be aligned.
 
     Success criteria:
       * Successful fit to GAIA for dataset
@@ -114,10 +116,12 @@ class TestAcsApriori(BaseACS):
         * This test is also compatible with pytest-xdist.
     """
 
+    @pytest.mark.serial
     @pytest.mark.bigdata
     @pytest.mark.parametrize('dataset', ['jb1601020', 'J9I408010'])
     def test_apriori(self, dataset):
-        compare_apriori(dataset)
+        filenames = self.get_mast_data(dataset, suffix='FLC')
+        compare_apriori(filenames)
 
 
 class TestWFC3Apriori(BaseWFC3):
@@ -132,9 +136,11 @@ class TestWFC3Apriori(BaseWFC3):
 
     """
 
+    @pytest.mark.serial
     @pytest.mark.bigdata
     @pytest.mark.parametrize(
         'dataset', ['ic0g0l010', 'icnw34040']
     )
     def test_apriori(self, dataset):
-        compare_apriori(dataset)
+        filenames = self.get_mast_data(dataset, suffix='FLC')
+        compare_apriori(filenames)
