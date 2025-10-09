@@ -78,7 +78,8 @@ def blot(
     outdata : str
         Filename for output blotted image.
 
-    Note : The following are configObj parameters
+    configObj : The following are configObj parameters.
+        These parameters can be set by the user.
 
     coeffs : bool (Default Value = True)
         This parameters specifies whether or not to use the header-based distortion
