@@ -78,94 +78,93 @@ def blot(
     outdata : str
         Filename for output blotted image.
 
-    configObj parameters
-    ---------------------
+    Note : The following are configObj parameters
 
-        coeffs : bool (Default Value = True)
-            This parameters specifies whether or not to use the header-based distortion
-            coefficients when creating the blotted, distorted image.  If False, no
-            distortion will be applied at all, effectively working as a cut-out operation.
+    coeffs : bool (Default Value = True)
+        This parameters specifies whether or not to use the header-based distortion
+        coefficients when creating the blotted, distorted image.  If False, no
+        distortion will be applied at all, effectively working as a cut-out operation.
 
-        interp : str{'nearest', 'linear', 'poly3', 'poly5', 'sinc'} (Default = 'poly5')
-            This parameter defines the method of interpolation to be used when
-            blotting drizzled images back to their original WCS solution.
-            Valid options include:
+    interp : str{'nearest', 'linear', 'poly3', 'poly5', 'sinc'} (Default = 'poly5')
+        This parameter defines the method of interpolation to be used when
+        blotting drizzled images back to their original WCS solution.
+        Valid options include:
 
-                * **nearest**: Nearest neighbor
-                * **linear**: Bilinear interpolation in x and y
-                * **poly3**: Third order interior polynomial in x and y
-                * **poly5**: Fifth order interior polynomial in x and y
-                * **sinc**: Sinc interpolation (accurate but slow)
+            * **nearest**: Nearest neighbor
+            * **linear**: Bilinear interpolation in x and y
+            * **poly3**: Third order interior polynomial in x and y
+            * **poly5**: Fifth order interior polynomial in x and y
+            * **sinc**: Sinc interpolation (accurate but slow)
 
-            The 'poly5' interpolation method has been chosen as the default because
-            it is relatively fast and accurate.
+        The 'poly5' interpolation method has been chosen as the default because
+        it is relatively fast and accurate.
 
-            If 'sinc' interpolation is selected, then the value of the parameter
-            for ```blot_sinscl`` will be used to specify the size of the sinc
-            interpolation kernel.
+        If 'sinc' interpolation is selected, then the value of the parameter
+        for ```blot_sinscl`` will be used to specify the size of the sinc
+        interpolation kernel.
 
-        sinscl : float (Default Value = 1.0)
-            Size of the sinc interpolation kernel in pixels.
+    sinscl : float (Default Value = 1.0)
+        Size of the sinc interpolation kernel in pixels.
 
-        stepsize : int (Default Value = 10)
-            Number of pixels for WCS interpolation.  The distortion model will be sampled
-            exactly and completely every ```stepsize`` pixel with bi-linear interpolation
-            being used to compute the distortion for intermediate pixels. This optimization
-            speeds up the computation significantly when ``stepsize`` >> 1 at the expense
-            of interpolation errors for intermediate pixels.
+    stepsize : int (Default Value = 10)
+        Number of pixels for WCS interpolation.  The distortion model will be sampled
+        exactly and completely every ```stepsize`` pixel with bi-linear interpolation
+        being used to compute the distortion for intermediate pixels. This optimization
+        speeds up the computation significantly when ``stepsize`` >> 1 at the expense
+        of interpolation errors for intermediate pixels.
 
-        addsky : bool (Default Value = Yes)
-            Add back a sky value using the ``MDRIZSKY`` value from the header.
-            If 'Yes' (``True``), the ``blot_skyval`` parameter is ignored.
+    addsky : bool (Default Value = Yes)
+        Add back a sky value using the ``MDRIZSKY`` value from the header.
+        If 'Yes' (``True``), the ``blot_skyval`` parameter is ignored.
 
-        skyval : float (Default Value = 0.0)
-            This is a user-specified custom sky value to be added to the blot image.
-            This is only used if ``blot_addsky`` is 'No' (``False``).
+    skyval : float (Default Value = 0.0)
+        This is a user-specified custom sky value to be added to the blot image.
+        This is only used if ``blot_addsky`` is 'No' (``False``).
 
-        in_units : str{'cps', 'counts'} (Default Value= 'cps')
-            Units of input (drizzled) image.
-            Valid options are **'cps'** and **'counts'**.
+    in_units : str{'cps', 'counts'} (Default Value= 'cps')
+        Units of input (drizzled) image.
+        Valid options are **'cps'** and **'counts'**.
 
-        out_units : str{'cps', 'counts'} (Default Value = 'counts')
-            Units of the ouput (blotted) image.
-            Valid options are **'cps'** and **'counts'**.
+    out_units : str{'cps', 'counts'} (Default Value = 'counts')
+        Units of the ouput (blotted) image.
+        Valid options are **'cps'** and **'counts'**.
 
-        expkey : str (Default Value = 'exptime)
-            Name of keyword to use to extract exposure time value, which will be used to
-            scale the blotted image to the final output flux values when ``out_units`` is
-            set to **counts**.
+    expkey : str (Default Value = 'exptime)
+        Name of keyword to use to extract exposure time value, which will be used to
+        scale the blotted image to the final output flux values when ``out_units`` is
+        set to **counts**.
 
-        expout : str or float (Default Value = 'input')
-            Value of exposure time to use in scaling the output blotted image when
-            ``out_units`` is set to **counts**. If set to **'input'**, the value will be
-            read in from the input image header keyword specified by ``expkey``.
+    expout : str or float (Default Value = 'input')
+        Value of exposure time to use in scaling the output blotted image when
+        ``out_units`` is set to **counts**. If set to **'input'**, the value will be
+        read in from the input image header keyword specified by ``expkey``.
 
-            .. note:: The following parameters, when set, will override any value determined
-                from ``refimage`` if a reference image was specified.
+        .. note:: The following parameters, when set, will override any value determined
+            from ``refimage`` if a reference image was specified.
 
-        outscale : float,optional
-            Absolute size of output pixels in arcsec/pixel
+    outscale : float,optional
+        Absolute size of output pixels in arcsec/pixel
 
-        orient : float
-            Orientation of output (PA of Y axis, N through E)
+    orient : float
+        Orientation of output (PA of Y axis, N through E)
 
-        raref : float
-            RA of reference point on output image(CRVAL1,degrees)
+    raref : float
+        RA of reference point on output image(CRVAL1,degrees)
 
-        decref : float
-            Dec of reference point on output image (CRVAL2, degrees)
+    decref : float
+        Dec of reference point on output image (CRVAL2, degrees)
 
-        xrefpix : float
-            Reference pixel X position on output (CRPIX1)
+    xrefpix : float
+        Reference pixel X position on output (CRPIX1)
 
-        yrefpix : float
-            Reference pixel Y position on output (CRPIX2)
+    yrefpix : float
+        Reference pixel Y position on output (CRPIX2)
 
-        outnx : float
-            Size of output image's X-axis (pixels)
+    outnx : float
+        Size of output image's X-axis (pixels)
 
-        outny : float
-            Size of output image's Y-axis (pixels)
+    outny : float
+        Size of output image's Y-axis (pixels)
 
     Notes
     -----
