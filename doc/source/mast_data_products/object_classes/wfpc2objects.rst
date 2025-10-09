@@ -4,7 +4,7 @@
 WFPC2 ImageObjects
 ******************
 
-.. moduleauthor:: Warren Hack, Ivo Busko, Christopher Hanley <help@stsci.edu>
+.. moduleauthor:: Warren Hack, Ivo Busko, Christopher Hanley
 
 .. currentmodule:: drizzlepac.wfpc2Data
 
@@ -14,4 +14,3 @@ WFPC2 ImageObjects
    :members:
    :undoc-members:
    :show-inheritance:
-
