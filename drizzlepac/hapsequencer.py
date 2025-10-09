@@ -1387,15 +1387,16 @@ def archive_alternate_wcs(filename):
 
 
 def delete_ramp_and_quadrant_exposures(obj_list, type_of_list):
-    """Delete the Ramp filter objects from the Total Product internal lists
+    """Delete objects from the Total Product internal lists if they use Ramp or
+    WFC3-UVIS Quadrant filters. 
 
     The Total Data Product (tdp) object is comprised of a list of Filter Product objects,
-    as well as a list of Exposure Product objects.  The Ramp filter
+    as well as a list of Exposure Product objects.  The Ramp/Quardrant filter
     images need to be processed in the same manner as nominal exposures for at least
     some of the processing steps.  Because of this, it was deemed best to keep the
     Ramp exposures in the tdp list attributes, until their final processing
     stage (align_to_gaia), and then delete these objects from the attribute
-    lists. This function handles the deletion of Ramp images from the input
+    lists. This function handles the deletion of Ramp/Quadrant images from the input
     list.
 
     Parameters
@@ -1408,13 +1409,13 @@ def delete_ramp_and_quadrant_exposures(obj_list, type_of_list):
 
     Returns
     -------
-    ramp_filenames_list : list of str
-        List of ramp exposure SVM FLT/FLC filenames and their corresponding trailer filenames
+    excluded_filenames_list : list of str
+        List of ramp/quadrant exposure SVM FLT/FLC filenames and their corresponding trailer filenames
 
     """
     reported = False
     temp = []
-    ramp_filenames_list = []
+    excluded_filenames_list = []
     while obj_list:
         obj = obj_list.pop()
         # If the filter name does not contain 'fr' or 'fq', then it is okay to keep.
@@ -1425,8 +1426,8 @@ def delete_ramp_and_quadrant_exposures(obj_list, type_of_list):
             # The file will be created by by copying the Total Data Product trailer file at
             # the end of processing.
             if type_of_list == 'EXPOSURE':
-                ramp_filenames_list.append(obj.full_filename)
-                ramp_filenames_list.append(obj.trl_filename)
+                excluded_filenames_list.append(obj.full_filename)
+                excluded_filenames_list.append(obj.trl_filename)
                 if not reported:
                     log.info('Removing the Ramp images from the Total Data Product exposure list.')
                     log.info('Theses images are not processed beyond the "align to Gaia" stage.')
@@ -1434,7 +1435,7 @@ def delete_ramp_and_quadrant_exposures(obj_list, type_of_list):
     while temp:
         obj_list.append(temp.pop())
 
-    return ramp_filenames_list
+    return excluded_filenames_list
 
 # ------------------------------------------------------------------------------
 
