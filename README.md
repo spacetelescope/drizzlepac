@@ -1,7 +1,7 @@
 # Drizzlepac
 
 [![build](https://github.com/spacetelescope/drizzlepac/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/drizzlepac/actions)
-[![codecov](https://codecov.io/gh/spacetelescope/drizzlepac/branch/master/graph/badge.svg)](https://codecov.io/gh/spacetelescope/drizzlepac)
+[![codecov](https://codecov.io/gh/spacetelescope/drizzlepac/branch/main/graph/badge.svg)](https://codecov.io/gh/spacetelescope/drizzlepac)
 [![docs](https://readthedocs.org/projects/drizzlepac/badge/?version=latest)](http://drizzlepac.readthedocs.io/en/latest/?badge=latest)
 [![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
 [![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
@@ -13,7 +13,7 @@ The use of this software on HST data is described at:
 
     http://drizzlepac.stsci.edu/
 
-A complete description of the documented interfaces in the code itself 
+A complete description of the documented interfaces in the code itself
 can be found at:
 
     http://drizzlepac.readthedocs.io
@@ -23,18 +23,18 @@ can be found at:
 
 ## Conda (Recommended)
 
-`Drizzlepac` is installed when you install the `stenv` conda environment (a replacement for `astroconda`). Select your desired release and follow the instructions on the [`stenv` installation page](https://stenv.readthedocs.io/en/latest/getting_started.html). 
+`Drizzlepac` is installed when you install the `stenv` conda environment (a replacement for `astroconda`). Select your desired release and follow the instructions on the [`stenv` installation page](https://stenv.readthedocs.io/en/latest/getting_started.html).
 
 ## Install with pip
 
 ```bash
 $ pip install git+https://github.com/spacetelescope/drizzlepac.git
 ```
-The option `--no-use-pep517` MAY be required in order to correctly build 
-the C extensions with `pip` versions up to 22.2, after commenting out 
+The option `--no-use-pep517` MAY be required in order to correctly build
+the C extensions with `pip` versions up to 22.2, after commenting out
 the `build-backend` from the `pyproject.toml` config file.
 
-Support for installing using `pip` is still evolving, so use of this 
+Support for installing using `pip` is still evolving, so use of this
 command is provided on an experimental basis for now.
 
 ## From Source
