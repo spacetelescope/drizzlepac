@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/publish.yml@86823142467dd2afcd1bbac57d3a664cf468eb3b  # v2.1.0
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/publish.yml@28e947497bed4d6ec3fa1d66d198e95a1d17bc63  # v2.2.1
     with:
       upload_to_pypi: ${{ (github.event_name == 'release') && (github.event.action == 'released') }}
       targets: |
@@ -17,6 +17,9 @@ jobs:
         # MacOS wheels
         - cp3*-macosx_x86_64
         - cp3*-macosx_arm64
+        # Windows wheels
+        - cp3*-win32
+        - cp3*-win_amd64
       sdist: true
       test_command: python -c "from drizzlepac import cdriz"
     secrets:
