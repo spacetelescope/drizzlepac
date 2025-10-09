@@ -50,8 +50,7 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
     The final median image serves as the only output from this step.
 
     For more information on the science applications of the ``createMedian`` task,
-    see the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_\ .
-
+    see the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_.
 
     Parameters
     ----------
@@ -70,21 +69,17 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
         An optional list of parameters specified by the user, which can also
         be used to override the defaults.
 
-
     Other Parameters
     ----------------
 
     median : bool (Default = No)
         This parameter specifies whether or not to create a median image. This median image will be used as the comparison 'truth' image :in the cosmic ray rejection step.
 
-
     median_newmasks : bool (Default = Yes)
         This parameter specifies whether or not new mask files will be created when the median image is created. These masks are generated from weight files previously produced by the "driz_separate" step, and contain all bad pixel information used to exclude pixels when calculating the median. Generally this step should be set to "Yes", unless for some reason, it is desirable to include bad pixel information when generating the median.
 
-
     combine_maskpt : float (Default = 0.7)
         Percentage of weight image values, below which the are flagged.
-
 
     combine_type : str {'average', 'median', 'sum', 'minmed'} (Default = 'minmed')
         This parameter defines the method that will be used to create the median
@@ -113,26 +108,20 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
         want to keep the total number of images minus "combine_nhigh" odd when
         using "median".
 
-
     combine_nsigma : float (Default = '4 3')
         This parameter defines the sigmas used for accepting minimum values, rather than median values, when using the 'minmed' combination method. If two values are specified the first value will be used in the initial choice between median and minimum, while the second value will be used in the "growing" step to reject additional pixels around those identified in the first step. If only one value is specified, then it is used in both steps.
-
 
     combine_nlow : int (Default = 0)
         This parameter sets the number of low value pixels to reject automatically during image combination.
 
-
     combine_nhigh : int (Default = 0)
         This parameter sets the number of high value pixels to reject automatically during image combination.
-
 
     combine_lthresh : float (Default = INDEF)
         Sets the lower threshold for clipping input pixel values during image combination. This value gets passed directly to 'imcombine' for use in creating the median image. If the parameter is set to "None", no thresholds will be imposed.
 
-
     combine_hthresh : float (Default = INDEF)
         This parameter sets the upper threshold for clipping input pixel values during image combination. The value for this parameter is passed directly to 'imcombine' for use in creating the median image. If the parameter is set to "None", no thresholds will be imposed.
-
 
     combine_grow : int (Default = 1)
         Width, in pixels, beyond the limit set by the rejection algorithm being
@@ -142,7 +131,6 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
         When ``combine_type`` is anything other than ``'(i)minmed'``, this
         parameter is ignored (set to 0).
 
-
     combine_bufsize : float (Default = None)
         Size of buffer, in MB (MiB), to use when reading in each section of each
         input image. The default buffer size is 1MB. The larger the buffer size,
@@ -150,7 +138,6 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
         will be required to create the median image. A larger buffer can be
         helpful when using compression, since slower copies need to be made of
         each set of rows from each input image instead of using memory-mapping.
-
 
     Examples
     --------

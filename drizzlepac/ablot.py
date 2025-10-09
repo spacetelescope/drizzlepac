@@ -59,7 +59,6 @@ def blot(data, reference, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
     For more information on the science applications of the blot task,
     see the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_
 
-
     Parameters
     ----------
     data : str
