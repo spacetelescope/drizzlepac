@@ -30,10 +30,22 @@ except ImportError:
 if util.can_parallel:
     import multiprocessing
 
-__all__ = ['drizzle', 'run', 'drizSeparate', 'drizFinal', 'mergeDQarray',
-           'updateInputDQArray', 'buildDrizParamDict', 'interpret_maskval',
-           'run_driz', 'run_driz_img', 'run_driz_chip', 'do_driz',
-           'get_data', 'create_output']
+__all__ = [
+    "drizzle",
+    "run",
+    "drizSeparate",
+    "drizFinal",
+    "mergeDQarray",
+    "updateInputDQArray",
+    "buildDrizParamDict",
+    "interpret_maskval",
+    "run_driz",
+    "run_driz_img",
+    "run_driz_chip",
+    "do_driz",
+    "get_data",
+    "create_output",
+]
 
 
 """

@@ -36,9 +36,15 @@ PROCSTEPS_NAME = "Blot"
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-
-def blot(data, reference, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
-         editpars=False, **input_dict):
+def blot(
+    data,
+    reference,
+    outdata,
+    configObj=None,
+    wcsmap=wcs_functions.WCSMap,
+    editpars=False,
+    **input_dict,
+):
     """
     The median image is the combination of the WCS aligned input images
     that have already had the distortion model applied. Taking the median
@@ -71,10 +77,10 @@ def blot(data, reference, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
 
     outdata : str
         Filename for output blotted image.
-        
+
     configObj parameters
     ---------------------
-    
+
         coeffs : bool (Default Value = True)
             This parameters specifies whether or not to use the header-based distortion
             coefficients when creating the blotted, distorted image.  If False, no
@@ -197,7 +203,7 @@ def blot(data, reference, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
     >>> ablot.blot('adriz_aligned_wcs_f814w_med.fits','j8c0d1bwq_flc.fits[sci,1]',
     'aligned_f814w_sci1_blot.fits',configObj=blotobj)
     """
-    
+
     if input_dict is None:
         input_dict = {}
     input_dict['data'] = data
@@ -215,6 +221,7 @@ def blot(data, reference, outdata, configObj=None, wcsmap=wcs_functions.WCSMap,
 
     if not editpars:
         run(configObj, wcsmap=wcsmap)
+
 
 def run(configObj,wcsmap=None):
     """

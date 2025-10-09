@@ -30,6 +30,7 @@ aspects of each of the processing steps.
 :License: :doc:`/LICENSE`
 
 """
+
 import os
 import sys
 import logging
@@ -57,8 +58,14 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
-                 wcsmap=None, **input_dict):
+def AstroDrizzle(
+    input=None,
+    mdriztab=False,
+    editpars=False,
+    configobj=None,
+    wcsmap=None,
+    **input_dict,
+):
     """
     Parameters
     ----------
@@ -1139,8 +1146,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
 
         >>> astrodrizzle.help(file='help.txt')
     """
-    
-    
+
     # Support input of filenames from command-line without a parameter name
     # then copy this into input_dict for merging with TEAL ConfigObj
     # parameters.
@@ -1194,6 +1200,7 @@ def AstroDrizzle(input=None, mdriztab=False, editpars=False, configobj=None,
     configObj['mdriztab'] = mdriztab
 
     run(configObj, wcsmap=wcsmap, input_dict=input_dict)
+
 
 ##############################
 #   Interfaces used by TEAL  #
