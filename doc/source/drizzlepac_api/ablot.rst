@@ -6,6 +6,6 @@ Median Image Blotting Step
 
 .. moduleauthor:: Warren Hack
 
-.. automodule:: drizzlepac.ablot
+.. automodapi:: drizzlepac.ablot
    :members:
    :undoc-members:
