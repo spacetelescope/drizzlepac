@@ -426,8 +426,9 @@ class ImageCatalog(Catalog):
     **kwargs : dict
         Additional parameters for source finding (see Other Parameters).
 
-    Other Parameters
-    ----------------
+    |Other Parameters:
+        |
+
     computesig : bool, optional
         This parameter controls whether or not to automatically compute a
         sigma value to be used for object identification. If set to ``True``,

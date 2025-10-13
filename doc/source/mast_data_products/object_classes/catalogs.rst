@@ -21,9 +21,7 @@ for these classes.
 .. autofunction:: generateCatalog
 
 .. autoclass:: ImageCatalog
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   :members: ImageCatalog
 
 .. autoclass:: UserCatalog
    :members:
