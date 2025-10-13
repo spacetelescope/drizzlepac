@@ -21,7 +21,6 @@ for these classes.
 .. autofunction:: generateCatalog
 
 .. autoclass:: ImageCatalog
-   :members: ImageCatalog
 
 .. autoclass:: UserCatalog
    :members:

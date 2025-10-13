@@ -101,10 +101,10 @@ chip_reg : string or list of strings (Default = '')
     This paramater can be provided in one of the following forms:
 
     - filename of a single image (if ``img_wcs_ext`` specifies a single FITS
-    extension);
+      extension);
     - comma-separated list of filenames (if ``img_wcs_ext`` specifies more than
-    one extension) or ``None`` for extensions that do not need any
-    chip-specific regions to be excluded/included;
+      one extension) or ``None`` for extensions that do not need any
+      chip-specific regions to be excluded/included;
     - '' (empty string) or None if no chip-specific region files are provided.
 
     The number of regions ideally must be equal to the number of extensions
@@ -1112,26 +1112,26 @@ def parse_ext(extn, default_extver=None):
 #
 # Tests of 'parse_ext':
 #
-#--> parse_ext(2)
-#2
-#--> parse_ext(None)
-#0
-#--> parse_ext(('sci',2))
-#('sci', 2)
-#--> parse_ext(('sci'))
+# --> parse_ext(2)
+# 2
+# --> parse_ext(None)
+# 0
+# --> parse_ext(('sci',2))
+# ('sci', 2)
+# --> parse_ext(('sci'))
 #'sci'
-#--> parse_ext(['file1','file2'])
-#['file1', 'file2']
-#--> parse_ext('sci')
+# --> parse_ext(['file1','file2'])
+# ['file1', 'file2']
+# --> parse_ext('sci')
 #'sci'
-#--> parse_ext('sci,2')
-#('sci', 2)
-#--> parse_ext('sci,2.3')
-#Traceback (innermost last):
+# --> parse_ext('sci,2')
+# ('sci', 2)
+# --> parse_ext('sci,2.3')
+# Traceback (innermost last):
 #    File "<console>", line 1, in <module>
 #    File "./tweakregtools.py", line 164, in parse_ext
-#ValueError: invalid literal for int() with base 10: '2.3'
-#FITS extension version must be a valid integer.
+# ValueError: invalid literal for int() with base 10: '2.3'
+# FITS extension version must be a valid integer.
 
 
 def count_extensions(img, extname='SCI'):
@@ -1287,10 +1287,10 @@ def _check_FITS_extensions(img, extensions):
     return all_present
 
 
-#--------------------------------
+# --------------------------------
 # TEAL Interface functions
 # (these functions are deprecated)
-#---------------------------------
+# ---------------------------------
 def run(configObj):
     MapReg(input_reg   = configObj['input_reg'],
            images      = configObj['images'],
@@ -1309,4 +1309,3 @@ def run(configObj):
 MapReg.__doc__ = util._def_help_functions(
     locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
 )
-
