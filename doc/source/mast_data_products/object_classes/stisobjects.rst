@@ -4,7 +4,7 @@
 STIS ImageObjects
 *****************
 
-.. moduleauthor:: Megan Sosey, Christopher Hanley <help@stsci.edu>
+.. moduleauthor:: Megan Sosey, Christopher Hanley
 
 .. currentmodule:: drizzlepac.stisData
 
