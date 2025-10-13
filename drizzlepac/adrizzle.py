@@ -5,50 +5,6 @@ Interfaces to main drizzle functions.
 
 :License: :doc:`/LICENSE`
 
-"""
-import os
-import copy
-import time
-from . import util
-import numpy as np
-from astropy.io import fits
-from stsci.tools import fileutil, logutil, mputil
-from . import outputimage, wcs_functions
-import stwcs
-from stwcs import distortion
-
-from . import __version__
-
-try:
-    from . import cdriz
-except ImportError:
-    cdriz = None
-    print('\n Coordinate transformation and image resampling library, cdriz, NOT found!')
-    print('\n Please check the installation of this package to insure C code was built successfully.')
-    raise ImportError
-
-if util.can_parallel:
-    import multiprocessing
-
-__all__ = [
-    "drizzle",
-    "run",
-    "drizSeparate",
-    "drizFinal",
-    "mergeDQarray",
-    "updateInputDQArray",
-    "buildDrizParamDict",
-    "interpret_maskval",
-    "run_driz",
-    "run_driz_img",
-    "run_driz_chip",
-    "do_driz",
-    "get_data",
-    "create_output",
-]
-
-
-"""
 Each input image gets drizzled onto a separate copy of the output frame.
 When stacked, these copies would correspond to the final combined product.
 As separate images, they allow for treatment of each input image separately
@@ -223,10 +179,13 @@ create seperately drizzled images of each image in your list and the other
 to create one single output drizzled image, which is the combination of all
 of them::
 
-    def drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap)
-    def drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_functions.WCSMap)
+    drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap)
+    
+    drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_functions.WCSMap)
+    
     if configObj[single_step]['driz_separate']:
         drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+        
     else:
         drizFinal(imgObjList,outwcs,configObj,wcsmap=wcsmap)
 
@@ -238,6 +197,46 @@ using the default parameters for the task.
 >>> from drizzlepac import adrizzle
 """
 
+import os
+import copy
+import time
+from . import util
+import numpy as np
+from astropy.io import fits
+from stsci.tools import fileutil, logutil, mputil
+from . import outputimage, wcs_functions
+import stwcs
+from stwcs import distortion
+
+from . import __version__
+
+try:
+    from . import cdriz
+except ImportError:
+    cdriz = None
+    print('\n Coordinate transformation and image resampling library, cdriz, NOT found!')
+    print('\n Please check the installation of this package to insure C code was built successfully.')
+    raise ImportError
+
+if util.can_parallel:
+    import multiprocessing
+
+__all__ = [
+    "drizzle",
+    "run",
+    "drizSeparate",
+    "drizFinal",
+    "mergeDQarray",
+    "updateInputDQArray",
+    "buildDrizParamDict",
+    "interpret_maskval",
+    "run_driz",
+    "run_driz_img",
+    "run_driz_chip",
+    "do_driz",
+    "get_data",
+    "create_output",
+]
 
 __taskname__ = "adrizzle"
 
