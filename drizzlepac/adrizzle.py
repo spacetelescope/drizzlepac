@@ -68,7 +68,7 @@ driz_sep_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default 
 
         .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
         processing as compared to other kernel options. This option
-        should never be used for ``pixfrac``\ !=\ 1.0, and is not
+        should never be used for ``pixfrac`` != 1.0, and is not
         recommended for ``scale`` != 1.0.
 
     The default for this step is **"turbo"** since it is much faster

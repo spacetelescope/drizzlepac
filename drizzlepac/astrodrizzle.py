@@ -129,12 +129,12 @@ wcskey : str (Default = '')
     each input image header using the Paper I Multiple WCS FITS standard.
 
     .. warning:: Use of this parameter should be done only when all input
-    images have been updated using the Paper I FITS standard for
-    specifying Multiple ``WCS``'s in each image header. This parameter
-    assumes that the same ``WCS`` letter corresponds to ``WCS``'s that have been
-    updated in a consistent manner. For example, all input images have been
-    updated to be consistent with their distortion model in the ``WCS``'s
-    with key of *A*.
+        images have been updated using the Paper I FITS standard for
+        specifying Multiple ``WCS``'s in each image header. This parameter
+        assumes that the same ``WCS`` letter corresponds to ``WCS``'s that have been
+        updated in a consistent manner. For example, all input images have been
+        updated to be consistent with their distortion model in the ``WCS``'s
+        with key of *A*.
 
 proc_unit : str (Default = 'native')
     The units to be used for the final output drizzled product. Valid
@@ -284,12 +284,12 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
     Select the algorithm for sky computation:
 
     * **'localmin'**\ : compute a common sky for all members of *an exposure*.
-    For a typical use, it will compute
-    sky values for each chip/image extension (marked for sky
-    subtraction in the ``input`` parameter) in an input image,
-    and it will subtract the previously found minimum sky value
-    from all chips (marked for sky subtraction) in that image.
-    This process is repeated for each input image.
+        For a typical use, it will compute
+        sky values for each chip/image extension (marked for sky
+        subtraction in the ``input`` parameter) in an input image,
+        and it will subtract the previously found minimum sky value
+        from all chips (marked for sky subtraction) in that image.
+        This process is repeated for each input image.
 
         .. note::
             This setting is recommended when regions of overlap between images
@@ -301,27 +301,27 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
             versions of ``AstroDrizzle``.
 
     * ``'globalmin'``: compute a common sky value for all members of
-    **all** "skylines". It will compute
-    sky values for each chip/image extension (marked for sky
-    subtraction in the ``input`` parameter) in **all** input
-    images, find the minimum sky value, and then it will
-    subtract the **same** minimum sky value from **all** chips
-    (marked for sky subtraction) in **all** images. This method *may*
-    useful when input images already have matched background values.
+        **all** "skylines". It will compute
+        sky values for each chip/image extension (marked for sky
+        subtraction in the ``input`` parameter) in **all** input
+        images, find the minimum sky value, and then it will
+        subtract the **same** minimum sky value from **all** chips
+        (marked for sky subtraction) in **all** images. This method *may*
+        useful when input images already have matched background values.
 
     * ``'match'``: compute differences in sky values between images
-    in common (pair-wise) sky regions. In this case computed sky values
-    will be relative (delta) to the sky computed in one of the
-    input images whose sky value will be set to (reported to be) 0.
-    This setting will "equalize" sky values between the images in
-    large mosaics. However, this method is not recommended when used
-    in conjunction with `AstroDrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
-    because it computes relative sky values while ``AstroDrizzle`` needs
-    "measured" sky values for median image generation and CR rejection.
+        in common (pair-wise) sky regions. In this case computed sky values
+        will be relative (delta) to the sky computed in one of the
+        input images whose sky value will be set to (reported to be) 0.
+        This setting will "equalize" sky values between the images in
+        large mosaics. However, this method is not recommended when used
+        in conjunction with `AstroDrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
+        because it computes relative sky values while ``AstroDrizzle`` needs
+        "measured" sky values for median image generation and CR rejection.
 
     * ``'globalmin+match'``: first find a minimum "global" sky value
-      in all input images and then use ``'match'`` method to
-      equalize sky values between images.
+        in all input images and then use ``'match'`` method to
+        equalize sky values between images.
 
         .. note::
             This is the *recommended* setting for images
@@ -376,8 +376,8 @@ sky_bits : int, str, None (Default = 0)
     setting ``sky_bits`` to 12.
 
     | Default value (0) will make *all* non-zero pixels in the DQ mask to
-    be considered "bad" pixels, and the corresponding image pixels will
-    not be used for sky computations.
+        be considered "bad" pixels, and the corresponding image pixels will
+        not be used for sky computations.
 
     | Set ``sky_bits`` to ``None`` to turn off the use of image's DQ array for
     | sky computations.
@@ -402,14 +402,14 @@ sky_bits : int, str, None (Default = 0)
         To summarize, below are provided allowable syntaxes for ``sky_bits``:
 
         * Specify that bits 4,8, and 512 be considered "good" bits
-        and that all other bits be considered "bad" bits:
+            and that all other bits be considered "bad" bits:
 
         * Integer: 524 [numerically: 4+8+512=524]
         * String: 4+8+512
         * String: 4,8,512
 
         * Specify that only bits 4,8, and 512 be considered "bad" bits
-          and that all other bits be considered "good" bits:
+            and that all other bits be considered "good" bits:
 
         * Integer: -525 [numerically: ~(4+8+512)=~524=-(524+1)=-525]
         * String: ~4+8+512 or ~(4+8+512)
@@ -437,9 +437,9 @@ skyuser : str (Default = '')
     a ``skyfile``.
 
     .. note::
-    When ``skysub='no'`` and ``skyuser`` field is empty, then
-    ``AstroDrizzle`` will assume that sky background is 0.0 for the purpose
-    of cosmic-ray rejection.
+        When ``skysub='no'`` and ``skyuser`` field is empty, then
+        ``AstroDrizzle`` will assume that sky background is 0.0 for the purpose
+        of cosmic-ray rejection.
 
 
 **STEP 3: DRIZZLE SEPARATE IMAGES**
@@ -483,13 +483,13 @@ driz_sep_kernel : str {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Defa
         results in reduced correlated noise in outputs.
 
         .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
-        produce reasonable results and can be useful in certain cases, they do not
-        conserve flux; understand the effects of these kernels before using them.
+            produce reasonable results and can be useful in certain cases, they do not
+            conserve flux; understand the effects of these kernels before using them.
 
         .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
-        processing as compared to other kernel options. This option should
-        never be used for ``pixfrac!=1.0``, and is not recommended
-        for ``scale!=1.0``.
+            processing as compared to other kernel options. This option should
+            never be used for ``pixfrac!=1.0``, and is not recommended
+            for ``scale!=1.0``.
 
     The default for this step is ``'turbo'`` since it is much faster
     than ``'square'``, and it is quite satisfactory for the purposes
@@ -589,10 +589,10 @@ median : bool (Default = Yes)
     "Step 3: Drizzle Separate".
 
     .. note::
-    This parameter may be ignored and the step be turned on if a
-    higher-numbered step that depends on the median image is turned on *and*
-    if there are more than one input images. These steps are:
-    "Blot", and "Remove Cosmic Rays".
+        This parameter may be ignored and the step be turned on if a
+        higher-numbered step that depends on the median image is turned on *and*
+        if there are more than one input images. These steps are:
+        "Blot", and "Remove Cosmic Rays".
 
     .. note::
         This parameter may be ignored and the step be turned off either
@@ -802,53 +802,53 @@ final_wht_type : {'EXP', 'ERR', 'IVM'} (Default = 'EXP')
     the final drizzle step.  The options for this parameter include:
 
         * ``'EXP'``: The default of ``'EXP'`` indicates that the images
-        will be weighted according to their exposure time, which is the
-        standard behavior for drizzle. This weighting is a good approximation
-        in the regime where the noise is dominated by photon counts from the
-        sources, while contributions from sky background, read-noise and dark
-        current are negligible. This option is provided as the default since
-        it produces reliable weighting for all types of data, including older
-        instruments (eg., ``WFPC2``), where more sophisticated options
-        may not be available.
+            will be weighted according to their exposure time, which is the
+            standard behavior for drizzle. This weighting is a good approximation
+            in the regime where the noise is dominated by photon counts from the
+            sources, while contributions from sky background, read-noise and dark
+            current are negligible. This option is provided as the default since
+            it produces reliable weighting for all types of data, including older
+            instruments (eg., ``WFPC2``), where more sophisticated options
+            may not be available.
 
         * ``'ERR'``: Specifying ``'ERR'`` is an alternative for ``ACS``
-        and ``STIS`` data. In these cases, the final drizzled images will
-        be weighted according to the inverse variance of each pixel in the
-        input exposure files, calculated from the error array data extension
-        that is in each calibrated input exposure file. This array is
-        exposure time dependent, and encapsulates all of the noise sources
-        in each exposure including read-noise, dark current, sky background,
-        and Poisson noise from the sources themselves. For ``WFPC2``,
-        the ``ERR`` array is not produced during the calibration process,
-        and therefore is not a viable option. We advise extreme caution when
-        selecting the ``'ERR'`` option, since the nature of this weighting
-        scheme can introduce photometric discrepancies in sharp unresolved
-        sources, although these effects are minimized for sources with
-        gradual variations between pixels. The "EXP" weighting option does
-        not suffer from these effects, and is therefore the recommended
-        option.
+            and ``STIS`` data. In these cases, the final drizzled images will
+            be weighted according to the inverse variance of each pixel in the
+            input exposure files, calculated from the error array data extension
+            that is in each calibrated input exposure file. This array is
+            exposure time dependent, and encapsulates all of the noise sources
+            in each exposure including read-noise, dark current, sky background,
+            and Poisson noise from the sources themselves. For ``WFPC2``,
+            the ``ERR`` array is not produced during the calibration process,
+            and therefore is not a viable option. We advise extreme caution when
+            selecting the ``'ERR'`` option, since the nature of this weighting
+            scheme can introduce photometric discrepancies in sharp unresolved
+            sources, although these effects are minimized for sources with
+            gradual variations between pixels. The "EXP" weighting option does
+            not suffer from these effects, and is therefore the recommended
+            option.
 
         * ``'IVM'``: Specifying ``'IVM'`` allows the user to either supply
-        their own inverse-variance weighting map, or allow ``AstroDrizzle``
-        to generate one automatically on-the-fly during the final drizzle
-        step. This parameter option may be necessary for specific purposes.
-        For example, to create a drizzled weight file for software such as
-        ``SExtractor``, it is expected that a weight image containing all
-        of the background noise sources (sky level, read-noise, dark current,
-        etc), but not the Poisson noise from the objects themselves will
-        be available. The user can create the inverse variance images and
-        then specify their names using the ``input`` parameter for
-        ``AstroDrizzle`` to specify an '\@file'. This would be a single
-        ``ASCII`` file containing the list of input calibrated exposure
-        filenames (one per line), with a second column containing the name
-        of the ``IVM`` file corresponding to each calibrated exposure.
-        Each ``IVM`` file must have the same file format as the input file,
-        and if provided as multi-extension ``FITS`` files (e.g., ``ACS``
-        or ``STIS`` data) then the ``IVM`` extension must have the
-        ``EXTNAME`` of ``'IVM'``. If no ``IVM`` files are specified on input,
-        then ``AstroDrizzle`` will rely on the flat-field reference file and
-        computed dark value from the image header to automatically generate
-        an ``IVM`` file specific to each exposure.
+            their own inverse-variance weighting map, or allow ``AstroDrizzle``
+            to generate one automatically on-the-fly during the final drizzle
+            step. This parameter option may be necessary for specific purposes.
+            For example, to create a drizzled weight file for software such as
+            ``SExtractor``, it is expected that a weight image containing all
+            of the background noise sources (sky level, read-noise, dark current,
+            etc), but not the Poisson noise from the objects themselves will
+            be available. The user can create the inverse variance images and
+            then specify their names using the ``input`` parameter for
+            ``AstroDrizzle`` to specify an '\@file'. This would be a single
+            ``ASCII`` file containing the list of input calibrated exposure
+            filenames (one per line), with a second column containing the name
+            of the ``IVM`` file corresponding to each calibrated exposure.
+            Each ``IVM`` file must have the same file format as the input file,
+            and if provided as multi-extension ``FITS`` files (e.g., ``ACS``
+            or ``STIS`` data) then the ``IVM`` extension must have the
+            ``EXTNAME`` of ``'IVM'``. If no ``IVM`` files are specified on input,
+            then ``AstroDrizzle`` will rely on the flat-field reference file and
+            computed dark value from the image header to automatically generate
+            an ``IVM`` file specific to each exposure.
 
 final_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'square')
     This parameter specifies the form of the kernel function used to distribute
@@ -858,24 +858,24 @@ final_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = '
         * ``'square'``: original classic drizzling kernel
 
         * ``'point'``: this kernel is a point so each input pixel can only
-        contribute to the single pixel that is closest to the output
-        position. It is equivalent to the limit as ``pixfrac->0``, and is
-        very fast.
+            contribute to the single pixel that is closest to the output
+            position. It is equivalent to the limit as ``pixfrac->0``, and is
+            very fast.
 
         * ``'gaussian'``: this kernel is a circular gaussian, measured
-        in input pixels, with a FWHM value equal to the value of ``pixfrac``.
+            in input pixels, with a FWHM value equal to the value of ``pixfrac``.
 
         * ``'turbo'``: this is similar to kernel="square", except that
-        the box is always the same shape and size on the output grid,
-        and is always aligned with the ``X`` and ``Y`` axes. This may result
-        in a significant speed increase.
+            the box is always the same shape and size on the output grid,
+            and is always aligned with the ``X`` and ``Y`` axes. This may result
+            in a significant speed increase.
 
         * ``'lanczos3'``: a Lanczos style kernel, extending a radius of
-          3 pixels from the center of the detection. The Lanczos kernel is
-          a damped and bounded form of the "sinc" interpolator, and is very
-          effective for resampling single images when ``scale=pixfrac=1``.
-          It leads to less resolution loss than other kernels, and typically
-          results in reduced correlated noise in outputs.
+            3 pixels from the center of the detection. The Lanczos kernel is
+            a damped and bounded form of the "sinc" interpolator, and is very
+            effective for resampling single images when ``scale=pixfrac=1``.
+            It leads to less resolution loss than other kernels, and typically
+            results in reduced correlated noise in outputs.
 
             .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
                 processing as compared to other kernel options. This option

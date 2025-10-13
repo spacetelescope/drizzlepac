@@ -7,5 +7,7 @@ Primary User Interface: AstroDrizzle()
 .. moduleauthor:: Warren Hack
 
 .. automodapi:: drizzlepac.astrodrizzle
-   :members:
-   :undoc-members:
+   :members: AstroDrizzle
+   :exclude-members: getHelpAsString
+
+.. autofunction:: help
