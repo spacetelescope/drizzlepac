@@ -8,4 +8,5 @@ Primary User Interface: AstroDrizzle()
 
 .. automodapi:: drizzlepac.astrodrizzle
    :members:
+   :exclude-members: getHelpAsString
    :undoc-members:
