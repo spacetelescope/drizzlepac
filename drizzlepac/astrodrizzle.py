@@ -50,9 +50,9 @@ input : str or list of str (Default = ``'*flt.fits'``)
         same line as a second entry, after its corresponding exposure filename.
 
     .. note:: If the user specifies ``IVM`` for the ``final_wht_type``,
-    but does not provide the names of ``IVM`` files, ``AstroDrizzle``
-    will automatically generate the ``IVM`` files itself for each input
-    exposure.
+        but does not provide the names of ``IVM`` files, ``AstroDrizzle``
+        will automatically generate the ``IVM`` files itself for each input
+        exposure.
 
 mdriztab : bool (Default = False)
     This button will immediately update the parameter values in the ``TEAL``
@@ -88,13 +88,12 @@ input_dict : dict, optional
     be used to override the defaults.
 
     .. note:: This list of parameters **can** include the ``updatewcs``
-    parameter, even though this parameter no longer can be set through
-    the ``TEAL`` GUI.
+        parameter, even though this parameter no longer can be set through
+        the ``TEAL`` GUI.
 
     .. note:: This list of parameters **can** contain parameters specific
-    to the ``AstroDrizzle`` task itself described here in the
-    "Other Parameters" section.
-
+        to the ``AstroDrizzle`` task itself described here in the
+        "Other Parameters" section.
 
 Other Parameters
 ----------------
@@ -142,10 +141,10 @@ proc_unit : str (Default = 'native')
     values and definitions are:
 
     * ``'native'``: Output DRZ product and input 'values' given in the native
-    units of the input image.
+      units of the input image.
 
     * ``'electrons'``: Output DRZ product and input 'values' given in units
-    of electrons.
+      of electrons.
 
 coeffs : bool (Default = Yes)
     This parameter determines whether or not to use the coefficients stored
@@ -292,14 +291,14 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
     from all chips (marked for sky subtraction) in that image.
     This process is repeated for each input image.
 
-    .. note::
-        This setting is recommended when regions of overlap between images
-        are dominated by "pure" sky (as opposite to extended, diffuse
-        sources).
+        .. note::
+            This setting is recommended when regions of overlap between images
+            are dominated by "pure" sky (as opposite to extended, diffuse
+            sources).
 
-    .. note::
-        This is similar to the "skysub" algorithm used in previous
-        versions of ``AstroDrizzle``.
+        .. note::
+            This is similar to the "skysub" algorithm used in previous
+            versions of ``AstroDrizzle``.
 
     * ``'globalmin'``: compute a common sky value for all members of
     **all** "skylines". It will compute
@@ -321,13 +320,13 @@ skymethod : {'localmin', 'globalmin+match', 'globalmin', 'match'} (Default = 'lo
     "measured" sky values for median image generation and CR rejection.
 
     * ``'globalmin+match'``: first find a minimum "global" sky value
-    in all input images and then use ``'match'`` method to
-    equalize sky values between images.
+      in all input images and then use ``'match'`` method to
+      equalize sky values between images.
 
-    .. note::
-        This is the *recommended* setting for images
-        containing diffuse sources (e.g., galaxies, nebulae)
-        covering significant parts of the image.
+        .. note::
+            This is the *recommended* setting for images
+            containing diffuse sources (e.g., galaxies, nebulae)
+            covering significant parts of the image.
 
 skywidth : float (Default = 0.3)
     Bin width, in sigma, used to sample the distribution of pixel flux values
@@ -381,19 +380,19 @@ sky_bits : int, str, None (Default = 0)
     not be used for sky computations.
 
     | Set ``sky_bits`` to ``None`` to turn off the use of image's DQ array for
-    sky computations.
+    | sky computations.
 
     | In order to reverse the meaning of the ``sky_bits``
-    parameter from indicating values of the "good" DQ flags
-    to indicating the "bad" DQ flags, prepend '~' to the string
-    value. For example, in order not to use pixels with
-    DQ flags 4 and 8 for sky computations and to consider
-    as "good" all other pixels (regardless of their DQ flag),
-    set ``sky_bits`` to ``~4+8``, or ``~4,8``. To obtain the
-    same effect with an ``int`` input value (except for 0),
-    enter -(4+8+1)=-13. Following this convention,
-    a ``sky_bits`` string value of ``'~0'`` would be equivalent to
-    setting ``sky_bits=None``.
+    | parameter from indicating values of the "good" DQ flags
+    | to indicating the "bad" DQ flags, prepend '~' to the string
+    | value. For example, in order not to use pixels with
+    | DQ flags 4 and 8 for sky computations and to consider
+    | as "good" all other pixels (regardless of their DQ flag),
+    | set ``sky_bits`` to ``~4+8``, or ``~4,8``. To obtain the
+    | same effect with an ``int`` input value (except for 0),
+    | enter -(4+8+1)=-13. Following this convention,
+    | a ``sky_bits`` string value of ``'~0'`` would be equivalent to
+    | setting ``sky_bits=None``.
 
     .. note::
         DQ masks (if used), *will be* combined with user masks specified
@@ -410,7 +409,7 @@ sky_bits : int, str, None (Default = 0)
         * String: 4,8,512
 
         * Specify that only bits 4,8, and 512 be considered "bad" bits
-        and that all other bits be considered "good" bits:
+          and that all other bits be considered "good" bits:
 
         * Integer: -525 [numerically: ~(4+8+512)=~524=-(524+1)=-525]
         * String: ~4+8+512 or ~(4+8+512)
@@ -452,10 +451,10 @@ driz_separate : bool (Default = Yes)
     the median image, needed for cosmic ray rejection.
 
     .. note::
-    This parameter may be ignored and the step be turned on if a
-    higher-numbered step needing separate drizzled images is turned on *and*
-    if there are more than one input images. These steps are:
-    "Create Median", "Blot", and "Remove Cosmic Rays".
+        This parameter may be ignored and the step be turned on if a
+        higher-numbered step needing separate drizzled images is turned on *and*
+        if there are more than one input images. These steps are:
+        "Create Median", "Blot", and "Remove Cosmic Rays".
 
 driz_sep_kernel : str {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'turbo')
     Used for the initial separate drizzling operation only, this parameter
@@ -596,12 +595,12 @@ median : bool (Default = Yes)
     "Blot", and "Remove Cosmic Rays".
 
     .. note::
-    This parameter may be ignored and the step be turned off either
-    when there is only one input image or the combination of input images
-    overlap and ``combine_*`` parameters is such that there are not enough
-    overlapping pixels to create a median image. When this will occur,
-    all other higher-numbered steps that depend on the median image will
-    also be turned off.
+        This parameter may be ignored and the step be turned off either
+        when there is only one input image or the combination of input images
+        overlap and ``combine_*`` parameters is such that there are not enough
+        overlapping pixels to create a median image. When this will occur,
+        all other higher-numbered steps that depend on the median image will
+        also be turned off.
 
 median_newmasks : bool (Default = Yes)
     This parameter specifies whether or not new mask files will be created when
@@ -707,15 +706,15 @@ blot : bool (Default = Yes)
     "Step 3: Drizzle Separate" and "Step 4: Create Median".
 
     .. note::
-    This parameter may be ignored and the step be turned on if
-    "Step 6: Remove Cosmic Rays", which depends on the blot image,
-    is turned on *and* if there are more than one input images.
+        This parameter may be ignored and the step be turned on if
+        "Step 6: Remove Cosmic Rays", which depends on the blot image,
+        is turned on *and* if there are more than one input images.
 
     .. note::
-    This parameter may be ignored and the step be turned off if
-    "Create Median" step was aborted. When this will occur
-    "Step 6: Remove Cosmic Rays" that depends on blot images
-    will also be turned off.
+        This parameter may be ignored and the step be turned off if
+        "Create Median" step was aborted. When this will occur
+        "Step 6: Remove Cosmic Rays" that depends on blot images
+        will also be turned off.
 
 blot_interp : str{'nearest', 'linear', 'poly3', 'poly5', 'sinc'} (Default = 'poly5')
     This parameter defines the method of interpolation to be used when blotting
@@ -762,8 +761,8 @@ driz_cr : bool (Default = Yes)
     settings.
 
     .. note::
-    This parameter may be ignored and the step be turned off if
-    "Create Median" step was aborted.
+        This parameter may be ignored and the step be turned off if
+        "Create Median" step was aborted.
 
 driz_cr_corr : bool (Default = No)
     Create a cosmic-ray cleaned input image? If set to ``'Yes'`` (`True`),
@@ -872,16 +871,16 @@ final_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = '
         in a significant speed increase.
 
         * ``'lanczos3'``: a Lanczos style kernel, extending a radius of
-        3 pixels from the center of the detection. The Lanczos kernel is
-        a damped and bounded form of the "sinc" interpolator, and is very
-        effective for resampling single images when ``scale=pixfrac=1``.
-        It leads to less resolution loss than other kernels, and typically
-        results in reduced correlated noise in outputs.
+          3 pixels from the center of the detection. The Lanczos kernel is
+          a damped and bounded form of the "sinc" interpolator, and is very
+          effective for resampling single images when ``scale=pixfrac=1``.
+          It leads to less resolution loss than other kernels, and typically
+          results in reduced correlated noise in outputs.
 
-        .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
-        processing as compared to other kernel options. This option
-        should never be used for pixfrac != 1.0, and is not recommended
-        for ``scale!=1.0``.
+            .. warning:: The ``'lanczos3'`` kernel tends to result in much slower
+                processing as compared to other kernel options. This option
+                should never be used for pixfrac != 1.0, and is not recommended
+                for ``scale!=1.0``.
 
     The default for this step is ``'turbo'`` since it is much faster
     than ``'square'``, and it is quite satisfactory for the purposes
@@ -1032,12 +1031,12 @@ updatewcs : bool  (Default = No)
     over-written by this update.
 
     .. note::
-    This parameter was preserved in the API for compatibility purposes with
-    existing user processing pipe-lines. However, it has been removed from
-    the ``TEAL`` interface because it is easy to have it set to ``'Yes'``
-    (especially between consecutive runs of ``AstroDrizzle``) with
-    potentially disastrous effects on input image ``WCS`` (for example it
-    could wipe-out previously aligned ``WCS``).
+        This parameter was preserved in the API for compatibility purposes with
+        existing user processing pipe-lines. However, it has been removed from
+        the ``TEAL`` interface because it is easy to have it set to ``'Yes'``
+        (especially between consecutive runs of ``AstroDrizzle``) with
+        potentially disastrous effects on input image ``WCS`` (for example it
+        could wipe-out previously aligned ``WCS``).
 
 
 See Also

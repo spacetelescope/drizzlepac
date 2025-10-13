@@ -78,10 +78,10 @@ driz_sep_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default 
 
 driz_sep_wt_scl : float (Default = exptime)
     This parameter specifies the weighting factor for input image.
-    If ``driz_sep_wt_scl``\ =\ ``exptime``, then the scaling value will be set
+    If ``driz_sep_wt_scl`` = ``exptime``, then the scaling value will be set
     equal to the exposure time found in the image header. The use of the
     default value is recommended for producing optimal behavior for most
-    scenarious. It is possible to set ``wt_scl``\ =\ 'expsq' for weighting by
+    scenarious. It is possible to set ``wt_scl`` = 'expsq' for weighting by
     the square of the exposure time, which is optimal for read-noise
     dominated images.
 
