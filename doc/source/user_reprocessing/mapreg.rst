@@ -2,7 +2,7 @@
 Region mapping for TweakReg
 ******************************
 
-.. moduleauthor:: Mihai Cara <help@stsci.edu>
+.. moduleauthor:: Mihai Cara
 
 .. automodule:: drizzlepac.mapreg
 

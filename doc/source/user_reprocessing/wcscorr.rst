@@ -5,7 +5,7 @@ These functions provide the basic support for initializing,
 creating and updating the WCS table extension which serves as
 the archive of updates made to the WCS information in the image headers.
 
-.. moduleauthor:: Warren Hack <help@stsci.edu>
+.. moduleauthor:: Warren Hack
 
 .. automodule:: stwcs.wcsutil.wcscorr
    :members:
@@ -30,7 +30,7 @@ This would allow images processed using the new code only can
 then be used with older versions of ``MultiDrizzle``, if the user
 needs such compatibility.
 
-.. moduleauthor:: Warren Hack <help@stsci.edu>
+.. moduleauthor:: Warren Hack
 
 .. automodule:: stwcs.wcsutil.convertwcs
    :members:
