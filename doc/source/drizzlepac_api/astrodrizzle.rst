@@ -6,8 +6,9 @@ Primary User Interface: AstroDrizzle()
 
 .. moduleauthor:: Warren Hack
 
-.. automodapi:: drizzlepac.astrodrizzle
-   :members: AstroDrizzle
-   :undoc-members:
+.. currentmodule:: drizzlepac.astrodrizzle
 
-.. autofunction:: help
+.. automodule:: drizzlepac.astrodrizzle
+   :noindex:
+
+.. autofunction:: drizzlepac.astrodrizzle.AstroDrizzle

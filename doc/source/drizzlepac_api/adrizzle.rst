@@ -13,6 +13,3 @@ twice during processing:
   based on the cosmic-ray masks determined by `~drizzlepac.astrodrizzle.AstroDrizzle`
 
 .. automodapi:: drizzlepac.adrizzle
-   :members:
-   :exclude-members: getHelpAsString
-   :undoc-members:

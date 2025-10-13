@@ -5,10 +5,7 @@
 imageObject Classes
 ***********************
 This class and related sub-classes manage all the instrument-specific
-images for processing by `~drizzlepac.astrodrizzle`.
-
-.. inheritance-diagram:: drizzlepac.imageObject drizzlepac.acsData drizzlepac.wfc3Data drizzlepac.wfpc2Data drizzlepac.nicmosData drizzlepac.stisData
-   :parts: 2
+images for processing by `~drizzlepac.astrodrizzle.AstroDrizzle`.
 
 .. toctree::
    :maxdepth: 3

@@ -195,6 +195,7 @@ Basic example of how to call static yourself from a Python command line,
 using the default parameters for the task.
 
 >>> from drizzlepac import adrizzle
+
 """
 
 import os
