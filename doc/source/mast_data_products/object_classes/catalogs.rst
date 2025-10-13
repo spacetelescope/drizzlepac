@@ -15,12 +15,6 @@ for these classes.
 
 .. automodule:: drizzlepac.catalogs
 
-.. Note:: Inheritance diagrams are disabled when graphviz is not available.
-
-..
-   .. inheritance-diagram:: drizzlepac.catalogs
-      :parts: 2
-
 .. autofunction:: generateCatalog
 
 .. autoclass:: ImageCatalog
