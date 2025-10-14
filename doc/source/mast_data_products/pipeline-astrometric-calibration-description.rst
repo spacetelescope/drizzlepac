@@ -173,7 +173,7 @@ telescope.  The accuracy of the guiding allows for sub-pixel alignment of the
 observations for most of the data and this step applies the distortion model to
 generate the 'pipeline-default' drizzle products.
 
-The default products get generated using the `~drizzlepac.astrodrizzle.AstroDrizzle` task.  This initial
+The default products get generated using the `~drizzlepac.astrodrizzle` task.  This initial
 run relies on a couple of default settings to generate the default drizzle products;
 namely,
 

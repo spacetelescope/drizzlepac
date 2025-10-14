@@ -746,11 +746,16 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
     return images.pop(0)
 
 
+#
+# Primary interface for running this task from Python
+#
 def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
              refimagefindcfg=None, **input_dict):
     """
-    Primary interface for running this task from Python
     """
+    # support input of filenames from command-line without a parameter name
+    # then copy this into input_dict for merging with TEAL ConfigObj parameters
+
     # Get default or user-specified configobj for primary task
     if isinstance(configobj, (str, bytes)):
         if configobj == 'defaults':
@@ -761,7 +766,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
                 raise RuntimeError('Cannot find .cfg file: '+configobj)
             configobj = teal.load(configobj, strict=False)
     elif configobj is None:
-        # load astrodrizzle parameter defaults as described in the docs:
+        # load 'astrodrizzle' parameter defaults as described in the docs:
         configobj = teal.load(__taskname__, defaults=True)
 
     if files and not util.is_blank(files):
