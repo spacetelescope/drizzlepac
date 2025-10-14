@@ -38,11 +38,12 @@ reference : str
 
 outdata : str
     Filename for output blotted image.
-    
-|
 
-configObj :
-    |
+configObj : object, optional
+    Contains all the parameters needed to control the blot operation.
+    
+    .. warning::
+       The following parameters are a part of the configObj object.
 
 coeffs : bool (Default Value = True)
     This parameters specifies whether or not to use the header-based distortion
@@ -328,8 +329,45 @@ def run(configObj,wcsmap=None):
 def runBlot(imageObjectList, output_wcs, configObj={},
             wcsmap=wcs_functions.WCSMap, procSteps=None):
     """
-    runBlot(imageObjectList, output_wcs, configObj={},
-            wcsmap=wcs_functions.WCSMap, procSteps=None)
+    Top-level interface for running the blot step from within AstroDrizzle.
+
+    This function performs the blot operation on a list of input images to create 
+    distorted versions that can be compared with the original input images for 
+    cosmic ray detection. It takes the median (drizzled) image and "blots" it 
+    back to match the original distorted geometry of each input image.
+
+    Parameters
+    ----------
+    imageObjectList : list
+        List of imageObject instances to be processed through the blot step.
+        Each imageObject contains the input image data and associated metadata.
+        
+    output_wcs : WCS object
+        World Coordinate System object that defines the coordinate transformation
+        for the output (median/drizzled) image that will be blotted back to the
+        input image geometries.
+        
+    configObj : dict, optional
+        Configuration object containing all the parameters needed to control
+        the blot operation, including interpolation method, sky handling, and
+        other blot-specific settings. Default is an empty dictionary.
+        
+    wcsmap : WCSMap, optional
+        Custom mapping class to use for coordinate transformations between
+        the drizzled and blotted image coordinate systems. Default is 
+        `wcs_functions.WCSMap`.
+        
+    procSteps : ProcessingSteps, optional
+        Object used to track and log the progress of processing steps within
+        the AstroDrizzle pipeline. If provided, the blot step will be logged.
+        Default is None.
+
+    Notes
+    -----
+    This function serves as the high-level interface called by AstroDrizzle to 
+    perform the blot operation. It checks whether the blot step should be 
+    performed based on the configuration settings, and if so, calls the 
+    lower-level `run_blot` function to perform the actual blotting operation.
     """
     if procSteps is not None:
         procSteps.addStep(PROCSTEPS_NAME)
