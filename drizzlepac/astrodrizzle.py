@@ -1454,11 +1454,6 @@ def run(configobj, wcsmap=None, input_dict=None):
             del imgObjList
             del outwcs
 
-
-AstroDrizzle.__doc__ = util._def_help_functions(
-    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
-)
-
 _fidx = 0
 
 def _dbg_dump_virtual_outputs(imgObjList):

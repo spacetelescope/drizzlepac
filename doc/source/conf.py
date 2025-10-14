@@ -150,9 +150,6 @@ autosummary_generate = True
 
 automodapi_toctreedirnm = 'api'
 
-# Suppress certain warnings
-suppress_warnings = ['toc.not_included', 'ref.obj']
-
 # Class documentation should contain *both* the class docstring and
 # the __init__ docstring
 autoclass_content = "both"
@@ -168,16 +165,6 @@ graphviz_dot_args = [
     '-Gfontsize=10',
     '-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif'
 ]
-
-# Handle missing graphviz gracefully - disable graphviz extensions if dot is not available
-import shutil
-if shutil.which('dot') is None:
-    # Remove graphviz-related extensions when dot is not available
-    if 'sphinx.ext.graphviz' in extensions:
-        extensions.remove('sphinx.ext.graphviz')
-    if 'sphinx.ext.inheritance_diagram' in extensions:
-        extensions.remove('sphinx.ext.inheritance_diagram')
-
 
 # -- Options for HTML output ---------------------------------------------------
 
