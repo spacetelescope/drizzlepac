@@ -40,10 +40,8 @@ outdata : str
     Filename for output blotted image.
 
 configObj : object, optional
-    Contains all the parameters needed to control the blot operation.
-    
-    .. warning::
-       The following parameters are a part of the configObj object.
+    Contains all the parameters needed to control the blot operation. 
+    All of the following parameters are a part of the configObj object.
 
 coeffs : bool (Default Value = True)
     This parameters specifies whether or not to use the header-based distortion
