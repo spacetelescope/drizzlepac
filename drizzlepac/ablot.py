@@ -354,8 +354,7 @@ def runBlot(imageObjectList, output_wcs, configObj={},
         
     wcsmap : WCSMap, optional
         Custom mapping class to use for coordinate transformations between
-        the drizzled and blotted image coordinate systems. Default is 
-        `wcs_functions.WCSMap`.
+        the drizzled and blotted image coordinate systems.
         
     procSteps : ProcessingSteps, optional
         Object used to track and log the progress of processing steps within
