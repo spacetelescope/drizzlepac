@@ -364,7 +364,7 @@ def runBlot(imageObjectList, output_wcs, configObj={},
     This function serves as the high-level interface called by AstroDrizzle to 
     perform the blot operation. It checks whether the blot step should be 
     performed based on the configuration settings, and if so, calls the 
-    lower-level `run_blot` function to perform the actual blotting operation.
+    lower-level ``run_blot`` function to perform the actual blotting operation.
     """
     if procSteps is not None:
         procSteps.addStep(PROCSTEPS_NAME)
