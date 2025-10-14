@@ -16,15 +16,15 @@ detection steps.
 
 Aside from the input parameters, this step requires:
 
-    * valid input images with SCI extensions
-    * valid distortion coefficients tables
-    * any optional secondary distortion correction images
-    * numpy object (in memory) for static mask
+- valid input images with ``SCI`` extensions
+- valid distortion coefficient tables
+- any optional secondary distortion correction images
+- a NumPy object (in memory) for the static mask
 
 This step produces:
 
-    * singly drizzled science image (simple FITS format)
-    * singly drizzled weight images (simple FITS format)
+- singly drizzled science image (simple ``FITS`` format)
+- singly drizzled weight images (simple ``FITS`` format)
 
 These images all have the same WCS based on the original input parameters
 and those provided for this step; specifically, output shape, pixel size,
@@ -43,24 +43,20 @@ driz_sep_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default 
     specifies the form of the kernel function used to distribute flux onto
     the separate output images. The current options are:
 
-    * **square**: original classic drizzling kernel
-    * **point**: this kernel is a point so each input pixel can only
-        contribute to the single pixel that is closest to the output
-        position. It is equivalent to the limit as ``pixfrac`` -> 0,
-        and is very fast.
-    * **gaussian**: this kernel is a circular gaussian with a FWHM equal
-        to the value of ``pixfrac``, measured in input pixels.
-    * **turbo**: this is similar to kernel="square" but the box is always
-        the same shape and size on the output grid, and is always aligned
-        with the X and Y axes. This may result in a significant speed
-        increase.
-    * **lanczos3**: a Lanczos style kernel, extending a radius of 3
-        pixels from the center of the detection. The Lanczos kernel
-        is a damped and bounded form of the "sinc" interpolator,
-        and is very effective for resampling single images
-        when ``scale``\ =\ ``pixfrac``\ =1. It leads to less resolution loss
-        than other kernels, and typically results in reduced correlated
-        noise in outputs.
+        - **square**: original classic drizzling kernel.
+        - **point**: this kernel is a point so each input pixel can only
+            contribute to the pixel closest to the output position. It is
+            equivalent to the limit as ``pixfrac`` → 0 and is very fast.
+        - **gaussian**: circular Gaussian with a FWHM equal to the value of
+            ``pixfrac``, measured in input pixels.
+        - **turbo**: similar to ``kernel="square"`` but the box is always the
+            same shape and size on the output grid and is aligned with the ``X``
+            and ``Y`` axes. This can provide a significant speed increase.
+        - **lanczos3**: Lanczos-style kernel extending three pixels from the
+            centre of the detection. The Lanczos kernel is a damped, bounded form
+            of the sinc interpolator and is effective for resampling single images
+            when ``scale = pixfrac = 1``. It leads to less resolution loss than
+            other kernels and typically results in reduced correlated noise.
 
     .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
         produce reasonable results, we cannot guarantee that they will properly 
@@ -174,20 +170,20 @@ working with the stand alone interfaces, it is assumed that the user has
 already taken care of backing up their original datafiles as the input
 file with be directly altered.
 
-There are two user interface function for this task, one to allow you to
-create seperately drizzled images of each image in your list and the other
-to create one single output drizzled image, which is the combination of all
-of them::
+There are two user-interface functions for this task: one to create
+separately drizzled images for every exposure in the list and another to
+generate a single combined drizzle product::
 
-    drizSeparate(imageObjectList,output_wcs,configObj,wcsmap=wcs_functions.WCSMap)
-    
-    drizFinal(imageObjectList, output_wcs, configObj,build=None,wcsmap=wcs_functions.WCSMap)
-    
+    drizSeparate(imageObjectList, output_wcs, configObj,
+                 wcsmap=wcs_functions.WCSMap)
+
+    drizFinal(imageObjectList, output_wcs, configObj, build=None,
+              wcsmap=wcs_functions.WCSMap)
+
     if configObj[single_step]['driz_separate']:
-        drizSeparate(imgObjList,outwcs,configObj,wcsmap=wcsmap)
-        
+        drizSeparate(imgObjList, outwcs, configObj, wcsmap=wcsmap)
     else:
-        drizFinal(imgObjList,outwcs,configObj,wcsmap=wcsmap)
+        drizFinal(imgObjList, outwcs, configObj, wcsmap=wcsmap)
 
 Examples
 --------
