@@ -102,25 +102,25 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
         the same WCS as the final combined output frame. These images are used
         to create the median image, needed for cosmic ray rejection.
 
-    driz_sep_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'turbo')
-        Used for the initial separate drizzling operation only, this parameter
-        specifies the form of the kernel function used to distribute flux onto
-                the separate output images. The current options are:
+        driz_sep_kernel : {'square', 'point', 'turbo', 'gaussian', 'lanczos3'} (Default = 'turbo')
+                Used for the initial separate drizzling operation only, this parameter
+                specifies the form of the kernel function used to distribute flux onto
+                        the separate output images. The current options are:
 
-            - **square**: original classic drizzling kernel.
-                - **point**: this kernel is a point so each input pixel can only
-                    contribute to the pixel closest to the output position. It is
-                    equivalent to the limit as ``pixfrac`` approaches 0 and is very fast.
-            - **gaussian**: circular Gaussian with a FWHM equal to the value of
-                ``pixfrac``, measured in input pixels.
-            - **turbo**: similar to ``kernel="square"`` but the box is always the
-                same shape and size on the output grid and is aligned with the ``X``
-                and ``Y`` axes. This can provide a significant speed increase.
-                - **lanczos3**: Lanczos-style kernel extending three pixels from the
-                    center of the detection. The Lanczos kernel is a damped, bounded form
-                of the sinc interpolator and is effective for resampling single images
-                when ``scale = pixfrac = 1``. It leads to less resolution loss than
-                other kernels and typically results in reduced correlated noise.
+                        - **square**: original classic drizzling kernel.
+                        - **point**: this kernel is a point so each input pixel can only
+                            contribute to the pixel closest to the output position. It is
+                            equivalent to the limit as ``pixfrac`` approaches 0 and is very fast.
+                        - **gaussian**: circular Gaussian with a FWHM equal to the value of
+                            ``pixfrac``, measured in input pixels.
+                        - **turbo**: similar to ``kernel="square"`` but the box is always the
+                            same shape and size on the output grid and is aligned with the ``X``
+                            and ``Y`` axes. This can provide a significant speed increase.
+                        - **lanczos3**: Lanczos-style kernel extending three pixels from the
+                            center of the detection. The Lanczos kernel is a damped, bounded form
+                            of the sinc interpolator and is effective for resampling single images
+                            when ``scale = pixfrac = 1``. It leads to less resolution loss than
+                            other kernels and typically results in reduced correlated noise.
 
         .. warning:: While the ``'gaussian'`` and ``'lanczos3'`` kernels may
             produce reasonable results, we cannot guarantee that they will properly
