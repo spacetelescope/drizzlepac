@@ -6,15 +6,16 @@ identifying cosmic-rays, removing distortion, and then combining the images
 after removing the identified cosmic-rays.
 
 This process involves a number of steps, such as:
-*  Processing the input images and input parameters
-*  Creating a static mask
-*  Performing sky subtraction
-*  Drizzling onto separate output images
-*  Creating the median image
-*  Blotting the median image
-*  Identifying and flagging cosmic-rays
-*  Final combination
-*  Cleaning-up of temporary files (when applicable)
+
+- Processing the input images and input parameters
+- Creating a static mask
+- Performing sky subtraction
+- Drizzling onto separate output images
+- Creating the median image
+- Blotting the median image
+- Identifying and flagging cosmic-rays
+- Final combination
+- Cleaning up temporary files (when applicable)
 
 A full description of this process can be found
 in the `DrizzlePac Handbook <http://drizzlepac.stsci.edu>`_.
@@ -179,13 +180,12 @@ def AstroDrizzle(
 
     proc_unit : str (Default = 'native')
         The units to be used for the final output drizzled product. Valid
-        values and definitions are:
+                values and definitions are:
 
-                * ``'native'``: Output DRZ product and input 'values' given in the native
-                    units of the input image.
-
-                * ``'electrons'``: Output DRZ product and input 'values' given in units
-                    of electrons.
+                - ``'native'``: Output ``DRZ`` product and input values given in the
+                    native units of the input image.
+                - ``'electrons'``: Output ``DRZ`` product and input values given in
+                    units of electrons.
 
     coeffs : bool (Default = Yes)
         This parameter determines whether or not to use the coefficients stored
