@@ -16,6 +16,11 @@
 # Check Sphinx version
 import os
 import sys
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'src'))
+
 from configparser import ConfigParser
 from datetime import datetime
 
@@ -31,7 +36,6 @@ def setup(app):
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../../src/'))
 
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.3'

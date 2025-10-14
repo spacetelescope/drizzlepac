@@ -654,4 +654,4 @@ Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``y
 
 See Also
 --------
-drizzlepac.astrodrizzle.AstroDrizzle
+:func:`~drizzlepac.astrodrizzle.AstroDrizzle`
