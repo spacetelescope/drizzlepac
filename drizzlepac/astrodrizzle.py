@@ -52,6 +52,7 @@ from . import __version__
 
 __taskname__ = "astrodrizzle"
 
+__all__ = ['AstroDrizzle', 'run']
 
 # Pointer to the included Python class for WCS-based coordinate transformations
 PYTHON_WCSMAP = wcs_functions.WCSMap
