@@ -9,11 +9,14 @@ for each input chip. Those positions can be transformed to undistorted sky
 positions, written out to files, or plotted using various methods defined
 for these classes.
 
-.. moduleauthor:: Warren Hack
+.. moduleauthor:: Warren Hack <help@stsci.edu>
 
 .. currentmodule:: drizzlepac.catalogs
 
 .. automodule:: drizzlepac.catalogs
+
+.. inheritance-diagram:: drizzlepac.catalogs
+   :parts: 2
 
 .. autofunction:: generateCatalog
 

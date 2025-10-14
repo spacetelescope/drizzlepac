@@ -5,6 +5,9 @@ Image Class
 ***********
 .. moduleauthor:: Warren Hack
 
+.. inheritance-diagram:: drizzlepac.imgclasses
+   :parts: 2
+
 .. automodule:: drizzlepac.imgclasses
 
 .. currentmodule:: drizzlepac.imgclasses
