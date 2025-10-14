@@ -187,7 +187,7 @@ except ImportError:
 
 from . import __version__
 
-__all__ = ['blot', 'runBlot', 'help']
+__all__ = ['blot', 'runBlot']
 
 __taskname__ = 'ablot'
 STEP_NUM = 5
