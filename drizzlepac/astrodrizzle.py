@@ -137,6 +137,7 @@ def AstroDrizzle(
     -----
 
     The following parameters are specific to the ``AstroDrizzle`` task itself
+    as a part of the configObj.
 
     output : str (Default = '')
         The rootname for the output drizzled products. This step can result
