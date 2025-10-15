@@ -10,8 +10,6 @@ cosmic-rays.
 """
 
 import os
-import warnings
-
 import numpy as np
 from stsci.tools import fileutil, logutil
 from . import outputimage
@@ -24,11 +22,9 @@ try:
     from . import cdriz
 except ImportError:
     cdriz = None
-    warnings.warn(
-        "Coordinate transformation and image resampling library 'cdriz' not found. "
-        "Runtime blot operations will fail until the C extensions are built.",
-        ImportWarning,
-    )
+    print('\n Coordinate transformation and image resampling library NOT found!')
+    print('\n Please check the installation of this package to insure C code was built successfully.')
+    raise ImportError
 
 from . import __version__
 
@@ -575,12 +571,6 @@ def do_blot(source, source_wcs, blot_wcs, exptime, coeffs = True,
             `~drizzlepac.wcs_functions.WCSMap`.
 
     """
-    if cdriz is None:
-        raise RuntimeError(
-            "cdriz extension is required for blotting operations. "
-            "Rebuild drizzlepac with compiled C extensions to enable 'ablot'."
-        )
-
     _outsci = np.zeros(blot_wcs.array_shape, dtype=np.float32)
 
     # Now pass numpy objects to callable version of Blot...
