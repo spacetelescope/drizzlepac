@@ -16,17 +16,38 @@
 # Check Sphinx version
 import os
 import sys
+import types
+from unittest.mock import MagicMock
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, project_root)
 sys.path.insert(0, os.path.join(project_root, 'src'))
 
+class _MockModule(types.ModuleType):
+    def __getattr__(self, item):
+        mock_attr = MagicMock(name=f'{self.__name__}.{item}')
+        setattr(self, item, mock_attr)
+        return mock_attr
+
+
+if os.environ.get('READTHEDOCS') == 'True':
+    for module_name in ('drizzlepac.cdriz',):
+        if module_name not in sys.modules:
+            mock_module = _MockModule(module_name)
+            mock_module.__file__ = f'<mocked {module_name}>'
+            sys.modules[module_name] = mock_module
+
 from configparser import ConfigParser
 from datetime import datetime
 
 
-import drizzlepac
-from drizzlepac import __version__ as version
+version_ns = {}
+version_path = os.path.join(project_root, 'drizzlepac', 'version.py')
+with open(version_path, 'r', encoding='utf-8') as version_file:
+    # Execute version file in isolated namespace to avoid importing drizzlepac during config load
+    exec(version_file.read(), version_ns)
+
+version = version_ns['__version__']
 
 conf = ConfigParser()
 
