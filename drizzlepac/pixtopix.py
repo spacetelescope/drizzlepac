@@ -232,8 +232,3 @@ def run(configObj):
          x=configObj['x'], y=configObj['y'], coordfile=coordfile,
          colnames=colnames, separator=sep, precision=configObj['precision'],
          output=outfile, verbose=configObj['verbose'])
-
-
-__doc__ = util._def_help_functions(
-    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
-)
