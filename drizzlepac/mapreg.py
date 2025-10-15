@@ -74,30 +74,31 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
 
         This paramater can be provided in any of several forms:
 
-        - filename of a single image
-        - comma-separated list of filenames
-        - ``@-file`` filelist containing list of desired input region filenames
+        * filename of a single image
+        * comma-separated list of filenames
+        * ``@-file`` filelist containing list of desired input region filenames
 
         The ``@-file`` filelist needs to be provided as an ASCII text file
         containing a list of filenames for all input region files with one
         filename on each line of the file.
 
-    images : string or list of strings (Default = ``*.fits``)
-        FITS images onto which the region files ``input_reg`` will be mapped. These
-        image files must contain WCS information in their headers in order to
-        convert ``input_reg`` from sky coordinates to correct image coordinates.
-        This paramater can be provided in any of several forms:
+        images : string or list of strings (Default = ``*.fits``)
+                FITS images onto which the region files ``input_reg`` will be mapped. These
+                image files must contain WCS information in their headers in order to
+                convert ``input_reg`` from sky coordinates to correct image coordinates.
 
-        - filename of a single image
-        - filename of an association (ASN)table
-        - wild-card specification for files in directory (using ``*``, ``?`` etc.)
-        - comma-separated list of filenames
-        - ``@-file`` filelist containing list of desired input filenames
-        (and optional inverse variance map filenames)
+                This paramater can be provided in any of several forms:
 
-        The ``@-file`` filelist needs to be provided as an ASCII text file
-        containing a list of filenames for all input images (to which ``input_reg``
-        regions should be mapped) with one filename on each line of the file.
+                * filename of a single image
+                * filename of an association (ASN)table
+                * wild-card specification for files in a directory (using ``*``, ``?`` etc.)
+                * comma-separated list of filenames
+                * ``@-file`` filelist containing list of desired input filenames
+                    (and optional inverse variance map filenames)
+
+                The ``@-file`` filelist needs to be provided as an ASCII text file
+                containing a list of filenames for all input images (to which ``input_reg``
+                regions should be mapped) with one filename on each line of the file.
 
     img_wcs_ext : string or list of strings (Default = ``SCI``)
         Extension name, extension name and version, or extension number of FITS
@@ -137,23 +138,24 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
             This parameter is reserved for future use and it is not
             available through ``TEAL`` interface.
 
-    chip_reg : string or list of strings (Default = '')
-        Input region files in image CS associated with each extension specified by
-        the ``img_wcs_ext`` parameter above. These regions will be added directly
-        (without any transformation) to the ``input_reg`` regions mapped to each
-        extension of the input ``images``. These regions must be specified in
-        image-like coordinates. Typically, these regions should contain "exclude"
-        regions to exclude parts of the image specific to the detector **chip**
-        (e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
-        images) from being used for source finding.
-        This paramater can be provided in one of the following forms:
+        chip_reg : string or list of strings (Default = '')
+                Input region files in image CS associated with each extension specified by
+                the ``img_wcs_ext`` parameter above. These regions will be added directly
+                (without any transformation) to the ``input_reg`` regions mapped to each
+                extension of the input ``images``. These regions must be specified in
+                image-like coordinates. Typically, these regions should contain "exclude"
+                regions to exclude parts of the image specific to the detector **chip**
+                (e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
+                images) from being used for source finding.
 
-        - filename of a single image (if ``img_wcs_ext`` specifies a single FITS
-        extension);
-        - comma-separated list of filenames (if ``img_wcs_ext`` specifies more than
-        one extension) or ``None`` for extensions that do not need any
-        chip-specific regions to be excluded/included;
-        - '' (empty string) or None if no chip-specific region files are provided.
+                This paramater can be provided in one of the following forms:
+
+                * filename of a single image (if ``img_wcs_ext`` specifies a single FITS
+                    extension);
+                * comma-separated list of filenames (if ``img_wcs_ext`` specifies more than
+                    one extension) or ``None`` for extensions that do not need any
+                    chip-specific regions to be excluded/included;
+                * '' (empty string) or None if no chip-specific region files are provided.
 
         The number of regions ideally must be equal to the number of extensions
         specified by the ``img_wcs_ext`` parameter. If the number of chip-specific
