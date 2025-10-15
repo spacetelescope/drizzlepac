@@ -41,13 +41,7 @@ from configparser import ConfigParser
 from datetime import datetime
 
 
-version_ns = {}
-version_path = os.path.join(project_root, 'drizzlepac', 'version.py')
-with open(version_path, 'r', encoding='utf-8') as version_file:
-    # Execute version file in isolated namespace to avoid importing drizzlepac during config load
-    exec(version_file.read(), version_ns)
-
-version = version_ns['__version__']
+from drizzlepac import __version__ as version
 
 conf = ConfigParser()
 
