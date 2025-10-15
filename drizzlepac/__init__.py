@@ -14,63 +14,104 @@ supported by this package include:
 cosmic-ray cleaned, and combined image as a FITS file.
 
 """
-import os
-import re
-import sys
 import contextlib
+import importlib
+from typing import TYPE_CHECKING
 
 from .version import __version__
 
-with contextlib.redirect_stdout(None):  
-  import stsci.skypac
+_OPTIONAL_IMPORTS = ("stsci.skypac",)
 
-from . import ablot
-from . import adrizzle
-from . import astrodrizzle
-from . import buildmask
-from . import createMedian
-from . import drizCR
-from . import imageObject
-from . import mapreg
-from . import mdzhandler
-from . import outputimage
-from . import photeq
-from . import processInput
-from . import resetbits
-from . import sky
-from . import staticMask
-from . import util
-from . import wcs_functions
+for _name in _OPTIONAL_IMPORTS:
+    with contextlib.suppress(Exception):
+        with contextlib.redirect_stdout(None):
+            importlib.import_module(_name)
+
+# Lazily import task modules so package import does not require compiled extensions.
+_LAZY_SUBMODULES = {
+        "ablot": "drizzlepac.ablot",
+        "adrizzle": "drizzlepac.adrizzle",
+        "align": "drizzlepac.align",
+        "astrodrizzle": "drizzlepac.astrodrizzle",
+        "buildmask": "drizzlepac.buildmask",
+        "buildwcs": "drizzlepac.buildwcs",
+        "catalogs": "drizzlepac.catalogs",
+        "createMedian": "drizzlepac.createMedian",
+        "drizCR": "drizzlepac.drizCR",
+        "haputils": "drizzlepac.haputils",
+        "imageObject": "drizzlepac.imageObject",
+        "imagefindpars": "drizzlepac.imagefindpars",
+        "imgclasses": "drizzlepac.imgclasses",
+        "make_custom_mosaic": "drizzlepac.make_custom_mosaic",
+        "mapreg": "drizzlepac.mapreg",
+        "mdzhandler": "drizzlepac.mdzhandler",
+        "outputimage": "drizzlepac.outputimage",
+        "photeq": "drizzlepac.photeq",
+        "pixreplace": "drizzlepac.pixreplace",
+        "pixtopix": "drizzlepac.pixtopix",
+        "pixtosky": "drizzlepac.pixtosky",
+        "processInput": "drizzlepac.processInput",
+        "refimagefindpars": "drizzlepac.refimagefindpars",
+        "resetbits": "drizzlepac.resetbits",
+        "runastrodriz": "drizzlepac.runastrodriz",
+        "sky": "drizzlepac.sky",
+        "skytopix": "drizzlepac.skytopix",
+        "staticMask": "drizzlepac.staticMask",
+        "tweakback": "drizzlepac.tweakback",
+        "tweakreg": "drizzlepac.tweakreg",
+        "tweakutils": "drizzlepac.tweakutils",
+        "updatenpol": "drizzlepac.updatenpol",
+        "util": "drizzlepac.util",
+        "wcs_functions": "drizzlepac.wcs_functions",
+}
+
+if TYPE_CHECKING:  # pragma: no cover - aid static analyzers without runtime import
+    from . import ablot as ablot  # noqa: F401
+    from . import adrizzle as adrizzle  # noqa: F401
+    from . import align as align  # noqa: F401
+    from . import astrodrizzle as astrodrizzle  # noqa: F401
+    from . import buildmask as buildmask  # noqa: F401
+    from . import buildwcs as buildwcs  # noqa: F401
+    from . import catalogs as catalogs  # noqa: F401
+    from . import createMedian as createMedian  # noqa: F401
+    from . import drizCR as drizCR  # noqa: F401
+    from . import haputils as haputils  # noqa: F401
+    from . import imageObject as imageObject  # noqa: F401
+    from . import imagefindpars as imagefindpars  # noqa: F401
+    from . import imgclasses as imgclasses  # noqa: F401
+    from . import make_custom_mosaic as make_custom_mosaic  # noqa: F401
+    from . import mapreg as mapreg  # noqa: F401
+    from . import mdzhandler as mdzhandler  # noqa: F401
+    from . import outputimage as outputimage  # noqa: F401
+    from . import photeq as photeq  # noqa: F401
+    from . import pixreplace as pixreplace  # noqa: F401
+    from . import pixtopix as pixtopix  # noqa: F401
+    from . import pixtosky as pixtosky  # noqa: F401
+    from . import processInput as processInput  # noqa: F401
+    from . import refimagefindpars as refimagefindpars  # noqa: F401
+    from . import resetbits as resetbits  # noqa: F401
+    from . import runastrodriz as runastrodriz  # noqa: F401
+    from . import sky as sky  # noqa: F401
+    from . import skytopix as skytopix  # noqa: F401
+    from . import staticMask as staticMask  # noqa: F401
+    from . import tweakback as tweakback  # noqa: F401
+    from . import tweakreg as tweakreg  # noqa: F401
+    from . import tweakutils as tweakutils  # noqa: F401
+    from . import updatenpol as updatenpol  # noqa: F401
+    from . import util as util  # noqa: F401
+    from . import wcs_functions as wcs_functions  # noqa: F401
 
 
-# These modules provide the user-interfaces to coordinate transformation tasks
-from . import pixtosky
-from . import skytopix
-from . import pixtopix
+def __getattr__(name):
+    if name in _LAZY_SUBMODULES:
+        module = importlib.import_module(_LAZY_SUBMODULES[name])
+        globals()[name] = module
+        return module
+    raise AttributeError(f"module 'drizzlepac' has no attribute '{name}'")
 
-# The following modules are for 'tweakreg' and are included here to make
-# it easier to get to this code interactively
-try:
-    from . import tweakreg, catalogs, imgclasses, tweakutils, mapreg, photeq, \
-                  imagefindpars, refimagefindpars
-except ImportError as e :
-    print('The libraries needed for "tweakreg" were not available!')
-    print('None of the code related to that task can be used at this time.')
-    print('   (If you want to report this error, the details are "%s")'%(str(e)))
 
-# Add updatenpol to the list of tasks imported automatically here
-from . import updatenpol
-from . import buildwcs
-
-# This module supports applying WCS from _drz to _flt files
-from . import tweakback
-
-# This module enables users to replace NaNs in images with another value easily
-from . import pixreplace
-
-from . import haputils
-from . import align
-from . import runastrodriz
+def __dir__():
+    return sorted(set(globals()) | set(_LAZY_SUBMODULES))
 
 
 def help():
