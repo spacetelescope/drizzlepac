@@ -4,7 +4,7 @@
 Updatenpol
 **********
 
-.. moduleauthor:: Warren Hack <help@stsci.edu>
+.. moduleauthor:: Warren Hack
 
 .. automodule:: drizzlepac.updatenpol
    :members:
