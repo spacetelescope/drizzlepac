@@ -17,6 +17,11 @@
 import os
 import sys
 
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'src'))
+
 # avoid importing cdriz on readthedocs
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
@@ -24,16 +29,11 @@ if on_rtd:
     version = 'latest'
 else:
     from drizzlepac import __version__ as version
-
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
+    
 
 from configparser import ConfigParser
 from datetime import datetime
 
-
-from drizzlepac import __version__ as version
 
 conf = ConfigParser()
 
