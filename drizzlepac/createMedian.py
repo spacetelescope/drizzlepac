@@ -6,7 +6,6 @@ Create a median image from the singly drizzled images.
 :License: :doc:`/LICENSE`
 
 """
-
 import os
 import sys
 import math
@@ -24,14 +23,14 @@ from .adrizzle import STEP_NUM_SINGLE
 
 from . import __version__
 
-__all__ = ["median", "createMedian"]
+__all__ = ['median', 'createMedian']
 
 # look in drizzlepac for createMedian.cfg:
 __taskname__ = "createMedian"
 STEP_NUM = 4  # this relates directly to the syntax in the cfg file
 PROCSTEPS_NAME = "Create Median"
 
-BUFSIZE = 1024 * 1024  # 1MB cache size
+BUFSIZE = 1024*1024   # 1MB cache size
 
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
@@ -178,9 +177,8 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
     else:
         raise ValueError("Please supply an input image")
 
-    configObj = util.getDefaultConfigObj(
-        __taskname__, configObj, inputDict, loadOnly=(not editpars)
-    )
+    configObj = util.getDefaultConfigObj(__taskname__, configObj, inputDict,
+                                         loadOnly=(not editpars))
     if configObj is None:
         return
 
@@ -191,7 +189,8 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
 # this is the function that will be called from TEAL
 def run(configObj):
     imgObjList, outwcs = processInput.setCommonInput(
-        configObj, createOutwcs=False
+        configObj,
+        createOutwcs=False
     )  # outwcs is not needed here
     createMedian(imgObjList, configObj)
 
@@ -200,7 +199,7 @@ def run(configObj):
 # ## Top-level interface from inside AstroDrizzle  ##
 # ###################################################
 def createMedian(imgObjList, configObj, procSteps=None):
-    """Top-level interface to createMedian step called from top-level
+    """ Top-level interface to createMedian step called from top-level
     AstroDrizzle.
 
     This function parses the input parameters then calls the `_median()`
@@ -216,19 +215,19 @@ def createMedian(imgObjList, configObj, procSteps=None):
         procSteps.addStep(PROCSTEPS_NAME)
 
     step_name = util.getSectionName(configObj, STEP_NUM)
-    if not configObj[step_name]["median"]:
-        log.info("Median combination step not performed.")
+    if not configObj[step_name]['median']:
+        log.info('Median combination step not performed.')
         if procSteps is not None:
             procSteps.endStep(PROCSTEPS_NAME, reason="off", delay_msg=True)
         return
 
     paramDict = configObj[step_name]
-    paramDict["proc_unit"] = configObj["proc_unit"]
+    paramDict['proc_unit'] = configObj['proc_unit']
 
     # include whether or not compression was performed
     driz_sep_name = util.getSectionName(configObj, STEP_NUM_SINGLE)
     driz_sep_paramDict = configObj[driz_sep_name]
-    paramDict["compress"] = driz_sep_paramDict["driz_sep_compress"]
+    paramDict['compress'] = driz_sep_paramDict['driz_sep_compress']
 
     log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
     util.printParams(paramDict, log=log)
@@ -252,32 +251,32 @@ def createMedian(imgObjList, configObj, procSteps=None):
 # this is the internal function, the user called function is below
 def _median(imageObjectList, paramDict):
     """Create a median image from the list of image Objects
-    that has been given.
+       that has been given.
     """
-    newmasks = paramDict["median_newmasks"]
-    comb_type = paramDict["combine_type"].lower()
-    nlow = paramDict["combine_nlow"]
-    nhigh = paramDict["combine_nhigh"]
-    grow = paramDict["combine_grow"] if "minmed" in comb_type else 0
-    maskpt = paramDict["combine_maskpt"]
-    proc_units = paramDict["proc_unit"]
-    compress = paramDict["compress"]
-    bufsizeMB = paramDict["combine_bufsize"]
+    newmasks = paramDict['median_newmasks']
+    comb_type = paramDict['combine_type'].lower()
+    nlow = paramDict['combine_nlow']
+    nhigh = paramDict['combine_nhigh']
+    grow = paramDict['combine_grow'] if 'minmed' in comb_type else 0
+    maskpt = paramDict['combine_maskpt']
+    proc_units = paramDict['proc_unit']
+    compress = paramDict['compress']
+    bufsizeMB = paramDict['combine_bufsize']
 
     sigma = paramDict["combine_nsigma"]
     sigmaSplit = sigma.split()
     nsigma1 = float(sigmaSplit[0])
     nsigma2 = float(sigmaSplit[1])
 
-    if paramDict["combine_lthresh"] is None:
+    if paramDict['combine_lthresh'] is None:
         lthresh = None
     else:
-        lthresh = float(paramDict["combine_lthresh"])
+        lthresh = float(paramDict['combine_lthresh'])
 
-    if paramDict["combine_hthresh"] is None:
+    if paramDict['combine_hthresh'] is None:
         hthresh = None
     else:
-        hthresh = float(paramDict["combine_hthresh"])
+        hthresh = float(paramDict['combine_hthresh'])
 
     # the name of the output median file isdefined in the output wcs object and
     # stuck in the image.outputValues["outMedian"] dict of every imageObject
@@ -307,43 +306,40 @@ def _median(imageObjectList, paramDict):
             virtual = image.inmemory
 
         det_gain = image.getGain(1)
-        img_exptime = image._image["sci", 1]._exptime
+        img_exptime = image._image['sci', 1]._exptime
         native_units = image.native_units
         native_units_lc = native_units.lower()
 
-        if proc_units.lower() == "native":
-            if native_units_lc not in [
-                "counts",
-                "electrons",
-                "counts/s",
-                "electrons/s",
-            ]:
-                raise ValueError("Unexpected native units: '{}'".format(native_units))
+        if proc_units.lower() == 'native':
+            if native_units_lc not in ['counts', 'electrons', 'counts/s',
+                                       'electrons/s']:
+                raise ValueError("Unexpected native units: '{}'"
+                                 .format(native_units))
 
             if lthresh is not None:
-                if native_units_lc.startswith("counts"):
+                if native_units_lc.startswith('counts'):
                     lthresh *= det_gain
-                if native_units_lc.endswith("/s"):
+                if native_units_lc.endswith('/s'):
                     lthresh *= img_exptime
 
             if hthresh is not None:
-                if native_units_lc.startswith("counts"):
+                if native_units_lc.startswith('counts'):
                     hthresh *= det_gain
-                if native_units_lc.endswith("/s"):
+                if native_units_lc.endswith('/s'):
                     hthresh *= img_exptime
 
         singleDriz = image.getOutputName("outSingle")
-        singleDriz_name = image.outputNames["outSingle"]
+        singleDriz_name = image.outputNames['outSingle']
         singleWeight = image.getOutputName("outSWeight")
-        singleWeight_name = image.outputNames["outSWeight"]
+        singleWeight_name = image.outputNames['outSWeight']
 
         # If compression was used, reference ext=1 as CompImageHDU only writes
         # out MEF files, not simple FITS.
         if compress:
-            wcs_ext = "[1]"
+            wcs_ext = '[1]'
             wcs_extnum = 1
         else:
-            wcs_ext = "[0]"
+            wcs_ext = '[0]'
             wcs_extnum = 0
 
         if not virtual:
@@ -363,9 +359,8 @@ def _median(imageObjectList, paramDict):
             if virtual:
                 single_hdr = singleDriz[wcs_extnum].header
             else:
-                single_hdr = fits.getheader(
-                    singleDriz_name, ext=wcs_extnum, memmap=False
-                )
+                single_hdr = fits.getheader(singleDriz_name, ext=wcs_extnum,
+                                            memmap=False)
 
         single_image = iterfile.IterFitsFile(iter_singleDriz)
         if virtual:
@@ -376,8 +371,7 @@ def _median(imageObjectList, paramDict):
 
         # If it exists, extract the corresponding weight images
         if (not virtual and os.access(singleWeight, os.F_OK)) or (
-            virtual and singleWeight
-        ):
+                virtual and singleWeight):
             weight_file = iterfile.IterFitsFile(iter_singleWeight)
             if virtual:
                 weight_file.handle = singleWeight
@@ -385,9 +379,8 @@ def _median(imageObjectList, paramDict):
 
             singleWeightList.append(weight_file)
             try:
-                tmp_mean_value = ImageStats(
-                    weight_file.data, lower=1e-8, fields="mean", nclip=0
-                ).mean
+                tmp_mean_value = ImageStats(weight_file.data, lower=1e-8,
+                                            fields="mean", nclip=0).mean
             except ValueError:
                 tmp_mean_value = 0.0
             wht_mean.append(tmp_mean_value * maskpt)
@@ -432,16 +425,13 @@ def _median(imageObjectList, paramDict):
                 bsky = 0.0
 
             if nchips > 0:
-                rdnoise = math.sqrt(rdnoise / nchips)
+                rdnoise = math.sqrt(rdnoise/nchips)
 
             backgroundValueList.append(bsky)
             readnoiseList.append(rdnoise)
 
-            print(
-                "reference sky value for image '{}' is {}".format(
-                    image._filename, backgroundValueList[-1]
-                )
-            )
+            print("reference sky value for image '{}' is {}"
+                  .format(image._filename, backgroundValueList[-1]))
         #
         # END Loop over input image list
         #
@@ -459,10 +449,8 @@ def _median(imageObjectList, paramDict):
 
     if comb_type == "minmed" and not newmasks:
         # Issue a warning if minmed is being run with newmasks turned off.
-        print(
-            "\nWARNING: Creating median image without the application of "
-            "bad pixel masks!\n"
-        )
+        print('\nWARNING: Creating median image without the application of '
+              'bad pixel masks!\n')
 
     # The overlap value needs to be set to 2*grow in order to
     # avoid edge effects when scrolling down the image, and to
@@ -475,25 +463,19 @@ def _median(imageObjectList, paramDict):
 
     if section_nrows == 0:
         buffsize = imcols * data_item_size
-        print(
-            "WARNING: Buffer size is too small to hold a single row.\n"
-            "         Buffer size size will be increased to minimal "
-            "required: {}MB".format(float(buffsize) / 1048576.0)
-        )
+        print("WARNING: Buffer size is too small to hold a single row.\n"
+              "         Buffer size size will be increased to minimal "
+              "required: {}MB".format(float(buffsize) / 1048576.0))
         section_nrows = 1
 
     if section_nrows < overlap + 1:
         new_grow = int((section_nrows - 1) / 2)
         if section_nrows == imrows:
-            print(
-                "'grow' parameter is too large for actual image size. "
-                "Reducing 'grow' to {}".format(new_grow)
-            )
+            print("'grow' parameter is too large for actual image size. "
+                  "Reducing 'grow' to {}".format(new_grow))
         else:
-            print(
-                "'grow' parameter is too large for requested buffer size. "
-                "Reducing 'grow' to {}".format(new_grow)
-            )
+            print("'grow' parameter is too large for requested buffer size. "
+                  "Reducing 'grow' to {}".format(new_grow))
         grow = new_grow
         overlap = 2 * grow
 
@@ -517,14 +499,16 @@ def _median(imageObjectList, paramDict):
             u2 = e2 - e1
 
         imdrizSectionsList = np.empty(
-            (len(singleDrizList), e2 - e1, imcols), dtype=single_data_dtype
+            (len(singleDrizList), e2 - e1, imcols),
+            dtype=single_data_dtype
         )
         for i, w in enumerate(singleDrizList):
             imdrizSectionsList[i, :, :] = w[e1:e2]
 
         if singleWeightList:
             weightSectionsList = np.empty(
-                (len(singleWeightList), e2 - e1, imcols), dtype=single_data_dtype
+                (len(singleWeightList), e2 - e1, imcols),
+                dtype=single_data_dtype
             )
             for i, w in enumerate(singleWeightList):
                 weightSectionsList[i, :, :] = w[e1:e2]
@@ -545,12 +529,13 @@ def _median(imageObjectList, paramDict):
             # creating the median image.
             # 0 means good, 1 means bad here...
             weight_mask_list = np.less(
-                weightSectionsList, np.asarray(wht_mean)[:, None, None]
+                weightSectionsList,
+                np.asarray(wht_mean)[:, None, None]
             ).astype(np.uint8)
 
-        if "minmed" in comb_type:  # Do MINMED
+        if 'minmed' in comb_type:  # Do MINMED
             # set up use of 'imedian'/'imean' in minmed algorithm
-            fillval = comb_type.startswith("i")
+            fillval = comb_type.startswith('i')
 
             # Create the combined array object using the minmed algorithm
             result = min_med(
@@ -563,7 +548,7 @@ def _median(imageObjectList, paramDict):
                 combine_grow=grow,
                 combine_nsigma1=nsigma1,
                 combine_nsigma2=nsigma2,
-                fillval=fillval,
+                fillval=fillval
             )
 
         else:  # DO NUMCOMBINE
@@ -575,11 +560,11 @@ def _median(imageObjectList, paramDict):
                 nlow=nlow,
                 nhigh=nhigh,
                 upper=hthresh,
-                lower=lthresh,
+                lower=lthresh
             )
 
         # Write out the processed image sections to the final output array:
-        medianImageArray[e1 + u1 : e1 + u2, :] = result[u1:u2, :]
+        medianImageArray[e1+u1:e1+u2, :] = result[u1:u2, :]
 
     # Write out the combined image
     # use the header from the first single drizzled image in the list
@@ -613,18 +598,18 @@ def _median(imageObjectList, paramDict):
 
 
 def _writeImage(dataArray=None, inputHeader=None):
-    """Writes out the result of the combination step.
-    The header of the first 'outsingle' file in the
-    association parlist is used as the header of the
-    new image.
+    """ Writes out the result of the combination step.
+        The header of the first 'outsingle' file in the
+        association parlist is used as the header of the
+        new image.
 
-    Parameters
-    ----------
-    dataArray : arr
-        Array of data to be written to a fits.PrimaryHDU object
+        Parameters
+        ----------
+        dataArray : arr
+            Array of data to be written to a fits.PrimaryHDU object
 
-    inputHeader : obj
-        fits.header.Header object to use as basis for the PrimaryHDU header
+        inputHeader : obj
+            fits.header.Header object to use as basis for the PrimaryHDU header
 
     """
     prihdu = fits.PrimaryHDU(data=dataArray, header=inputHeader)
