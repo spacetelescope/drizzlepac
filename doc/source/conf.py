@@ -19,22 +19,23 @@ import sys
 import types
 from unittest.mock import MagicMock
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
+sys.path.insert(0, os.path.join(project_root, "src"))
+
 
 class _MockModule(types.ModuleType):
     def __getattr__(self, item):
-        mock_attr = MagicMock(name=f'{self.__name__}.{item}')
+        mock_attr = MagicMock(name=f"{self.__name__}.{item}")
         setattr(self, item, mock_attr)
         return mock_attr
 
 
-if os.environ.get('READTHEDOCS') == 'True':
-    for module_name in ('drizzlepac.cdriz',):
+if os.environ.get("READTHEDOCS") == "True":
+    for module_name in ("drizzlepac.cdriz",):
         if module_name not in sys.modules:
             mock_module = _MockModule(module_name)
-            mock_module.__file__ = f'<mocked {module_name}>'
+            mock_module.__file__ = f"<mocked {module_name}>"
             sys.modules[module_name] = mock_module
 
 from configparser import ConfigParser
@@ -47,7 +48,7 @@ conf = ConfigParser()
 
 
 def setup(app):
-    app.add_css_file('stsci.css')
+    app.add_css_file("stsci.css")
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -57,20 +58,20 @@ def setup(app):
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.3'
 
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
 # -- General configuration ------------------------------------------------
 
 # Configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3/', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
-    'matplotlib': ('https://matplotlib.org/stable/', None),
-    'astropy': ('https://docs.astropy.org/en/stable/', None),
-    'tweakwcs': ('https://tweakwcs.readthedocs.io/en/latest/', None),
-    'stsci.skypac': ('https://stsci-skypac.readthedocs.io/en/latest/', None),
-    'stwcs': ('https://stwcs.readthedocs.io/en/latest/', None),
+    "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "astropy": ("https://docs.astropy.org/en/stable/", None),
+    "tweakwcs": ("https://tweakwcs.readthedocs.io/en/latest/", None),
+    "stsci.skypac": ("https://stsci-skypac.readthedocs.io/en/latest/", None),
+    "stwcs": ("https://stwcs.readthedocs.io/en/latest/", None),
 }
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -80,38 +81,38 @@ intersphinx_mapping = {
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.inheritance_diagram',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.doctest',
-    'sphinx.ext.coverage',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.graphviz',
-    'numpydoc',
-    'sphinx_automodapi.automodapi',
-    'sphinx_automodapi.automodsumm',
-    'sphinx_automodapi.autodoc_enhancements',
-    'sphinx_automodapi.smart_resolver',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.todo",
+    "sphinx.ext.inheritance_diagram",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.doctest",
+    "sphinx.ext.coverage",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.graphviz",
+    "numpydoc",
+    "sphinx_automodapi.automodapi",
+    "sphinx_automodapi.automodsumm",
+    "sphinx_automodapi.autodoc_enhancements",
+    "sphinx_automodapi.smart_resolver",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The encoding of source files.
 # source_encoding = 'utf-8'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'DrizzlePac'
-copyright = f'{datetime.now().year}, Steve Goldman, Michele De La Pena, Warren Hack, Mihai Cara, Nadia Dencheva'
+project = "DrizzlePac"
+copyright = f"{datetime.now().year}, Steve Goldman, Michele De La Pena, Warren Hack, Mihai Cara, Nadia Dencheva"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -150,18 +151,18 @@ exclude_trees = []
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ["_build"]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
-default_role = 'obj'
+default_role = "obj"
 
 # Don't show summaries of the members in each class along with the
 # class' docstring
@@ -169,7 +170,7 @@ numpydoc_show_class_members = False
 
 autosummary_generate = True
 
-automodapi_toctreedirnm = 'api'
+automodapi_toctreedirnm = "api"
 
 # Class documentation should contain *both* the class docstring and
 # the __init__ docstring
@@ -179,19 +180,19 @@ autoclass_content = "both"
 graphviz_output_format = "svg"
 
 graphviz_dot_args = [
-    '-Nfontsize=10',
-    '-Nfontname=Helvetica Neue, Helvetica, Arial, sans-serif',
-    '-Efontsize=10',
-    '-Efontname=Helvetica Neue, Helvetica, Arial, sans-serif',
-    '-Gfontsize=10',
-    '-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif'
+    "-Nfontsize=10",
+    "-Nfontname=Helvetica Neue, Helvetica, Arial, sans-serif",
+    "-Efontsize=10",
+    "-Efontname=Helvetica Neue, Helvetica, Arial, sans-serif",
+    "-Gfontsize=10",
+    "-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif",
 ]
 
 # -- Options for HTML output ---------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -220,7 +221,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -258,28 +259,33 @@ html_static_path = ['_static']
 # html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'drizzlepacdoc'
+htmlhelp_basename = "drizzlepacdoc"
 
 
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
-    'papersize': 'letterpaper',
+    "papersize": "letterpaper",
     # The font size ('10pt', '11pt' or '12pt').
-    'pointsize': '11pt',
+    "pointsize": "11pt",
     # Additional stuff for the LaTeX preamble.
-    'preamble': r"""\usepackage{enumitem} \setlistdepth{99}"""
+    "preamble": r"""\usepackage{enumitem} \setlistdepth{99}""",
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 
 latex_documents = [
-  ('index', 'drizzlepac.tex', u'DrizzlePac Documentation',
-   u'Steven Goldman, \\and Michele De La Pena, \\and Warren Hack, '
-   u'Nadia Dencheva, \\and Mihai Cara, \\and Chris Sontag, '
-   u'\\and Megan Sosey, \\and Michael Droettboom', 'manual'),
+    (
+        "index",
+        "drizzlepac.tex",
+        "DrizzlePac Documentation",
+        "Steven Goldman, \\and Michele De La Pena, \\and Warren Hack, "
+        "Nadia Dencheva, \\and Mihai Cara, \\and Chris Sontag, "
+        "\\and Megan Sosey, \\and Michael Droettboom",
+        "manual",
+    ),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -296,7 +302,7 @@ latex_documents = [
 # If false, no module index is generated.
 # latex_use_modindex = True
 
-latex_elements = {'pointsize': '11pt'}
+latex_elements = {"pointsize": "11pt"}
 
 # Enable nitpicky mode - which ensures that all references in the docs resolve.
 nitpicky = True
