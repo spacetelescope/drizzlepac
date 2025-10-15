@@ -19,10 +19,12 @@ from stsci.tools import fileutil, logutil, mputil
 from . import quickDeriv
 from . import util
 from . import processInput
-from . import __version__
+from . import version as __version__
 
 if util.can_parallel:
     import multiprocessing
+
+__all__ = ['rundrizCR', 'drizCR']
 
 
 __taskname__ = "drizCR"  # looks in drizzlepac for sky.cfg
@@ -147,6 +149,27 @@ def run(configObj):
 
 
 def rundrizCR(imgObjList, configObj, procSteps=None):
+    """Execute the ``driz_cr`` cosmic-ray rejection step.
+
+    Parameters
+    ----------
+    imgObjList : list
+        Iterable of image objects created by ``processInput`` that contain the
+        science data, masks, and bookkeeping information for each exposure.
+    configObj : ConfigObj-like
+        Configuration structure holding AstroDrizzle parameter sections. The
+        ``driz_cr`` section supplies thresholds and flags for the rejection
+        run.
+    procSteps : drizzlepac.util.ProcessingSteps, optional
+        Optional progress tracker used by the pipeline harness; when provided
+        the step is registered and marked complete automatically.
+
+    Returns
+    -------
+    None
+
+    """
+
     if procSteps is not None:
         procSteps.addStep(PROCSTEPS_NAME)
 
@@ -436,8 +459,3 @@ def setDefaults(configObj={}):
             paramDict[key] = configObj[key]
 
     return paramDict
-
-
-drizCR.__doc__ = util._def_help_functions(
-    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
-)
