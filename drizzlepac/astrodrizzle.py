@@ -52,7 +52,7 @@ from . import __version__
 
 __taskname__ = "astrodrizzle"
 
-__all__ = ['AstroDrizzle', 'run']
+__all__ = ["AstroDrizzle", "run"]
 
 # Pointer to the included Python class for WCS-based coordinate transformations
 PYTHON_WCSMAP = wcs_functions.WCSMap
@@ -1234,8 +1234,9 @@ def run(configobj, wcsmap=None, input_dict=None):
     # also, initialize timing of processing steps
     #
     # We need to define a default logfile name from the user's parameters
-    input_list, output, ivmlist, odict = \
-            processInput.processFilenames(configobj['input'])
+    input_list, output, ivmlist, odict = processInput.processFilenames(
+        configobj["input"]
+    )
 
     if output is not None:
         def_logname = output
@@ -1254,25 +1255,23 @@ def run(configobj, wcsmap=None, input_dict=None):
     logfile = log_name[0] if log_name else "{}.tra".format(def_logname)
     print("AstroDrizzle log file: {}".format(logfile))
 
-    clean = configobj['STATE OF INPUT FILES']['clean']
+    clean = configobj["STATE OF INPUT FILES"]["clean"]
     procSteps = util.ProcSteps()
 
     print("AstroDrizzle Version {:s} started at: {:s}\n"
           .format(__version__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
-    log.debug('')
-    log.debug(
-        "==== AstroDrizzle was invoked with the following parameters: ===="
-    )
-    log.debug('')
+    log.debug("")
+    log.debug("==== AstroDrizzle was invoked with the following parameters: ====")
+    log.debug("")
     util.print_cfg(configobj, log.debug)
 
     try:
         # Define list of imageObject instances and output WCSObject instance
         # based on input paramters
         imgObjList = None
-        procSteps.addStep('Initialization')
+        procSteps.addStep("Initialization")
         imgObjList, outwcs = processInput.setCommonInput(
             configobj, overwrite_dict=input_dict
         )
@@ -1309,23 +1308,18 @@ def run(configobj, wcsmap=None, input_dict=None):
 
         if len(imgObjList) > 1:
             if do_crrej and not do_blot:
-                log.warning(
-                    "Turning blot step on as it is required by 'driz_cr'."
-                )
+                log.warning("Turning blot step on as it is required by 'driz_cr'.")
                 configobj[step_name_blot]["blot"] = True
                 do_blot = True
 
             if do_blot and not do_median:
-                log.warning(
-                    "Turning median step on as it is required by 'blot'."
-                )
+                log.warning("Turning median step on as it is required by 'blot'.")
                 configobj[step_name_median]["median"] = True
                 do_median = True
 
             if do_median and not do_single:
                 log.warning(
-                    "Turning single drizzle step on as it is required by "
-                    "'median'."
+                    "Turning single drizzle step on as it is required by " "'median'."
                 )
                 configobj[step_name_single]["driz_separate"] = True
                 do_single = True
@@ -1360,8 +1354,7 @@ def run(configobj, wcsmap=None, input_dict=None):
 
         # Call rest of MD steps...
         # create static masks for each image
-        staticMask.createStaticMask(imgObjList, configobj,
-                                    procSteps=procSteps)
+        staticMask.createStaticMask(imgObjList, configobj, procSteps=procSteps)
 
         # subtract the sky
         sky.subtractSky(imgObjList, configobj, procSteps=procSteps)
@@ -1369,19 +1362,20 @@ def run(configobj, wcsmap=None, input_dict=None):
         #       _dbg_dump_virtual_outputs(imgObjList)
 
         # drizzle to separate images
-        adrizzle.drizSeparate(imgObjList, outwcs, configobj, wcsmap=wcsmap,
-                              logfile=logfile,
-                              procSteps=procSteps)
+        adrizzle.drizSeparate(
+            imgObjList,
+            outwcs,
+            configobj,
+            wcsmap=wcsmap,
+            logfile=logfile,
+            procSteps=procSteps,
+        )
 
         #       _dbg_dump_virtual_outputs(imgObjList)
 
         # create the median images from the driz sep images
         try:
-            createMedian.createMedian(
-                imgObjList,
-                configobj,
-                procSteps=procSteps
-            )
+            createMedian.createMedian(imgObjList, configobj, procSteps=procSteps)
 
             if skip_median:
                 procSteps.endStep(createMedian.PROCSTEPS_NAME, reason="skipped")
@@ -1390,35 +1384,27 @@ def run(configobj, wcsmap=None, input_dict=None):
 
         except util.StepAbortedError as e:
             if str(e).startswith("Rejecting all pixels"):
-                log.warning(
-                    "Create median step was aborted due the following error:"
-                )
-                log.warning(
-                    f"ERROR: {str(e)}"
-                )
+                log.warning("Create median step was aborted due the following error:")
+                log.warning(f"ERROR: {str(e)}")
 
                 if do_blot:
-                    log.warning(
-                        "Turning blot step off due to aborted median step."
-                    )
-                    configobj[step_name_blot]['median'] = False
+                    log.warning("Turning blot step off due to aborted median step.")
+                    configobj[step_name_blot]["median"] = False
                     skip_blot = True
                     do_blot = False
 
                 if do_crrej:
                     log.warning(
-                        "Turning CR rejection step off due to aborted "
-                        "median step."
+                        "Turning CR rejection step off due to aborted " "median step."
                     )
-                    configobj[step_name_crrej]['driz_cr'] = False
+                    configobj[step_name_crrej]["driz_cr"] = False
                     skip_crrej = True
                     do_crrej = False
             else:
                 raise e
 
         # blot the images back to the original reference frame
-        ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap,
-                      procSteps=procSteps)
+        ablot.runBlot(imgObjList, outwcs, configobj, wcsmap=wcsmap, procSteps=procSteps)
         if skip_blot:
             procSteps.endStep(ablot.PROCSTEPS_NAME, reason="skipped")
         elif not do_blot:
@@ -1432,9 +1418,14 @@ def run(configobj, wcsmap=None, input_dict=None):
             procSteps.endStep(drizCR.PROCSTEPS_NAME, reason="off")
 
         # Make your final drizzled image
-        adrizzle.drizFinal(imgObjList, outwcs, configobj, wcsmap=wcsmap,
-                           logfile=logfile,
-                           procSteps=procSteps)
+        adrizzle.drizFinal(
+            imgObjList,
+            outwcs,
+            configobj,
+            wcsmap=wcsmap,
+            logfile=logfile,
+            procSteps=procSteps,
+        )
 
         print("\nAstroDrizzle Version {:s} is finished processing at {:s}.\n\n"
               .format(__version__, util._ptime()[0]))
@@ -1458,36 +1449,38 @@ def run(configobj, wcsmap=None, input_dict=None):
             del imgObjList
             del outwcs
 
+
 _fidx = 0
 
+
 def _dbg_dump_virtual_outputs(imgObjList):
-    """ dump some helpful information.  strictly for debugging """
+    """dump some helpful information.  strictly for debugging"""
     global _fidx
-    tag = 'virtual'
-    log.info((tag+'  ')*7)
+    tag = "virtual"
+    log.info((tag + "  ") * 7)
     for iii in imgObjList:
-        log.info('-'*80)
-        log.info(tag+'  orig nm: '+iii._original_file_name)
-        log.info(tag+'  names.data: '+str(iii.outputNames["data"]))
-        log.info(tag+'  names.orig: '+str(iii.outputNames["origFilename"]))
-        log.info(tag+'  id: '+str(id(iii)))
-        log.info(tag+'  in.mem: '+str(iii.inmemory))
-        log.info(tag+'  vo items...')
+        log.info("-" * 80)
+        log.info(tag + "  orig nm: " + iii._original_file_name)
+        log.info(tag + "  names.data: " + str(iii.outputNames["data"]))
+        log.info(tag + "  names.orig: " + str(iii.outputNames["origFilename"]))
+        log.info(tag + "  id: " + str(id(iii)))
+        log.info(tag + "  in.mem: " + str(iii.inmemory))
+        log.info(tag + "  vo items...")
         for vok in sorted(iii.virtualOutputs.keys()):
             FITSOBJ = iii.virtualOutputs[vok]
-            log.info(tag+': '+str(vok)+' = '+str(FITSOBJ))
-            if vok.endswith('.fits'):
-                if not hasattr(FITSOBJ, 'data'):
-                    FITSOBJ = FITSOBJ[0] # list of PrimaryHDU ?
-                if not hasattr(FITSOBJ, 'data'):
-                    FITSOBJ = FITSOBJ[0] # was list of HDUList ?
-                dbgname = 'DEBUG_%02d_'%(_fidx,)
-                dbgname+=os.path.basename(vok)
-                _fidx+=1
+            log.info(tag + ": " + str(vok) + " = " + str(FITSOBJ))
+            if vok.endswith(".fits"):
+                if not hasattr(FITSOBJ, "data"):
+                    FITSOBJ = FITSOBJ[0]  # list of PrimaryHDU ?
+                if not hasattr(FITSOBJ, "data"):
+                    FITSOBJ = FITSOBJ[0]  # was list of HDUList ?
+                dbgname = "DEBUG_%02d_" % (_fidx,)
+                dbgname += os.path.basename(vok)
+                _fidx += 1
                 FITSOBJ.writeto(dbgname)
-                log.info(tag+'  wrote: '+dbgname)
-                log.info('\n'+vok)
-                if hasattr(FITSOBJ, 'data'):
+                log.info(tag + "  wrote: " + dbgname)
+                log.info("\n" + vok)
+                if hasattr(FITSOBJ, "data"):
                     log.info(str(FITSOBJ._summary()))
                     log.info('min and max are: '+str( (FITSOBJ.data.min(),
                                                        FITSOBJ.data.max()) ))
@@ -1495,7 +1488,7 @@ def _dbg_dump_virtual_outputs(imgObjList):
                                                        FITSOBJ.data.sum()) ))
 #                    log.info(str(FITSOBJ.data)[:75])
                 else:
-                    log.info(vok+' has no .data attr')
+                    log.info(vok + " has no .data attr")
                     log.info(str(type(FITSOBJ)))
-                log.info(vok+'\n')
-    log.info('-'*80)
+                log.info(vok + "\n")
+    log.info("-" * 80)
