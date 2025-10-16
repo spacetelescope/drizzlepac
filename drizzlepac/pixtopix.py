@@ -18,19 +18,8 @@ __all__ = ['tran']
 __taskname__ = 'pixtopix'
 
 
-def tran(
-    inimage,
-    outimage,
-    direction="forward",
-    x=None,
-    y=None,
-    coordfile=None,
-    colnames=None,
-    separator=None,
-    precision=6,
-    output=None,
-    verbose=True,
-):
+def tran(inimage, outimage, direction="forward", x=None, y=None, coordfile=None, 
+         colnames=None, separator=None, precision=6, output=None, verbose=True):
     """Primary interface to perform coordinate transformations in pixel
     coordinates between 2 images using STWCS and full distortion models
     read from each image's header.
