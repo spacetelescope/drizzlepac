@@ -18,7 +18,10 @@ for these classes.
 .. inheritance-diagram:: drizzlepac.catalogs
    :parts: 2
 
-.. autofunction:: generateCatalog
+.. autoclass:: Catalog
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 .. autoclass:: ImageCatalog
 
@@ -32,10 +35,6 @@ for these classes.
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: Catalog
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
+.. autofunction:: generateCatalog
 
 
