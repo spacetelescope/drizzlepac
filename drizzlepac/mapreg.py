@@ -356,6 +356,85 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                      refimg=None, ref_wcs_ext='sci', chip_reg=None,
                      outpath='./regions', filter=None, catfname=None,
                      iteractive=False, append=False, verbose=True):
+    """Map DS9 region files from sky coordinates onto image coordinates.
+
+    This routine performs the core work for :func:`MapReg`. It reads one or more
+    region files defined in a sky-based coordinate system, transforms them into
+    the image coordinate system for every requested image extension, and writes
+    the transformed regions to disk. Optional chip-specific region files can be
+    merged into the output, regions can be filtered to remain inside the image
+    footprint, and an exclusions catalog may be generated to summarize the
+    outputs.
+
+    Parameters
+    ----------
+    input_reg : str or sequence of str
+        Region file(s) in sky coordinates to be mapped. File lists created with
+        the ``@`` syntax should be expanded before calling this helper. Entries
+        may be ``None`` to skip a slot.
+    images : str or sequence of str
+        FITS image filenames (or wildcards that have already been expanded)
+        that provide the WCS information used for the transformation.
+    img_wcs_ext : str or sequence of str or tuple, optional
+        FITS extension specifiers identifying which extensions in ``images``
+        should receive transformed regions. Strings are interpreted as
+        extension names and expanded to all available EXTVER values. Tuples of
+        ``(extname, extver)`` or integers (extension numbers) are respected as
+        given. Default is ``'sci'``.
+    refimg : str or None, optional
+        Reference FITS image that supplies WCS information when any input
+        region is provided in image-like coordinates. May include an extension
+        specifier. Required when ``input_reg`` contains image-coordinate
+        regions. Default is ``None``.
+    ref_wcs_ext : str or sequence of str or tuple, optional
+        Extension specifier(s) for selecting the WCS headers from ``refimg``
+        that correspond to each entry in ``input_reg``. The interpretation
+        mirrors ``img_wcs_ext``. Default is ``'sci'``.
+    chip_reg : str or sequence of str or None, optional
+        Region file(s) already in image coordinates that should be appended to
+        every transformed region file. The list is matched one-to-one with
+        ``img_wcs_ext`` entries; ``None`` skips a position. Default is ``None``.
+    outpath : str, optional
+        Directory where transformed region files (and optional catalog) will be
+        written. Created files are named ``<image><ext>_twreg.reg``. Default is
+        ``'./regions'``.
+    filter : {None, 'fast', 'precise'}, optional
+        Method for removing regions that fall fully outside the target image.
+        ``'fast'`` performs bounding-box clipping; ``'precise'`` currently
+        downgrades to ``'fast'``. ``None`` disables filtering. Default is
+        ``None``.
+    catfname : str or None, optional
+        Name of an exclusions catalog to write summarizing the generated region
+        files. When ``None`` no catalog is produced. Default is ``None``.
+    iteractive : bool, optional
+        Reserved for future interactive workflows. Currently unused. Default
+        is ``False``.
+    append : bool, optional
+        If ``True`` and an output region file already exists, append the newly
+        transformed regions instead of overwriting the file. Default is
+        ``False``.
+    verbose : bool, optional
+        When ``True`` print additional progress information and associations
+        between extensions and chip regions. Default is ``True``.
+
+    Returns
+    -------
+    None
+        All results are persisted to ``outpath`` and optionally to the catalog
+        file.
+
+    Raises
+    ------
+    IOError
+        If any required input file or output directory is missing.
+    TypeError
+        If an argument has an unexpected type or invalid value.
+    ValueError
+        If a required reference WCS is missing when needed.
+    RuntimeError
+        If an image extension is unsupported or necessary FITS extensions do
+        not exist.
+    """
     # Check that output directory exists:
     if outpath in [None, ""]:
         outpath = os.path.curdir + os.path.sep
@@ -366,7 +445,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
         raise TypeError("The 'filter' argument can be None, 'fast', " \
                         "or 'precise'.")
 
-    #TODO: Implement the "precise" checking of region intersection
+    # TODO: Implement the "precise" checking of region intersection
     # with the image's bounding box.
     if filter is not None and filter.lower() == "precise":
         _print_warning("\"precise\" filter option is not yet supported. "\
@@ -411,24 +490,24 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                                        "type.".format(ext))
 
                 # Remove references to non-SIP distortions from the header
-                #TODO: remove this line of code as well as the remove_header_tdd
+                # TODO: remove this line of code as well as the remove_header_tdd
                 # function once publicly available release of pyregion uses
                 # all_world2pix and all_pix2world functions and does this header
                 # cleanup itself.
-#                remove_header_tdd(imghdu[ext].header)
+                #                remove_header_tdd(imghdu[ext].header)
 
                 ####### added to pass hstwcs instead of header to pyregion
-#                if isinstance(ext, str):
-#                    ext = findExtname(imghdu, extname = ext, extver = 1)
-#                elif isinstance(ext, tuple):
-#                    ext = findExtname(imghdu, extname = ext[0], extver = ext[1])
+                #                if isinstance(ext, str):
+                #                    ext = findExtname(imghdu, extname = ext, extver = 1)
+                #                elif isinstance(ext, tuple):
+                #                    ext = findExtname(imghdu, extname = ext[0], extver = ext[1])
 
-#                wcs = stwcs.wcsutil.HSTWCS(imghdu, ext=ext)
+                #                wcs = stwcs.wcsutil.HSTWCS(imghdu, ext=ext)
                 wcs    = _AuxSTWCS(imghdu, ext=ext)
                 extreg = all_sky_regions.as_imagecoord(wcs, rot_wrt_axis=2)
                 #######
 
-                #extreg = all_sky_regions.as_imagecoord(imghdu[ext].header, rot_wrt_axis=2)
+                # extreg = all_sky_regions.as_imagecoord(imghdu[ext].header, rot_wrt_axis=2)
 
                 if extp[0]: # add "fixed" regions if any
                     extreg = pyregion.ShapeList(extreg+extp[0])
@@ -457,16 +536,16 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
                     old_extreg = pyregion.open(fullregfname)
                     extreg = pyregion.ShapeList(old_extreg + extreg)
 
-                #TODO: pyregion.write does not work well. For now use _regwite
+                # TODO: pyregion.write does not work well. For now use _regwite
                 # (until the bug fixes get to the pyregion project).
-                #TODO: we replaced pyregion.write with our implementation
+                # TODO: we replaced pyregion.write with our implementation
                 # of the write (code from _regwrite) in the locally maintained
                 # pyregion until these changes get to be implemented in the
                 # publicly available release of pyregion.
                 #
                 _regwrite(extreg, fullregfname)
-                #extreg.write(fullregfname) # <- use this instead of _regwrite
-                                            # once the pyregion bugs are fixed.
+                # extreg.write(fullregfname) # <- use this instead of _regwrite
+                # once the pyregion bugs are fixed.
             cattb.append([fname, catreg])
         except:
             if imghdu:
