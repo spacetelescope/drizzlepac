@@ -163,10 +163,6 @@ def rundrizCR(imgObjList, configObj, procSteps=None):
         Optional progress tracker used by the pipeline harness; when provided
         the step is registered and marked complete automatically.
 
-    Returns
-    -------
-    None
-
     """
 
     if procSteps is not None:
