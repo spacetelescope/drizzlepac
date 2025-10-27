@@ -95,8 +95,8 @@ def tran(inimage, outimage, direction="forward", x=None, y=None, coordfile=None,
     Examples
     --------
     1. The following command will transform the position 256,256 from
-    'input_flt.fits[sci,1]' into a position on the output image
-    'output_drz.fits[sci,1]' using::
+       'input_flt.fits[sci,1]' into a position on the output image
+       'output_drz.fits[sci,1]' using::
 
         >>> from drizzlepac import pixtopix
         >>> outx,outy = pixtopix.tran("input_file_flt.fits[sci,1]",
