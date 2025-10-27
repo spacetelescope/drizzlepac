@@ -16,8 +16,30 @@
 # Check Sphinx version
 import os
 import sys
+import types
+from unittest.mock import MagicMock
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'src'))
+
+class _MockModule(types.ModuleType):
+    def __getattr__(self, item):
+        mock_attr = MagicMock(name=f'{self.__name__}.{item}')
+        setattr(self, item, mock_attr)
+        return mock_attr
+
+
+if os.environ.get('READTHEDOCS') == 'True':
+    for module_name in ('drizzlepac.cdriz',):
+        if module_name not in sys.modules:
+            mock_module = _MockModule(module_name)
+            mock_module.__file__ = f'<mocked {module_name}>'
+            sys.modules[module_name] = mock_module
+
 from configparser import ConfigParser
 from datetime import datetime
+
 
 from drizzlepac import __version__ as version
 
@@ -31,7 +53,6 @@ def setup(app):
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../../src/'))
 
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.3'
@@ -43,9 +64,9 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 # Configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
-    'matplotlib': ('https://matplotlib.org/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
     'astropy': ('https://docs.astropy.org/en/stable/', None),
     'tweakwcs': ('https://tweakwcs.readthedocs.io/en/latest/', None),
     'stsci.skypac': ('https://stsci-skypac.readthedocs.io/en/latest/', None),
@@ -68,6 +89,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
+    'sphinx.ext.graphviz',
     'numpydoc',
     'sphinx_automodapi.automodapi',
     'sphinx_automodapi.automodsumm',
@@ -164,7 +186,6 @@ graphviz_dot_args = [
     '-Gfontsize=10',
     '-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif'
 ]
-
 
 # -- Options for HTML output ---------------------------------------------------
 
