@@ -118,11 +118,6 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
         Filename of the reference image. May contain extension specifier:
         [extname,extver], [extname], or [extnumber].
 
-        .. note::
-
-            This parameter is reserved for future use and it is not
-            available through ``TEAL`` interface.
-
     ref_wcs_ext : string (Default = ``SCI``)
         **Reserved for future use.**
         Extension name and/or version of FITS extensions
