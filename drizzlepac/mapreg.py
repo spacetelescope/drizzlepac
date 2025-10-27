@@ -167,8 +167,6 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
 
             The ``'precise'`` method is not
             implemented in this release and, if specified, defaults to 'fast'.
-            The ``'precise'`` option is not available through the ``TEAL``
-            interface.
 
     catfname : string (Default = ``exclusions_cat.txt``)
         The file name of the output exclusions catalog file to be created from the
