@@ -128,11 +128,6 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
         agree with the number of extensions with name specified by ``ref_wcs_ext``
         present in the ``refimg`` FITS image.
 
-        .. note::
-
-            This parameter is reserved for future use and it is not
-            available through ``TEAL`` interface.
-
     chip_reg : string or list of strings (Default = '')
         Input region files in image CS associated with each extension specified by
         the ``img_wcs_ext`` parameter above. These regions will be added directly
