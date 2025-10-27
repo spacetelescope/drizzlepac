@@ -22,6 +22,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Remove WFC3/UVIS Quadrant filter data from SVM total image and catalog creation. [#2093]
 
+- Removed help files and moved text to docstrings. [#2077,#2078,#2079]
+
 - Removed rounding of IDCSCALE values. [#2063]
 
 - Fixed metawcs ecsv filename issue and removed lingering files. [#2073]
