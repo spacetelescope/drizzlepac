@@ -82,23 +82,23 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
         containing a list of filenames for all input region files with one
         filename on each line of the file.
 
-        images : string or list of strings (Default = ``*.fits``)
-                FITS images onto which the region files ``input_reg`` will be mapped. These
-                image files must contain WCS information in their headers in order to
-                convert ``input_reg`` from sky coordinates to correct image coordinates.
+    images : string or list of strings (Default = ``*.fits``)
+        FITS images onto which the region files ``input_reg`` will be mapped. These
+        image files must contain WCS information in their headers in order to
+        convert ``input_reg`` from sky coordinates to correct image coordinates.
 
-                This paramater can be provided in any of several forms:
+        This paramater can be provided in any of several forms:
 
-                * filename of a single image
-                * filename of an association (ASN)table
-                * wild-card specification for files in a directory (using ``*``, ``?`` etc.)
-                * comma-separated list of filenames
-                * ``@-file`` filelist containing list of desired input filenames
-                    (and optional inverse variance map filenames)
+        * filename of a single image
+        * filename of an association (ASN)table
+        * wild-card specification for files in a directory (using ``*``, ``?`` etc.)
+        * comma-separated list of filenames
+        * ``@-file`` filelist containing list of desired input filenames
+            (and optional inverse variance map filenames)
 
-                The ``@-file`` filelist needs to be provided as an ASCII text file
-                containing a list of filenames for all input images (to which ``input_reg``
-                regions should be mapped) with one filename on each line of the file.
+        The ``@-file`` filelist needs to be provided as an ASCII text file
+        containing a list of filenames for all input images (to which ``input_reg``
+        regions should be mapped) with one filename on each line of the file.
 
     img_wcs_ext : string or list of strings (Default = ``SCI``)
         Extension name, extension name and version, or extension number of FITS
@@ -138,24 +138,24 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
             This parameter is reserved for future use and it is not
             available through ``TEAL`` interface.
 
-        chip_reg : string or list of strings (Default = '')
-                Input region files in image CS associated with each extension specified by
-                the ``img_wcs_ext`` parameter above. These regions will be added directly
-                (without any transformation) to the ``input_reg`` regions mapped to each
-                extension of the input ``images``. These regions must be specified in
-                image-like coordinates. Typically, these regions should contain "exclude"
-                regions to exclude parts of the image specific to the detector **chip**
-                (e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
-                images) from being used for source finding.
+    chip_reg : string or list of strings (Default = '')
+        Input region files in image CS associated with each extension specified by
+        the ``img_wcs_ext`` parameter above. These regions will be added directly
+        (without any transformation) to the ``input_reg`` regions mapped to each
+        extension of the input ``images``. These regions must be specified in
+        image-like coordinates. Typically, these regions should contain "exclude"
+        regions to exclude parts of the image specific to the detector **chip**
+        (e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
+        images) from being used for source finding.
 
-                This paramater can be provided in one of the following forms:
+        This paramater can be provided in one of the following forms:
 
-                * filename of a single image (if ``img_wcs_ext`` specifies a single FITS
-                    extension);
-                * comma-separated list of filenames (if ``img_wcs_ext`` specifies more than
-                    one extension) or ``None`` for extensions that do not need any
-                    chip-specific regions to be excluded/included;
-                * '' (empty string) or None if no chip-specific region files are provided.
+        * filename of a single image (if ``img_wcs_ext`` specifies a single FITS
+            extension);
+        * comma-separated list of filenames (if ``img_wcs_ext`` specifies more than
+            one extension) or ``None`` for extensions that do not need any
+            chip-specific regions to be excluded/included;
+        * '' (empty string) or None if no chip-specific region files are provided.
 
         The number of regions ideally must be equal to the number of extensions
         specified by the ``img_wcs_ext`` parameter. If the number of chip-specific
@@ -271,14 +271,14 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
     This will produce six region files in the ./regions subdirectory for *each*
     input image::
 
-        ``img1_sci1_twreg.reg``,    ``img1_sci2_twreg.reg``,    ``img1_sci3_twreg.reg``,
-        ``img1_sci4_twreg.reg``,    ``img1_dq2_twreg.reg``,     ``img1_extn8_twreg.reg``
+        img1_sci1_twreg.reg,    img1_sci2_twreg.reg,    img1_sci3_twreg.reg,
+        img1_sci4_twreg.reg,    img1_dq2_twreg.reg,     img1_extn8_twreg.reg
         ...
 
     ::
 
-        ``img2_sci1_twreg.reg``,    ``img2_sci2_twreg.reg``,    ``img2_sci3_twreg.reg``,
-        ``img2_sci4_twreg.reg``,    ``img2_dq2_twreg.reg``,     ``img2_extn8_twreg.reg``
+        img2_sci1_twreg.reg,    img2_sci2_twreg.reg,    img2_sci3_twreg.reg,
+        img2_sci4_twreg.reg,    img2_dq2_twreg.reg,     img2_extn8_twreg.reg
         ...
     """
 
@@ -289,9 +289,7 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
                                                 parse_at = True )
     images_par, cat = parse_input( check_blank(images) )
     img_wcs_ext_par = _simple_parse_teal_extn( check_blank(img_wcs_ext) )
-    refimg_par      = check_blank(refimg) #TODO: may need something similar to
-    # _simple_parse_teal_fname when we will
-    # support it
+    refimg_par      = check_blank(refimg)
     ref_wcs_ext_par = _simple_parse_teal_extn( check_blank(ref_wcs_ext) )
     chip_reg_par    = _simple_parse_teal_fname( check_blank(chip_reg),
                                                 parse_at = False )
@@ -364,7 +362,8 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
     the transformed regions to disk. Optional chip-specific region files can be
     merged into the output, regions can be filtered to remain inside the image
     footprint, and an exclusions catalog may be generated to summarize the
-    outputs.
+    outputs. All results are persisted to ``outpath`` and optionally to the catalog
+    file.
 
     Parameters
     ----------
@@ -416,12 +415,6 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
     verbose : bool, optional
         When ``True`` print additional progress information and associations
         between extensions and chip regions. Default is ``True``.
-
-    Returns
-    -------
-    None
-        All results are persisted to ``outpath`` and optionally to the catalog
-        file.
 
     Raises
     ------
