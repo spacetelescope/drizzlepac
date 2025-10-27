@@ -141,10 +141,10 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
         This paramater can be provided in one of the following forms:
 
         * filename of a single image (if ``img_wcs_ext`` specifies a single FITS
-            extension);
+          extension);
         * comma-separated list of filenames (if ``img_wcs_ext`` specifies more than
-            one extension) or ``None`` for extensions that do not need any
-            chip-specific regions to be excluded/included;
+          one extension) or ``None`` for extensions that do not need any
+          chip-specific regions to be excluded/included;
         * '' (empty string) or None if no chip-specific region files are provided.
 
         The number of regions ideally must be equal to the number of extensions
