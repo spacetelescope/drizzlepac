@@ -66,8 +66,10 @@ def drizCR(input=None, configObj=None, editpars=False, **inputDict):
         be used to override the defaults.
 
 
-    Other Parameters
-    ----------------
+    Notes
+    -----
+    The following are additional parameters that can be set in the configObj
+    for this step:
 
     driz_cr : bool (Default = False)
         Perform cosmic-ray detection? If set to ``True``, cosmic-rays will be
@@ -99,9 +101,6 @@ def drizCR(input=None, configObj=None, editpars=False, **inputDict):
         cosmic-rays. See the help file for ``driz_cr`` for further discussion
         of this parameter.
 
-
-    Notes
-    -----
 
     These tasks are designed to work together seemlessly when run in the
     full ``AstroDrizzle`` interface. More advanced users may wish to create
