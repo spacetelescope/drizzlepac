@@ -8,7 +8,5 @@ drizzle images.
 
 .. moduleauthor:: Warren Hack
 
-.. automodule:: drizzlepac.createMedian
-   :members:
-   :undoc-members:
+.. automodapi:: drizzlepac.createMedian
 

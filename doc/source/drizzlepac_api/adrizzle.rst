@@ -12,7 +12,4 @@ twice during processing:
 * final drizzle step: this step produces the final combined image
   based on the cosmic-ray masks determined by `~drizzlepac.astrodrizzle.AstroDrizzle`
 
-.. automodule:: drizzlepac.adrizzle
-   :members:
-   :exclude-members: getHelpAsString
-   :undoc-members:
+.. automodapi:: drizzlepac.adrizzle
