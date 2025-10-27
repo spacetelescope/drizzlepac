@@ -79,7 +79,7 @@ class TestAlignMosaic(BaseHLATest):
         # Since these are full file names (*_flc.fits) which cannot be obtained via astroquery from
         # MAST, get the data now using ci_watson.
         for input_file in input_filenames:
-            get_bigdata("hst-hla-pipeline", "dev", "mosaic_ngc188", input_file)
+            get_bigdata("drizzlepac", "dev", "hap", "mosaic_ngc188", input_file)
 
         dataset_table = alignimages.perform_align(
             input_filenames,
@@ -124,7 +124,7 @@ class TestAlignMosaic(BaseHLATest):
         # Since these are full file names (*_flc.fits) which cannot be obtained via astroquery from
         # MAST, get the data now using ci_watson.
         for input_file in input_filenames:
-            get_bigdata("hst-hla-pipeline", "dev", "mosaic_47tuc", input_file)
+            get_bigdata("drizzlepac", "dev", "hap", "mosaic_47tuc", input_file)
 
         dataset_table = alignimages.perform_align(
             input_filenames,
@@ -168,13 +168,7 @@ class TestAlignMosaic(BaseHLATest):
                 "jbqf02i3q_flc.fits",
                 "jbqf02i8q_flc.fits",
                 "jbqf02iaq_flc.fits",
-            ], # commented out until alignment parameters better optimized. 
-            # [
-            #     "ib2u12kaq_flt.fits",
-            #     "ib2u12keq_flt.fits",
-            #     "ib2u12kiq_flt.fits",
-            #     "ib2u12klq_flt.fits",
-            # ],
+            ],
             [
                 "ibnh02coq_flc.fits",
                 "ibnh02cmq_flc.fits",
@@ -212,7 +206,7 @@ class TestAlignMosaic(BaseHLATest):
         # Since these are full file names (*_flc.fits) which cannot be obtained via astroquery from
         # MAST, get the data now using ci_watson.
         for input_file in input_filenames:
-            get_bigdata("hst-hla-pipeline", "dev", "base_tests", input_file)
+            get_bigdata("drizzlepac", "dev", "hap", "base_tests", input_file)
 
         dataset_table = alignimages.perform_align(
             input_filenames,
@@ -279,7 +273,7 @@ class TestAlignMosaic(BaseHLATest):
         # Since these are full file names (*_flc.fits) which cannot be obtained via astroquery from
         # MAST, get the data now using ci_watson.
         for input_file in input_filenames:
-            get_bigdata("hst-hla-pipeline", "dev", "base_tests", input_file)
+            get_bigdata("drizzlepac", "dev", "hap", "base_tests", input_file)
 
         dataset_table = alignimages.perform_align(
             input_filenames,

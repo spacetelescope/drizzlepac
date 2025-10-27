@@ -25,3 +25,4 @@ hapcut_utility.log
 headerlet.log
 svm_poller_file.txt
 .vscode/settings.json
+doc/source/api/*

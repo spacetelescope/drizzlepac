@@ -8,7 +8,7 @@ import sys
 # Related third party imports
 from astropy.table import Table
 import numpy as np
-from PyPDF2 import PdfFileMerger
+from pypdf import PdfWriter
 
 # Local application imports
 from drizzlepac.haputils import starmatch_hist
@@ -292,7 +292,7 @@ def pdf_merger(output_path, input_paths):
     -------
     nothing.
     """
-    pdf_merger = PdfFileMerger()
+    pdf_merger = PdfWriter()
 
     for path in input_paths:
         pdf_merger.append(path)
