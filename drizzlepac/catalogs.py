@@ -436,7 +436,7 @@ class ImageCatalog(Catalog):
 
     skysigma : float, optional
         The standard deviation of the sky pixels. This value will only be
-        used if computesig is ``False``.
+        used if computesig is `False`.
         Default: 0.0
 
     threshold : float, optional
