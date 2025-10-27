@@ -45,7 +45,7 @@ dependencies = [
     "astrocut",
     "photutils>=2.0.0",
     "lxml",
-    "PyPDF2",
+    "pypdf",
     "scikit-image>=0.14.2",
     "numpy>2.0",
 ]
