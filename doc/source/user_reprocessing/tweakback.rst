@@ -4,7 +4,7 @@
 TWEAKBACK: Propagating The Solution
 ***********************************
 
-.. moduleauthor:: Warren Hack <help@stsci.edu>
+.. moduleauthor:: Warren Hack
 
 .. automodule:: drizzlepac.tweakback
    :members:

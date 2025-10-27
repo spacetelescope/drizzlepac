@@ -5,7 +5,7 @@ Pipeline Drizzle Parameters
 ***************************
 
 
-.. moduleauthor:: Warren Hack, Ivo Busko, Christopher Hanley <help@stsci.edu>
+.. moduleauthor:: Warren Hack, Ivo Busko, Christopher Hanley
 
 .. automodule:: drizzlepac.mdzhandler
    :members:

@@ -78,7 +78,7 @@ drizzlepac/drizzlepac/devutils/comparison_tools/compare_sourcelists.py
 Dependencies
 ------------
 - drizzlepac/drizzlepac/devutils/comparison_tools/starmatch_hist.py
-- The `PyPDF2 <https://pypi.org/project/PyPDF2/>`_ python library
+- The `PyPDF <https://pypi.org/project/pypdf//>`_ python library
 
 Inputs
 ------
@@ -132,7 +132,7 @@ from astropy.table import Table
 
 import matplotlib.pyplot as plt
 import numpy as np
-from PyPDF2 import PdfFileMerger
+from pypdf import PdfWriter
 
 from drizzlepac.haputils import diagnostic_utils
 from drizzlepac.devutils.comparison_tools import starmatch_hist
@@ -1672,7 +1672,7 @@ def pdf_merger(output_path, input_paths):
     -------
     nothing.
     """
-    pdf_merger = PdfFileMerger()
+    pdf_merger = PdfWriter()
 
     for path in input_paths:
         pdf_merger.append(path)

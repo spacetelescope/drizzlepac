@@ -2,7 +2,7 @@
 Photometric equalization for AstroDrizzle
 *****************************************
 
-.. moduleauthor:: Mihai Cara <help@stsci.edu>
+.. moduleauthor:: Mihai Cara
 
 .. automodule:: drizzlepac.photeq
 

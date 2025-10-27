@@ -4,7 +4,7 @@
 Sky-Subtraction Step
 ********************
 
-.. moduleauthor:: Christopher Hanley, Megan Sosey, Mihai Cara <help@stsci.edu>
+.. moduleauthor:: Christopher Hanley, Megan Sosey, Mihai Cara
 
 .. automodule:: drizzlepac.sky
    :members: sky

@@ -4,7 +4,7 @@
 Output Image Generation
 ***********************
 
-.. moduleauthor:: Warren Hack <help@stsci.edu>
+.. moduleauthor:: Warren Hack
 
 .. currentmodule:: drizzlepac.outputimage
 
