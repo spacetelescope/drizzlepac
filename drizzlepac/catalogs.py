@@ -788,6 +788,7 @@ class UserCatalog(Catalog):
 
         xyunits : str
             Units of the input catalog positions. Valid values are:
+
             - 'pixels': Positions are in pixel coordinates.
             - 'degrees': Positions are in world coordinates (RA/Dec) in degrees.
 
