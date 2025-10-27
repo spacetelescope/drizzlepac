@@ -94,7 +94,7 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
         * wild-card specification for files in a directory (using ``*``, ``?`` etc.)
         * comma-separated list of filenames
         * ``@-file`` filelist containing list of desired input filenames
-            (and optional inverse variance map filenames)
+          (and optional inverse variance map filenames)
 
         The ``@-file`` filelist needs to be provided as an ASCII text file
         containing a list of filenames for all input images (to which ``input_reg``
