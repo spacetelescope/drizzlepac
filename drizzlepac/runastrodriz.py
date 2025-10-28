@@ -179,9 +179,6 @@ FILTER_NAMES = {'WFPC2': ['FILTNAM1', 'FILTNAM2'],
 # default marker for trailer files
 __trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + '***\n'
 
-envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
-envvar_dict = {'off': 'off', 'on': 'on', 'yes': 'on', 'no': 'off', 'true': 'on', 'false': 'off'}
-
 envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
 # ASTROMETRY_APPLY_APRIORI supersedes a previously existing environment variable
 envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
@@ -247,29 +244,23 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     manifest_list = []
 
     # interpret envvar variable, if specified
-    if envvar_compute_name in os.environ:
-        val = os.environ[envvar_compute_name].lower()
-        if val not in envvar_bool_dict:
-            msg = "ERROR: invalid value for {}.".format(envvar_compute_name)
-            msg += "  \n    Valid Values: on, off, yes, no, true, false"
-            raise ValueError(msg)
-        align_to_gaia = envvar_bool_dict[val]
+    align_to_gaia = util.get_envvar_switch(
+        envvar_compute_name, default=align_to_gaia, description="'align to gaia'"
+    )
 
     # Insure os.environ ALWAYS contains an entry for envvar_new_apriori_name
     # and it will default to being 'on'
-    if envvar_new_apriori_name in os.environ:
-        val = os.environ[envvar_new_apriori_name].lower()
-        align_with_apriori = envvar_bool_dict[val]
-    else:
-        os.environ[envvar_new_apriori_name] = 'on'
-        align_with_apriori = True
+    align_with_apriori = util.get_envvar_switch(
+        envvar_new_apriori_name, default=True, description="'align with apriori'"
+    )
 
     # Add support for environment variable switch to automatically
     # reset IDCTAB in FLT/FLC files if different from IDCTAB in RAW files.
-    reset_idctab_switch = False
-    if envvar_reset_idctab_name in os.environ:
-        val = os.environ[envvar_reset_idctab_name].lower()
-        reset_idctab_switch = envvar_bool_dict[val]
+    reset_idctab_switch = util.get_envvar_switch(
+        envvar_reset_idctab_name,
+        default=False,
+        description="'reset idctab in flt if different from raw'",
+    )
 
     if headerlets or align_to_gaia:
         from stwcs.wcsutil import headerlet
@@ -923,7 +914,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # wcsname = fits.getval(drz_products[0], 'wcsname', ext=1)
 
     # interpret envvar variable, if specified
-    qa_switch = _get_envvar_switch(envvar_qa_stats_name)
+    qa_switch = util.get_envvar_switch(envvar_qa_stats_name, description="'QA statistics'", default=False)
 
     if qa_switch and dcorr == 'PERFORM':
 
@@ -2111,20 +2102,6 @@ def _copyToNewWorkingDir(newdir, input):
         for fname in glob.glob(rootname + '*'):
             shutil.copy(fname, os.path.join(newdir, fname))
 
-
-def _get_envvar_switch(envvar_name):
-    # interpret envvar variable, if specified
-    if envvar_name in os.environ:
-        val = os.environ[envvar_name].lower()
-        if val not in envvar_bool_dict:
-            msg = "ERROR: invalid value for {}.".format(envvar_name)
-            msg += "  \n    Valid Values: on, off, yes, no, true, false"
-            raise ValueError(msg)
-        switch_val = envvar_bool_dict[val]
-    else:
-        switch_val = None
-
-    return switch_val
 
 
 def _restoreResults(newdir, origdir):
