@@ -20,7 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.xx.x (unreleased)
 ===================
 
-- Removed help files and moved text to docstrings. [#2077,#2078,#2079]
+- Removed help files and moved text to docstrings. Also deprecated the 
+  ``interactive`` argument in ``MapReg`` function. [#2077,#2078,#2079]
 
 - Removed rounding of IDCSCALE values. [#2063]
 
