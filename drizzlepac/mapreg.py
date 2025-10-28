@@ -185,8 +185,7 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
 
         .. note::
 
-            This parameter is reserved for future use and it is not
-            available through ``TEAL`` interface.
+            This parameter is deprecated in v3.11 and will be removed in a future version.
 
     verbose : bool (Default = False)
         Specify whether or not to print extra messages during processing.
