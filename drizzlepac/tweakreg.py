@@ -1,7 +1,5 @@
 """ ``TweakReg`` - A replacement for IRAF-based ``tweakshifts``
 
-:Authors: Warren Hack, Mihai Cara
-
 :License: :doc:`/LICENSE`
 
 """
@@ -29,6 +27,7 @@ from . import refimagefindpars
 from . import __version__
 
 __taskname__ = 'tweakreg'
+__all__ = ['TweakReg']
 
 PSET_SECTION        = '_SOURCE FINDING PARS_'
 PSET_SECTION_REFIMG = '_REF IMAGE SOURCE FINDING PARS_'
@@ -752,11 +751,6 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
 def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
              refimagefindcfg=None, **input_dict):
     """
-    support input of filenames from command-line without a parameter name
-    then copy this into input_dict for merging with TEAL ConfigObj parameters
-
-    Get default or user-specified configobj for primary task
-    
     Tweakreg provides an automated interface for computing residual shifts
     between input exposures being combined using ``AstroDrizzle``. The offsets
     computed by Tweakreg correspond to pointing differences after applying the WCS
@@ -772,11 +766,15 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         This paramater can be provided in any of several forms:
 
         - filename of a single image
+        
         - filename of an association (ASN)table
+        
         - wild-card specification for files in directory (using ``\*``, ``?`` etc.)
+        
         - comma-separated list of filenames
-        - ``@file`` filelist containing list of desired input filenames with one
-        filename on each line of the file.
+        
+        - filelist containing list of desired input filenames with one filename 
+          on each line of the file.
 
     editpars : bool (Default = False)
         A parameter that allows user to edit input parameters by hand in the GUI.
@@ -811,26 +809,23 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
 
     input_dict : dict, optional
         An optional list of parameters specified by the user, which can also
-        be used to override the defaults.
-
-        .. note:: This list of parameters **can** include the ``updatewcs``
-        parameter, even though this parameter no longer can be set through
-        the TEAL GUI.
-
-        .. note:: This list of parameters **can** contain parameters specific
-        to the ``TweakReg`` task itself described here in the "Other Parameters"
+        be used to override the defaults. This list of parameters **can** include
+        the ``updatewcs`` parameter, even though this parameter no longer can be 
+        set through the TEAL GUI. This list of parameters **can** also contain parameters
+        specific to the ``TweakReg`` task itself described here in the "Other Parameters"
         section and **may not** contain parameters from the ``refimagefindpars``
-        PSET.
-
-        .. note:: For compatibility purpose with previous ``TweakReg`` versions,
+        PSET. For compatibility purpose with previous ``TweakReg`` versions,
         ``input_dict`` may contain parameters from the the ``imagefindpars``
         PSET. However, if ``imagefindcfg`` is not ``None``, then ``imagefindpars``
         parameters specified through ``input_dict`` may not duplicate
         parameters specified through ``imagefindcfg``.
 
 
-    Other Parameters
-    ----------------
+    Notes
+    -----
+
+    Additional parameters that can be set using the configobj, or input_dict
+    arguments.
 
     refimage : str (Default = '')
         Filename of reference image. Sources derived from this image will be
@@ -886,19 +881,21 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         *prepended* to the list of exclude regions.
 
         .. note::
-        Regions in a region file are processed in the order they appear in the
-        region file. Thus, when region files contain *both* "include" and
-        "exclude" regions, the order in which these regions appear may affect
-        the results.
+
+            Regions in a region file are processed in the order they appear in the
+            region file. Thus, when region files contain *both* "include" and
+            "exclude" regions, the order in which these regions appear may affect
+            the results.
 
         .. warning::
-        ``TweakReg`` relies on ``pyregion`` package for work with region files.
-        At the time of writing, ``pyregion`` uses a different algorithm from DS9
-        for converting regions from sky coordinates to image coordinate
-        (this conversion is performed before regions are converted to masks).
-        For these reasons, regions provided in sky coordinates may not produce
-        the expected (from DS9) results. While in most instances these
-        discrepancies should be tolerable, it is important to keep this in mind.
+
+            ``TweakReg`` relies on ``pyregion`` package for work with region files.
+            At the time of writing, ``pyregion`` uses a different algorithm from DS9
+            for converting regions from sky coordinates to image coordinate
+            (this conversion is performed before regions are converted to masks).
+            For these reasons, regions provided in sky coordinates may not produce
+            the expected (from DS9) results. While in most instances these
+            discrepancies should be tolerable, it is important to keep this in mind.
 
         During testing it was observed that conversion to image coordinates is
         most accurate for polygonal regions and less accurate for other regions
@@ -940,7 +937,9 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     runfile : string (Default = 'tweakreg.log')
         Specify the filename of the processing log.
 
+
     *UPDATE HEADER*
+
     updatehdr : bool (Default = No)
         Specify whether or not to update the headers of each input image
         directly with the shifts that were determined. This will allow the
@@ -954,7 +953,9 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         Allows overwriting of an existing primary WCS with the same name as
         specified by ``wcsname`` parameter.
 
+
     *HEADERLET CREATION*
+
     headerlet: bool (Default = No)
         Specify whether or not to generate a headerlet from the images at
         the end of the task? If turned on, this will create a headerlet
@@ -1000,7 +1001,9 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         into finalizing the WCS alignment stored in this headerlet. This information
         will be reformatted as 70-character wide FITS HISTORY keyword section.
 
+
     *OPTIONAL SHIFTFILE OUTPUT*
+
     shiftfile : bool (Default = No)
         Create output shiftfile?
 
@@ -1018,7 +1021,9 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         data itself. The values will be derived from the FIRST input image
         specified.
 
+
     *COORDINATE FILE DESCRIPTION*
+
     catfile : str (Default = '')
         Name of file that contains a list of input images and associated
         catalog files generated by the user. Each line of this file will
@@ -1028,12 +1033,13 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
 
         A sample catfile, with one line per image would look like::
 
-        image1_flt.fts  cat1_sci1.coo  cat1_sci2.coo
-        image2_flt.fts  cat2_sci1.coo  cat2_sci2.coo
+            image1_flt.fts  cat1_sci1.coo  cat1_sci2.coo
+            image2_flt.fts  cat2_sci1.coo  cat2_sci2.coo
 
         .. note::
-        Catalog files themselves must be text files containing
-        "white space"-separated list of values (``xcol``, ``ycol``, etc.)
+
+            Catalog files themselves must be text files containing
+            "white space"-separated list of values (``xcol``, ``ycol``, etc.)
 
     xcol : int (Default = 1)
         Column number of X position from the user-generated catalog files
@@ -1078,7 +1084,9 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         The number of brightest objects to keep after sorting the full object
         list. If nbright is set equal to ``None``, all objects will be used.
 
+
     *REFERENCE CATALOG DESCRIPTION*
+
     refcat : str (Default = '')
         Name of the external reference catalog file to be used in place of the
         catalog extracted from one of the input images. When ``refimage`` is not
@@ -1086,8 +1094,9 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         derived from input images.
 
         .. note::
-        Reference catalog must be text file containing
-        "white space"-separated list of values (``xcol``, ``ycol``, etc.)
+
+            Reference catalog must be text file containing
+            "white space"-separated list of values (``xcol``, ``ycol``, etc.)
 
     refxcol : int (Default = 1)
         Column number of RA in the external catalog file specified by the
@@ -1131,7 +1140,10 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         list. If refnbright is set to ``None``, all objects will be used. Used in
         conjunction with refcat.
 
+
     *OBJECT MATCHING PARAMETERS*
+    
+
     minobj : int (Default = 15)
         Minimum number of identified objects from each input image to use
         in matching objects from other images.
@@ -1174,7 +1186,9 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         provided.If the parameter value is set to None, no offset will
         be assumed in matching sources in ``xyxymatch``.
 
+
     *CATALOG FITTING PARAMETERS*
+
     fitgeometry : str {'shift', 'rscale', 'general'} (Default = 'rscale')
         The fitting geometry to be used in fitting the matched object lists.
         This parameter is used in fitting the offsets, rotations and/or scale
@@ -1208,30 +1222,32 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         by this update.
 
         .. note::
-        This parameter was preserved in the API for compatibility purposes with
-        existing user processing pipe-lines. However, it has been removed from
-        the ``TEAL`` interface because it is easy to have it set to 'yes'
-        (especially between consecutive runs of ``AstroDrizzle``) with
-        potentially disastrous effects on input image WCS (for example it
-        could wipe-out previously aligned WCS).
 
+            This parameter was preserved in the API for compatibility purposes with
+            existing user processing pipe-lines. However, it has been removed from
+            the ``TEAL`` interface because it is easy to have it set to 'yes'
+            (especially between consecutive runs of ``AstroDrizzle``) with
+            potentially disastrous effects on input image WCS (for example it
+            could wipe-out previously aligned WCS).
 
-    Notes
-    -----
-    Tweakreg supports the use of calibrated, distorted images (such as FLT
-    images for ACS and WFC3, or ``_c0m.fits`` images for WFPC2) as input images.
-    All coordinates for sources derived from these images (either by this task
-    or as provided by the user directly) will be corrected for distortion using
-    the distortion model information specified in each image's header. This
-    eliminates the need to run ``AstroDrizzle`` on the input images prior to
-    running ``TweakReg``.
+    .. note::
 
-    .. note:: All calibrated input images must have been updated using
-            ``updatewcs`` from the ``STWCS`` package, to include the full
-            distortion model in the header. Alternatively, one can set
-            ``updatewcs`` parameter to ``True`` when running either ``TweakReg``
-            or ``AstroDrizzle`` from command line (Python interpreter)
-            **the first time** on such images.
+        Tweakreg supports the use of calibrated, distorted images (such as FLT
+        images for ACS and WFC3, or ``_c0m.fits`` images for WFPC2) as input images.
+        All coordinates for sources derived from these images (either by this task
+        or as provided by the user directly) will be corrected for distortion using
+        the distortion model information specified in each image's header. This
+        eliminates the need to run ``AstroDrizzle`` on the input images prior to
+        running ``TweakReg``.
+
+    .. note::
+
+        All calibrated input images must have been updated using
+        ``updatewcs`` from the ``STWCS`` package, to include the full
+        distortion model in the header. Alternatively, one can set
+        ``updatewcs`` parameter to ``True`` when running either ``TweakReg``
+        or ``AstroDrizzle`` from command line (Python interpreter)
+        **the first time** on such images.
 
     This task will use catalogs, and catalog-matching, based on the ``xyxymatch``
     algorithm to determine the offset between the input images. The primary
@@ -1241,16 +1257,19 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     their catalogs of source positions derived from **each input chip**.
 
     .. note::
-    Catalog files must be text files containing
-    "white space"-separated list of values (``xcol``, ``ycol``, etc.)
+
+        Catalog files must be text files containing
+        "white space"-separated list of values (``xcol``, ``ycol``, etc.)
 
     The reference frame will be defined either by:
 
-        * the image with the largest overlap with another input image AND
-        with the largest total overlap with the rest of the input images,
+        * the image with the largest overlap with another input image AND with 
+          the largest total overlap with the rest of the input images,
+          
         * a catalog derived from a reference image specified by the user, or
-        * a catalog of undistorted sky positions (RA/Dec) and fluxes
-        provided by the user.
+        
+        * a catalog of undistorted sky positions (RA/Dec) and fluxes provided by 
+          the user.
 
     For a given observation, the distortion model is applied to all distorted
     input positions, and the sources from each chip are then combined into a
@@ -1280,9 +1299,11 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     can be updated directly with the fit derived for that image. Otherwise,
     the 'shiftfile' can be passed to AstroDrizzle for aligning the images.
 
-    .. note:: Because of the nature of the used algorithm it may be necessary
-            to run this task multiple time until new shifts, rotations,
-            and/or scales are small enough for the required precision.
+    .. note::
+
+        Because of the nature of the used algorithm it may be necessary
+        to run this task multiple time until new shifts, rotations,
+        and/or scales are small enough for the required precision.
 
     New sources (that are not in the reference catalog) from the matched images
     are added to the reference catalog in order to allow next image to be
@@ -1311,8 +1332,8 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     every input image, regardless of whether or not that image has
     any defined exclusion regions.  A sample file would look like::
 
-    j99da1emq_flt.fits
-    j99da1f2q_flt.fits test_exclusion.reg
+        j99da1emq_flt.fits
+        j99da1f2q_flt.fits test_exclusion.reg
 
     This file specifies no exclusion files for the first image, and only
     an regions file for SCI,1 of the second image.  NOTE: The first file can be
@@ -1321,41 +1342,40 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     In the above example, should an exclusion regions file only be needed for the
     second chip in the second image, the file would need to look like::
 
-    j99da1emq_flt.fits
-    j99da1f2q_flt.fits None test_sci2_exclusion.reg
+        j99da1emq_flt.fits
+        j99da1f2q_flt.fits None test_sci2_exclusion.reg
 
     The value ``None`` could also be replaced by ``INDEF`` if desired, but either
     string needs to be present to signify no regions file for that chip while
     the code continues parsing the line to find a file for the second chip.
 
-
+    
     **Format of Region Files**
 
     The format of the exclusions catalogs referenced in the 'exclusions'
     file defaults to the format written out by DS9 using the 'DS9/Funtools'
     region file format.  A sample file with circle() regions will look like::
 
-    # Region file format: DS9 version 4.1
-    # Filename: j99da1f2q_flt.fits[SCI]
-    global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman"
-    select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
-    image
-    circle(3170,198,20)
-    ellipse(3269,428,30,10,45) # a rotated ellipse
-    box(3241.1146,219.78132,20,20,15) # a rotated box
-    circle(200,200,50)  # outer circle
-    -circle(200,200,30) # inner circle
+        # Region file format: DS9 version 4.1
+        # Filename: j99da1f2q_flt.fits[SCI]
+        global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman"
+        select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
+        image
+        circle(3170,198,20)
+        ellipse(3269,428,30,10,45) # a rotated ellipse
+        box(3241.1146,219.78132,20,20,15) # a rotated box
+        circle(200,200,50)  # outer circle
+        -circle(200,200,30) # inner circle
 
     This region file will be interpreted as "find all sources in the image that
     **are inside** the four regions above but **not inside** the
     region -circle(200,200,30)". Effectively we will instruct ``TweakReg``
     to find all the sources *inside* the following regions::
 
-    circle(3170,198,20)
-    ellipse(3269,428,30,10,45) # a rotated ellipse
-    box(3241.1146,219.78132,20,20,15) # a rotated box
-    annulus(200,200,30,50)  # outer circle(r=50) - inner circle(r=30)
-
+        circle(3170,198,20)
+        ellipse(3269,428,30,10,45) # a rotated ellipse
+        box(3241.1146,219.78132,20,20,15) # a rotated box
+        annulus(200,200,30,50)  # outer circle(r=50) - inner circle(r=30)
 
     Examples
     --------
@@ -1371,9 +1391,9 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     Set the convolution kernel width to ``~2x`` the value of the PSF FWHM.
     Save the residual offsets (``dx``, ``dy``, ``rot``, ``scale``, ``xfit_rms``, ``yfit_rms``) to a text file.
 
-    1. Run the task from Python using the command line while individually
-    specifying source finding parameters for the reference image and
-    input images:
+     1. Run the task from Python using the command line while individually
+         specifying source finding parameters for the reference image and
+         input images:
 
         >>> import drizzlepac
         >>> from drizzlepac import tweakreg
@@ -1382,7 +1402,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         ...       refimagefindcfg={'threshold' : 400, 'conv_width' : 2.5},
         ...       updatehdr=False, shiftfile=True, outshifts='shift.txt')
 
-    or, using ``dict`` constructor,
+         or, using ``dict`` constructor,
 
         >>> import drizzlepac
         >>> from drizzlepac import tweakreg
@@ -1391,30 +1411,30 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         ...       refimagefindcfg=dict(threshold=400, conv_width=2.5),
         ...       updatehdr=False, shiftfile=True, outshifts='shift.txt')
 
-    Or, run the same task from the Python command line, but specify all parameters in
-    a config file named "myparam.cfg":
+         Or, run the same task from the Python command line, but specify all parameters in
+         a config file named "myparam.cfg":
 
         >>> tweakreg.TweakReg('*flt.fits', configobj='myparam.cfg')
 
-    Alternately, edit the imagefind parameters in a TEAL GUI window
-    prior to running the task:
+         Alternately, edit the imagefind parameters in a TEAL GUI window
+         prior to running the task:
 
         >>> tweakreg.edit_imagefindpars()
 
-    2. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  It can also
-    be accessed from the Python command-line and saved to a text file:
+     2. Help can be accessed via the "Help" pulldown menu in the TEAL GUI.  It can also
+         be accessed from the Python command-line and saved to a text file:
 
         >>> from drizzlepac import tweakreg
         >>> tweakreg.help()
-    
-    or
 
-        >>> tweakreg.help(file='help.txt')   
+         or
+
+        >>> tweakreg.help(file='help.txt')
 
     See Also
     --------
     drizzlepac.astrodrizzle
-    
+
     """
     if isinstance(configobj, (str, bytes)):
         if configobj == 'defaults':
@@ -1478,8 +1498,3 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     if not editpars:
         # Pass full set of parameters on to the task
         run(configObj)
-
-
-TweakReg.__doc__ = util._def_help_functions(
-    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
-)
