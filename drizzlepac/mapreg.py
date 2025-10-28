@@ -60,7 +60,7 @@ class _AuxSTWCS:
 
 
 def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
-           chip_reg='', outpath='./regions', filter='', catfname='',
+           chip_reg='', outpath='./regions', filter='', catfname='', iteractive=False,
            append=False, verbose=True):
     """Primary interface to map DS9 region files given in sky coordinates
 
@@ -177,6 +177,16 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
         Specify whether or not to append the transformed regions to the existing
         region files with the same name.
 
+    interactive : bool (Default = False)
+        **Reserved for future use.** (This switch controls whether the program stops
+        and waits for the user to examine any generated region files before
+        continuing on to the next image.)
+
+        .. note::
+
+            This parameter is reserved for future use and it is not
+            available through ``TEAL`` interface.
+
     verbose : bool (Default = False)
         Specify whether or not to print extra messages during processing.
 
@@ -280,7 +290,7 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
                       refimg=refimg_par, ref_wcs_ext=ref_wcs_ext_par,
                       chip_reg=chip_reg_par,
                       outpath=outpath_par, filter=filter_par,
-                      catfname = catfname_par,
+                      catfname = catfname_par, iteractive=iteractive,
                       append=append, verbose=verbose )
 
 
@@ -331,7 +341,7 @@ def _simple_parse_teal_extn(extnstr):
 def map_region_files(input_reg, images, img_wcs_ext='sci',
                      refimg=None, ref_wcs_ext='sci', chip_reg=None,
                      outpath='./regions', filter=None, catfname=None,
-                     append=False, verbose=True):
+                     iteractive=False, append=False, verbose=True):
     """Map DS9 region files from sky coordinates onto image coordinates.
 
     This routine performs the core work for :func:`MapReg`. It reads one or more
@@ -383,6 +393,9 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
     catfname : str or None, optional
         Name of an exclusions catalog to write summarizing the generated region
         files. When ``None`` no catalog is produced. Default is ``None``.
+    iteractive : bool, optional
+        Reserved for future interactive workflows. Currently unused. Default
+        is ``False``.
     append : bool, optional
         If ``True`` and an output region file already exists, append the newly
         transformed regions instead of overwriting the file. Default is
@@ -1353,5 +1366,6 @@ def run(configObj):
            outpath     = configObj['outpath'],
            filter      = configObj['filter'],
            catfname    = configObj['catfname'],
+           iteractive  = False, #configObj['iteractive'],
            append      = configObj['append'],
            verbose     = configObj['verbose'])
