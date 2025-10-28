@@ -178,7 +178,7 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
         Specify whether or not to append the transformed regions to the existing
         region files with the same name.
 
-    interactive : bool (Default = False)
+    iteractive : bool (Default = False)
         **Reserved for future use.** (This switch controls whether the program stops
         and waits for the user to examine any generated region files before
         continuing on to the next image.)
