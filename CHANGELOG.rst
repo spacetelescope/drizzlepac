@@ -17,7 +17,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.xx.x (unreleased)
+3.11.0 (unreleased)
 ===================
 
 - Removed help files and moved text to docstrings. Also deprecated the 

@@ -59,7 +59,7 @@ class _AuxSTWCS:
             ar.append(kwargs['origin'])
         return self._stwcs.all_pix2world( *tuple(ar) )
 
-@deprecated_renamed_argument('interactive', None, '3.10.1')
+@deprecated_renamed_argument('iteractive', None, '3.11.0')
 def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
            chip_reg='', outpath='./regions', filter='', catfname='', iteractive=False,
            append=False, verbose=True):
