@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.xx.x (unreleased)
 ===================
 
+- Log all environment variables [#2085].
+
 - Removed help files and moved text to docstrings. [#2077,#2078,#2079]
 
 - Removed rounding of IDCSCALE values. [#2063]
