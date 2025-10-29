@@ -14,6 +14,7 @@ from stwcs import wcsutil
 from . import __version__
 
 __taskname__ = 'skytopix'
+__all__ = ['rd2xy']
 
 blank_list = [None, '', ' ']
 
@@ -94,7 +95,6 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
         >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]", coordfile='radec_sci1.dat',
         ...                     colnames=['c3','c4'], output="xy_sci1.dat")
     """
-    
     single_coord = False
     if coordfile is not None:
         if colnames in blank_list:
