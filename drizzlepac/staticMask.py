@@ -20,6 +20,7 @@ from . import util
 from . import processInput
 
 __taskname__ = "staticMask"
+__all__ = ["createMask"]
 STEP_NUM = 1
 PROCSTEPS_NAME = "Static Mask"
 
