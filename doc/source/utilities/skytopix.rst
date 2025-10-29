@@ -14,6 +14,4 @@ tweakreg.
 
 .. moduleauthor:: Warren Hack
 
-.. automodule:: drizzlepac.skytopix
-
-.. autofunction:: rd2xy
+.. automodapi:: drizzlepac.skytopix

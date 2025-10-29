@@ -3,8 +3,7 @@
 This step measures, subtracts and/or equalizes the sky from each
 input image while recording the subtracted value in the image header.
 
-:Authors:
-    Christopher Hanley, Megan Sosey, Mihai Cara
+:Authors: Christopher Hanley, Megan Sosey, Mihai Cara
 
 :License: :doc:`/LICENSE`
 
@@ -29,6 +28,7 @@ from . import __version__
 
 
 __taskname__= "drizzlepac.sky" #looks in drizzlepac for sky.cfg
+__all__ = ['sky']
 STEP_NUM = 2  #this relates directly to the syntax in the cfg file
 PROCSTEPS_NAME = "Subtract Sky"
 
@@ -65,7 +65,8 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     target itself, thereby overestimating the sky on that detector. If the other
     detector is less affected by such a target, then its sky value  will be lower,
     and can therefore also be substituted as the sky value for the detector
-    with the bright source.
+    with the bright source. The input file's primary headers is updated with the
+    computed sky value.
 
     For more information on the science applications of the sky task,
     see the `DrizzlePac Handbook: <http://drizzlepac.stsci.edu>`_\ .
@@ -94,11 +95,11 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         An optional list of parameters specified by the user.
 
         .. note::
-        These are parameters that ``configObj`` should contain by default. These
-        parameters can be altered on the fly using the ``inputDict``. If ``configObj``
-        is set to None and there is no ``inputDict`` information, then the values
-        for the parameters will be pulled from the default configuration files
-        for the task.
+            These are parameters that ``configObj`` should contain by default. These
+            parameters can be altered on the fly using the ``inputDict``. If ``configObj``
+            is set to None and there is no ``inputDict`` information, then the values
+            for the parameters will be pulled from the default configuration files
+            for the task.
 
         Table of optional parameters that should be in ``configobj`` and can also be
         specified in ``inputDict``.
@@ -106,29 +107,30 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         ===============   ===================================================================
         Name              Definition
         ===============   ===================================================================
-        ``skyuser``         'KEYWORD in header which indicates a sky subtraction value to use'.
-        ``skymethod``       'Sky computation method'
-        ``skysub``          'Perform sky subtraction?'
-        ``skywidth``        'Bin width of histogram for sampling sky statistics (in sigma)'
-        ``skystat``         'Sky correction statistics parameter'
-        ``skylower``        'Lower limit of usable data for sky (always in electrons)'
-        ``skyupper``        'Upper limit of usable data for sky (always in electrons)'
-        ``skyclip``         'Number of clipping iterations'
-        ``skylsigma``       'Lower side clipping factor (in sigma)'
-        ``skyusigma``       'Upper side clipping factor (in sigma)'
-        ``skymask_cat``     'Catalog file listing image masks'
-        ``use_static``      'Use static mask for skymatch computations?'
-        ``sky_bits``        'Bit flags for identifying bad pixels in DQ array'
-        ``skyuser``         'KEYWORD indicating a sky subtraction value if done by user'
-        ``skyfile``         'Name of file with user-computed sky values'
-        ``in_memory``       'Optimize for speed or for memory use'
+        skyuser           KEYWORD in header which indicates a sky subtraction value to use.
+        skymethod         Sky computation method
+        skysub            Perform sky subtraction?
+        skywidth          Bin width of histogram for sampling sky statistics (in sigma)
+        skystat           Sky correction statistics parameter
+        skylower          Lower limit of usable data for sky (always in electrons)
+        skyupper          Upper limit of usable data for sky (always in electrons)
+        skyclip           Number of clipping iterations
+        skylsigma         Lower side clipping factor (in sigma)
+        skyusigma         Upper side clipping factor (in sigma)
+        skymask_cat       Catalog file listing image masks
+        use_static        Use static mask for skymatch computations?
+        sky_bits          Bit flags for identifying bad pixels in DQ array
+        skyuser           KEYWORD indicating a sky subtraction value if done by user
+        skyfile           Name of file with user-computed sky values
+        in_memory         Optimize for speed or for memory use
         ===============   ===================================================================
 
         These optional parameters are described in more detail below in the
         "Other Parameters" section.
 
-    Other Parameters
-    ----------------
+    Notes
+    -----
+
     skysub : bool (Default = Yes)
         Turn on or off sky subtraction on the input data. When ``skysub`` is set
         to ``no``, then ``skyuser`` field will be enabled and if user specifies a header
@@ -144,50 +146,47 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
 
         Select the algorithm for sky computation:
 
-        * **'localmin'**\ : compute a common sky for all members of *an exposure*
-        (see NOTES below). For a typical use, it will compute
-        sky values for each chip/image extension (marked for sky
-        subtraction in the :py:obj:`input` parameter) in an input image,
-        and it will subtract the previously found minimum sky value
-        from all chips (marked for sky subtraction) in that image.
-        This process is repeated for each input image.
+        * *localmin* : compute a common sky for all members of *an exposure*
+          (see NOTES below). For a typical use, it will compute
+          sky values for each chip/image extension (marked for sky
+          subtraction in the :py:obj:`input` parameter) in an input image,
+          and it will subtract the previously found minimum sky value
+          from all chips (marked for sky subtraction) in that image.
+          This process is repeated for each input image.
 
-        .. note::
-            This setting is recommended when regions of overlap between images
-            are dominated by "pure" sky (as opposite to extended, diffuse
-            sources).
+          .. note::
+              This setting is recommended when regions of overlap between images
+              are dominated by "pure" sky (as opposite to extended, diffuse
+              sources). This is similar to the "skysub" algorithm used in previous
+              versions of astrodrizzle.
 
-        .. note::
-            This is similar to the "skysub" algorithm used in previous
-            versions of astrodrizzle.
+        * *globalmin* : compute a common sky value for all members of
+          *all exposures* (see NOTES below). It will compute
+          sky values for each chip/image extension (marked for sky
+          subtraction in the ``input`` parameter) in all input
+          images, find the minimum sky value, and then it will
+          subtract the same minimum sky value from all chips
+          (marked for sky subtraction) in all images. This method *may*
+          useful when input images already have matched background values.
 
-        * **'globalmin'**\ : compute a common sky value for all members of
-        *all exposures* (see NOTES below). It will compute
-        sky values for each chip/image extension (marked for sky
-        subtraction in the ``input`` parameter) in **all** input
-        images, find the minimum sky value, and then it will
-        subtract the **same** minimum sky value from **all** chips
-        (marked for sky subtraction) in **all** images. This method *may*
-        useful when input images already have matched background values.
+        * *match* : compute differences in sky values between images
+          in common (pair-wise) sky regions. In this case computed sky values
+          will be relative (delta) to the sky computed in one of the
+          input images whose sky value will be set to (reported to be) 0.
+          This setting will "equalize" sky values between the images in
+          large mosaics. However, this method is not recommended when used
+          in conjunction with `AstroDrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
+          because it computes relative sky values while ``AstroDrizzle`` needs
+          "measured" sky values for median image generation and CR rejection.
 
-        * **'match'**\ : compute differences in sky values between images
-        in common (pair-wise) sky regions. In this case computed sky values
-        will be relative (delta) to the sky computed in one of the
-        input images whose sky value will be set to (reported to be) 0.
-        This setting will "equalize" sky values between the images in
-        large mosaics. However, this method is not recommended when used
-        in conjunction with `AstroDrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
-        because it computes relative sky values while ``AstroDrizzle`` needs
-        "measured" sky values for median image generation and CR rejection.
+        * *globalmin+match* : first find a minimum "global" sky value
+          in all input images and then use 'match' method to
+          equalize sky values between images.
 
-        * **'globalmin+match'**\ : first find a minimum "global" sky value
-        in all input images and then use **'match'** method to
-        equalize sky values between images.
-
-        .. note::
-            This is the *recommended* setting for images
-            containing diffuse sources (e.g., galaxies, nebulae)
-            covering significant parts of the image.
+          .. note::
+              This is the *recommended* setting for images
+              containing diffuse sources (e.g., galaxies, nebulae)
+              covering significant parts of the image.
 
     skywidth : float, optional (Default Value = 0.1)
         Bin width, in sigma, used to sample the distribution of pixel flux values in order to compute the sky background statistics.
@@ -250,9 +249,9 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         ``skysub`` is set to ``yes``.
 
         .. note::
-        When ``skysub``=``no`` and ``skyuser`` field is empty, then ``AstroDrizzle``
-        will assume that sky background is 0.0 for the purpose of cosmic-ray
-        rejection.
+            When ``skysub``=``no`` and ``skyuser`` field is empty, then ``AstroDrizzle``
+            will assume that sky background is 0.0 for the purpose of cosmic-ray
+            rejection.
 
 
     in_memory : bool, optional (Default Value = False)
@@ -262,13 +261,8 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         recommended for most systems.
 
 
-    Returns
-    -------
-    None : The input file's primary headers is updated with the computed sky value.
+    **Further Notes:**
 
-
-    Notes
-    -----
     :py:func:`sky` provides new algorithms for sky value computations
     and enhances previously available algorithms used by, e.g.,
     `Astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_\ .
@@ -282,21 +276,20 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     ``'match'``, as well as a combination of the two -- ``'globalmin+match'``.
 
     - The ``'globalmin'`` method computes the minimum sky value across *all*
-    chips in *all* input images. That sky value is then considered to be
-    the background in all input images.
+      chips in *all* input images. That sky value is then considered to be
+      the background in all input images.
 
-    - The ``'match'`` algorithm is somewhat
-    similar to the traditional sky subtraction method (``skymethod``\ =\
-    ``'localmin'``\ ) in the sense that it measures the sky indipendently
-    in input images (or detector chips). The major differences are that,
-    unlike the traditional method,
+    - The ``'match'`` algorithm is somewhat similar to the traditional sky
+      subtraction method (``skymethod``\ =\``'localmin'``\ ) in the sense that it
+      measures the sky indipendently in input images (or detector chips). The
+      major differences are that, unlike the traditional method,
 
-        #. ``'match'`` algorithm computes *relative* sky values with regard
-        to the sky in a reference image chosen from the input list
-        of images; *and*
+        * ``'match'`` algorithm computes *relative* sky values with regard
+          to the sky in a reference image chosen from the input list
+          of images; *and*
 
-        #. Sky statistics is computed only in the part of the image
-        that intersects other images.
+        * Sky statistics is computed only in the part of the image
+          that intersects other images.
 
     This makes ``'match'`` sky computation algorithm particularly useful
     for "equalizing" sky values in large mosaics in which one may have
@@ -340,7 +333,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         header keyword will be relative sky values (sky offsets) and derived
         weights will be incorrect.
 
-    - The ``'globalmin+match'`` algorithm combines ``'match'`` and
+    The ``'globalmin+match'`` algorithm combines ``'match'`` and
     ``'globalmin'`` methods in order to overcome the limitation of the
     ``'match'`` method described in the note above: it uses ``'globalmin'``
     algorithm to find a baseline sky value common to all input images
@@ -351,7 +344,8 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     ``AstroDrizzle``.
 
     **Glossary:**
-    **Exposure** -- a *subset* of FITS image extensions in an input image
+
+    *Exposure* -- a *subset* of FITS image extensions in an input image
     that correspond to different chips in the detector used to acquire
     the image. The subset of image extensions that form an exposure
     is defined by specifying extensions to be used with input images
@@ -366,17 +360,17 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     .. note::
 
         * Footprints are managed by the
-        `spherical_geometry.polygon.SphericalPolygon
-        <https://spherical-geometry.readthedocs.io/en/latest/api/spherical_geometry.polygon.SphericalPolygon.html>`_
-        class.
+          `spherical_geometry.polygon.SphericalPolygon
+          <https://spherical-geometry.readthedocs.io/en/latest/api/spherical_geometry.polygon.SphericalPolygon.html>`_
+          class.
 
         * Both footprints *and* associated exposures (image data, WCS
-        information, and other header information) are managed by the
-        :py:class:`~stsci.skypac.skyline.SkyLine` class.
+          information, and other header information) are managed by the
+          :py:class:`~stsci.skypac.skyline.SkyLine` class.
 
         * Each :py:class:`~stsci.skypac.skyline.SkyLine` object contains one or more
-        :py:class:`~stsci.skypac.skyline.SkyLineMember` objects that manage
-        both footprints *and* associated *chip* data that form an exposure.
+          :py:class:`~stsci.skypac.skyline.SkyLineMember` objects that manage
+          both footprints *and* associated *chip* data that form an exposure.
 
     **Remarks:**
     * :py:func:`sky` works directly on *geometrically distorted*
@@ -1198,8 +1192,3 @@ def getreferencesky(image,keyval):
     _platescale=image.header["PLATESCL"]
 
     return (_subtractedSky * (_refplatescale / _platescale)**2 )
-
-
-sky.__doc__ = util._def_help_functions(
-    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
-)
