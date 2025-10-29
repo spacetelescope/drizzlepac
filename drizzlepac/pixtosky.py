@@ -13,11 +13,14 @@ from . import util
 from . import wcs_functions
 from stwcs import wcsutil
 from . import __version__
+from astropy.utils.decorators import deprecated_renamed_argument
 
 __taskname__ = 'pixtosky'
+__all__ = ['xy2rd']
 
 blank_list = [None, '', ' ']
 
+@deprecated_renamed_argument('coords', 'coordfile', '2.1.3')
 def xy2rd(input,x=None,y=None,coords=None, coordfile=None,colnames=None,separator=None,
             hms=True, precision=6,output=None,verbose=True):
     """Primary interface to perform coordinate transformations from
@@ -106,7 +109,7 @@ def xy2rd(input,x=None,y=None,coords=None, coordfile=None,colnames=None,separato
         >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coordfile='xy_sci1.dat',
         ...                     colnames=['c3','c4'], output="radec_sci1.dat")
     """
-    
+
     single_coord = False
     # Only use value provided in `coords` if nothing has been specified for coordfile
     if coords is not None and coordfile is None:
