@@ -13,6 +13,4 @@ tweakreg.
 
 .. moduleauthor:: Warren Hack
 
-.. automodule:: drizzlepac.pixtosky
-
-.. autofunction:: xy2rd
+.. automodapi:: drizzlepac.pixtosky
