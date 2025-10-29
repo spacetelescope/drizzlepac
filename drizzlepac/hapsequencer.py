@@ -87,7 +87,6 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # Environment variable which controls the quality assurance testing
 # for the Single Visit Mosaic processing.
-envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
 envvar_qa_svm = "SVM_QUALITY_TESTING"
 
 envvar_cat_svm = {"SVM_CATALOG_SBC": 'on',
@@ -539,7 +538,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     log.info("Run start time: {}".format(str(starting_dt)))
 
     # Start by reading in any environment variable related to catalog generation that has been set
-    cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_svm[sw]) for sw in envvar_cat_svm}
+    cat_switches = {sw: util.get_envvar_switch(sw,default=envvar_cat_svm[sw]) for sw in envvar_cat_svm}
 
     # Since these are used in the finally block, make sure they are initialized
     total_obj_list = []
@@ -686,7 +685,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
         # Quality assurance portion of the processing - done only if the environment
         # variable, SVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
-        qa_switch = _get_envvar_switch(envvar_qa_svm)
+        qa_switch = util.get_envvar_switch(envvar_qa_svm, description="'QA statistics'", default=False)
 
         # If requested, generate quality assessment statistics for the SVM products
         if qa_switch:
@@ -955,35 +954,6 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         filter_product_catalogs.catalogs[cat_type].source_cat = source_cat
 
     return filter_product_catalogs
-
-
-def _get_envvar_switch(envvar_name, default=None):
-    """
-    This private routine interprets any environment variable, such as SVM_QUALITY_TESTING.
-
-    PARAMETERS
-    -----------
-    envvar_name : str
-        name of environment variable to be interpreted
-
-    default : str or None
-        Value to be used in case environment variable was not defined or set.
-
-    .. note :
-    This is a copy of the routine in runastrodriz.py.  This code should be put in a common place.
-
-    """
-    if envvar_name in os.environ:
-        val = os.environ[envvar_name].lower()
-        if val not in envvar_bool_dict:
-            msg = "ERROR: invalid value for {}.".format(envvar_name)
-            msg += "  \n    Valid Values: on, off, yes, no, true, false"
-            raise ValueError(msg)
-        switch_val = envvar_bool_dict[val]
-    else:
-        switch_val = envvar_bool_dict[default] if default else None
-
-    return switch_val
 
 # ------------------------------------------------------------------------------
 

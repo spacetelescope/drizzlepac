@@ -85,10 +85,13 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'
 
+# Check if the environment variable is defined, and if so, use that value
 if ASTROMETRIC_CAT_ENVVAR in os.environ:
     SERVICELOCATION = os.environ[ASTROMETRIC_CAT_ENVVAR]
+    log.debug(f"ENVVAR {ASTROMETRIC_CAT_ENVVAR} found, setting SERVICELOCATION to {SERVICELOCATION}.")
 else:
     SERVICELOCATION = DEF_CAT_URL
+    log.debug(f"ENVVAR {ASTROMETRIC_CAT_ENVVAR} not found, setting SERVICELOCATION to {SERVICELOCATION}.")
 
 MODULE_PATH = os.path.dirname(inspect.getfile(inspect.currentframe()))
 
