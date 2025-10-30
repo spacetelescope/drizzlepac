@@ -63,7 +63,7 @@ class _AuxSTWCS:
 def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
            chip_reg='', outpath='./regions', filter='', catfname='', iteractive=False,
            append=False, verbose=True):
-    """Primary interface to map DS9 region files given in sky coordinates
+    """Primary interface to map DS9 region files given in sky coordinates.
 
     Parameters
     ----------
