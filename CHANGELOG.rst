@@ -23,6 +23,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Removed help files and moved text to docstrings. Also deprecated the 
   ``iteractive`` argument in ``MapReg`` function. [#2077,#2078,#2079]
 
+- Log all environment variables [#2085].
+
 - Removed rounding of IDCSCALE values. [#2063]
 
 - Fixed metawcs ecsv filename issue and removed lingering files. [#2073]
