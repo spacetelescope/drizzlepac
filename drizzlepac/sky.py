@@ -69,7 +69,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     computed sky value.
 
     For more information on the science applications of the sky task,
-    see the `DrizzlePac Handbook: <http://drizzlepac.stsci.edu>`_\ .
+    see the `DrizzlePac Handbook: <http://drizzlepac.stsci.edu>`_.
 
 
     Parameters
@@ -189,7 +189,8 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
               covering significant parts of the image.
 
     skywidth : float, optional (Default Value = 0.1)
-        Bin width, in sigma, used to sample the distribution of pixel flux values in order to compute the sky background statistics.
+        Bin width, in sigma, used to sample the distribution of pixel flux values 
+        in order to compute the sky background statistics.
 
 
     skystat : {'median', 'mode', 'mean'}, optional (Default Value = 'median')
@@ -197,11 +198,13 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
 
 
     skylower : float, optional (Default Value = INDEF)
-        Lower limit of usable pixel values for computing the sky. This value should be specified in the units of the input image.
+        Lower limit of usable pixel values for computing the sky. This value 
+        should be specified in the units of the input image.
 
 
     skyupper : float, optional (Default Value = INDEF)
-        Upper limit of usable pixel values for computing the sky. This value should be specified in the units of the input image.
+        Upper limit of usable pixel values for computing the sky. This value 
+        should be specified in the units of the input image.
 
 
     skyclip : int, optional (Default Value = 5)
@@ -221,18 +224,30 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
 
 
     use_static : bool, optional (Default Value = True)
-        Specifies whether or not to use static mask to exclude masked image pixels from sky computations.
+        Specifies whether or not to use static mask to exclude masked image 
+        pixels from sky computations.
 
 
     sky_bits : int, None, optional (Default = 0)
-        Integer sum of all the DQ bit values from the input image's DQ array that should be considered "good" when building masks for sky computations. For example, if pixels in the DQ array can be combinations of 1, 2, 4, and 8 flags and one wants to consider DQ "defects" having flags 2 and 4 as being acceptable for sky computations, then ``sky_bits`` should be set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a "bad" pixel.
+        Integer sum of all the DQ bit values from the input image's DQ array 
+        that should be considered "good" when building masks for sky computations. 
+        For example, if pixels in the DQ array can be combinations of 1, 2, 4, 
+        and 8 flags and one wants to consider DQ "defects" having flags 2 and 4 
+        as being acceptable for sky computations, then ``sky_bits`` should be 
+        set to 2+4=6. Then a DQ pixel having values 2,4, or 6 will be considered 
+        a good pixel, while a DQ pixel with a value, e.g., 1+2=3, 4+8=12, etc. 
+        will be flagged as a "bad" pixel.
 
-        | Default value (0) will make *all* non-zero pixels in the DQ mask to be considered "bad" pixels, and the corresponding image pixels will not be used for sky computations.
+        Default value (0) will make *all* non-zero pixels in the DQ mask to be
+        considered "bad" pixels, and the corresponding image pixels will not be 
+        used for sky computations.
 
-        | Set ``sky_bits`` to ``None`` to turn off the use of image's DQ array for sky computations.
+        Set ``sky_bits`` to ``None`` to turn off the use of image's DQ array 
+        for sky computations.
 
         .. note::
-            DQ masks (if used), *will* *be* combined with user masks specified in the input @-file.
+            DQ masks (if used), *will be* combined with user masks specified 
+            in the input @-file.
 
 
     skyfile : str, optional (Default Value = '')
@@ -265,10 +280,10 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
 
     :py:func:`sky` provides new algorithms for sky value computations
     and enhances previously available algorithms used by, e.g.,
-    `Astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_\ .
+    `Astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_.
 
     First, the standard sky computation algorithm
-    (see ``skymethod`` = ``'localmin'``\ ) was upgraded to be able to use
+    (see skymethod = 'localmin') was upgraded to be able to use
     DQ flags and user supplied masks to remove "bad" pixels from being
     used for sky statistics computations.
 
@@ -280,8 +295,8 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
       the background in all input images.
 
     - The ``'match'`` algorithm is somewhat similar to the traditional sky
-      subtraction method (``skymethod``\ =\``'localmin'``\ ) in the sense that it
-      measures the sky indipendently in input images (or detector chips). The
+      subtraction method (skymethod ='localmin') in the sense that it
+      measures the sky independently in input images (or detector chips). The
       major differences are that, unlike the traditional method,
 
         * ``'match'`` algorithm computes *relative* sky values with regard
@@ -349,7 +364,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     that correspond to different chips in the detector used to acquire
     the image. The subset of image extensions that form an exposure
     is defined by specifying extensions to be used with input images
-    (see parameter ``input``\ ).
+    (see parameter ``input``).
 
     See help for :py:func:`~stsci.skypac.parseat.parse_at_line` for details
     on how to specify image extensions.
@@ -373,17 +388,17 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
           both footprints *and* associated *chip* data that form an exposure.
 
     **Remarks:**
+    
     * :py:func:`sky` works directly on *geometrically distorted*
-        flat-fielded images thus avoiding the need to perform an additional
-        drizzle step to perform distortion correction of input images.
-
-        Initially, the footprint of a chip in an image is aproximated by a
-        2D planar rectangle representing the borders of chip's distorted
-        image. After applying distortion model to this rectangle and
-        progecting it onto the celestial sphere, it is approximated by
-        spherical polygons. Footprints of exposures and mosaics are
-        computed as unions of such spherical polygons while overlaps
-        of image pairs are found by intersecting these spherical polygons.
+      flat-fielded images thus avoiding the need to perform an additional
+      drizzle step to perform distortion correction of input images.    
+      Initially, the footprint of a chip in an image is approximated by a
+      2D planar rectangle representing the borders of chip's distorted
+      image. After applying distortion model to this rectangle and
+      projecting it onto the celestial sphere, it is approximated by
+      spherical polygons. Footprints of exposures and mosaics are
+      computed as unions of such spherical polygons while overlaps
+      of image pairs are found by intersecting these spherical polygons.
 
     **Limitations and Discussions:**
     Primary reason for introducing "sky match" algorithm was to try to
@@ -412,7 +427,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     * Normally, distorted flat-fielded images contain cosmic rays. This
         algorithm does not perform CR cleaning. A possible way of minimizing
         the effect of the cosmic rays on sky computations is to use
-        clipping (\ ``nclip`` > 0) and/or set ``upper`` parameter to a value
+        clipping (``nclip`` > 0) and/or set ``upper`` parameter to a value
         larger than most of the sky background (or extended source) but
         lower than the values of most CR pixels.
 
