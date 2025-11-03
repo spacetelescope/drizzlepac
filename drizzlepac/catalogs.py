@@ -17,7 +17,6 @@ from astropy.io import fits
 import stsci.imagestats as imagestats
 import stregion as pyregion
 
-#import idlphot
 from . import tweakutils, util
 from .mapreg import _AuxSTWCS
 
@@ -411,15 +410,160 @@ class Catalog:
 
 
 class ImageCatalog(Catalog):
-    """ Class which generates a source catalog from an image using
-        Python-based, daofind-like algorithms
+    """Class which generates a source catalog from an image using
+    Python-based, daofind-like algorithms.
 
-        Required input ``kwargs`` parameters::
+    Parameters
+    ----------
 
-            computesig, skysigma, threshold, peakmin, peakmax,
-            hmin, conv_width, [roundlim, sharplim]
+    src_find_filters : dict, optional
+        Dictionary containing region file information for source finding.
 
+    computesig : bool, optional
+        This parameter controls whether or not to automatically compute a
+        sigma value to be used for object identification. If set to ``True``,
+        then the value computed will override any user input for
+        the parameter ``skysigma``. The automatic sigma value gets
+        computed from each input exposure as:
+
+        .. math::
+
+           \\sigma = \\sqrt{2\\left|mode\\right|}
+
+        This single value will then be used for object identification
+        for all input exposures.
+        Default: True
+
+    skysigma : float, optional
+        The standard deviation of the sky pixels. This value will only be
+        used if computesig is `False`.
+        Default: 0.0
+
+    threshold : float, optional
+        The object detection threshold above the local background in units
+        of sigma.
+        Default: 4.0
+
+    peakmin : float or None, optional
+        This parameter allows the user to select only those sources whose
+        peak value (in the units of the input image) is greater than this
+        value.
+        Default: None
+
+    peakmax : float or None, optional
+        This parameter allows the user to select only those sources
+        whose peak value (in the units of the input image) is less than
+        this value.
+        Default: None
+
+    hmin : float or None, optional
+        Threshold in sigma for feature detection.
+        Default: 4.0
+
+    conv_width : float, optional
+        The convolution kernel width in pixels. Recommended values
+        (~2x the PSF FWHM): ACS/WFC & WFC3/UVIS ~3.5 pix and
+        WFC3/IR ~2.5 pix.
+        Default: 3.5
+
+    use_sharp_round : bool, optional
+        This parameter controls whether or not to enable selection of sources
+        based on their sharpness and roundness statistics.
+        Default: False
+
+    sharplo : float, optional
+        ``sharplo`` and ``sharphi`` are designed to eliminate brightness
+        maxima that are due to bad pixels rather than to astronomical objects.
+        Only sources with sharpness above the ``sharplo`` value will be
+        selected.
+        Default: 0.2
+
+    sharphi : float, optional
+        ``sharplo`` and ``sharphi`` are designed to eliminate brightness
+        maxima that are due to bad pixels rather than to astronomical objects.
+        Only sources with sharpness below the ``sharphi`` value will be
+        selected.
+        Default: 1.0
+
+    roundlo : float, optional
+        ``roundlo`` and ``roundhi`` are designed to eliminate brightness
+        maxima that are due to bad rows or columns, rather than to
+        astronomical objects. Only sources with roundness above the
+        ``roundlo`` value will be selected.
+        Default: -1.0
+
+    roundhi : float, optional
+        ``roundlo`` and ``roundhi`` are designed to eliminate brightness
+        maxima that are due to bad rows or columns, rather than to
+        astronomical objects. Only sources with roundness below the
+        ``roundhi`` value will be selected.
+        Default: 1.0
+
+    nsigma : float, optional
+        The semi-major axis of the Gaussian convolution kernel used to
+        compute the density enhancement and mean density images in
+        Gaussian sigma.
+        Default: 1.5
+
+    ratio : float, optional
+        The ratio of the sigma of the Gaussian convolution kernel along
+        the minor axis direction to the sigma along the major axis direction.
+        For a circularly-symmetric kernel use ratio = 1.0.
+        Default: 1.0
+
+    theta : float, optional
+        The position angle (degrees) of the major axis of the Gaussian
+        convolution kernel. Theta is measured counter-clockwise from
+        the x axis.
+        Default: 0.0
+
+    fluxmin : float or None, optional
+        This parameter allows the user to select only those sources whose
+        total flux (in the units of the input image) is greater than
+        this value.
+        Default: None
+
+    fluxmax : float or None, optional
+        This parameter allows the user to select only those sources whose
+        total flux (in the units of the input image) is less than this value.
+        Default: None
+
+    dqbits : int, str, or None, optional
+        Integer sum of all the DQ bit values from the input image's DQ array
+        that should be considered "good" when building masks for source
+        finding. For example, if pixels in the DQ array can be combinations
+        of 1, 2, 4, and 8 flags and one wants to consider DQ "defects"
+        having flags 2 and 4 as being acceptable for source finding,
+        then ``dqbits`` should be set to 2+4=6. Then a DQ pixel having values
+        2,4, or 6 will be considered a good pixel, while a DQ pixel with
+        a value, e.g., 1+2=3, 4+8=12, etc. will be flagged as a "bad" pixel.
+
+        Alternatively, one can enter a comma- or '+'-separated list of
+        integer bit flags that should be added to obtain the final "good"
+        bits. For example, both ``4,8`` and ``4+8`` are equivalent to
+        setting ``dqbits`` to 12.
+
+        Setting ``dqbits`` to 0 will make *all* non-zero pixels in the DQ
+        mask to be considered "bad" pixels, and the corresponding image
+        pixels will not be used for source finding.
+
+        The default value of ``None`` will turn off the use of image's DQ
+        array for source finding.
+
+        In order to reverse the meaning of the ``dqbits``
+        parameter from indicating values of the "good" DQ flags
+        to indicating the "bad" DQ flags, prepend '~' to the string
+        value. For example, in order not to use pixels with
+        DQ flags 4 and 8 for source finding and to consider
+        as "good" all other pixels (regardless of their DQ flag),
+        set ``dqbits`` to ``~4+8``, or ``~4,8``. To obtain the
+        same effect with an ``int`` input value (except for 0),
+        enter -(4+8+1)=-13. Following this convention,
+        a ``dqbits`` string value of ``'~0'`` would be equivalent to
+        setting ``dqbits=None``.
+        Default: None
     """
+
     def __init__(self, wcs, catalog_source, src_find_filters=None, **kwargs):
         # 'src_find_filters' - None or a dictionary. The dictionary
         # MUST contain keys 'region_file' and 'region_file_mode':
@@ -485,7 +629,7 @@ class ImageCatalog(Catalog):
             ##TODO: remove the code below once 'pyregion' package can correctly
             ##      (DS9-like) convert sky coordinates to image coordinates for all
             ##      supported shapes.
-            #if not all([ (x.coord_format == 'image' or \
+            # if not all([ (x.coord_format == 'image' or \
             #              x.coord_format == 'physical') for x in reglist]):
             #    print("WARNING: Some exclusion regions are in sky coordinates.\n"
             #          "         These regions will be ignored.")
@@ -495,7 +639,7 @@ class ImageCatalog(Catalog):
             #         x.coord_format == 'physical']
             #    )
 
-            #TODO: comment out next lines if we do not support region files
+            # TODO: comment out next lines if we do not support region files
             #      in sky coordinates and uncomment previous block:
             # Convert regions from sky coordinates to image coordinates:
             auxwcs    = _AuxSTWCS(self.wcs)
@@ -525,7 +669,7 @@ class ImageCatalog(Catalog):
         else:
             mask = regmask
 
-        #DEBUG:
+        # DEBUG:
         if mask is not None:
             fn = os.path.splitext(self.fname)[0] + '_srcfind_mask.fits'
             fits.writeto(fn, mask.astype(dtype=np.uint8), overwrite=True)
@@ -535,7 +679,7 @@ class ImageCatalog(Catalog):
     def generateXY(self, **kwargs):
         """ Generate source catalog from input image using DAOFIND-style algorithm
         """
-        #x,y,flux,sharp,round = idlphot.find(array,self.pars['hmin'],self.pars['fwhm'],
+        # x,y,flux,sharp,round = idlphot.find(array,self.pars['hmin'],self.pars['fwhm'],
         #                    roundlim=self.pars['roundlim'], sharplim=self.pars['sharplim'])
         print("  #  Source finding for '{}', EXT={} started at: {}"
               .format(self.fnamenoext, self.wcs.extname, util._ptime()[0]))
@@ -639,9 +783,28 @@ class ImageCatalog(Catalog):
 class UserCatalog(Catalog):
     """ Class to manage user-supplied catalogs as inputs.
 
-        Required input ``kwargs`` parameters::
+        Parameters
+        ----------
 
-            xyunits, xcol, ycol[, fluxcol, [idcol]]
+        xyunits : str
+            Units of the input catalog positions. Valid values are:
+
+            - 'pixels': Positions are in pixel coordinates.
+            - 'degrees': Positions are in world coordinates (RA/Dec) in degrees.
+
+        xcol : int
+            Column number for the x-coordinate (1-based).
+
+        ycol : int
+            Column number for the y-coordinate (1-based).
+
+        fluxcol : int
+            Column number for the flux (1-based).
+            
+        kwargs : dict
+            Parameters for interpreting the catalog file or for performing the
+            source extraction from the image. These will be set differently
+            depending on the type of catalog being instantiated.
 
     """
     COLNAMES = COLNAME_PARS
