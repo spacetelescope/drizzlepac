@@ -1,20 +1,39 @@
-""" pixtopix - A module to perform coordinate transformation from pixel
-    coordinates in one image to pixel coordinates in another frame
+"""pixtopix - A module to perform coordinate transformation from pixel
+coordinates in one image to pixel coordinates in another frame
 
-    :Authors: Warren Hack
+:Authors: Warren Hack
 
-    :License: :doc:`/LICENSE`
+:License: :doc:`/LICENSE`
+"""
 
-    PARAMETERS
+import numpy as np
+
+from stsci.tools import fileutil
+from stwcs import wcsutil, distortion
+from . import wcs_functions
+from . import util
+from . import __version__
+
+__all__ = ['tran']
+__taskname__ = 'pixtopix'
+
+
+def tran(inimage, outimage, direction="forward", x=None, y=None, coordfile=None, 
+         colnames=None, separator=None, precision=6, output=None, verbose=True):
+    """Primary interface to perform coordinate transformations in pixel
+    coordinates between 2 images using STWCS and full distortion models
+    read from each image's header.
+
+    Parameters
     ----------
     inimage : str
-        full filename with path of input image, an extension name ``['sci',1]``
+        Full filename with path of input image, an extension name ``['sci',1]``
         should be provided if input is a multi-extension FITS file.
 
     outimage : str, optional
-        full filename with path of output image, an extension name ``['sci',1]``
+        Full filename with path of output image, an extension name ``['sci',1]``
         should be provided if output is a multi-extension FITS file.
-        If no image gets  specified, the input image will be used to generate a
+        If no image gets specified, the input image will be used to generate a
         default output WCS using ``stwcs.distortion.util.output_wcs()``.
 
     direction : str
@@ -24,92 +43,76 @@
         transform converts the pixel positions (assumed to be from the
         'output' image) into pixel positions in the 'input' image.
 
-    Optional Parameters
-    -------------------
     x : float, optional
         X position from image
+
     y : float, optional
         Y position from image
+
     coordfile : str, optional
-        full filename with path of file with starting x,y coordinates
+        Full filename with path of file with starting x,y coordinates
+
     colnames : str, optional
-        comma separated list of column names from 'coordfile' files
+        Comma separated list of column names from 'coordfile' files
         containing x,y coordinates, respectively. Will default to
         first two columns if None are specified. Column names for ASCII
         files will use 'c1','c2',... convention.
+
     separator : str, optional
-        non-blank separator used as the column delimiter in the coordfile file
+        Non-blank separator used as the column delimiter in the coordfile file
+
     precision : int, optional
         Number of floating-point digits in output values
+
     output : str, optional
         Name of output file with results, if desired
+
     verbose : bool
         Print out full list of transformation results (default: False)
 
-    RETURNS
+    Returns
     -------
     outx : float
         X position of transformed pixel. If more than 1 input value, then it
         will be a numpy array.
+
     outy : float
         Y position of transformed pixel. If more than 1 input value, then it
         will be a numpy array.
 
-    NOTES
+    Notes
     -----
     This module performs a full distortion-corrected coordinate transformation
     based on all WCS keywords and any recognized distortion keywords from the
     input image header.
 
-    Usage
-    -----
     It can be called from within Python using the syntax::
 
         >>> from drizzlepac import pixtopix
         >>> outx,outy = pixtopix.tran("input_flt.fits[sci,1]",
-                        "output_drz.fits[sci,1],"forward",100,100)
+        ...                          "output_drz.fits[sci,1]", "forward", 100, 100)
 
-    EXAMPLES
+    Examples
     --------
-
-    1.  The following command will transform the position 256,256 from
-        'input_flt.fits[sci,1]' into a position on the output image
-        'output_drz.fits[sci,1]' using::
+    1. The following command will transform the position 256,256 from
+       'input_flt.fits[sci,1]' into a position on the output image
+       'output_drz.fits[sci,1]' using::
 
         >>> from drizzlepac import pixtopix
         >>> outx,outy = pixtopix.tran("input_file_flt.fits[sci,1]",
-                    "output_drz.fits[sci,1],"forward", 256,256)
+        ...                          "output_drz.fits[sci,1]", "forward", 256, 256)
 
-
-    2.  The set of X,Y positions from 'output_drz.fits[sci,1]' stored as
-        the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
-        will be transformed into pixel positions from 'input_flt.fits[sci,1]'
-        and written out to 'xy_flt1.dat' using::
+    2. The set of X,Y positions from 'output_drz.fits[sci,1]' stored as
+    the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
+    will be transformed into pixel positions from 'input_flt.fits[sci,1]'
+    and written out to 'xy_flt1.dat' using::
 
         >>> from drizzlepac import pixtopix
         >>> x,y = pixtopix.tran("input_flt.fits[sci,1]", "output_drz.fits[sci,1]",
-                "backward", coordfile='xy_sci1.dat', colnames=['c3','c4'],
-                output="xy_flt1.dat")
-
-"""
-import numpy as np
-
-from stsci.tools import fileutil
-from stwcs import wcsutil, distortion
-from . import wcs_functions
-from . import util
-from . import __version__
-
-__taskname__ = 'pixtopix'
-
-
-def tran(inimage, outimage, direction='forward', x=None, y=None,
-         coordfile=None, colnames=None, separator=None,
-         precision=6, output=None, verbose=True):
-    """ Primary interface to perform coordinate transformations in pixel
-        coordinates between 2 images using STWCS and full distortion models
-        read from each image's header.
+        ...                    "backward", coordfile='xy_sci1.dat', colnames=['c3','c4'],
+        ...                    output="xy_flt1.dat")
     """
+    
     single_coord = False
 
     if coordfile is None:
@@ -201,10 +204,10 @@ def tran(inimage, outimage, direction='forward', x=None, y=None,
     return outx, outy
 
 
-#--------------------------------
+# --------------------------------
 # TEAL Interface functions
 # (these functions are deprecated)
-#---------------------------------
+# ---------------------------------
 def run(configObj):
     coordfile = util.check_blank(configObj['coordfile'])
     colnames = util.check_blank(configObj['colnames'])
@@ -218,9 +221,3 @@ def run(configObj):
          x=configObj['x'], y=configObj['y'], coordfile=coordfile,
          colnames=colnames, separator=sep, precision=configObj['precision'],
          output=outfile, verbose=configObj['verbose'])
-
-
-__doc__ = util._def_help_functions(
-    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
-)
-
