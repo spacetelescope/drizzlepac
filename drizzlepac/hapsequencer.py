@@ -903,7 +903,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
     ci_lookup_file_path = "svm_parameters/any"
     output_custom_pars_file = filter_product_obj.configobj_pars.output_custom_pars_file
     for cat_type in filter_product_catalogs.catalogs.keys():
-        exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime']  # TODO: This works for ACS. Make sure that it also works for WFC3. Look at "TEXPTIME"
+        exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime']
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
         drz_root_dir = os.getcwd()
