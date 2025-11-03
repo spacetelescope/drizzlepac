@@ -142,6 +142,10 @@ drizzlepac = [
     "htmlhelp/_*/*/*",
 ]
 
+[tool.cibuildwheel]
+# Disable free-threading builds on all platforms
+skip = "cp3??t-*"
+
 [tool.build_sphinx]
 builder = "html"
 configuration = "docs/source/conf.py"
