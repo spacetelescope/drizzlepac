@@ -52,6 +52,7 @@ from astropy.io import ascii
 from astropy.table import Table
 import numpy as np
 import drizzlepac
+from drizzlepac.util import get_envvar_switch
 
 from drizzlepac.haputils import analyze
 from drizzlepac.haputils import cell_utils
@@ -74,7 +75,6 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # Environment variable which controls the quality assurance testing
 # for the Single Visit Mosaic processing.
-envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
 envvar_qa_mvm = "MVM_QUALITY_TESTING"
 
 # Default values for these environment variables set to include all available data
@@ -344,7 +344,7 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
     logging.basicConfig(filename=logname, format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
     # Start by reading in any environment variable related to catalog generation that has been set
-    cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_mvm[sw]) for sw in envvar_cat_mvm}
+    cat_switches = {sw: get_envvar_switch(sw, default=envvar_cat_mvm[sw]) for sw in envvar_cat_mvm}
 
     # start processing
     starting_dt = datetime.datetime.now()
@@ -434,7 +434,8 @@ def run_mvm_processing(input_filename, skip_gaia_alignment=True, diagnostic_mode
 
         # Quality assurance portion of the processing - done only if the environment
         # variable, MVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
-        qa_switch = _get_envvar_switch(envvar_qa_mvm)
+        qa_switch = get_envvar_switch(envvar_qa_mvm, description="'QA statistics'", default=False)
+        
 
         # If requested, generate quality assessment statistics for the MVM products
         if qa_switch:
@@ -594,34 +595,3 @@ def run_align_to_gaia(total_obj_list, custom_limits=None, log_level=logutil.logg
     # Composite WCS fitting should be done at this point so that all exposures have been fit to GAIA at
     # the same time (on the same frame)
     #
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def _get_envvar_switch(envvar_name, default=None):
-    """
-    This private routine interprets any environment variable, such as MVM_QUALITY_TESTING.
-
-    PARAMETERS
-    -----------
-    envvar_name : str
-        name of environment variable to be interpreted
-
-    default : str or None
-        Value to be used in case environment variable was not defined or set.
-
-    .. note :
-    This is a copy of the routine in hapsequencer.py.  This code should be put in a common place.
-
-    """
-    if envvar_name in os.environ:
-        val = os.environ[envvar_name].lower()
-        if val not in envvar_bool_dict:
-            msg = "ERROR: invalid value for {}.".format(envvar_name)
-            msg += "  \n    Valid Values: on, off, yes, no, true, false"
-            raise ValueError(msg)
-        switch_val = envvar_bool_dict[val]
-    else:
-        switch_val = envvar_bool_dict[default] if default else None
-
-    return switch_val

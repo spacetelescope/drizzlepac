@@ -17,8 +17,19 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.xx.x (unreleased)
+3.11.0 (unreleased)
 ===================
+
+- Removed help files and moved text to docstrings. Also deprecated the 
+  ``iteractive`` argument in ``MapReg`` function. [#2077,#2078,#2079]
+
+- Log all environment variables [#2085].
+
+- Removed rounding of IDCSCALE values. [#2063]
+
+- Fixed metawcs ecsv filename issue and removed lingering files. [#2073]
+
+- Removed deprecated functions in align.py and related HAP tests. [#2072]
 
 - Improved compatibility with Python 3.15 and numpy 2.0. Updated requirement
   for ``stsci.skypac``. [#2059]

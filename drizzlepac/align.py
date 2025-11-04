@@ -48,172 +48,12 @@ log = _init_logger()
 module_fh = None
 module_logfile = ""
 
-# ----------------------------------------------------------------------------------------------------------
-
-
-def check_and_get_data(input_list: list, **pars: object) -> list:
-    """Verify that all specified files are present. If not, retrieve them from MAST.
-
-    This function relies on the `AstroQuery interface to MAST
-    <https://astroquery.readthedocs.io/en/latest/mast/mast.html>`_
-    to retrieve the exposures from the ``input_list`` that are not found in the current directory.  This
-    function calls the simplified interface in
-    :func:`haputils/astroquery_utils/retrieve_observation`
-    to get the files through AstroQuery.
-
-    Parameters
-    ----------
-    input_list : list
-        List of one or more calibrated fits images that will be used for catalog generation.
-
-    pars : dict
-        Set of additional parameters for :func:`haputils/astroquery_utils/retrieve_observation`
-        to use in retrieving any data that was not already in the current working directory.
-
-    Returns
-    =======
-    total_input_list: list
-        list of full filenames
-
-    See Also
-    ========
-    haputils/astroquery_utils/retrieve_observation
-
-    """
-    empty_list = []
-    retrieve_list = []  # Actual files retrieved via astroquery and resident on disk
-    candidate_list = []  # File names gathered from *_asn.fits file
-    ipppssoot_list = []  # ipppssoot names used to avoid duplicate downloads
-    total_input_list = []  # Output full filename list of data on disk
-
-    # Loop over the input_list to determine if the item in the input_list is a full association file
-    # (*_asn.fits), a full individual image file (aka singleton, *_flt.fits), or a root name specification
-    # (association or singleton, ipppssoot).
-    for input_item in input_list:
-        log.debug("Input item: {}".format(input_item))
-        indx = input_item.find("_")
-
-        # Input with a suffix (_xxx.fits)
-        if indx != -1:
-            lc_input_item = input_item.lower()
-            suffix = lc_input_item[indx + 1 : indx + 4]
-            log.debug("file: {}".format(lc_input_item))
-            # For an association, need to open the table and read the image names as this could
-            # be a custom association.  The assumption is this file is on local disk when specified
-            # in this manner (vs just the ipppssoot of the association).
-            # This "if" block just collects the wanted full file names.
-            if suffix == "asn":
-                candidate_list.extend(_get_asn_members(input_item))
-            elif suffix in ["flc", "flt", "c0m"]:
-                if lc_input_item not in candidate_list:
-                    candidate_list.append(lc_input_item)
-            else:
-                log.error(
-                    'Inappropriate file suffix: {}.  Looking for "asn.fits", '
-                    '"flc.fits", or "flt.fits".'.format(suffix)
-                )
-                return empty_list
-
-        # Input is an ipppssoot (association or singleton), nine characters by definition.
-        # This "else" block actually downloads the data specified as ipppssoot.
-        elif len(input_item) == 9:
-            try:
-                if input_item not in ipppssoot_list:
-                    input_item = input_item.lower()
-                    # An ipppssoot of an individual file which is part of an association cannot be
-                    # retrieved from MAST
-                    retrieve_list = aqutils.retrieve_observation(input_item, **pars)
-
-                    # If the retrieved list is not empty, add filename(s) to the total_input_list.
-                    # Also, update the ipppssoot_list so we do not try to download the data again.  Need
-                    # to do this since retrieve_list can be empty because (1) data cannot be acquired (error)
-                    # or (2) data is already on disk (ok).
-                    if retrieve_list:
-                        total_input_list += retrieve_list
-                        ipppssoot_list.append(input_item)
-                    else:
-                        # log.error('File {} cannot be retrieved from MAST.'.format(input_item))
-                        # return(empty_list)
-                        log.warning(
-                            "File {} cannot be retrieved from MAST.".format(input_item)
-                        )
-                        log.warning(f"    using pars: {pars}")
-                        # look for already downloaded ASN and related files instead
-                        # ASN filenames are the only ones that end in a digit
-                        if input_item[-1].isdigit():
-                            _asn_name = f"{input_item}_asn.fits"
-                            if not os.path.exists(_asn_name):
-                                _ = aqutils.retrieve_observation(
-                                    [f"{input_item}"], suffix=["ASN"], clobber=True
-                                )
-                            _local_files = _get_asn_members(_asn_name)
-                            if _local_files:
-                                log.warning(
-                                    f"Using local files instead:\n    {_local_files}"
-                                )
-                                total_input_list.extend(_local_files)
-                            else:
-                                _lfiles = os.listdir()
-                                log.error(
-                                    f"No suitable files found for input {input_item}"
-                                )
-                                log.error(f" in directory with files: \n {_lfiles}")
-                        return total_input_list
-
-            except Exception:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                traceback.print_exception(exc_type, exc_value, exc_tb, file=sys.stdout)
-
-    # Only the retrieve_list files via astroquery have been put into the total_input_list thus far.
-    # Now check candidate_list to detect or acquire the requested files from MAST via astroquery.
-    for file in candidate_list:
-        # If the file is found on disk, add it to the total_input_list and continue
-        if glob.glob(file):
-            total_input_list.append(file)
-            continue
-        else:
-            log.error("File {} cannot be found on the local disk.".format(file))
-            return empty_list
-
-    log.debug("TOTAL INPUT LIST: {}".format(total_input_list))
-    return total_input_list
-
-
-# ----------------------------------------------------------------------------------------------------------
-
-
-def _get_asn_members(asnfile):
-    # default ASN member type
-    member_suffix = "_flc.fits"
-
-    candidate_list = []
-    try:
-        asntab = Table.read(asnfile, format="fits")
-    except FileNotFoundError:
-        log.error("File {} not found.".format(asnfile))
-        return []
-    for row in asntab:
-        if row["MEMTYPE"].startswith("PROD"):
-            continue
-        memname = row["MEMNAME"].lower().strip()
-        # Need to check if the MEMNAME is a full filename or an ipppssoot
-        if memname.find("_") != -1:
-            candidate_list.append(memname)
-        else:
-            # Define suffix for all members based on what files are present
-            if not os.path.exists(memname + member_suffix):
-                member_suffix = "_flt.fits"
-
-            candidate_list.append(memname + member_suffix)
-
-    return candidate_list
-
 
 # ------------------------------------------------------------------------------------------------------------
 
 
 def perform_align(
-    input_list,
+    imglist,
     catalog_list,
     num_sources,
     archive=False,
@@ -233,13 +73,13 @@ def perform_align(
     """Actual Main calling function.
 
     This function performs ``a posteriori`` astrometric fits to the images specified in the
-    ``input_list``.  The images are fit to all the catalogs listed in the ``catalog_list`` parameter with
+    ``imglist``.  The images are fit to all the catalogs listed in the ``catalog_list`` parameter with
     the results being saved and returned as an Astropy Table object.  This allows the user
     to select the solution that is most appropriate.
 
     Parameters
     ----------
-    input_list : list
+    imglist : list
         List of one or more IPPSSOOTs (rootnames) to align.
 
     catalog_list : list
@@ -352,12 +192,9 @@ def perform_align(
     # 1: Interpret input data and optional parameters
     log.debug("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
     zero_dt = starting_dt = datetime.datetime.now()
-    log.debug(str(starting_dt))
-    imglist = check_and_get_data(
-        input_list, archive=archive, clobber=clobber, product_type=product_type
-    )
-    log.debug("SUCCESS")
-    log.debug(f"Processing: {imglist}")
+    log.info(str(starting_dt))
+    log.info("SUCCESS")
+    log.info(f"Processing: {imglist}")
 
     log.debug(make_label("Processing time of [STEP 1]", starting_dt))
     starting_dt = datetime.datetime.now()
