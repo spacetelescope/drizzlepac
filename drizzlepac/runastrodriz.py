@@ -2093,8 +2093,7 @@ def _update_idcscale(filename):
         for extn in range(num_sci):
             msg =  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, hdul.filename(), extn + 1)
             hdul[('sci', extn + 1)].header['idcscale'] = fhdu_idscale
-            print(msg)
-            update_msg = msg
+            log.info(msg)
     # No need to keep this file handle open anymore
     if isinstance(filename, str):
         hdul.close()
