@@ -19,10 +19,12 @@ from stsci.tools import fileutil, logutil, mputil
 from . import quickDeriv
 from . import util
 from . import processInput
-from . import __version__
+from . import version as __version__
 
 if util.can_parallel:
     import multiprocessing
+
+__all__ = ['rundrizCR', 'drizCR']
 
 
 __taskname__ = "drizCR"  # looks in drizzlepac for sky.cfg
@@ -34,7 +36,96 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 def drizCR(input=None, configObj=None, editpars=False, **inputDict):
-    """ Look for cosmic rays. """
+    """ 
+    The blotted median images that are now transformed back into the original
+    reference frame, get compared to the original input images to detect any
+    spurious pixels (which may include pixels impacted by cosmic rays) in
+    each input. Those spurious pixels then get flagged as 'bad' in the output
+    cosmic ray mask files, which get used as input for the final combination
+    so that they do not show up in the final product.
+    The identified bad pixels get flagged by updating the input mask files.
+    Optionally, copies of the original images with the bad pixels removed
+    can be created through the use of the ``driz_cr_corr`` parameter.
+
+    Parameters
+    ----------
+
+    input : str or list of str (Default = None)
+        A Python list of blotted median image filenames, or just a single
+        filename.
+
+    configObj : configObject (Default = None)
+        An instance of ``configObject`` which overrides default parameter settings.
+
+    editpars : bool (Default = False)
+        A parameter that allows user to edit input parameters by hand in the GUI.
+        True to use the GUI to edit parameters.
+
+    inputDict : dict, optional
+        An optional list of parameters specified by the user, which can also
+        be used to override the defaults.
+
+
+    Notes
+    -----
+    The following are additional parameters that can be set in the configObj
+    for this step:
+
+    driz_cr : bool (Default = False)
+        Perform cosmic-ray detection? If set to ``True``, cosmic-rays will be
+        detected and used to create cosmic-ray masks based on the algorithms
+        from ``deriv`` and ``driz_cr``.
+
+    driz_cr_corr : bool (Default = False)
+        Create a cosmic-ray cleaned input image? I set to ``True``, a cosmic-ray
+        cleaned ``_cor`` image will be generated directly from the input image,
+        and a corresponding ``_crmask`` file will be written to document detected
+        pixels affected by cosmic-rays.
+
+    driz_cr_snr : list of floats (Default = '3.5 3.0')
+        The values for this parameter specify the signal-to-noise ratios for
+        the ``driz_cr`` task to be used in detecting cosmic rays.
+        See the help file for ``driz_cr`` for further discussion of this parameter.
+
+    driz_cr_grow : int (Default = 1)
+        The radius, in pixels, around each detected cosmic-ray,
+        in which more stringent detection criteria for additional cosmic
+        rays will be used.
+
+    driz_cr_ctegrow : int (Default = 0)
+        Length, in pixels, of the CTE tail that should be masked in
+        the drizzled output.
+
+    driz_cr_scale : str (Default = '1.2 0.7')
+        Scaling factor applied to the derivative in ``driz_cr`` when detecting
+        cosmic-rays. See the help file for ``driz_cr`` for further discussion
+        of this parameter.
+
+
+    These tasks are designed to work together seemlessly when run in the
+    full ``AstroDrizzle`` interface. More advanced users may wish to create
+    specialized scripts for their own datasets, making use of only a subset
+    of the predefined ``AstroDrizzle`` tasks, or add additional processing,
+    which may be usefull for their particular data. In these cases, individual
+    access to the tasks is important.
+
+    Something to keep in mind is that the full ``AstroDrizzle`` interface will
+    make backup copies of your original files and place them in
+    the ``OrIg/`` directory of your current working directory. If you are
+    working with the stand alone interfaces, it is assumed that the user
+    has already taken care of backing up their original datafiles as the
+    input file with be directly altered.
+
+
+    Examples
+    --------
+    Basic example of how to call ``drizCR`` yourself from a Python command line
+    using the default parameters for the task.
+
+    >>> from drizzlepac import drizCR
+    >>> drizCR.drizCR('*flt.fits')
+
+    """
     log.debug(inputDict)
     inputDict["input"] = input
     configObj = util.getDefaultConfigObj(__taskname__, configObj, inputDict,
@@ -57,6 +148,23 @@ def run(configObj):
 
 
 def rundrizCR(imgObjList, configObj, procSteps=None):
+    """Execute the ``driz_cr`` cosmic-ray rejection step.
+
+    Parameters
+    ----------
+    imgObjList : list
+        Iterable of image objects created by ``processInput`` that contain the
+        science data, masks, and bookkeeping information for each exposure.
+    configObj : ConfigObj-like
+        Configuration structure holding AstroDrizzle parameter sections. The
+        ``driz_cr`` section supplies thresholds and flags for the rejection
+        run.
+    procSteps : drizzlepac.util.ProcessingSteps, optional
+        Optional progress tracker used by the pipeline harness; when provided
+        the step is registered and marked complete automatically.
+
+    """
+
     if procSteps is not None:
         procSteps.addStep(PROCSTEPS_NAME)
 
@@ -346,8 +454,3 @@ def setDefaults(configObj={}):
             paramDict[key] = configObj[key]
 
     return paramDict
-
-
-drizCR.__doc__ = util._def_help_functions(
-    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
-)
