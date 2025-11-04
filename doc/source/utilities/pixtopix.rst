@@ -10,7 +10,4 @@ task 'tran'.
 
 .. moduleauthor:: Warren Hack
 
-.. automodule:: drizzlepac.pixtopix
-
-.. autofunction:: tran
-.. autofunction:: help
+.. automodapi:: drizzlepac.pixtopix
