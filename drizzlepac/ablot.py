@@ -18,6 +18,8 @@ from . import util
 import stwcs
 from stwcs import distortion
 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+
 try:
     from . import cdriz
 except ImportError:
@@ -33,8 +35,6 @@ __all__ = ["blot", "runBlot"]
 __taskname__ = "ablot"
 STEP_NUM = 5
 PROCSTEPS_NAME = "Blot"
-
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 def blot(

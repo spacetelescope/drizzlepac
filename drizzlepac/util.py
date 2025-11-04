@@ -32,6 +32,7 @@ from . import __version__
 __fits_version__ = astropy.__version__
 __numpy_version__ = np.__version__
 
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 _cpu_count = 1
 can_parallel = False
@@ -871,7 +872,7 @@ def printParams(paramDictionary, all=False, log=None):
 
     if log is not None:
         def output(msg):
-            log.info(msg)
+            print(msg)
     else:
         def output(msg):
             print(msg, flush=True)
@@ -1472,9 +1473,9 @@ def get_envvar_switch(envvar_name, default, description=''):
             msg += f"Valid values: {', '.join(sorted(valid_values))}"
             raise ValueError(msg)
         result = envvar_bool_dict[val]
-        print(f"ENVVAR {envvar_name} found, setting {description_text}to {result}.")
+        log.info(f"ENVVAR {envvar_name} found, setting {description_text}to {result}.")
     else:
         result = envvar_bool_dict[default]
-        print(f"ENVVAR {envvar_name} not found, setting {description_text}to default of {result}.")
+        log.info(f"ENVVAR {envvar_name} not found, setting {description_text}to default of {result}.")
     
     return result
