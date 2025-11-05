@@ -1,8 +1,8 @@
-"""pixtosky - A module to perform coordinate transformation from pixel to sky coordinates.
+""" pixtosky - A module to perform coordinate transformation from pixel to sky coordinates.
 
-:Authors: Warren Hack
+    :Authors: Warren Hack
 
-:License: :doc:`/LICENSE`
+    :License: :doc:`/LICENSE`
 
 """
 
