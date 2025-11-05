@@ -764,7 +764,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     Parameters
     ----------
     
-    files : str or list of str (Default = '*flt.fits')
+    files : str or list of str (Default = ``'*flt.fits'``)
             Input files (passed in from *files* parameter)
             This parameter can be provided in any of several forms:
             
@@ -784,12 +784,9 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         settings. When configobj is defaults, default parameter values are
         loaded from the user local configuration file usually located in
         ``~/.teal/tweakreg.cfg`` or a matching configuration file in the
-        current directory. This configuration file stores most recent
-        settings that an user used when running TweakReg through the
-        `TEAL <https://stscitools.readthedocs.io/en/latest/teal_guide.html>`_
-        interface. When configobj is None, TweakReg
+        current directory. When configobj is None, TweakReg
         parameters not provided explicitly will be initialized with their
-        default values as described in the "Other Parameters" section.
+        default values as described in the section below.
 
     imagefindcfg : dict, configObject (Default = None)
         An instance of dict or configObject which overrides default source
@@ -808,8 +805,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
     input_dict : dict, optional
         An optional list of parameters specified by the user, which can also
         be used to override the defaults. This list of parameters **can** include
-        the updatewcs parameter, even though this parameter no longer can be 
-        set through the TEAL GUI. This list of parameters **can** also contain parameters
+        the updatewcs parameter. This list of parameters **can** also contain parameters
         specific to the TweakReg task itself described here in the "Other Parameters"
         section and **may not** contain parameters from the refimagefindpars
         PSET. For compatibility purpose with previous TweakReg versions,

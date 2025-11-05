@@ -126,8 +126,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         in_memory         Optimize for speed or for memory use
         ===============   ===================================================================
 
-        These optional parameters are described in more detail below in the
-        "Other Parameters" section.
+        These optional parameters are described in more detail below.
 
     Notes
     -----
@@ -277,7 +276,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         recommended for most systems.
 
 
-    **Further Notes:**
+    .. rubric:: Further Notes
 
     :py:func:`sky` provides new algorithms for sky value computations
     and enhances previously available algorithms used by, e.g.,
@@ -359,7 +358,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     making this method acceptable for use in conjunction with
     ``AstroDrizzle``.
 
-    **Glossary:**
+    .. rubric:: Glossary
 
     *Exposure* -- a *subset* of FITS image extensions in an input image
     that correspond to different chips in the detector used to acquire
@@ -370,7 +369,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     See help for :py:func:`~stsci.skypac.parseat.parse_at_line` for details
     on how to specify image extensions.
 
-    **Footprint** -- the outline (edge) of the projection of a chip or
+    *Footprint* -- the outline (edge) of the projection of a chip or
     of an exposure on the celestial sphere.
 
     .. note::
@@ -388,20 +387,21 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
           :py:class:`~stsci.skypac.skyline.SkyLineMember` objects that manage
           both footprints *and* associated *chip* data that form an exposure.
 
-    **Remarks:**
+    .. rubric:: Remarks
     
-    * :py:func:`sky` works directly on *geometrically distorted*
-      flat-fielded images thus avoiding the need to perform an additional
-      drizzle step to perform distortion correction of input images.    
-      Initially, the footprint of a chip in an image is approximated by a
-      2D planar rectangle representing the borders of chip's distorted
-      image. After applying distortion model to this rectangle and
-      projecting it onto the celestial sphere, it is approximated by
-      spherical polygons. Footprints of exposures and mosaics are
-      computed as unions of such spherical polygons while overlaps
-      of image pairs are found by intersecting these spherical polygons.
+    :py:func:`sky` works directly on *geometrically distorted*
+    flat-fielded images thus avoiding the need to perform an additional
+    drizzle step to perform distortion correction of input images.    
+    Initially, the footprint of a chip in an image is approximated by a
+    2D planar rectangle representing the borders of chip's distorted
+    image. After applying distortion model to this rectangle and
+    projecting it onto the celestial sphere, it is approximated by
+    spherical polygons. Footprints of exposures and mosaics are
+    computed as unions of such spherical polygons while overlaps
+    of image pairs are found by intersecting these spherical polygons.
 
-    **Limitations and Discussions:**
+    .. rubric:: Limitations and Discussions
+    
     Primary reason for introducing "sky match" algorithm was to try to
     equalize the sky in large mosaics in which computation of the
     "absolute" sky is difficult due to the presence of large diffuse

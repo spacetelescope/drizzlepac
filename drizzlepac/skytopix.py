@@ -85,7 +85,7 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
     position on the image 'input_flt.fits[sci,1]' using::
 
         >>> from drizzlepac import skytopix
-        >>> x,y = skytopix.rd2xy("input_file_flt.fits[sci,1]", "00:22:36.79","-72:4:9.0")
+        >>> x,y = skytopix.rd2xy("input_file_flt.fits[sci,1]", "00:22:36.79", "-72:4:9.0")
 
     2. The set of sky positions from 'input_flt.fits[sci,1]' stored as
     the 3rd and 4th columns from the ASCII file 'radec_sci1.dat'
