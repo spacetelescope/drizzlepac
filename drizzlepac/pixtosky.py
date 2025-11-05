@@ -188,10 +188,10 @@ def xy2rd(input,x=None,y=None,coords=None, coordfile=None,colnames=None,separato
 
     return ra,dec
 
-# --------------------------------
+#--------------------------------
 # TEAL Interface functions
 # (these functions are deprecated)
-# ---------------------------------
+#---------------------------------
 def run(configObj):
 
     if 'coords' in configObj:
