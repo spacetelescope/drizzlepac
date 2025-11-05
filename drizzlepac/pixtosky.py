@@ -86,12 +86,9 @@ def xy2rd(input,x=None,y=None,coords=None, coordfile=None,colnames=None,separato
     input image header. The transformation recognizes the conventions for
     describing distortion implemented as part of the SIP and Paper IV
     conventions used with ``AstroDrizzle``. Input images can be updated to use
-    these conventions through the use of the ``updatewcs`` module the ``STWCS``
-    package.
-
-    See Also
-    --------
-    stwcs
+    these conventions through the updatewcs module in the STWCS package. Refer
+    to the STWCS documentation (https://stwcs.readthedocs.io/en/latest/) for an
+    overview of the WCS-based transformation utilities relied upon here.
 
     Examples
     --------
