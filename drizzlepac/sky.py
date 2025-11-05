@@ -3,7 +3,8 @@
 This step measures, subtracts and/or equalizes the sky from each
 input image while recording the subtracted value in the image header.
 
-:Authors: Christopher Hanley, Megan Sosey, Mihai Cara
+:Authors: 
+    Christopher Hanley, Megan Sosey, Mihai Cara
 
 :License: :doc:`/LICENSE`
 
@@ -36,7 +37,7 @@ PROCSTEPS_NAME = "Subtract Sky"
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
-# this is the user access function
+#this is the user access function
 def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inputDict):
     """
     Function for computing and subtracting (or equalizing/matching) the backgroud
@@ -489,7 +490,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         run(configObj,outExt=outExt)
 
 
-# this is the function that will be called from TEAL
+#this is the function that will be called from TEAL
 def run(configObj,outExt=None):
 
     #now we really just need the imageObject list created for the dataset
@@ -512,7 +513,7 @@ def run(configObj,outExt=None):
     subtractSky(imageObjList,configObj,saveFile=saveFile)
 
 
-# this is the workhorse looping function
+#this is the workhorse looping function
 def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
     # if neither 'skyfile' nor 'skyuser' are specified, subtractSky will
     # call _skymatch to perform "sky background matching". When 'skyuser'
@@ -1137,6 +1138,7 @@ def _computeSky(image, skypars, memmap=False):
     return _skyValue
 
 
+
 def _extractSkyValue(imstatObject,skystat):
     if (skystat =="mode"):
         return imstatObject.mode
@@ -1144,6 +1146,7 @@ def _extractSkyValue(imstatObject,skystat):
         return imstatObject.mean
     else:
         return imstatObject.median
+
 
 
 def _subtractSky(image,skyValue,memmap=False):
@@ -1198,8 +1201,8 @@ def _addDefaultSkyKW(imageObjList):
                 log.info("    Adding MDRIZSKY to header with default value of 0.")
         fobj.close()
 
-# this is really related to each individual chip
-# so pass in the image for that chip, image contains header and data
+#this is really related to each individual chip
+#so pass in the image for that chip, image contains header and data
 def getreferencesky(image,keyval):
 
     _subtractedSky=image.header[keyval]

@@ -123,7 +123,7 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj
         print >> sys.stderr, "Please supply an input image\n"
         raise ValueError
 
-    # this accounts for a user-called init where config is not defined yet
+    #this accounts for a user-called init where config is not defined yet
     configObj = util.getDefaultConfigObj(__taskname__,configObj,inputDict,loadOnly=(not editpars))
     if configObj is None:
         return
@@ -131,10 +131,10 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj
     if not editpars:
         run(configObj)
 
-# --------------------------------
+#--------------------------------
 # TEAL Interface functions
 # (these functions are deprecated)
-# ---------------------------------
+#---------------------------------
 def run(configObj):
 
     #now we really just need the imageObject list created for the dataset

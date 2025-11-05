@@ -1,9 +1,9 @@
-"""skytopix - A module to perform coordinate transformation from sky
-to pixel coordinates.
+""" skytopix - A module to perform coordinate transformation from sky
+    to pixel coordinates.
 
-:Authors: Warren Hack
+    :Authors: Warren Hack
 
-:License: :doc:`/LICENSE`
+    :License: :doc:`/LICENSE`
 
 """
 
@@ -164,10 +164,10 @@ def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
     return outx, outy
 
 
-# --------------------------------
+#--------------------------------
 # TEAL Interface functions
 # (these functions are deprecated)
-# ---------------------------------
+#---------------------------------
 def run(configObj):
 
     coordfile = util.check_blank(configObj['coordfile'])
