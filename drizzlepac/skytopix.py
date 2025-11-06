@@ -18,11 +18,12 @@ __all__ = ['rd2xy']
 
 blank_list = [None, '', ' ']
 
-def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
-            precision=6,output=None,verbose=True):
+def rd2xy(input, ra=None, dec=None, coordfile=None, colnames=None,
+            precision=6, output=None, verbose=True):
     """Primary interface to perform coordinate transformations from
         pixel to sky coordinates using STWCS and full distortion models
-        read from the input image header.
+        read from the input image header. Input positions must be in the 
+        form of RA/Dec strings or as columns in a coordinate file.
 
     Parameters
     ----------

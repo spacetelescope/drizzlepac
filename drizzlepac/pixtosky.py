@@ -15,7 +15,6 @@ from stwcs import wcsutil
 from . import __version__
 from astropy.utils.decorators import deprecated_renamed_argument
 
-__taskname__ = 'pixtosky'
 __all__ = ['xy2rd']
 
 blank_list = [None, '', ' ']

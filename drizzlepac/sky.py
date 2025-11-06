@@ -84,13 +84,14 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         then the input image is overwritten.
 
     configObj : configObject (Default = None)
-        An instance of ``configObject``
+        An instance of ``configObject``, see parameters below for more details. 
 
     group : int (Default = None)
         The group of the input image.
 
     editpars : bool (Default = False)
-        A parameter that allows user to edit input parameters by hand in the GUI.
+        A deprecated argument that previously allowed a user to edit input 
+        parameters by hand in the TEAL GUI.
 
     inputDict : dict, optional
         An optional list of parameters specified by the user.
@@ -200,7 +201,6 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     skylower : float, optional (Default Value = INDEF)
         Lower limit of usable pixel values for computing the sky. This value 
         should be specified in the units of the input image.
-
 
     skyupper : float, optional (Default Value = INDEF)
         Upper limit of usable pixel values for computing the sky. This value 

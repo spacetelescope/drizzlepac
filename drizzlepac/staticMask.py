@@ -28,8 +28,11 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 
 # this is called by the user
-def createMask(input=None, static_sig=4.0, group=None, editpars=False, configObj=None, **inputDict):
-    """
+def createMask(input=None, static_sig=4.0, group=None, editpars=False, 
+               configObj=None, **inputDict):
+    """ The user can input a list of images if they like to create static masks
+    as well as optional values for static_sig and inputDict.
+    
     Create a static mask for all input images. The mask contains pixels that fall
     more than ``static_sig`` RMS below the mode for a given chip or extension.
     Those severely negative, or low pixels, might result from oversubtraction
