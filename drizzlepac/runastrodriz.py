@@ -132,9 +132,8 @@ from drizzlepac import photeq
 from drizzlepac import __version__
 
 
-__taskname__ = "runastrodriz"
 package_level_logger = logging.getLogger('drizzlepac')
-log = logging.getLogger(f'drizzlepac.{__taskname__}')
+log = logging.getLogger(f'drizzlepac.runastrodriz')
 
 # Local variables
 
@@ -250,35 +249,23 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     _manifest_filename = _trlroot + '_manifest.txt'
     _calfiles_flc = []
 
-    # remove previous file and stream handlers
-    log.handlers.clear()
-    log.parent.handlers.clear()
-    
     if debug:
         default_log_level = logging.DEBUG
         formatter = logging.Formatter('[%(levelname)s:%(name)s] %(message)s')
     else:
         default_log_level = logging.INFO
         formatter = logging.Formatter('[%(levelname)-8s] %(message)s')
-    
+
     file_handler = logging.FileHandler(f'{_trlfile}')
     stream_handler = logging.StreamHandler(sys.stdout)
-    
+
     file_handler.setLevel(default_log_level)
     stream_handler.setLevel(default_log_level)
     file_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
     package_level_logger.addHandler(file_handler)
     package_level_logger.addHandler(stream_handler)
-
-    msg = (f"""Calibration pipeline processing of {inFile} started.
-                 {__trlmarker__} 
-                 drizzlepac version {drizzlepac.__version__}
-                 tweakwcs version {tweakwcs.__version__}
-                 stwcs version {stwcs.__version__}
-                 numpy version {np.__version__}
-                 photutils version {photutils.__version__}""")
-    log.debug(msg)
+    package_level_logger.setLevel(default_log_level)
 
     init_time = time.time()
     pipeline_pars = PIPELINE_PARS.copy()
@@ -302,6 +289,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         envvar_reset_idctab_name,
         default=False,
         description="'reset idctab in flt if different from raw'",
+    )
+
+    # interpret envvar variable, if specified
+    qa_switch = util.get_envvar_switch(
+        envvar_qa_stats_name, description="'QA statistics'", default=False
     )
 
     if headerlets or align_to_gaia:
@@ -923,14 +915,15 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # Look to see whether we have products which can be evaluated
     # wcsname = fits.getval(drz_products[0], 'wcsname', ext=1)
 
-    # interpret envvar variable, if specified
-    qa_switch = util.get_envvar_switch(envvar_qa_stats_name, description="'QA statistics'", default=False)
-
     if qa_switch and dcorr == 'PERFORM':
 
         # Generate quality statistics for astrometry if specified
         calfiles = _calfiles_flc if _calfiles_flc else _calfiles
         qa.run_all(inFile, calfiles, catalogs=aposteriori_table)
+
+    # remove previous file and stream handlers
+    log.handlers.clear()
+    log.parent.handlers.clear()
 
 
 def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
@@ -1977,7 +1970,6 @@ def _copyToNewWorkingDir(newdir, input):
     for rootname in flist:
         for fname in glob.glob(rootname + '*'):
             shutil.copy(fname, os.path.join(newdir, fname))
-
 
 
 def _restoreResults(newdir, origdir):
