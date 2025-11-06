@@ -69,7 +69,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     with the bright source. The input file's primary headers is updated with the
     computed sky value.
 
-    For more information on the science applications of the sky task,
+    For more information on the science applications of the ``sky`` task,
     see the `DrizzlePac Handbook: <http://drizzlepac.stsci.edu>`_.
 
 
