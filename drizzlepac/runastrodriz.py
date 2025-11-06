@@ -284,7 +284,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     pipeline_pars = PIPELINE_PARS.copy()
     _verify = True  # Switch to control whether to verify alignment or not
     manifest_list = []
-    
+
     # interpret envvar variable, if specified
     align_to_gaia = util.get_envvar_switch(
         envvar_compute_name, default=align_to_gaia, description="'align to gaia'"
@@ -488,7 +488,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # If we no longer have any valid images to process due to guiding problems,
     # set drizcorr to OMIT and finish processing gracefully.
     if len(_calfiles) == 0:
-        dcorr = 'OMIT'    
+        dcorr = 'OMIT'
+
     if dcorr == 'PERFORM':
         # Run updatewcs on each list of images to define pipeline default WCS
         # based on latest distortion models
