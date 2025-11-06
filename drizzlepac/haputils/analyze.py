@@ -778,7 +778,11 @@ def lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4):
     # start by generating a histogram of the angles of all the lines
     # We will ignore lines that are exactly in line with a column (+/- 90)
     # as they are nearly always caused by CTE or saturation bleeding along the columns.
-    diff_lines = np.isclose(np.abs(lines['angles']), 90, atol=2.0)
+    # In addition, we want to ignore those lines aligned roughly with the rows (+/- 2)
+    # as they are mostly associated with the diffraction spikes from saturated stars.
+    diff_lines90 = np.isclose(np.abs(lines['angles']), 90, atol=2.0)  # CTE/diffraction spike
+    diff_lines0 = np.isclose(np.abs(lines['angles']), 0, atol=2.0)
+    diff_lines = np.bitwise_or(diff_lines90, diff_lines0)
     angles = lines['angles'][~diff_lines]
 
     angle_bins = np.linspace(-180., 180., 91)
@@ -789,9 +793,26 @@ def lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4):
     # it is considered as having bad guiding.
     max_angles = ahist[0].max()
     alimit = max(len(angles) / 10.0, diff_lines.sum())
+    
+    # check to see whether there are multiple lines in multiple directions
+    angles_sorted = ahist[0].copy()
+    angles_sorted.sort()
+    # if second largest bin has >= 0.75 * max_angles,
+    # we have detected lines which are not parallel
+    # This logic assumes that PSF diffraction spikes will be detected and there will be
+    # at least 2 lines at right angles  (at least one detected in each direction)
+    # to each other for every PSF.
+    # This should only be able to happen when guiding in good, as cosmic-ray lines would
+    # have a random distribution of angles (if detected on a bad-guiding exposure).
+    # The limit of 0.75 guards against small number statistics (4 at max, only 3 detected at 90 deg)
+    good_guiding = angles_sorted[-2] >= 0.75 * max_angles
 
+    log.debug(f"Number of secondary peak line angles: {angles_sorted[-2]}")
     log.debug(f"Peak number of similar lines: {max_angles} based on a threshold of {alimit}")
     log.debug(f"number of probable sources: {num_sources}")
+    
+    # TODO:  add check against length of lines detected as well
+    #        -- Not sure what stats to use for this check...
 
     # Now check to see if enough detected lines have the same (non-90 deg) orientation
     lines_detected = (max_angles > alimit)
