@@ -4,83 +4,8 @@
 
     :License: :doc:`/LICENSE`
 
-    PARAMETERS
-    ----------
-    input : str
-        full filename with path of input image, an extension name ['sci',1] should be
-        provided if input is a multi-extension FITS file
-
-    Optional Parameters
-    -------------------
-    x : float or list or array, optional
-        X position from input image for a single or multiple sources
-    y : float or list or array, optional
-        Y position from input image for a single or multiple sources
-    coords : str, deprecated
-        [DEPRECATED] full filename with path of file with x,y coordinates
-        Filename given here will be *ignored* if a file has been specified
-        in ``coordfile`` parameter.
-    coordfile : str, optional
-        full filename with path of file with x,y coordinates
-    colnames : str, optional
-        comma separated list of column names or list of column name strings
-        from 'coordfile' files containing x,y coordinates, respectively.
-        This parameter will default to first two columns if None are specified.
-        Column names for ASCII files will use 'c1','c2',... convention.
-        Valid syntax: ['c1','c3'] or 'c1,c3'
-    separator : str, optional
-        non-blank separator used as the column delimiter in the coordfile file
-    hms : bool, optional
-        Produce output in HH:MM:SS.S format instead of decimal degrees? (default: False)
-    precision : int, optional
-        Number of floating-point digits in output values
-    output : str, optional
-        Name of output file with results, if desired
-    verbose : bool
-        Print out full list of transformation results (default: False)
-
-    RETURNS
-    -------
-    ra : float or array
-        Right Ascension of pixel. If more than 1 input value, then it will be a
-        numpy array.
-    dec : float or array
-        Declination of pixel. If more than 1 input value, then it will be a
-        numpy array.
-
-    NOTES
-    -----
-    This task performs a full distortion-correction coordinate transformation
-    based on all WCS keywords and any recognized distortion keywords from the
-    input image header. The transformation recognizes the conventions for
-    describing distortion implemented as part of the SIP and Paper IV
-    conventions used with ``AstroDrizzle``. Input images can be updated to use
-    these conventions through the use of the ``updatewcs`` module the ``STWCS``
-    package.
-
-
-    See Also
-    --------
-    `stwcs`
-
-    EXAMPLES
-    --------
-    1. The following command will transform the position 256,256 into a
-       position on the sky for the image 'input_flt.fits[sci,1]' using::
-
-       >>> from drizzlepac import pixtosky
-       >>> r,d = pixtosky.xy2rd("input_file_flt.fits[sci,1]", 256,256)
-
-
-    2. The set of X,Y positions from 'input_flt.fits[sci,1]' stored as
-       the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
-       will be transformed and written out to 'radec_sci1.dat' using::
-
-       >>> from drizzlepac import pixtosky
-       >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coordfile='xy_sci1.dat',
-       ...                      colnames=['c3','c4'], output="radec_sci1.dat")
-
 """
+
 import warnings
 import numpy as np
 
@@ -88,17 +13,99 @@ from . import util
 from . import wcs_functions
 from stwcs import wcsutil
 from . import __version__
+from astropy.utils.decorators import deprecated_renamed_argument
 
-__taskname__ = 'pixtosky'
+__all__ = ['xy2rd']
 
 blank_list = [None, '', ' ']
 
+@deprecated_renamed_argument('coords', 'coordfile', '2.1.3')
 def xy2rd(input,x=None,y=None,coords=None, coordfile=None,colnames=None,separator=None,
             hms=True, precision=6,output=None,verbose=True):
-    """ Primary interface to perform coordinate transformations from
-        pixel to sky coordinates using STWCS and full distortion models
-        read from the input image header.
+    """Primary interface to perform coordinate transformations from
+    pixel to sky coordinates using STWCS and full distortion models
+    read from the input image header.
+
+    Parameters
+    ----------
+    input : str
+        Full filename with path of input image, an extension name ['sci',1] should be
+        provided if input is a multi-extension FITS file
+
+    x : float or list or array, optional
+        X position from input image for a single or multiple sources
+
+    y : float or list or array, optional
+        Y position from input image for a single or multiple sources
+
+    coords : str, deprecated
+        [DEPRECATED] full filename with path of file with x,y coordinates
+        Filename given here will be *ignored* if a file has been specified
+        in ``coordfile`` parameter.
+
+    coordfile : str, optional
+        Full filename with path of file with x,y coordinates
+
+    colnames : str, optional
+        Comma separated list of column names or list of column name strings
+        from 'coordfile' files containing x,y coordinates, respectively.
+        This parameter will default to first two columns if None are specified.
+        Column names for ASCII files will use 'c1','c2',... convention.
+        Valid syntax: ['c1','c3'] or 'c1,c3'
+
+    separator : str, optional
+        Non-blank separator used as the column delimiter in the coordfile file
+
+    hms : bool, optional
+        Produce output in HH:MM:SS.S format instead of decimal degrees? (default: False)
+
+    precision : int, optional
+        Number of floating-point digits in output values
+
+    output : str, optional
+        Name of output file with results, if desired
+
+    verbose : bool
+        Print out full list of transformation results (default: False)
+
+    Returns
+    -------
+    ra : float or array
+        Right Ascension of pixel. If more than 1 input value, then it will be a
+        numpy array.
+
+    dec : float or array
+        Declination of pixel. If more than 1 input value, then it will be a
+        numpy array.
+
+    Notes
+    -----
+    This task performs a full distortion-correction coordinate transformation
+    based on all WCS keywords and any recognized distortion keywords from the
+    input image header. The transformation recognizes the conventions for
+    describing distortion implemented as part of the SIP and Paper IV
+    conventions used with ``AstroDrizzle``. Input images can be updated to use
+    these conventions through the updatewcs module in the STWCS package. Refer
+    to the STWCS documentation (https://stwcs.readthedocs.io/en/latest/) for an
+    overview of the WCS-based transformation utilities relied upon here.
+
+    Examples
+    --------
+    1. The following command will transform the position 256,256 into a
+    position on the sky for the image 'input_flt.fits[sci,1]' using::
+
+        >>> from drizzlepac import pixtosky
+        >>> r,d = pixtosky.xy2rd("input_file_flt.fits[sci,1]", 256,256)
+
+    2. The set of X,Y positions from 'input_flt.fits[sci,1]' stored as
+    the 3rd and 4th columns from the ASCII file 'xy_sci1.dat'
+    will be transformed and written out to 'radec_sci1.dat' using::
+
+        >>> from drizzlepac import pixtosky
+        >>> r,d = pixtosky.xy2rd("input_flt.fits[sci,1]", coordfile='xy_sci1.dat',
+        ...                     colnames=['c3','c4'], output="radec_sci1.dat")
     """
+
     single_coord = False
     # Only use value provided in `coords` if nothing has been specified for coordfile
     if coords is not None and coordfile is None:
@@ -200,8 +207,3 @@ def run(configObj):
             coordfile = coordfile, colnames = colnames,
             separator= sep, hms = configObj['hms'], precision= configObj['precision'],
             output= outfile, verbose = configObj['verbose'])
-
-
-__doc__ = util._def_help_functions(
-    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
-)
