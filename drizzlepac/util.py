@@ -350,7 +350,7 @@ class ProcSteps:
         step.
         """
         ptime = _ptime()
-        print(f"\n==== Processing Step '{key}' started at {ptime[0]}", flush=True)
+        log.info(f"\n==== Processing Step '{key}' started at {ptime[0]}")
         self.steps[key] = {
             'start': ptime,
             'end': ptime,
@@ -385,7 +385,7 @@ class ProcSteps:
             self.delayed_msg = msg
         else:
             self.delayed_msg = None
-            print(msg, flush=True)
+            log.info(msg)
 
     def flush(self):
         if self.delayed_msg is not None:
@@ -872,7 +872,7 @@ def printParams(paramDictionary, all=False, log=None):
 
     if log is not None:
         def output(msg):
-            print(msg)
+            log.info(msg)
     else:
         def output(msg):
             print(msg, flush=True)
@@ -885,11 +885,10 @@ def printParams(paramDictionary, all=False, log=None):
             and key[0] != '_':
                 output('\t' + '\t'.join([str(key) + ' :',
                                          str(paramDictionary[key])]))
-        if log is None:
-            output('\n')
 
 
-def print_key(key, val, lev=0, logfn=print):
+
+def print_key(key, val, lev=0, logfn=log.info):
     if isinstance(val, dict):
         logfn('')
         logfn('{}{}:'.format(2 * lev * ' ', key))
@@ -902,7 +901,7 @@ def print_key(key, val, lev=0, logfn=print):
         logfn("{}{}: {}".format(2 * lev * ' ', key, val))
 
 
-def print_cfg(cfg, logfn=None):
+def print_cfg(cfg, logfn=log.info):
     if logfn is None:
         logfn = print
 

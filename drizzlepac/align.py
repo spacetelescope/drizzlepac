@@ -31,23 +31,25 @@ MSG_DATEFMT = "%Y%j%H%M%S"
 SPLUNK_MSG_FORMAT = "%(asctime)s %(levelname)s src=%(name)s- %(message)s"
 
 
-def _init_logger():
-    log = logutil.create_logger(
-        __name__,
-        level=logutil.logging.NOTSET,
-        stream=sys.stdout,
-        format=SPLUNK_MSG_FORMAT,
-        datefmt=MSG_DATEFMT,
-    )
-    return log
+# def _init_logger():
+#     log = logutil.create_logger(
+#         __name__,
+#         level=logutil.logging.NOTSET,
+#         stream=sys.stdout,
+#         format=SPLUNK_MSG_FORMAT,
+#         datefmt=MSG_DATEFMT,
+#     )
+#     return log
 
 
-log = _init_logger()
+# log = _init_logger()
 
-# Initial values for the module log filename and the associated file handler used for the log
-module_fh = None
-module_logfile = ""
+# # Initial values for the module log filename and the associated file handler used for the log
+# module_fh = None
+# module_logfile = ""
 
+
+log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -150,18 +152,18 @@ def perform_align(
         loglevel = logutil.logging.INFO
 
     # Need to ensure the logging works properly for the PyTests where each test starts with a fresh handler
-    global module_fh
-    global module_logfile
-    if module_fh is not None:
-        log.debug("Removing old file handler for logging.")
-        log.removeHandler(module_fh)
+    # global module_fh
+    # global module_logfile
+    # if module_fh is not None:
+    #     log.debug("Removing old file handler for logging.")
+    #     log.removeHandler(module_fh)
 
-    module_logfile = runfile.upper()
-    module_fh = logutil.logging.FileHandler(runfile)
-    module_fh.setLevel(loglevel)
+    # module_logfile = runfile.upper()
+    # module_fh = logutil.logging.FileHandler(runfile)
+    # module_fh.setLevel(loglevel)
 
-    log.addHandler(module_fh)
-    log.setLevel(loglevel)
+    # log.addHandler(module_fh)
+    # log.setLevel(loglevel)
     log.debug(f"{__taskname__} Version {__version__}\n")
 
     # 0: print git info
@@ -704,20 +706,20 @@ def determine_fit_quality(
     # Set up the log file handler and name of the log file
     # If the log file handler were never set, the module_fh will be None.
     # Only want to remove a file handler if there were one set in the first place.
-    global module_fh
-    global module_logfile
-    # if module_fh is not None and module_logfile != runfile.upper():
-    if module_fh is not None:
-        print("Removing old file handler for logging.")
-        log.removeHandler(module_fh)
+    # global module_fh
+    # global module_logfile
+    # # if module_fh is not None and module_logfile != runfile.upper():
+    # if module_fh is not None:
+    #     print("Removing old file handler for logging.")
+    #     log.removeHandler(module_fh)
 
-    module_logfile = runfile.upper()
-    module_fh = logutil.logging.FileHandler(runfile)
-    module_fh.setLevel(loglevel)
+    # module_logfile = runfile.upper()
+    # module_fh = logutil.logging.FileHandler(runfile)
+    # module_fh.setLevel(loglevel)
 
-    log.addHandler(module_fh)
-    log.setLevel(loglevel)
-    log.debug("Log file: {}".format(module_logfile))
+    # log.addHandler(module_fh)
+    # log.setLevel(loglevel)
+    # log.debug("Log file: {}".format(module_logfile))
 
     max_rms_val = 1e9
     fit_status_dict = {}
@@ -805,6 +807,7 @@ def determine_fit_quality(
         # This check will only be performed when the fit may be uncertain
         # due to less than 100 matches.
         ref_cat_limit = min(1000, item.meta["num_ref_catalog"])
+        # import ipdb; ipdb.set_trace()
         log.debug(
             "MAG CHECK REF_CAT_LIMIT: {}    XMATCHES: {}".format(
                 ref_cat_limit, num_xmatches
