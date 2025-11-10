@@ -807,7 +807,6 @@ def determine_fit_quality(
         # This check will only be performed when the fit may be uncertain
         # due to less than 100 matches.
         ref_cat_limit = min(1000, item.meta["num_ref_catalog"])
-        # import ipdb; ipdb.set_trace()
         log.debug(
             "MAG CHECK REF_CAT_LIMIT: {}    XMATCHES: {}".format(
                 ref_cat_limit, num_xmatches
