@@ -785,8 +785,8 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     if lines['num'] < max(min_lines, num_sources/10):
         log.debug(f"Only {lines['num']} linear features detected for {num_sources}.")
         return False
-
-    # Check 3: Ensure that there isn't a dominant angle in detected lines. 
+    
+    # Check 3: Check for high fraction of lines at orthogonal angles.
     # Start by looking for lines not associated with columns (90 +/- 2 deg) as they are 
     # nearly always caused by CTE or saturation bleeding along the columns,
     # and lines aligned roughly with the rows (0 +/- 2 deg) as they are mostly 
@@ -801,16 +801,11 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     # start by generating a histogram of the angles of all of the lines
     angle_bins = np.linspace(-180., 180., 91)
     counts, bins = np.histogram(angles, bins=angle_bins)
-
-    # if 90% of the linear features (excluding linear features associated with
-    # rows or columns) have one angle, then bad guiding is detected.
-    max_angle_bin_counts = counts.max()
-    if max_angle_bin_counts/len(angles) > 0.9:
-        log.warning(f"Over 90% of linear features detected at one angle." +
-                    " Bad guiding detected.")
-        return True
-
-    # Check 4: Check for high fraction of lines at orthogonal angles.
+    
+    # sort the histogram bins by number of lines detected (descending order)
+    sorted_angle_counts = np.sort(counts)[::-1]
+    sorted_angle_bins = bins[np.argsort(counts)][::-1]
+    
     # We use a threshold where the second largest bin must have at least 75% of 
     # the largest bins counts. This logic assumes that PSF diffraction spikes 
     # will be detected and there will be a roughly equal number of orthogonal
@@ -818,11 +813,7 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     # guiding in good, as cosmic-ray lines would have a random distribution of 
     # angles (if detected on a bad-guiding exposure). The limit of 75% guards 
     # against small number statistics (4 at max, only 3 detected at 90 deg)
-    
-    # sort the histogram bins by number of lines detected (descending order)
-    sorted_angle_counts = np.sort(counts)[::-1]
-    sorted_angle_bins = bins[np.argsort(counts)][::-1]
-
+    max_angle_bin_counts = counts.max()
     if sorted_angle_counts[1] / max_angle_bin_counts >= 0.75:  
         log.debug(f"Detected high fraction (>75%) of lines at an orthogonal "
                   f"angle ({sorted_angle_bins[1]} deg), Good guiding.")
@@ -830,8 +821,15 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
         
         # TODO:  add check against length of lines detected as well
         #        -- Not sure what stats to use for this check...
-        
-    else:
-        log.warning(f"Linear features found primarily with one angle " +
-                    f"({sorted_angle_bins[1]} deg), bad guiding detected.")
+
+    # Check 4: Ensure that there isn't a dominant angle in detected lines. 
+    # if >10% of the linear features (excluding linear features associated with
+    # rows or columns) have one angle, then bad guiding is detected.
+    detection_frac = max_angle_bin_counts/len(angles)
+    if detection_frac > 0.10:
+        log.warning(f"{detection_frac*100}% of real linear features detected at "
+                    f"one angle ({sorted_angle_bins[1]} deg). Bad guiding detected.")
         return True
+    else:
+        log.debug("No dominant angle in detected linear features.")
+        return False
