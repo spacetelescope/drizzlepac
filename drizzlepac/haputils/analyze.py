@@ -779,14 +779,6 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     if lines['num'] is None:
         log.debug(f"No linear features detected.")
         return False
-    import matplotlib.pyplot as plt
-    from matplotlib.colors import LogNorm
-    plt.imshow(image, norm=LogNorm())
-    for i, item in enumerate(zip(lines['startarr'], lines['endarr'])):
-        p0, p1 = item
-        plt.plot((p0[0], p1[0]), (p0[1], p1[1]), 'r-')
-    plt.show()
-    import ipdb; ipdb.set_trace()
 
     # Check 2: if number of lines is small (<10%) compared to the number of
     # sources, good guiding; min_lines is used to guard against faint fields
