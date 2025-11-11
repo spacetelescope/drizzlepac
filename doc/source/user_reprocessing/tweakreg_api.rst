@@ -10,7 +10,5 @@ other and/or to and external astrometric reference frame or image.
 
 .. moduleauthor:: Warren Hack, Mihai Cara
 
-.. automodule:: drizzlepac.tweakreg
-
-.. autofunction:: TweakReg
-.. autofunction:: help
+.. automodapi:: drizzlepac.tweakreg
+	:include: TweakReg
