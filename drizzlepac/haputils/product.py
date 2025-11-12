@@ -1131,7 +1131,7 @@ class SkyCellExposure(HAPProduct):
 
     def __init__(
         self,
-        prop_id,
+        prop_id, # used as proposal ID for other products, used as projection ID here
         obset_id,
         instrument,
         detector,
