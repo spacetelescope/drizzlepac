@@ -194,6 +194,18 @@ def refine_product_headers(product, total_obj_list):
         # Build HAP table
         # if 'total' in product: level = 3
         update_hdrtab(hdu, level, total_obj_list, input_exposures)
+        
+        # add unique MVM proposal IDs to header using hdrtab
+        if level == 4:
+            if 'PROPOSID' in hdu['hdrtab'].data.names:
+                proposal_ids = np.unique(hdu['hdrtab'].data['PROPOSID'])
+                proposal_ids.sort()
+                proposal_ids_str = '; '.join([str(pid) for pid in proposal_ids])
+                log.debug(f"Updating PROPOSID keyword to {proposal_ids_str}")
+                phdu['PROPOSID']= proposal_ids_str
+            else:
+                log.warning("PROPOSID missing from hdrtab; " +
+                            "not updating header keyword.")
 
     # close file if opened by this function
     if closefits:

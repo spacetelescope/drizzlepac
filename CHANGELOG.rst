@@ -20,6 +20,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.11.0 (unreleased)
 ===================
 
+- Added Proposal ID to MVM header keywords. [#2099]
+
 - Removed help files and moved text to docstrings. Also deprecated the 
   ``iteractive`` argument in ``MapReg`` function. [#2077,#2078,#2079]
 
