@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.11.0 (unreleased)
 ===================
 
+- Improved MVM guide star failure check to reintroduce exposures that
+  were incorrectly excluded due to PSF spikes, saturation, and CTE issues. [#2101]
+
 - Removed help files and moved text to docstrings. Also deprecated the 
   ``iteractive`` argument in ``MapReg`` function. [#2077,#2078,#2079]
 
