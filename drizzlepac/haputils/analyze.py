@@ -783,10 +783,11 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     # Check 2: if number of lines is small (<10%) compared to the number of
     # sources, good guiding; min_lines is used to guard against faint fields
     if lines['num'] < max(min_lines, num_sources/10):
-        log.debug(f"Only {lines['num']} linear features detected for {num_sources}.")
+        log.debug(f"Only {lines['num']} linear features detected for "+
+                  f"{num_sources} sources.")
         return False
     
-    # Check 3: Check for high fraction of lines at orthogonal angles.
+    # Check 3: Check for high fraction of lines at multiple angles.
     # Start by looking for lines not associated with columns (90 +/- 2 deg) as they are 
     # nearly always caused by CTE or saturation bleeding along the columns,
     # and lines aligned roughly with the rows (0 +/- 2 deg) as they are mostly 
@@ -815,7 +816,7 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     # against small number statistics (4 at max, only 3 detected at 90 deg)
     max_angle_bin_counts = counts.max()
     if sorted_angle_counts[1] / max_angle_bin_counts >= 0.75:  
-        log.debug(f"Detected high fraction (>75%) of lines at an orthogonal "
+        log.debug(f"Detected high fraction of linear features at a secondary "
                   f"angle ({sorted_angle_bins[1]} deg), Good guiding.")
         return False
         
@@ -828,7 +829,7 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     detection_frac = max_angle_bin_counts/len(angles)
     if detection_frac > 0.10:
         log.warning(f"{int(detection_frac*100)}% of real linear features detected at "
-                    f"one angle ({sorted_angle_bins[1]} deg). Bad guiding detected.")
+                    f"one angle ({sorted_angle_bins[0]} deg). Bad guiding detected.")
         return True
     else:
         log.debug("No dominant angle in detected linear features.")
