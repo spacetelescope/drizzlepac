@@ -23,6 +23,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Improved MVM guide star failure check to reintroduce exposures that
   were incorrectly excluded due to PSF spikes, saturation, and CTE issues. [#2101]
 
+- Remove WFC3/UVIS Quadrant filter data from SVM total image and catalog creation. [#2093]
+
+- Log all environment variables [#2085].
+
 - Added Proposal ID to MVM header keywords. [#2099]
 
 - Removed help files and moved text to docstrings. Also deprecated the 
