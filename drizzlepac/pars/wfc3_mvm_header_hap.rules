@@ -367,7 +367,10 @@ EQUINOX   EQUINOX   first
 <delete>  ASN_ID
 <delete>  ASN_TAB
 <delete>  ASN_MTYPE
-<delete>  / PROPOSAL INFORMATION
+<delete>  LINENUM
+<delete>  PR_INV_L
+<delete>  PR_INV_F
+<delete>  PR_INV_M
 <delete>  GYROMODE
 <delete>  SUNANGLE
 <delete>  MOONANGL
