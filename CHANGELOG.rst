@@ -20,6 +20,10 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.11.0 (unreleased)
 ===================
 
+- Remove WFC3/UVIS Quadrant filter data from SVM total image and catalog creation. [#2093]
+
+- Log all environment variables [#2085].
+
 - Added Proposal ID to MVM header keywords. [#2099]
 
 - Removed help files and moved text to docstrings. Also deprecated the 
