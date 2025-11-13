@@ -631,7 +631,6 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
             # Need to delete the Ramp filter Exposure objects from the *Product lists as
             # these images should not be processed beyond the alignment to Gaia (run_align_to_gaia).
-            # import ipdb; ipdb.set_trace()
             _ = delete_ramp_and_quadrant_exposures(total_item.fdp_list, 'FILTER')
             ramp_product_list = delete_ramp_and_quadrant_exposures(total_item.edp_list, 'EXPOSURE')
             product_list += ramp_product_list
@@ -1388,8 +1387,9 @@ def delete_ramp_and_quadrant_exposures(obj_list, type_of_list):
     excluded_filenames_list = []
     while obj_list:
         obj = obj_list.pop()
-        # If the filter name does not contain 'fr' or 'fq', then it is okay to keep.
-        if (obj.filters.lower().find('fr') == -1) and (obj.filters.lower().find('fq') == -1):
+        # If the filter name does not contain 'fr' or 'fq', then keep it.
+        filt_lower = obj.filters.lower()
+        if not filt_lower.startswith(('fr', 'fq')):
             temp.append(obj)
         else:
             # Add the Ramp images to the manifest as well as the Ramp trailer filename here.
