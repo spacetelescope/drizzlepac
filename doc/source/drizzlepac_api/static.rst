@@ -8,9 +8,4 @@ used in the input images of all negative (presumably bad) pixel values.
 
 .. moduleauthor:: Warren Hack
 
-.. automodule:: drizzlepac.staticMask
-   :members:
-   :undoc-members:
-   :exclude-members: getHelpAsString
-
-.. autofunction:: help
+.. automodapi:: drizzlepac.staticMask
