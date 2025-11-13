@@ -60,6 +60,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Fixed scipy deprecations in catalog_utils.py and hap_flag_filter.py.
   [#2032]
 
+- Updated alignment configuration parameters json files and removed those that 
+  were obsolete; updated documentation for these files. [#2037]
+
 - Added ability to automatically turn on/of some intermediate steps such as
   drizzle separate, create median, blot, and cosmic ray rejection steps based
   on the number of input images and/or requested top level step. [#2036]
