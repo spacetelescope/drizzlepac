@@ -3,7 +3,7 @@
 ***********
 Image Class
 ***********
-.. moduleauthor:: Warren Hack <help@stsci.edu>
+.. moduleauthor:: Warren Hack
 
 .. inheritance-diagram:: drizzlepac.imgclasses
    :parts: 2
