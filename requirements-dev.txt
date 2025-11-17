@@ -1,7 +1,3 @@
-# 2024-01-25
-# Testing of numpy developement packages will resume after drizzlepac's upstream
-# dependencies publish wheels that are compatible with numpy v2.x.
-
 git+https://github.com/spacetelescope/stsci.tools.git
 git+https://github.com/spacetelescope/stwcs.git
 git+https://github.com/spacetelescope/stregion.git
