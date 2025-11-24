@@ -514,6 +514,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
 
     return filename_list
 
+
 @deprecated('3.11.0', message="This function is deprecated and will be removed in a future release.")
 def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
     """
