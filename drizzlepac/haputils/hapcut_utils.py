@@ -6,6 +6,7 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.table import Table, vstack, unique
 from astropy.units.quantity import Quantity
+from astropy.utils.decorators import deprecated
 from astroquery.mast import Observations
 from drizzlepac.haputils import cell_utils as cu
 from pprint import pprint
@@ -27,7 +28,7 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger("hapcut", level=logutil.logging.NOTSET, stream=sys.stdout, 
                             filename="hapcut_utility.log", format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
-
+@deprecated('3.11.0', message="This function is deprecated and will be removed in a future release.")
 def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
     """
     This function retrieves a table of MVM drizzled image filenames with additional
@@ -210,6 +211,7 @@ def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
     return final_table
 
 
+@deprecated('3.11.0', message="This function is deprecated and will be removed in a future release.")
 def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil.logging.INFO):
     """
     This function retrieves specified files from the archive - unless the file is found
@@ -298,6 +300,7 @@ def mvm_retrieve_files(products, archive=False, clobber=False, log_level=logutil
     return local_files
 
 
+@deprecated('3.11.0', message="This function is deprecated and will be removed in a future release.")
 def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=logutil.logging.INFO, verbose=False):
     """
     This function makes the actual cut in the input MVM drizzled filter- and exposure-level FITS
@@ -511,7 +514,7 @@ def make_the_cut(input_files, sky_coord, cutout_size, output_dir=".", log_level=
 
     return filename_list
 
-
+@deprecated('3.11.0', message="This function is deprecated and will be removed in a future release.")
 def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
     """
     This function combines multiple MVM skycell cutout images from the same detector/filter combination
@@ -622,6 +625,7 @@ def mvm_combine(cutout_files, output_dir=".", log_level=logutil.logging.INFO):
     log.info("Cutout combination is done.")
 
 
+@deprecated('3.11.0', message="This function is deprecated and will be removed in a future release.")
 def __combine_cutouts(input_dict, type="FILTER", img_combiner=None, output_dir=".", log_level=logutil.logging.INFO):
     """
     This private function performs the actual combine of the multiple MVM skycell cutout images.
