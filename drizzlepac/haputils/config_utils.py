@@ -230,10 +230,8 @@ class HapConfig(object):
                                 if n_exp >= 6:
                                     self.conditions.append("wfc3_uvis_any_post_n6")
                             else:
-                                if n_exp in [2, 3]:
+                                if n_exp in [2, 3, 4, 5]:
                                     self.conditions.append("wfc3_uvis_any_pre_n2")
-                                if n_exp in [4, 5]:
-                                    self.conditions.append("wfc3_uvis_any_pre_n4")
                                 if n_exp >= 6:
                                     self.conditions.append("wfc3_uvis_any_pre_n6")
                     else:
