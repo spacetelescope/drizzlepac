@@ -28,6 +28,7 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger("hapcut", level=logutil.logging.NOTSET, stream=sys.stdout, 
                             filename="hapcut_utility.log", format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
+
 @deprecated('3.11.0', message="This function is deprecated and will be removed in a future release.")
 def mvm_id_filenames(sky_coord, cutout_size, log_level=logutil.logging.INFO):
     """
