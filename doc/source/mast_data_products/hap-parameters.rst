@@ -20,10 +20,10 @@ For the astrodrizzle step, there are different files which should be employed de
 Exceptions:
 
     * WFC3/UVIS: As shown in the table, different configuration files are used "pre" and "post" November 8th, 2012.  
-    * For MVM processing, if the number of exposures is 1, the corresponding alignment configuration file name will end in "any_1.json". Otherwise it will end in "any_n2" for two or more exposures. 
+    * For MVM processing, if the number of exposures is 1, the corresponding alignment configuration file name will end in "any_1.json". Otherwise it will end in "any_n2" for two or more exposures. The exception to this is ACS/SBC blue filter (described in a condition below).
     * Grism/Prism MVM: Grism/prism images are not processed for MVM datasets. For SVM processing, the WCS is updated in order for datasets to match their corresponding direct images if they exist.
     * WFC3/IR (grism): if the grism filters "G102" or "G141" are used, the alignment configuration file will end in "wfc3_ir_grism_n2" for two or three exposures, or "wfc3_ir_grism_n4" if there are 4 or more exposures.
-    * ACS/SBC: if the filters "F115LP" or "F122M" are used, the alignment configuration file will end in "acs_sbc_blue_n2" for 2, 3, 4, or 5 exposures, and "acs_sbc_blue_n6" for 6 or more exposures; this is also true for MVMs. For ACS/SBC MVM's that do not use these filters, the alignment configuration file will end in "any_1" for one exposure, and "any_any" for two or more exposures.
+    * ACS/SBC: if the filters "F115LP" or "F122M" are used, the alignment configuration file will end in "acs_sbc_blue_n2" for 2, 3, 4, or 5 exposures, and "acs_sbc_blue_n6" for 6 or more exposures; this is ALSO TRUE for MVMs. For ACS/SBC MVM's that do not use these filters, the alignment configuration file will end in "any_1" for one exposure, and "any_any" for two or more exposures.
 
 
 
