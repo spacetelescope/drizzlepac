@@ -180,6 +180,7 @@ class HapConfig(object):
                             if n_exp >= 6:
                                 self.conditions.append("acs_hrc_any_n6")
                     elif self.detector == "sbc":
+                        # No mvm condition for ACS/SBC, below is for SVM and MVMs. 
                         if self.filters.lower() in ["f115lp", "f122m"]:
                             if n_exp in [2, 3, 4, 5]:
                                 self.conditions.append("acs_sbc_blue_n2")
