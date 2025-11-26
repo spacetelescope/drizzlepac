@@ -5,7 +5,10 @@ Regression Tests
 
 **SVM**
 
-Several HAP specific tests do various checks on different datasets included in the test file name (e.g. test_svm_wfc3ir.py). 
+Several HAP specific tests do various checks on different datasets included in 
+the test file name (e.g. test_svm_wfc3ir.py). These are only run when the bigdata
+mark is specified since they require retrieval of significant data from MAST.
+
 The four groups of tests used are as follows:
 
 A. Simple tests:
