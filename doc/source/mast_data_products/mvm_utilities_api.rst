@@ -11,8 +11,8 @@ a Python session for interactive data analysis.
 .. toctree::
    :maxdepth: 1
 
-haputils.hapcut_utils
----------------------
+haputils.hapcut_utils (deprecated)
+----------------------------------
 .. automodule:: drizzlepac.haputils.hapcut_utils
 .. autofunction:: drizzlepac.haputils.hapcut_utils.mvm_id_filenames
 .. autofunction:: drizzlepac.haputils.hapcut_utils.mvm_retrieve_files
