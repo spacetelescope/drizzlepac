@@ -2113,7 +2113,7 @@ def main():
     num_cores = None
     headerlets = True
     align_to_gaia = True
-    debug = True
+    debug = False
     force_alignment = False
     do_verify_guiding = False
     make_manifest = False
