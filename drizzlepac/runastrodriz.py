@@ -1450,7 +1450,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
 
                     if most_recent_wcs:
                         # restore this WCS
-                        log.debug(f"Restoring apriori WCS {wname} as primary WCS in {f}")
+                        log.info(f"Restoring apriori WCS {wname} as primary WCS in {f}")
                         headerlet.restore_from_headerlet(fhdu,
                                                          force=True,
                                                          hdrname=most_recent_wcs[1],
