@@ -5,12 +5,44 @@ HAP Parameters
 
 In the high-level svm_parameters or mvm_parameters directories, the instrument/detector-dependent configuration index files (e.g., acs_sbc_index.json) provide a map to the configuration files used for the major HAP processing steps. The svm_parameter configuration files are also used for pipeline products.
 
-
-For the astrodrizzle step, there are different files which should be employed depending upon the number of exposures int the visit.
-
+.. _detector_configuration_files:
 
 Detector Configuration Files
 ****************************
+
+For the astrodrizzle step, there are different files which should be employed depending upon the number of exposures int the visit. Examples of these files include names that end in "any_n1" or "any_n2" generally representing the configuration files for the case of one or two exposures. The naming convention, however, can differ for each detector. The following table shows the general naming convention, followed by exceptions to these rules. 
+
+
+.. csv-table:: Pipeline and SVM Alignment Parameter File Conditions
+   :file: align_par_table.csv
+   :header-rows: 2
+
+Exceptions:
+
+    * WFC3/UVIS: As shown in the table, different configuration files are used 
+      "pre" and "post" November 8th, 2012.  
+    * For MVM processing, if the number of exposures is 1, the corresponding 
+      alignment configuration file name will end in "any_1.json". Otherwise 
+      it will end in "any_n2" for two or more exposures. The exception to this 
+      is ACS/SBC blue filter (described in a condition below).
+    * Grism/Prism MVM: Grism/prism images are not processed for MVM datasets. 
+      For SVM processing, the WCS is updated in order for datasets to match 
+      their corresponding direct images if they exist.
+    * WFC3/IR (grism): if the grism filters "G102" or "G141" are used, the 
+      alignment configuration file will end in "wfc3_ir_grism_n2" for two or 
+      three exposures, or "wfc3_ir_grism_n4" if there are 4 or more exposures.
+    * ACS/SBC: if the filters "F115LP" or "F122M" are used, the alignment 
+      configuration file will end in "acs_sbc_blue_n2" for 2, 3, 4, or 5 
+      exposures, and "acs_sbc_blue_n6" for 6 or more exposures; this is ALSO 
+      TRUE for MVMs. For ACS/SBC MVM's that do not use these filters, the 
+      alignment configuration file will end in "any_1" for one exposure, and 
+      "any_any" for two or more exposures.
+
+
+
+.. note:: 
+    The alignment configuration names listed above correspond to a condition within the code that corresponds to a similar looking filename. The mapping of the condition to the filenames is listed in the "instrument_detector_index.json" files, like the following example.
+    
 
 acs_hrc_index.json
 
@@ -37,7 +69,7 @@ acs_hrc_index.json
       }
   }
 
-The different files for "astrodrizzle" are for the case of 1 exposure ("any_n1"), 2 exposures (acs_hrc_any_n2), etc. Each json file with an associated task above (e.g. astrodrizzle) will have the parameters for that task. These files will be used to initialize variables that are required in the processing of the data and, in the case of "astrodrizzle", are separated into different steps.
+Each json file with an associated task above (e.g. astrodrizzle) will have the parameters for that task. These files will be used to initialize variables that are required in the processing of the data and, in the case of "astrodrizzle", are separated into different steps.
 
 
 Detector Configuration Files for Alignment
