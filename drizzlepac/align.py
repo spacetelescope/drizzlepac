@@ -931,16 +931,16 @@ def determine_fit_quality(
                 "RMS_DEC",
                 "catalog",
             ]
-            log.debug("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
-            log.debug("image: {}".format(image_name))
-            log.debug("chip: {}".format(item.meta["chip"]))
-            log.debug("group_id: {}".format(item.meta["group_id"]))
+            log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
+            log.info("image: {}".format(image_name))
+            log.info("chip: {}".format(item.meta["chip"]))
+            log.info("group_id: {}".format(item.meta["group_id"]))
             for tweakwcs_info_key in log_info_keys:
-                log.debug(
+                log.info(
                     "{} : {}".format(tweakwcs_info_key, fit_info[tweakwcs_info_key])
                 )
-            log.debug("~" * 84)
-            log.debug(
+            log.info("~" * 84)
+            log.info(
                 "nmatches_check: {} radial_offset_check: {}"
                 " large_rms_check: {},"
                 " consistency_check: {}".format(
