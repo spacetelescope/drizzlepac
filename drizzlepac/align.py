@@ -954,7 +954,7 @@ def determine_fit_quality(
     # determine which fit quality category this latest fit falls into
     if overall_valid is False:
         fit_quality = 5
-        log.debug("FIT SOLUTION REJECTED")
+        log.info("FIT SOLUTION REJECTED")
         filtered_table["status"][:] = 1
         for ctr in range(0, len(filtered_table)):
             imgname = filtered_table[ctr]["imageName"] + ",1"
@@ -966,20 +966,20 @@ def determine_fit_quality(
         for ctr in range(0, len(filtered_table)):
             filtered_table[ctr]["processMsg"] = ""
         if overall_comp is False and max_rms_val < auto_good_rms:
-            log.debug("Valid solution with RMS < {} mas found!".format(auto_good_rms))
+            log.info("Valid solution with RMS < {} mas found!".format(auto_good_rms))
             fit_quality = 1
         elif overall_comp is True and max_rms_val < auto_good_rms:
-            log.debug(
+            log.info(
                 "Valid but compromised solution with RMS < {} mas found!".format(
                     auto_good_rms
                 )
             )
             fit_quality = 2
         elif overall_comp is False and 1000.0 >= max_rms_val >= auto_good_rms:
-            log.debug("Valid solution with RMS >= {} mas found!".format(auto_good_rms))
+            log.info("Valid solution with RMS >= {} mas found!".format(auto_good_rms))
             fit_quality = 3
         else:
-            log.debug(
+            log.info(
                 "Valid but compromised solution with RMS >= {} mas found!".format(
                     auto_good_rms
                 )
@@ -988,22 +988,22 @@ def determine_fit_quality(
 
     if print_fit_parameters:
         for item in imglist:
-            log.debug(
+            log.info(
                 fit_status_dict["{},{}".format(item.meta["name"], item.meta["chip"])]
             )
 
     if max_rms_val > auto_good_rms:
-        log.debug(
+        log.info(
             "Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(
                 max_rms_val, auto_good_rms
             )
         )
     if not overall_valid:
-        log.debug("The fit solution for some or all of the images is not valid.")
+        log.info("The fit solution for some or all of the images is not valid.")
     if max_rms_val > auto_good_rms or not overall_valid:
-        log.debug("Trying again with the next catalog, method, or geometry depending upon the current fitting cycle.")
+        log.info("Trying again with the next catalog, method, or geometry depending upon the current fitting cycle.")
     else:
-        log.debug("Fit calculations successful.")
+        log.info("Fit calculations successful.")
 
     return max_rms_val, num_xmatches, fit_quality, filtered_table, fit_status_dict
 
