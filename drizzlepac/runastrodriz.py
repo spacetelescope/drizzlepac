@@ -1193,13 +1193,13 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 for row in align_table:
                     if row['status'] == 0:
                         if row['compromised'] == 0:
-                            log.debug(f"""Successfully aligned {row['imageName']} 
+                            log.info(f"""Successfully aligned {row['imageName']} 
                                                to {row['catalog']} astrometric frame""")
                         else:
-                            log.debug(f"""Alignment only partially 
+                            log.info(f"""Alignment only partially 
                                                successful for {row['imageName']}""")
                     else:
-                        log.debug(f"""Could not align {row['imageName']} 
+                        log.info(f"""Could not align {row['imageName']} 
                                            to absolute astrometric frame""")
                         return None, None
             except Exception as err:
@@ -1248,7 +1248,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                                                          **pipeline_pars)
 
         # Start verification of alignment using focus and similarity indices
-        log.debug(f"Verification of {tmpmode} alignment started ")
+        log.info(f"Verification of {tmpmode} alignment started ")
 
         if focus_dicts is not None:
             # Only check focus on CTE corrected, when available
@@ -1333,7 +1333,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             # Copy drizzle products to parent directory to replace 'less aligned' versions
             _ = [shutil.copy(f, parent_dir) for f in headerlet_files]
 
-        log.debug('Verification of alignment completed ')
+        log.info('Verification of alignment completed ')
     finally:
         if tmpdir:
             os.chdir(parent_dir)
