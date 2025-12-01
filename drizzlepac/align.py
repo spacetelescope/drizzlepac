@@ -192,7 +192,7 @@ def perform_align(
     filtered_table = None
 
     # 1: Interpret input data and optional parameters
-    log.debug("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
+    log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
     zero_dt = starting_dt = datetime.datetime.now()
     log.info(str(starting_dt))
     log.info("SUCCESS")
@@ -240,14 +240,14 @@ def perform_align(
         log.debug(make_label("Processing time of [STEP 2]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 3: Build WCS for full set of input observations
-        log.debug("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
+        log.info("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
         # refwcs = amutils.build_reference_wcs(process_list)
         log.debug("SUCCESS")
 
         log.debug(make_label("Processing time of [STEP 3]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 4: Extract catalog of observable sources from each input image
-        log.debug("{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
+        log.info("{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
         if debug:
             pickle_filename = "{}.source_catalog.pickle".format(process_list[0])
             if os.path.exists(pickle_filename):
@@ -342,7 +342,7 @@ def perform_align(
             for catalog_index, catalog_name in enumerate(
                 catalog_list
             ):  # loop over astrometric catalog
-                log.debug(
+                log.info(
                     "{} STEP 5: Detect astrometric sources {}".format(
                         "-" * 20, "-" * 48
                     )
@@ -527,7 +527,7 @@ def perform_align(
         starting_dt = datetime.datetime.now()
 
         # 6: Populate the filtered_table
-        log.debug(
+        log.info(
             "{} STEP 6: Collect up information and populate the filtered table "
             "{}".format("-" * 20, "-" * 20)
         )
@@ -572,7 +572,7 @@ def perform_align(
         log.debug(make_label("Processing time of [STEP 6]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 7: Write new fit solution to input image headers
-        log.debug(
+        log.info(
             "{} STEP 7: Update image headers with new WCS information "
             "{}".format("-" * 20, "-" * 29)
         )
@@ -584,7 +584,7 @@ def perform_align(
             log.debug(" STEP SKIPPED")
 
         log.debug(make_label("Processing time of [STEP 7]", starting_dt))
-        log.debug(
+        log.info(
             "TOTAL Processing time of {} sec".format(
                 (datetime.datetime.now() - zero_dt).total_seconds()
             )
@@ -807,14 +807,14 @@ def determine_fit_quality(
         # This check will only be performed when the fit may be uncertain
         # due to less than 100 matches.
         ref_cat_limit = min(1000, item.meta["num_ref_catalog"])
-        log.debug(
+        log.info(
             "MAG CHECK REF_CAT_LIMIT: {}    XMATCHES: {}".format(
                 ref_cat_limit, num_xmatches
             )
         )
         if num_xmatches < max(0.1 * ref_cat_limit, 10):
             cross_match_check = amutils.check_mag_corr([item])[0]
-            log.debug(
+            log.info(
                 "Cross-match check: {} on {} ref sources".format(
                     cross_match_check, item.meta["num_ref_catalog"]
                 )
@@ -901,7 +901,7 @@ def determine_fit_quality(
         if fit_status_dict[dict_key]["compromised"]:
             overall_comp = True
 
-        log.debug(
+        log.info(
             "RESULTS FOR {} Chip {}: FIT_RMS = {} mas, TOTAL_RMS = {}"
             " mas, NUM =  {}".format(
                 image_name, item.meta["chip"], fit_rms_val, max_rms_val, num_xmatches
