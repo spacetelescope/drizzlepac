@@ -49,7 +49,7 @@ dependencies = [
     "scikit-image>=0.14.2",
     "numpy>2.0",
 ]
-license-files = ["LICENSE.txt"]
+license = { file = "LICENSE.txt" }
 dynamic = [
     "version",
 ]
