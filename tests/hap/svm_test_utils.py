@@ -26,7 +26,6 @@ def load_poller_filenames(poller_file: str) -> list[str]:
     table = ascii.read(path, format="no_header")
     filename_column = table.colnames[0]
     filenames = list(table[filename_column])
-    print(f"\nread_csv_for_filenames. Filesnames from poller: {filenames}")
     return filenames
 
 
@@ -70,7 +69,6 @@ def retrieve_data_for_processing(
     if not downloaded_set:
         existing_files = {fn for fn in filenames if Path(fn).exists()}
         if existing_files:
-            print(f"\ngather_data_for_processing. Using existing files: {existing_files}")
             return existing_files
 
     files_to_process = filenames_set & downloaded_set if downloaded_set else filenames_set
@@ -82,12 +80,7 @@ def retrieve_data_for_processing(
         except FileNotFoundError:
             continue
         except Exception as exc:
-            print("")
-            print(f"Exception encountered: {exc}.")
-            print(f"The file {ftr} could not be deleted from disk. ")
-            print("Remove files which are not used for processing from disk manually.")
-
-    print(f"\ngather_data_for_processing. Gathered data: {files_to_process}")
+            raise Exception(f"The file {ftr} could not be deleted from disk. ") from exc
     return files_to_process
 
 
@@ -97,18 +90,15 @@ def build_manifest_name(reference_filename: str) -> str:
     root = fits.getval(reference_filename, "ROOTNAME", ext=0).lower()
     tokens = (inst, root[1:4], root[4:6], "manifest.txt")
     manifest_filename = "_".join(tokens)
-    print(f"\nconstruct_manifest_filename. Manifest filename: {manifest_filename}")
     return manifest_filename
 
 
 def read_manifest(manifest_filename: str) -> list[str]:
     """Read a manifest and return every listed filename."""
-    print(f"\nManifest Filename: {manifest_filename}")
     files: list[str] = []
     with open(manifest_filename, "r", encoding="utf-8") as manifest:
         for line in manifest:
             files.append(line.rstrip("\n"))
-    print(f"\ngather_output_data. Output data files: {files}")
     return files
 
 
@@ -117,14 +107,10 @@ def run_svm_pipeline(poller_file: str, runner) -> None:
     poller_path = TESTS_ROOT / poller_file
 
     current_dt = datetime.datetime.now()
-    print(str(current_dt))
-    print("\nsvm_setup fixture")
 
     try:
         runner(str(poller_path))
     except Exception as exc:  # pragma: no cover - defensive logging
-        print(exc)
-        pytest.fail(f"\nsvm_setup. Exception Visit: {poller_path}\n")
+        raise Exception(f"\nsvm_setup. Exception Visit: {poller_path}\n") from exc
 
     final_dt = datetime.datetime.now()
-    print(str(final_dt))

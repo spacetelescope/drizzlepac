@@ -20,9 +20,6 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.11.0 (unreleased)
 ===================
 
-- SVM regression tests tagged as bigdata to avoid running during normal
-  test runs; common svm test code also moved to new svm_test_utilities file.  [#2103]
-
 - Remove WFC3/UVIS Quadrant filter data from SVM total image and catalog creation. [#2093]
 
 - Log all environment variables [#2085].
