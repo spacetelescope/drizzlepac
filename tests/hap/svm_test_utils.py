@@ -60,7 +60,7 @@ def retrieve_data_for_processing(
     if pytestconfig is not None:
         try:
             configured_roots_raw = pytestconfig.getini("inputs_root")
-        except (TypeError, ValueError):  # pragma: no cover - defensive guard
+        except (TypeError, ValueError):
             configured_roots_raw = []
 
         if isinstance(configured_roots_raw, str):
@@ -106,7 +106,7 @@ def retrieve_data_for_processing(
             os.remove(orphan)
         except FileNotFoundError:
             continue
-        except Exception as exc:  # pragma: no cover - defensive cleanup
+        except Exception as exc:
             raise Exception(f"The file {orphan} could not be deleted from disk.") from exc
 
     return staged & expected
