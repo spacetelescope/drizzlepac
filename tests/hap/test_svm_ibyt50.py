@@ -5,6 +5,7 @@
 import numpy as np
 import pytest
 
+from ci_watson.plugin import _jail
 from drizzlepac import runsinglehap
 from astropy.io import fits, ascii
 from pathlib import Path
@@ -44,25 +45,27 @@ def read_csv_for_filenames():
     return svm_utils.load_poller_filenames(POLLER_FILE)
 
 
-@pytest.fixture(scope="module")
-def gather_data_for_processing(read_csv_for_filenames, tmp_path_factory):
-    svm_utils.change_to_temp_working_dir(tmp_path_factory, __file__)
+@pytest.fixture(scope="function")
+def gather_data_for_processing(_jail, read_csv_for_filenames):
+    """Stage required inputs within the temporary jail directory."""
     return svm_utils.retrieve_data_for_processing(read_csv_for_filenames)
 
 
-@pytest.fixture(scope="module")
-def gather_output_data(construct_manifest_filename):
-    return svm_utils.read_manifest(construct_manifest_filename)
+@pytest.fixture(scope="function")
+def svm_run(gather_data_for_processing):
+    """Run the SVM pipeline against the staged inputs."""
+    svm_utils.run_svm_pipeline(POLLER_FILE, runsinglehap.perform)
+    return gather_data_for_processing
 
 
-@pytest.fixture(scope="module")
-def construct_manifest_filename(read_csv_for_filenames):
+@pytest.fixture(scope="function")
+def construct_manifest_filename(read_csv_for_filenames, svm_run):
     return svm_utils.build_manifest_name(read_csv_for_filenames[0])
 
 
-@pytest.fixture(scope="module", autouse=True)
-def svm_setup(gather_data_for_processing):
-    svm_utils.run_svm_pipeline(POLLER_FILE, runsinglehap.perform)
+@pytest.fixture(scope="function")
+def gather_output_data(construct_manifest_filename, svm_run):
+    return svm_utils.read_manifest(construct_manifest_filename)
 
 
 # TESTS
