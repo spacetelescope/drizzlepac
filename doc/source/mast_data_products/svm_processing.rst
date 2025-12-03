@@ -523,7 +523,8 @@ detector, selection information can take the form of the number of input observa
 the date that the observations were taken, the central filter wavelength, or the dispersive
 element type. For example, a **filter product** would end up using the **filter_basic**
 criteria, while an 8 exposure ACS/WFC association would end up selecting the
-**acs_wfc_any_n6** entry.
+**acs_wfc_any_n6** entry. For more details on the alignment configuration files, 
+see the :ref:`detector_configuration_files` section.
 
 
 User-customization of Parameters
