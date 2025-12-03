@@ -46,9 +46,12 @@ def read_csv_for_filenames():
 
 
 @pytest.fixture(scope="function")
-def gather_data_for_processing(_jail, read_csv_for_filenames):
+def gather_data_for_processing(_jail, read_csv_for_filenames, pytestconfig):
     """Stage required inputs within the temporary jail directory."""
-    return svm_utils.retrieve_data_for_processing(read_csv_for_filenames)
+    return svm_utils.retrieve_data_for_processing(
+        read_csv_for_filenames,
+        pytestconfig=pytestconfig,
+    )
 
 
 @pytest.fixture(scope="function")

@@ -10,14 +10,20 @@ from __future__ import annotations
 import datetime
 import os
 from pathlib import Path
-from typing import Iterable, Sequence, Set
+from typing import Iterable, Sequence, Set, TYPE_CHECKING
 
 import pytest
 from astropy.io import ascii, fits
 
-from drizzlepac.haputils import astroquery_utils as aqutils
+from ci_watson.artifactory_helpers import BigdataError, get_bigdata
+
+if TYPE_CHECKING:  # pragma: no cover - typing helper
+    from _pytest.config import Config
 
 TESTS_ROOT = Path(__file__).parent
+DEFAULT_INPUTS_ROOT = "drizzlepac"
+DEFAULT_ENV = "dev"
+SVM_INPUT_SUBDIR = os.environ.get("SVM_INPUT_DATA_DIR", "svm_input_data")
 
 
 def load_poller_filenames(poller_file: str) -> list[str]:
@@ -36,52 +42,74 @@ def change_to_temp_working_dir(tmp_path_factory, test_filename: str) -> Path:
     return workdir
 
 
-def _collect_wildcards(filenames: Iterable[str], suffixes: Sequence[str]) -> dict[str, str]:
-    wildcards: dict[str, str] = {}
-    for name in filenames:
-        lower_name = name.lower()
-        for suffix in suffixes:
-            suffix_lower = suffix.lower()
-            if lower_name.endswith(f"{suffix_lower}.fits") and suffix not in wildcards:
-                wildcards[suffix] = name[:6] + "*"
-    return wildcards
-
-
 def retrieve_data_for_processing(
     filenames: Iterable[str],
     suffixes: Sequence[str] = ("FLC", "FLT"),
     product_type: str = "pipeline",
+    *,
+    pytestconfig: Config | None = None,
+    artifactory_subdir: str = SVM_INPUT_SUBDIR,
 ) -> Set[str]:
-    """Download required observation files and cull unused extras."""
-    suffixes = tuple(s.upper() for s in suffixes)
-    wildcards = _collect_wildcards(filenames, suffixes)
+    """Materialize required observation files locally via Artifactory."""
 
-    downloaded: list[str] = []
-    for suffix in suffixes:
-        flag = wildcards.get(suffix)
-        if flag:
-            files = aqutils.retrieve_observation(flag, suffix=[suffix], product_type=product_type)
-            downloaded.extend(files)
+    _ = suffixes, product_type  # Parameters retained for backward compatibility.
 
-    filenames_set = set(filenames)
-    downloaded_set = set(downloaded)
+    inputs_root = DEFAULT_INPUTS_ROOT
+    env = DEFAULT_ENV
 
-    if not downloaded_set:
-        existing_files = {fn for fn in filenames if Path(fn).exists()}
-        if existing_files:
-            return existing_files
-
-    files_to_process = filenames_set & downloaded_set if downloaded_set else filenames_set
-
-    files_to_remove = filenames_set.symmetric_difference(downloaded_set)
-    for ftr in files_to_remove:
+    if pytestconfig is not None:
         try:
-            os.remove(ftr)
+            configured_roots_raw = pytestconfig.getini("inputs_root")
+        except (TypeError, ValueError):  # pragma: no cover - defensive guard
+            configured_roots_raw = []
+
+        if isinstance(configured_roots_raw, str):
+            configured_roots = [configured_roots_raw]
+        else:
+            configured_roots = list(configured_roots_raw)
+
+        if configured_roots:
+            candidate_root = configured_roots[0].strip()
+            if candidate_root:
+                inputs_root = candidate_root
+
+        env_candidate = (pytestconfig.getoption("env") or "").strip()
+        if env_candidate:
+            env = env_candidate
+
+    artifactory_path = (inputs_root, env, artifactory_subdir)
+
+    expected = {Path(name).name for name in filenames}
+    staged: Set[str] = set()
+    missing: list[str] = []
+
+    for name in expected:
+        if Path(name).exists():
+            staged.add(name)
+            continue
+
+        try:
+            local_path = get_bigdata(*artifactory_path, name)
+        except BigdataError:
+            missing.append(name)
+            continue
+
+        staged.add(Path(local_path).name)
+
+    if missing:
+        missing_list = ", ".join(sorted(missing))
+        raise BigdataError(f"Missing SVM input data for: {missing_list}")
+
+    files_to_remove = staged - expected
+    for orphan in files_to_remove:
+        try:
+            os.remove(orphan)
         except FileNotFoundError:
             continue
-        except Exception as exc:
-            raise Exception(f"The file {ftr} could not be deleted from disk. ") from exc
-    return files_to_process
+        except Exception as exc:  # pragma: no cover - defensive cleanup
+            raise Exception(f"The file {orphan} could not be deleted from disk.") from exc
+
+    return staged & expected
 
 
 def build_manifest_name(reference_filename: str) -> str:
