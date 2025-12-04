@@ -55,9 +55,9 @@ def read_csv_for_filenames():
 
 
 @pytest.fixture(scope="function")
-    def gather_data_for_processing(_jail, read_csv_for_filenames, pytestconfig):
+def gather_data_for_processing(_jail, read_csv_for_filenames, pytestconfig):
     """Retrieve observation files inside the temporary jail directory."""
-        return svm_utils.retrieve_data_for_processing(
+    return svm_utils.retrieve_data_for_processing(
             read_csv_for_filenames,
             pytestconfig=pytestconfig,
         )

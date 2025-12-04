@@ -1,32 +1,20 @@
-"""Shared helpers for SVM regression tests.
-
-These utilities consolidate repeated logic across the ``test_svm_*`` modules
-including poller-file parsing, data retrieval, manifest handling, and running
-of pipeline steps. Keeping them in one place reduces duplication and makes it
-simpler to update test mechanics in the future.
-"""
-from __future__ import annotations
+# Shared helpers for SVM regression tests.
 
 import datetime
 import os
 from pathlib import Path
-from typing import Iterable, Sequence, Set, TYPE_CHECKING
 
 import pytest
 from astropy.io import ascii, fits
 
 from ci_watson.artifactory_helpers import BigdataError, get_bigdata
 
-if TYPE_CHECKING:  # pragma: no cover - typing helper
-    from _pytest.config import Config
-
 TESTS_ROOT = Path(__file__).parent
 DEFAULT_INPUTS_ROOT = "drizzlepac"
 DEFAULT_ENV = "dev"
-SVM_INPUT_SUBDIR = os.environ.get("SVM_INPUT_DATA_DIR", "svm_input_data")
+SVM_INPUT_SUBDIR = "svm_inputs"
 
-
-def load_poller_filenames(poller_file: str) -> list[str]:
+def load_poller_filenames(poller_file):
     """Read a poller file and return the list of filenames it references."""
     path = TESTS_ROOT / poller_file
     table = ascii.read(path, format="no_header")
@@ -35,7 +23,7 @@ def load_poller_filenames(poller_file: str) -> list[str]:
     return filenames
 
 
-def change_to_temp_working_dir(tmp_path_factory, test_filename: str) -> Path:
+def change_to_temp_working_dir(tmp_path_factory, test_filename):
     """Create a per-test temporary directory and change into it."""
     workdir = tmp_path_factory.mktemp(Path(test_filename).name)
     os.chdir(workdir)
@@ -43,13 +31,13 @@ def change_to_temp_working_dir(tmp_path_factory, test_filename: str) -> Path:
 
 
 def retrieve_data_for_processing(
-    filenames: Iterable[str],
-    suffixes: Sequence[str] = ("FLC", "FLT"),
-    product_type: str = "pipeline",
+    filenames,
+    suffixes=("FLC", "FLT"),
+    product_type="pipeline",
     *,
-    pytestconfig: Config | None = None,
-    artifactory_subdir: str = SVM_INPUT_SUBDIR,
-) -> Set[str]:
+    pytestconfig=None,
+    artifactory_subdir=SVM_INPUT_SUBDIR,
+):
     """Materialize required observation files locally via Artifactory."""
 
     _ = suffixes, product_type  # Parameters retained for backward compatibility.
@@ -80,8 +68,8 @@ def retrieve_data_for_processing(
     artifactory_path = (inputs_root, env, artifactory_subdir)
 
     expected = {Path(name).name for name in filenames}
-    staged: Set[str] = set()
-    missing: list[str] = []
+    staged = set()
+    missing = []
 
     for name in expected:
         if Path(name).exists():
@@ -112,7 +100,7 @@ def retrieve_data_for_processing(
     return staged & expected
 
 
-def build_manifest_name(reference_filename: str) -> str:
+def build_manifest_name(reference_filename):
     """Derive the manifest filename based on an input exposure."""
     inst = fits.getval(reference_filename, "INSTRUME", ext=0).lower()
     root = fits.getval(reference_filename, "ROOTNAME", ext=0).lower()
@@ -121,16 +109,16 @@ def build_manifest_name(reference_filename: str) -> str:
     return manifest_filename
 
 
-def read_manifest(manifest_filename: str) -> list[str]:
+def read_manifest(manifest_filename):
     """Read a manifest and return every listed filename."""
-    files: list[str] = []
+    files = []
     with open(manifest_filename, "r", encoding="utf-8") as manifest:
         for line in manifest:
             files.append(line.rstrip("\n"))
     return files
 
 
-def run_svm_pipeline(poller_file: str, runner) -> None:
+def run_svm_pipeline(poller_file, runner):
     """Execute the SVM pipeline entry point with robust logging."""
     poller_path = TESTS_ROOT / poller_file
 
