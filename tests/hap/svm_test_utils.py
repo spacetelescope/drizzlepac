@@ -1,13 +1,10 @@
 # Shared helpers for SVM regression tests.
 
-import datetime
-import os
 from pathlib import Path
 
-import pytest
 from astropy.io import ascii, fits
 
-from ci_watson.artifactory_helpers import BigdataError, get_bigdata
+from ci_watson.artifactory_helpers import get_bigdata
 
 TESTS_ROOT = Path(__file__).parent
 DEFAULT_INPUTS_ROOT = "drizzlepac"
@@ -23,81 +20,31 @@ def load_poller_filenames(poller_file):
     return filenames
 
 
-def change_to_temp_working_dir(tmp_path_factory, test_filename):
-    """Create a per-test temporary directory and change into it."""
-    workdir = tmp_path_factory.mktemp(Path(test_filename).name)
-    os.chdir(workdir)
-    return workdir
-
-
 def retrieve_data_for_processing(
     filenames,
-    suffixes=("FLC", "FLT"),
-    product_type="pipeline",
-    *,
     pytestconfig=None,
     artifactory_subdir=SVM_INPUT_SUBDIR,
 ):
-    """Materialize required observation files locally via Artifactory."""
-
-    _ = suffixes, product_type  # Parameters retained for backward compatibility.
-
     inputs_root = DEFAULT_INPUTS_ROOT
     env = DEFAULT_ENV
 
-    if pytestconfig is not None:
-        try:
-            configured_roots_raw = pytestconfig.getini("inputs_root")
-        except (TypeError, ValueError):
-            configured_roots_raw = []
-
-        if isinstance(configured_roots_raw, str):
-            configured_roots = [configured_roots_raw]
-        else:
-            configured_roots = list(configured_roots_raw)
-
-        if configured_roots:
-            candidate_root = configured_roots[0].strip()
-            if candidate_root:
-                inputs_root = candidate_root
-
-        env_candidate = (pytestconfig.getoption("env") or "").strip()
-        if env_candidate:
-            env = env_candidate
+    if pytestconfig:
+        roots = pytestconfig.getini("inputs_root")
+        first_root = roots if isinstance(roots, str) else next(iter(roots), inputs_root)
+        inputs_root = first_root.strip() or inputs_root
+        env = (pytestconfig.getoption("env") or env).strip() or env
 
     artifactory_path = (inputs_root, env, artifactory_subdir)
 
     expected = {Path(name).name for name in filenames}
-    staged = set()
-    missing = []
 
     for name in expected:
-        if Path(name).exists():
-            staged.add(name)
+        path = Path(name)
+        if path.exists():
             continue
+        get_bigdata(*artifactory_path, name)
 
-        try:
-            local_path = get_bigdata(*artifactory_path, name)
-        except BigdataError:
-            missing.append(name)
-            continue
-
-        staged.add(Path(local_path).name)
-
-    if missing:
-        missing_list = ", ".join(sorted(missing))
-        raise BigdataError(f"Missing SVM input data for: {missing_list}")
-
-    files_to_remove = staged - expected
-    for orphan in files_to_remove:
-        try:
-            os.remove(orphan)
-        except FileNotFoundError:
-            continue
-        except Exception as exc:
-            raise Exception(f"The file {orphan} could not be deleted from disk.") from exc
-
-    return staged & expected
+    return expected
 
 
 def build_manifest_name(reference_filename):
@@ -122,11 +69,7 @@ def run_svm_pipeline(poller_file, runner):
     """Execute the SVM pipeline entry point with robust logging."""
     poller_path = TESTS_ROOT / poller_file
 
-    current_dt = datetime.datetime.now()
-
     try:
         runner(str(poller_path))
-    except Exception as exc:  # pragma: no cover - defensive logging
+    except Exception as exc:
         raise Exception(f"\nsvm_setup. Exception Visit: {poller_path}\n") from exc
-
-    final_dt = datetime.datetime.now()
