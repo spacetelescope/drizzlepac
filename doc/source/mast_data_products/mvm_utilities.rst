@@ -1,8 +1,8 @@
 .. _mvmutilities:
 
-=======================================
-Utilities for Manipulating MVM Products
-=======================================
+====================================================
+Utilities for Manipulating MVM Products (deprecated)
+====================================================
 .. toctree::
    :maxdepth: 2
 
