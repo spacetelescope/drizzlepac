@@ -1946,7 +1946,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 self.kernel = g2d_kernel
                 segm_img = copy.deepcopy(g_segm_img)
                 del g_segm_img
-                self.final_nsigma = self._nsigma
+                self.final_nsigma = self._segm_nsigma
 
             # No segments were detected in the total data product - no further processing done for this TDP,
             # but processing of another TDP should proceed.
