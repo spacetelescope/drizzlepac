@@ -23,6 +23,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 - Improved MVM guide star failure check to reintroduce exposures that
   were incorrectly excluded due to PSF spikes, saturation, and CTE issues. [#2101]
 
+- Deprecated the hapcut_utils module. [#2103]
+
 - Remove WFC3/UVIS Quadrant filter data from SVM total image and catalog creation. [#2093]
 
 - Log all environment variables [#2085].
@@ -62,6 +64,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Fixed scipy deprecations in catalog_utils.py and hap_flag_filter.py.
   [#2032]
+
+- Updated alignment configuration parameters json files and removed those that 
+  were obsolete; updated documentation for these files. [#2037]
 
 - Added ability to automatically turn on/of some intermediate steps such as
   drizzle separate, create median, blot, and cosmic ray rejection steps based
