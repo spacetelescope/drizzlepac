@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - master
+      - main
       - '*x'
     tags:
       - '*'
@@ -14,14 +14,14 @@ on:
 
 jobs:
   crds_contexts:
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@22def9c8953b3551e01468f78cecf24d1463e856  # 12.1.10
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@8fe0f7e7d5e84cbf077093e28979b89558dec5b5  # 13.0.6
   check:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@86823142467dd2afcd1bbac57d3a664cf468eb3b  # v2.1.0
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@9f1fedda61294df4c004c05519a3fbf3b8e1f32f  # v2.3.1
     with:
       envs: |
         - linux: check-style
   test:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@86823142467dd2afcd1bbac57d3a664cf468eb3b  # v2.1.0
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@9f1fedda61294df4c004c05519a3fbf3b8e1f32f  # v2.3.1
     needs: [ crds_contexts ]
     with:
       setenv: |
@@ -31,15 +31,15 @@ jobs:
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
       cache-path: /tmp/data/crds_cache/
       cache-key: ${{ needs.crds_contexts.outputs.hst }}
-      libraries: |
-        brew:
-          - hdf5
+      coverage: ''
       envs: |
         - linux: py311-xdist
-        - linux: py312-xdist
+        - macos: py312-xdist
+          libraries:
+            brew:
+              - hdf5
         # `tox` does not currently respect `requires-python` versions when creating testing environments;
         # if this breaks, add an upper pin to `requires-python` and revert this py3 to the latest working version
-        - linux: py3-cov
+        - linux: py3-cov-xdist
           coverage: codecov
-        - linux: py3-xdist
       toxdeps: tox-uv

@@ -87,7 +87,6 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 # Environment variable which controls the quality assurance testing
 # for the Single Visit Mosaic processing.
-envvar_bool_dict = {'off': False, 'on': True, 'no': False, 'yes': True, 'false': False, 'true': True}
 envvar_qa_svm = "SVM_QUALITY_TESTING"
 
 envvar_cat_svm = {"SVM_CATALOG_SBC": 'on',
@@ -539,7 +538,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
     log.info("Run start time: {}".format(str(starting_dt)))
 
     # Start by reading in any environment variable related to catalog generation that has been set
-    cat_switches = {sw: _get_envvar_switch(sw, default=envvar_cat_svm[sw]) for sw in envvar_cat_svm}
+    cat_switches = {sw: util.get_envvar_switch(sw,default=envvar_cat_svm[sw]) for sw in envvar_cat_svm}
 
     # Since these are used in the finally block, make sure they are initialized
     total_obj_list = []
@@ -632,8 +631,8 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
             # Need to delete the Ramp filter Exposure objects from the *Product lists as
             # these images should not be processed beyond the alignment to Gaia (run_align_to_gaia).
-            _ = delete_ramp_exposures(total_item.fdp_list, 'FILTER')
-            ramp_product_list = delete_ramp_exposures(total_item.edp_list, 'EXPOSURE')
+            _ = delete_ramp_and_quadrant_exposures(total_item.fdp_list, 'FILTER')
+            ramp_product_list = delete_ramp_and_quadrant_exposures(total_item.edp_list, 'EXPOSURE')
             product_list += ramp_product_list
 
             # If there are Grism/Prism images present in this visit, as well as corresponding direct images
@@ -685,7 +684,7 @@ def run_hap_processing(input_filename, diagnostic_mode=False, input_custom_pars_
 
         # Quality assurance portion of the processing - done only if the environment
         # variable, SVM_QUALITY_TESTING, is set to 'on', 'yes', or 'true'.
-        qa_switch = _get_envvar_switch(envvar_qa_svm)
+        qa_switch = util.get_envvar_switch(envvar_qa_svm, description="'QA statistics'", default=False)
 
         # If requested, generate quality assessment statistics for the SVM products
         if qa_switch:
@@ -904,7 +903,7 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
     ci_lookup_file_path = "svm_parameters/any"
     output_custom_pars_file = filter_product_obj.configobj_pars.output_custom_pars_file
     for cat_type in filter_product_catalogs.catalogs.keys():
-        exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime']  # TODO: This works for ACS. Make sure that it also works for WFC3. Look at "TEXPTIME"
+        exptime = filter_product_catalogs.catalogs[cat_type].image.imghdu[0].header['exptime']
         catalog_name = filter_product_catalogs.catalogs[cat_type].sourcelist_filename
         catalog_data = filter_product_catalogs.catalogs[cat_type].source_cat
         drz_root_dir = os.getcwd()
@@ -954,35 +953,6 @@ def run_sourcelist_flagging(filter_product_obj, filter_product_catalogs, log_lev
         filter_product_catalogs.catalogs[cat_type].source_cat = source_cat
 
     return filter_product_catalogs
-
-
-def _get_envvar_switch(envvar_name, default=None):
-    """
-    This private routine interprets any environment variable, such as SVM_QUALITY_TESTING.
-
-    PARAMETERS
-    -----------
-    envvar_name : str
-        name of environment variable to be interpreted
-
-    default : str or None
-        Value to be used in case environment variable was not defined or set.
-
-    .. note :
-    This is a copy of the routine in runastrodriz.py.  This code should be put in a common place.
-
-    """
-    if envvar_name in os.environ:
-        val = os.environ[envvar_name].lower()
-        if val not in envvar_bool_dict:
-            msg = "ERROR: invalid value for {}.".format(envvar_name)
-            msg += "  \n    Valid Values: on, off, yes, no, true, false"
-            raise ValueError(msg)
-        switch_val = envvar_bool_dict[val]
-    else:
-        switch_val = envvar_bool_dict[default] if default else None
-
-    return switch_val
 
 # ------------------------------------------------------------------------------
 
@@ -1385,16 +1355,17 @@ def archive_alternate_wcs(filename):
 # ------------------------------------------------------------------------------
 
 
-def delete_ramp_exposures(obj_list, type_of_list):
-    """Delete the Ramp filter objects from the Total Product internal lists
+def delete_ramp_and_quadrant_exposures(obj_list, type_of_list):
+    """Delete objects from the Total Product internal lists if they use Ramp or
+    WFC3-UVIS Quadrant filters. 
 
     The Total Data Product (tdp) object is comprised of a list of Filter Product objects,
-    as well as a list of Exposure Product objects.  The Ramp filter
+    as well as a list of Exposure Product objects.  The Ramp/Quardrant filter
     images need to be processed in the same manner as nominal exposures for at least
     some of the processing steps.  Because of this, it was deemed best to keep the
     Ramp exposures in the tdp list attributes, until their final processing
     stage (align_to_gaia), and then delete these objects from the attribute
-    lists. This function handles the deletion of Ramp images from the input
+    lists. This function handles the deletion of Ramp/Quadrant images from the input
     list.
 
     Parameters
@@ -1407,24 +1378,26 @@ def delete_ramp_exposures(obj_list, type_of_list):
 
     Returns
     -------
-    ramp_filenames_list : list of str
-        List of ramp exposure SVM FLT/FLC filenames and their corresponding trailer filenames
+    excluded_filenames_list : list of str
+        List of ramp/quadrant exposure SVM FLT/FLC filenames and their corresponding trailer filenames
 
     """
     reported = False
     temp = []
-    ramp_filenames_list = []
+    excluded_filenames_list = []
     while obj_list:
         obj = obj_list.pop()
-        if obj.filters.lower().find('fr') == -1:
+        # If the filter name does not contain 'fr' or 'fq', then keep it.
+        filt_lower = obj.filters.lower()
+        if not filt_lower.startswith(('fr', 'fq')):
             temp.append(obj)
         else:
             # Add the Ramp images to the manifest as well as the Ramp trailer filename here.
             # The file will be created by by copying the Total Data Product trailer file at
             # the end of processing.
             if type_of_list == 'EXPOSURE':
-                ramp_filenames_list.append(obj.full_filename)
-                ramp_filenames_list.append(obj.trl_filename)
+                excluded_filenames_list.append(obj.full_filename)
+                excluded_filenames_list.append(obj.trl_filename)
                 if not reported:
                     log.info('Removing the Ramp images from the Total Data Product exposure list.')
                     log.info('Theses images are not processed beyond the "align to Gaia" stage.')
@@ -1432,7 +1405,7 @@ def delete_ramp_exposures(obj_list, type_of_list):
     while temp:
         obj_list.append(temp.pop())
 
-    return ramp_filenames_list
+    return excluded_filenames_list
 
 # ------------------------------------------------------------------------------
 

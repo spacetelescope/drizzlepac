@@ -5,7 +5,7 @@ Base ImageObject Classes
 ************************
 A class which makes image objects for each input filename.
 
-.. moduleauthor:: Warren Hack <help@stsci.edu>
+.. moduleauthor:: Warren Hack
 
 .. currentmodule:: drizzlepac.imageObject 
 

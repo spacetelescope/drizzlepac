@@ -5,71 +5,8 @@
 
     :License: :doc:`/LICENSE`
 
-    PARAMETERS
-    ----------
-    input : str
-        full filename with path of input image, an extension name
-        ['sci',1] should be provided if input is a multi-extension
-        FITS file
-
-    Optional Parameters
-    -------------------
-    ra : string or list or array, optional
-        RA from input image for a single or multiple positions
-    dec : string or list or array, optional
-        Dec from input image for a single or multiple positions
-    coordfile : str, optional
-        full filename with path of file with sky coordinates
-    colnames : str, optional
-        comma separated list of column names or list of column name strings
-        from 'coordfile' files containing x,y coordinates, respectively.
-        This parameter will default to first two columns if None are specified.
-        Column names for ASCII files will use 'c1','c2',... convention.
-        Valid syntax: ['c1','c3'] or 'c1,c3'
-    separator : str, optional
-        non-blank separator used as the column delimiter in the coords file
-    precision : int, optional
-        Number of floating-point digits in output values
-    output : str, optional
-        Name of output file with results, if desired
-    verbose : bool
-        Print out full list of transformation results (default: False)
-
-    RETURNS
-    -------
-    x : float or array
-        X position of pixel. If more than 1 input value, then it will be a
-        numpy array.
-    y : float or array
-        Y position of pixel. If more than 1 input value, then it will be a
-        numpy array.
-
-
-    NOTES
-    -----
-    This module performs a full distortion-corrected coordinate
-    transformation based on all WCS keywords and any recognized
-    distortion keywords from the input image header.
-
-
-    EXAMPLES
-    --------
-    1. The following command will transform the position 00:22:36.79 -72:4:9.0 into a
-       position on the image 'input_flt.fits[sci,1]' using::
-
-            >>> from drizzlepac import skytopix
-            >>> x,y = skytopix.rd2xy("input_file_flt.fits[sci,1]", "00:22:36.79","-72:4:9.0")
-
-
-    2. The set of sky positions from 'input_flt.fits[sci,1]' stored as
-       the 3rd and 4th columns from the ASCII file 'radec_sci1.dat'
-       will be transformed and written out to 'xy_sci1.dat' using::
-
-            >>> from drizzlepac import skytopix
-            >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]", coordfile='radec_sci1.dat',
-                colnames=['c3','c4'], output="xy_sci1.dat")
-
 """
+
 import numpy as np
 
 from . import util,tweakutils
@@ -77,14 +14,87 @@ from stwcs import wcsutil
 from . import __version__
 
 __taskname__ = 'skytopix'
+__all__ = ['rd2xy']
 
 blank_list = [None, '', ' ']
 
-def rd2xy(input,ra=None,dec=None,coordfile=None,colnames=None,
-            precision=6,output=None,verbose=True):
-    """ Primary interface to perform coordinate transformations from
+def rd2xy(input, ra=None, dec=None, coordfile=None, colnames=None,
+            precision=6, output=None, verbose=True):
+    """Primary interface to perform coordinate transformations from
         pixel to sky coordinates using STWCS and full distortion models
-        read from the input image header.
+        read from the input image header. Input positions must be in the 
+        form of RA/Dec strings or as columns in a coordinate file.
+
+    Parameters
+    ----------
+    input : str
+        Full filename with path of input image, an extension name
+        ['sci',1] should be provided if input is a multi-extension
+        FITS file
+
+    ra : string or list or array, optional
+        RA from input image for a single or multiple positions
+        (with or without ``':'``)
+        like ``'19:10:50.337406303'`` or ``'19 10 50.337406303'``
+
+    dec : string or list or array, optional
+        Dec from input image for a single or multiple positions
+        (with or without ``':'``)
+        like ``'-60:2:22.186557409'`` or ``'-60 2 22.186557409'``
+
+    coordfile : str, optional
+        Full filename with path of file with sky coordinates
+
+    colnames : str, optional
+        Comma separated list of column names or list of column name strings
+        from 'coordfile' files containing sky coordinates, respectively.
+        This parameter will default to first two columns if None are specified.
+        Column names for ASCII files will use 'c1','c2',... convention.
+        Valid syntax: ['c1','c3'] or 'c1,c3'
+
+    separator : str, optional
+        Non-blank separator used as the column delimiter in the coords file
+
+    precision : int, optional
+        Number of floating-point digits in output values
+
+    output : str, optional
+        Name of output file with results, if desired
+
+    verbose : bool
+        Print out full list of transformation results (default: False)
+
+    Returns
+    -------
+    x : float or array
+        X position of pixel. If more than 1 input value, then it will be a
+        numpy array.
+
+    y : float or array
+        Y position of pixel. If more than 1 input value, then it will be a
+        numpy array.
+
+    Notes
+    -----
+    This module performs a full distortion-corrected coordinate
+    transformation based on all WCS keywords and any recognized
+    distortion keywords from the input image header.
+
+    Examples
+    --------
+    1. The following command will transform the position 00:22:36.79 -72:4:9.0 into a
+    position on the image 'input_flt.fits[sci,1]' using::
+
+        >>> from drizzlepac import skytopix
+        >>> x,y = skytopix.rd2xy("input_file_flt.fits[sci,1]", "00:22:36.79", "-72:4:9.0")
+
+    2. The set of sky positions from 'input_flt.fits[sci,1]' stored as
+    the 3rd and 4th columns from the ASCII file 'radec_sci1.dat'
+    will be transformed and written out to 'xy_sci1.dat' using::
+
+        >>> from drizzlepac import skytopix
+        >>> x,y = skytopix.rd2xy("input_flt.fits[sci,1]", coordfile='radec_sci1.dat',
+        ...                     colnames=['c3','c4'], output="xy_sci1.dat")
     """
     single_coord = False
     if coordfile is not None:
@@ -170,9 +180,3 @@ def run(configObj):
             coordfile = coordfile, colnames = colnames,
             precision= configObj['precision'],
             output= outfile, verbose = configObj['verbose'])
-
-
-__doc__ = util._def_help_functions(
-    locals(), module_file=__file__, task_name=__taskname__, module_doc=__doc__
-)
-

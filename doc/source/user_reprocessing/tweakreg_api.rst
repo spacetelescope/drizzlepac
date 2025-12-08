@@ -8,9 +8,7 @@ the headers of each input image align to within sub-pixel accuracy.
 The ``TweakReg`` task allows the user to align sets of images to each
 other and/or to and external astrometric reference frame or image.
 
-.. moduleauthor:: Warren Hack, Mihai Cara <help@stsci.edu>
+.. moduleauthor:: Warren Hack, Mihai Cara
 
-.. automodule:: drizzlepac.tweakreg
-
-.. autofunction:: TweakReg
-.. autofunction:: help
+.. automodapi:: drizzlepac.tweakreg
+	:include: TweakReg

@@ -4,7 +4,7 @@
 NICMOS ImageObjects
 *******************
 
-.. moduleauthor:: Christopher Hanley, David Grumm, Megan Sosey <help@stsci.edu>
+.. moduleauthor:: Christopher Hanley, David Grumm, Megan Sosey
 
 .. currentmodule:: drizzlepac.nicmosData
 

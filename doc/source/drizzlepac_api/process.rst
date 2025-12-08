@@ -15,7 +15,7 @@ input files specified by the user. These functions:
     * adds info about any user-provided IVM files to the ImageObjects
     * generates the output WCS based on user inputs
 
-.. moduleauthor:: Warren Hack <help@stsci.edu>
+.. moduleauthor:: Warren Hack
 
 .. automodule:: drizzlepac.processInput
    :members:
