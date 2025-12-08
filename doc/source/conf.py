@@ -16,16 +16,33 @@
 # Check Sphinx version
 import os
 import sys
-import sphinx
-import tomli
-from pathlib import Path
+import types
+from unittest.mock import MagicMock
 
-from packaging.version import Version
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'src'))
 
-try:
-    from ConfigParser import ConfigParser
-except ImportError:
-    from configparser import ConfigParser
+class _MockModule(types.ModuleType):
+    def __getattr__(self, item):
+        mock_attr = MagicMock(name=f'{self.__name__}.{item}')
+        setattr(self, item, mock_attr)
+        return mock_attr
+
+
+if os.environ.get('READTHEDOCS') == 'True':
+    for module_name in ('drizzlepac.cdriz',):
+        if module_name not in sys.modules:
+            mock_module = _MockModule(module_name)
+            mock_module.__file__ = f'<mocked {module_name}>'
+            sys.modules[module_name] = mock_module
+
+from configparser import ConfigParser
+from datetime import datetime
+
+
+from drizzlepac import __version__ as version
+
 conf = ConfigParser()
 
 
@@ -36,14 +53,6 @@ def setup(app):
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-# sys.path.insert(0, os.path.abspath('../'))
-# sys.path.insert(0, os.path.abspath('../../'))
-sys.path.insert(0, os.path.abspath('../../.eggs'))
-sys.path.insert(0, os.path.abspath('../../src/'))
-
-# sys.path.insert(0, os.path.abspath('../'))
-# sys.path.insert(0, os.path.abspath('packagename/'))
-# sys.path.insert(0, os.path.abspath('exts/'))
 
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.3'
@@ -51,40 +60,18 @@ sys.path.insert(0, os.path.abspath('../../src/'))
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # -- General configuration ------------------------------------------------
-# conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
-with open(Path(__file__).parent.parent.parent / "pyproject.toml", "rb") as configuration_file:
-    conf = tomli.load(configuration_file)
-setup_cfg = conf['project']
-
-
-def check_sphinx_version(expected_version):
-    sphinx_version = Version(sphinx.__version__)
-    expected_version = Version(expected_version)
-    if sphinx_version < expected_version:
-        raise RuntimeError(
-            "At least Sphinx version {0} is required to build this "
-            "documentation.  Found {1}.".format(
-                expected_version, sphinx_version))
-
 
 # Configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
-    'matplotlib': ('https://matplotlib.org/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
     'astropy': ('https://docs.astropy.org/en/stable/', None),
     'tweakwcs': ('https://tweakwcs.readthedocs.io/en/latest/', None),
     'stsci.skypac': ('https://stsci-skypac.readthedocs.io/en/latest/', None),
     'stwcs': ('https://stwcs.readthedocs.io/en/latest/', None),
 }
-
-if sys.version_info[0] == 2:
-    intersphinx_mapping['python'] = ('https://docs.python.org/2/', None)
-    # intersphinx_mapping['pythonloc'] = (
-        # 'https://docs.python.org/',
-        # os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                     # 'local/python2_local_links.inv')))
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -101,22 +88,14 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.graphviz',
     'numpydoc',
     'sphinx_automodapi.automodapi',
     'sphinx_automodapi.automodsumm',
     'sphinx_automodapi.autodoc_enhancements',
     'sphinx_automodapi.smart_resolver',
 ]
-
-if on_rtd:
-    extensions.append('sphinx.ext.mathjax')
-
-elif Version(sphinx.__version__) < Version('1.4'):
-    extensions.append('sphinx.ext.pngmath')
-
-else:
-    extensions.append('sphinx.ext.imgmath')
-
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -131,13 +110,13 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'DrizzlePac'
-copyright = u'2024, Steve Goldman, Michele De La Pena, Warren Hack, Mihai Cara, Nadia Dencheva'
+project = 'DrizzlePac'
+copyright = f'{datetime.now().year}, Steve Goldman, Michele De La Pena, Warren Hack, Mihai Cara, Nadia Dencheva'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-from drizzlepac import __version__ as version
+
 # The full version, including alpha/beta/rc tags.
 # release = '1.0.6 (14-Aug-2012)'
 release = version
@@ -207,7 +186,6 @@ graphviz_dot_args = [
     '-Gfontsize=10',
     '-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif'
 ]
-
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -318,7 +296,7 @@ latex_documents = [
 # If false, no module index is generated.
 # latex_use_modindex = True
 
-latex_elements = { 'pointsize' : '11pt' }
+latex_elements = {'pointsize': '11pt'}
 
 # Enable nitpicky mode - which ensures that all references in the docs resolve.
 nitpicky = True

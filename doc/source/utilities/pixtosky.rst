@@ -11,9 +11,6 @@ added capability of understanding the full distortion model
 provided in the headers of images updated for use with astrodrizzle and
 tweakreg.
 
-.. moduleauthor:: Warren Hack <help@stsci.edu>
+.. moduleauthor:: Warren Hack
 
-.. automodule:: drizzlepac.pixtosky
-
-.. autofunction:: xy2rd
-.. autofunction:: help
+.. automodapi:: drizzlepac.pixtosky

@@ -17,8 +17,21 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.xx.x (unreleased)
+3.11.0 (unreleased)
 ===================
+
+- Deprecated the hapcut_utils module. [#2103]
+
+- Remove WFC3/UVIS Quadrant filter data from SVM total image and catalog creation. [#2093]
+
+- Log all environment variables [#2085].
+
+- Added Proposal ID to MVM header keywords. [#2099]
+
+- Removed help files and moved text to docstrings. Also deprecated the 
+  ``iteractive`` argument in ``MapReg`` function. [#2077,#2078,#2079]
+
+- Log all environment variables [#2085].
 
 - Removed rounding of IDCSCALE values. [#2063]
 
@@ -48,6 +61,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Fixed scipy deprecations in catalog_utils.py and hap_flag_filter.py.
   [#2032]
+
+- Updated alignment configuration parameters json files and removed those that 
+  were obsolete; updated documentation for these files. [#2037]
 
 - Added ability to automatically turn on/of some intermediate steps such as
   drizzle separate, create median, blot, and cosmic ray rejection steps based

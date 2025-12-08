@@ -17,7 +17,7 @@ Alternative Usage
 =================
 
     >>> python
-    >>> from wfc3tools import runastrodriz
+    >>> from drizzlepac import runastrodriz
     >>> runastrodriz.process(inputFilename,force=False,newpath=None,inmemory=False)
 
 
