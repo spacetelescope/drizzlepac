@@ -848,7 +848,7 @@ class baseImageObject:
                 weighting type.\n\nA workaround would be to create inverse
                 variance maps and use 'IVM' as the final_wht_type.  See the
                 HELP file for more details on using inverse variance maps.""")
-            log.debug("\n Continue with final drizzle step...", file=sys.stderr)
+            log.debug("\n Continue with final drizzle step...")
 
         return errmask.astype(np.float32)
 

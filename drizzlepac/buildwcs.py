@@ -384,7 +384,7 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
             log.debug('Overwrite existing file "%s"'%outname)
             os.remove(outname)
         hdrlet.writeto(outname)
-        log.debug('Wrote out headerlet :',outname)
+        log.debug('Wrote out headerlet : %s',outname)
 
 
 util._def_help_functions(

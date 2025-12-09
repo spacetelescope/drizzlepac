@@ -1245,7 +1245,7 @@ def run(configobj, wcsmap=None, input_dict=None):
     else:
         log.error(textutil.textbox(
             "No valid input files found!   Please restart the task "
-            "and check the value for the 'input' parameter."), file=sys.stderr)
+            "and check the value for the 'input' parameter."))
         def_logname = None
         return
 
@@ -1285,7 +1285,7 @@ def run(configobj, wcsmap=None, input_dict=None):
             log.error(textutil.textbox(
                 '\nAstroDrizzle Version {:s} encountered a problem!  '
                 'Processing terminated at {:s}.'
-                .format(__version__, util._ptime()[0])), file=sys.stderr)
+                .format(__version__, util._ptime()[0])))
             return
 
         log.debug("USER INPUT PARAMETERS common to all Processing Steps:")
@@ -1435,7 +1435,7 @@ def run(configobj, wcsmap=None, input_dict=None):
         log.error(textutil.textbox(
             "AstroDrizzle Version {:s} encountered a problem!  "
             "Processing terminated at {:s}."
-            .format(__version__, util._ptime()[0])), file=sys.stderr)
+            .format(__version__, util._ptime()[0])))
         procSteps.endStep(None, reason="aborted")
         raise
 
