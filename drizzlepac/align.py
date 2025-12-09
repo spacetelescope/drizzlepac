@@ -669,24 +669,6 @@ def determine_fit_quality(
             * reason fit is considered 'compromised' (only populated if "compromised" field is "True")
     """
 
-    # Set up the log file handler and name of the log file
-    # If the log file handler were never set, the module_fh will be None.
-    # Only want to remove a file handler if there were one set in the first place.
-    # global module_fh
-    # global module_logfile
-    # # if module_fh is not None and module_logfile != runfile.upper():
-    # if module_fh is not None:
-    #     print("Removing old file handler for logging.")
-    #     log.removeHandler(module_fh)
-
-    # module_logfile = runfile.upper()
-    # module_fh = logutil.logging.FileHandler(runfile)
-    # module_fh.setLevel(loglevel)
-
-    # log.addHandler(module_fh)
-    # log.setLevel(loglevel)
-    # log.debug("Log file: {}".format(module_logfile))
-
     max_rms_val = 1e9
     fit_status_dict = {}
     xshifts = []
