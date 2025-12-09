@@ -30,28 +30,7 @@ __taskname__ = "align"
 MSG_DATEFMT = "%Y%j%H%M%S"
 SPLUNK_MSG_FORMAT = "%(asctime)s %(levelname)s src=%(name)s- %(message)s"
 
-
-# def _init_logger():
-#     log = logutil.create_logger(
-#         __name__,
-#         level=logutil.logging.NOTSET,
-#         stream=sys.stdout,
-#         format=SPLUNK_MSG_FORMAT,
-#         datefmt=MSG_DATEFMT,
-#     )
-#     return log
-
-
-# log = _init_logger()
-
-# # Initial values for the module log filename and the associated file handler used for the log
-# module_fh = None
-# module_logfile = ""
-
-
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
-
-# ------------------------------------------------------------------------------------------------------------
 
 
 def perform_align(
@@ -151,19 +130,6 @@ def perform_align(
     else:
         loglevel = logutil.logging.INFO
 
-    # Need to ensure the logging works properly for the PyTests where each test starts with a fresh handler
-    # global module_fh
-    # global module_logfile
-    # if module_fh is not None:
-    #     log.debug("Removing old file handler for logging.")
-    #     log.removeHandler(module_fh)
-
-    # module_logfile = runfile.upper()
-    # module_fh = logutil.logging.FileHandler(runfile)
-    # module_fh.setLevel(loglevel)
-
-    # log.addHandler(module_fh)
-    # log.setLevel(loglevel)
     log.debug(f"{__taskname__} Version {__version__}\n")
 
     # 0: print git info
