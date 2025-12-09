@@ -1195,7 +1195,7 @@ def AstroDrizzle(
         util.applyUserPars_steps(configObj, input_dict, step="7a")
 
     except ValueError:
-        log.error("Problem with input parameters. Quitting...", file=sys.stderr)
+        log.error("Problem with input parameters. Quitting...")
         return
 
     # add flag to configObj to indicate whether or not to use mdriztab
