@@ -598,8 +598,8 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
 
     nimg = len(imageList)
     if nimg == 0:
-        log.debug("Skymatch needs at least one image to perform{0} \
-                    sky matching. Nothing to be done.",os.linesep)
+        log.debug("Skymatch needs at least one image to perform sky matching. "+
+                  "Nothing to be done.")
         return
 
     # create a list of input file names as provided by the user:
@@ -919,7 +919,7 @@ def _skyUserFromFile(imageObjList, skyFile, apply_sky=None):
                 else:
                     imageSet[chipext].computedSky = _skyValue
                 imageSet[chipext].subtractedSky = _skyValue
-                log.debug("Setting ",skyKW,"=",_skyValue)
+                log.debug(f"Setting {skyKW} = {_skyValue}")
         else:
             log.warning(f"NO user-supplied sky value found for {fname}")
             log.warning("Setting sky to a value of 0.0!")
