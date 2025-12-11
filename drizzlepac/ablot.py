@@ -10,15 +10,16 @@ cosmic-rays.
 """
 
 import os
+import logging
 import numpy as np
-from stsci.tools import fileutil, logutil
+from stsci.tools import fileutil
 from . import outputimage
 from . import wcs_functions
 from . import util
 import stwcs
 from stwcs import distortion
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 try:
     from . import cdriz
