@@ -269,12 +269,14 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
     from . import imageObject
     if outwcs is None:
         output_mem = 0
+        pixel_shape = (0, 0)
     else:
         if isinstance(outwcs,imageObject.WCSObject):
             owcs = outwcs.final_wcs
         else:
             owcs = outwcs
-        output_mem = np.prod(owcs.pixel_shape) * 4 * 3  # bytes used for output arrays
+        pixel_shape = owcs.pixel_shape
+        output_mem = np.prod(pixel_shape) * 4 * 3  # bytes used for output arrays
     img1 = imageObjectList[0]
     numchips = 0
     input_mem = 0
@@ -296,12 +298,10 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
                 chip_mem = cmem
     max_mem = (input_mem + output_mem*pool_size + chip_mem*2)//(1024*1024)
 
-    log.debug("""
-              Estimated memory usage:  up to %d Mb.'%(max_mem))\n
-              Output image size:       {:d} X {:d} pixels. '.format(*owcs.pixel_shape))\n
-              Output image file:       ~ %d Mb. '%(output_mem//(1024*1024)))\n
-              Cores available:         %d'%(pool_size))\n
-              """)
+    log.debug(f""" Estimated memory usage:  up to {max_mem:d} Mb.
+              Output image size:       {pixel_shape[0]:d} X {pixel_shape[1]:d} pixels.
+              Output image file:       ~ {output_mem // (1024 * 1024):d} Mb.
+              Cores available:         {pool_size:d}""")
 
     if interactive:
         log.debug('Continue with processing?')
