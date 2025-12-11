@@ -24,8 +24,8 @@ __all__ = ['BaseHLATest', 'BaseHLAParTest', 'centroid_compare', 'BaseUnit']
 @pytest.mark.usefixtures('_jail')
 class BaseHLATest(BaseTest):
     ignore_hdus = []
-    input_repo = 'hst-hla-pipeline'
-    results_root = 'hst-hla-pipeline-results'
+    input_repo = 'drizzlepac'
+    results_root = 'drizzlepac-results'
     output_shift_file = None
     fit_limit = 0.010 # 10 milli-arcseconds
     
