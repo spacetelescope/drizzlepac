@@ -310,7 +310,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             log.error(f"ERROR: Input file - {inFilename} - does not exist.")
             return
     except TypeError:
-        log.error("ERROR: Appropriate input file could not be found.")
+        log.error("Appropriate input file could not be found.")
         return
 
     # If newpath was specified, move all files to that directory for processing
@@ -357,7 +357,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         else:
             # Remove FLT file created here, since the calibration file can NOT be aligned or drizzled
             os.remove(inFilename)
-            log.error("ERROR: Inappropriate input file.  Deleting converted WFPC2 FLT file.")
+            log.error("Inappropriate input file.  Deleting converted WFPC2 FLT file.")
 
             # write out manifest file, if requested
             mani_filename = inFile[:inFile.find('_d0m')] + '_manifest.txt'
@@ -568,7 +568,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _good_images = [f for f in _good_images if fits.getval(f, goodpix_name, ext=("SCI", 1)) > 0.]
         if len(_good_images) == 0:
             if len(_calfiles)==0:
-                log.error("ERROR: No valid data found in input exposures.")
+                log.error("No valid data found in input exposures.")
                 sys.exit(analyze.Ret_code.NO_VIABLE_DATA.value)
             else:
                 _good_images = _calfiles
@@ -1675,7 +1675,7 @@ def collect_wcs_names(exp_list, image_type):
             log.warning(f"WARNING: There are no WCS solutions in the image {filename} in this visit.")
             skip_image_list.append(filename)
             if image_type == 'GRISM':
-                log.warning("WARNING:    Skip and delete this image.")
+                log.warning("Skip and delete this image.")
                 # Delete the SVM FLT/FlC image as it has no updated WCS
                 try:
                     os.remove(filename)

@@ -274,7 +274,7 @@ def run(configObj, wcsmap=None):
     # read in WCS from source (drizzled) image
     source_wcs = stwcs.wcsutil.HSTWCS(configObj["data"])
     if source_wcs.wcs.is_unity():
-        log.warning("WARNING: No valid WCS found for input drizzled image: {}!".format(configObj['data']))
+        log.warning("No valid WCS found for input drizzled image: {}!".format(configObj['data']))
 
     # define blot_wcs
     blot_wcs = None
