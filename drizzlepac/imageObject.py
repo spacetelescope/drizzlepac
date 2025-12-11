@@ -137,7 +137,7 @@ class baseImageObject:
                         'outMedian','dqmask','tmpmask',
                         'skyMatchMask']
 
-        log.info('Removing intermediate files for %s' % self._filename)
+        log.debug('Removing intermediate files for %s' % self._filename)
         # We need to remove the combined products first; namely, median image
         util.removeFileSafely(self.outputNames['outMedian'])
         # Now remove chip-specific intermediate files, if any were created.
@@ -327,7 +327,7 @@ class baseImageObject:
                     (ext.extname == extname) and (ext.extver == extver)):
                     extnum = ext.extnum
         else:
-            log.info("Image is simple fits")
+            log.debug("Image is simple fits")
 
         return extnum
 
@@ -474,7 +474,7 @@ class baseImageObject:
         """
         self.createContext = contextpar
         if not contextpar:
-            log.info('No context image will be created for %s' %
+            log.debug('No context image will be created for %s' %
                      self._filename)
             self.outputNames['outContext'] = None
 
@@ -723,7 +723,7 @@ class baseImageObject:
         if write:
             phdu = fits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
             dqmask_name = self._image[self.scienceExt,chip].dqrootname+'_dqmask.fits'
-            log.info('Writing out DQ/weight mask: %s' % dqmask_name)
+            log.debug('Writing out DQ/weight mask: %s' % dqmask_name)
             if os.path.exists(dqmask_name): os.remove(dqmask_name)
             phdu.writeto(dqmask_name)
             del phdu
@@ -738,7 +738,7 @@ class baseImageObject:
         """ Builds a weight mask from an input DQ array and the exposure time
         per pixel for this chip.
         """
-        log.info("Applying EXPTIME weighting to DQ mask for chip %s" %
+        log.debug("Applying EXPTIME weighting to DQ mask for chip %s" %
                  chip)
         #exparr = self.getexptimeimg(chip)
         exparr = self._image[self.scienceExt,chip]._exptime
@@ -755,7 +755,7 @@ class baseImageObject:
         ivmname = self.outputNames['ivmFile']
 
         if ivmname is not None:
-            log.info("Applying user supplied IVM files for chip %s" % chip)
+            log.debug("Applying user supplied IVM files for chip %s" % chip)
             #Parse the input file name to get the extension we are working on
             extn = "IVM,{}".format(chip)
 
@@ -769,7 +769,7 @@ class baseImageObject:
             ivm.close()
 
         else:
-            log.info("Automatically creating IVM files for chip %s" % chip)
+            log.debug("Automatically creating IVM files for chip %s" % chip)
             # If no IVM files were provided by the user we will
             # need to automatically generate them based upon
             # instrument specific information.
@@ -808,7 +808,7 @@ class baseImageObject:
                 # Attempt to open the ERR image.
                 err = self.getData(exten=self.errExt+','+str(chip))
 
-                log.info("Applying ERR weighting to DQ mask for chip %s" %
+                log.debug("Applying ERR weighting to DQ mask for chip %s" %
                          chip)
 
                 # Multiply the scaled ERR file by the input mask in place.
@@ -827,12 +827,11 @@ class baseImageObject:
                 # Print a generic warning message and continue on with the
                 # final drizzle step.
 
-                print(textutil.textbox(
-                    'WARNING: No ERR weighting will be applied to the mask '
-                    'used in the final drizzle step!  Weighting will be only '
-                    'by exposure time.\n\nThe data provided as input does not '
-                    'contain an ERR extension'), file=sys.stderr)
-                print('\n Continue with final drizzle step...', sys.stderr)
+                log.warning("No ERR weighting will be applied to the mask "+
+                    "used in the final drizzle step! Weighting will be only "+
+                    "by exposure time. The data provided as input does not "+
+                    "contain an ERR extension")
+                log.debug('Continue with final drizzle step...')
         else:
             # If we were unable to find an 'ERR' extension to apply, one
             # possible reason was that the input was a 'standard' WFPC2 data
@@ -840,16 +839,14 @@ class baseImageObject:
             # this condition and issue a Warning to the user and continue on to
             # the final drizzle.
 
-            print(textutil.textbox(
-                "WARNING: No ERR weighting will be applied to the mask used "
-                "in the final drizzle step!  Weighting will be only by "
-                "exposure time.\n\nThe WFPC2 data provided as input does not "
-                "contain ERR arrays.  WFPC2 data is not supported by this "
-                "weighting type.\n\nA workaround would be to create inverse "
-                "variance maps and use 'IVM' as the final_wht_type.  See the "
-                "HELP file for more details on using inverse variance maps."),
-                file=sys.stderr)
-            print("\n Continue with final drizzle step...", file=sys.stderr)
+            log.warning("No ERR weighting will be applied to the mask used "+
+                "in the final drizzle step!  Weighting will be only by "+
+                "exposure time.The WFPC2 data provided as input does not "+
+                "contain ERR arrays.  WFPC2 data is not supported by this "+
+                "weighting type.A workaround would be to create inverse "+
+                "variance maps and use 'IVM' as the final_wht_type.  See the "+
+                "HELP file for more details on using inverse variance maps.")
+            log.debug("Continue with final drizzle step...")
 
         return errmask.astype(np.float32)
 
@@ -929,7 +926,9 @@ class baseImageObject:
             value = None
 
         if value and (keyword is not None and keyword.strip() != ''):
-            exceptionMessage = "ERROR: Your input is ambiguous!  Please specify either a value or a keyword.\n  You specifed both " + str(value) + " and " + str(keyword)
+            exceptionMessage = """ERROR: Your input is ambiguous!  Please specify
+            either a value or a keyword. You specifed both ' + str(value) + ' 
+            and ' + str(keyword)"""
             raise ValueError(exceptionMessage)
 
         elif value is not None and value != '':
@@ -1109,7 +1108,7 @@ class imageObject(baseImageObject):
                 #
                 if "MDRIZSKY" in sci_chip.header:
                     subsky = sci_chip.header['MDRIZSKY']
-                    log.info('Reading in MDRIZSKY of %s' % subsky)
+                    log.debug('Reading in MDRIZSKY of %s' % subsky)
                     sci_chip.subtractedSky = subsky
                     sci_chip.computedSky = subsky
                 else:
