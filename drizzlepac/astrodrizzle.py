@@ -1385,7 +1385,7 @@ def run(configobj, wcsmap=None, input_dict=None):
         except util.StepAbortedError as e:
             if str(e).startswith("Rejecting all pixels"):
                 log.warning("Create median step was aborted due the following error:")
-                log.warning(f"ERROR: {str(e)}")
+                log.error(f"{str(e)}")
 
                 if do_blot:
                     log.warning("Turning blot step off due to aborted median step.")

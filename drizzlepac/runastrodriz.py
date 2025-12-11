@@ -307,7 +307,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # Make sure given filename is complete and exists...
         inFilename = fileutil.buildRootname(inFile, ext=['.fits'])
         if not os.path.exists(inFilename):
-            log.error(f"ERROR: Input file - {inFilename} - does not exist.")
+            log.error(f"Input file - {inFilename} - does not exist.")
             return
     except TypeError:
         log.error("Appropriate input file could not be found.")
@@ -350,7 +350,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 photeq.photeq(files=inFilename, ref_phot_ext=3, readonly=False)
             except Exception as err:
                 log.error(err)
-                log.warning(f"WARNING: PHOTEQ was unable to run on {inFilename}")
+                log.warning(f"PHOTEQ was unable to run on {inFilename}")
 
             raw_suffix = '_d0m.fits'
             goodpix_name = 'GPIXELS'
@@ -904,7 +904,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         except Exception:
             # If we are unable to remove any of these sub-directories,
             # leave them for the user or calling routine/pipeline to clean up.
-            log.warning(f"WARNING: Unable to remove any or all of these sub-directories: \n{sub_dirs}")
+            log.warning(f"Unable to remove any or all of these sub-directories: \n{sub_dirs}")
             if Process is not None:
                 log.debug("Files still open at this time include: ")
                 log.debug([ofile.path for ofile in Process().open_files()])
@@ -990,7 +990,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
             # util.end_logging(drizlog)
 
         except Exception as errorobj:
-            log.error(f"ERROR: Could not complete astrodrizzle processing of {infile}.")
+            log.error(f"Could not complete astrodrizzle processing of {infile}.")
             log.error(str(errorobj))
             raise Exception(str(errorobj))
 
@@ -1213,7 +1213,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 if 'aposteriori' not in repr(err):
                     traceback.print_exc()
                 else:
-                    log.warning(f"WARNING: {err}")
+                    log.warning(f"{err}")
                 return None, None
 
             # Check to see whether there are any additional input files that need to
@@ -1672,18 +1672,18 @@ def collect_wcs_names(exp_list, image_type):
                 sys.exit(1)
         # If there are no WCS solutions, the image could be bad (e.g., EXPTIME=0 or EXPFLAG="TDF-DOWN...")
         else:
-            log.warning(f"WARNING: There are no WCS solutions in the image {filename} in this visit.")
+            log.warning(f"There are no WCS solutions in the image {filename} in this visit.")
             skip_image_list.append(filename)
             if image_type == 'GRISM':
                 log.warning("Skip and delete this image.")
                 # Delete the SVM FLT/FlC image as it has no updated WCS
                 try:
                     os.remove(filename)
-                    log.warning(f"WARNING: Deleted image {filename}.")
+                    log.warning(f"Deleted image {filename}.")
                 except OSError:
                     pass
             else:
-                log.warning(f"WARNING:    Skip this image.")
+                log.warning(f"Skip this image.")
 
     return image_wcs_set, skip_image_list, keyword_wcs_names_dict, image_dict
 
@@ -1795,7 +1795,7 @@ def update_active_wcs(filename, wcsname):
                 del fhdu
 
             except ValueError as err:
-                log.warning(f"WARNING: Trapped ValueError - attempting recovery: {str(err)}")
+                log.warning(f"Trapped ValueError - attempting recovery: {str(err)}")
 
                 found_string = [i for i in keyword_wcs_list if wcsname == i]
                 if found_string:
@@ -2035,7 +2035,7 @@ def _analyze_exposure(filename):
     # Using .get() insures that this check gets done even if keyword is missing.
     gs_quality = fhdu.get('quality', default="")
     if 'gsfail' in gs_quality.lower() or 'tdf-down' in gs_quality.lower():
-        log.error(f"ERROR: Image {filename}'s QUALITY keywords: '{gs_quality}'")
+        log.error(f"Image {filename}'s QUALITY keywords: '{gs_quality}'")
         log.error("        GUIDING == BAD.  Skipping processing ")
         process_exposure = False  # Yes, there was bad guiding...
 
@@ -2045,7 +2045,7 @@ def _analyze_exposure(filename):
 
     # Also check to see whether this observation was taken with a blank filter name.
     if all(filter == '' for filter in filters):
-        log.warning(f"ERROR: Inappropriate filter for exposure of {filters}")
+        log.error(f"Inappropriate filter for exposure of {filters}")
         process_exposure = False
 
     return process_exposure
@@ -2166,7 +2166,7 @@ def main():
 
         except Exception as errorobj:
             log.error(str(errorobj))
-            log.error(f"ERROR: Cannot run astrodrizzle on {' '.join(sys.argv)}.")
+            log.error(f"Cannot run astrodrizzle on {' '.join(sys.argv)}.")
             raise Exception(str(errorobj))
 
         # This except handles sys.exit() which raises the SystemExit exception which inherits from BaseException.
