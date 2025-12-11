@@ -399,6 +399,7 @@ class ProcSteps:
         performed steps.
         """
         self.flush()  # print any delayed messages
+        log.info(ProcSteps.__report_header)
 
         self.end = _ptime()
         total_time = 0
