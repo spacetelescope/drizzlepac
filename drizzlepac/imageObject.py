@@ -827,11 +827,10 @@ class baseImageObject:
                 # Print a generic warning message and continue on with the
                 # final drizzle step.
 
-                log.warning("""
-                    No ERR weighting will be applied to the mask
-                    used in the final drizzle step! Weighting will be only
-                    by exposure time. The data provided as input does not
-                    contain an ERR extension""")
+                log.warning("No ERR weighting will be applied to the mask "+
+                    "used in the final drizzle step! Weighting will be only "+
+                    "by exposure time. The data provided as input does not "+
+                    "contain an ERR extension")
                 log.debug('Continue with final drizzle step...')
         else:
             # If we were unable to find an 'ERR' extension to apply, one
@@ -840,14 +839,13 @@ class baseImageObject:
             # this condition and issue a Warning to the user and continue on to
             # the final drizzle.
 
-            log.warning("""
-                No ERR weighting will be applied to the mask used
-                in the final drizzle step!  Weighting will be only by
-                exposure time.The WFPC2 data provided as input does not
-                contain ERR arrays.  WFPC2 data is not supported by this
-                weighting type.A workaround would be to create inverse
-                variance maps and use 'IVM' as the final_wht_type.  See the
-                HELP file for more details on using inverse variance maps.""")
+            log.warning("No ERR weighting will be applied to the mask used "+
+                "in the final drizzle step!  Weighting will be only by "+
+                "exposure time.The WFPC2 data provided as input does not "+
+                "contain ERR arrays.  WFPC2 data is not supported by this "+
+                "weighting type.A workaround would be to create inverse "+
+                "variance maps and use 'IVM' as the final_wht_type.  See the "+
+                "HELP file for more details on using inverse variance maps.")
             log.debug("Continue with final drizzle step...")
 
         return errmask.astype(np.float32)
