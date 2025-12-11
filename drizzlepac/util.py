@@ -402,7 +402,6 @@ class ProcSteps:
 
         self.end = _ptime()
         total_time = 0
-        print(ProcSteps.__report_header)
 
         for step in self.order:
             _time = self.steps[step]['elapsed']
@@ -416,11 +415,10 @@ class ProcSteps:
                 note = "(off)"
             else:
                 note = ''
-            print(f"   {step:20s}          {_time:0.4f} sec {note}")
-
-        print(f"   {'=' * 20:20s}          {'=' * 20:s}")
-        print(f"   {'Total':20s}          {total_time:0.4f} sec")
-        print("", flush=True)
+            log.info(f"   {step:20s}          {_time:0.4f} sec {note}")
+        log.info(f"   {'=' * 20:20s}          {'=' * 20:s}")
+        log.info(f"   {'Total':20s}          {total_time:0.4f} sec")
+        log.info("")
 
 
 def _ptime():
