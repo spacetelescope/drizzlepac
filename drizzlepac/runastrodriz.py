@@ -1196,14 +1196,14 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 for row in align_table:
                     if row['status'] == 0:
                         if row['compromised'] == 0:
-                            log.info(f"""Successfully aligned {row['imageName']} 
-                                               to {row['catalog']} astrometric frame""")
+                            log.info(f"Successfully aligned {row['imageName']} "+
+                                     f"to {row['catalog']} astrometric frame")
                         else:
-                            log.info(f"""Alignment only partially 
-                                               successful for {row['imageName']}""")
+                            log.info(f"Alignment only partially "+
+                                     f"successful for {row['imageName']}")
                     else:
-                        log.info(f"""Could not align {row['imageName']} 
-                                           to absolute astrometric frame""")
+                        log.info(f"Could not align {row['imageName']} "+
+                                 f"to absolute astrometric frame")
                         return None, None
             except Exception as err:
                 # Something went wrong with alignment to GAIA, so report this in
@@ -1230,12 +1230,11 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         # headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
                         #                                     attach=True, archive=True)
                         headerlet_files.append(headerlet_file)
-                        log.debug(f"""Applying headerlet {headerlet_file} 
-                                           as Primary WCS to {fltfile}""")
+                        log.debug(f"Applying headerlet {headerlet_file} "+
+                                  f"as Primary WCS to {fltfile}")
                     else:
-                        log.debug(f"""No absolute astrometric headerlet 
-                                           applied to {fltfile}""")
-
+                        log.debug(f"No absolute astrometric headerlet "+
+                                  f"applied to {fltfile}")
             # Finally, append any further messages associated with alignement from this calling routine
             log.debug('Align_to_GAIA completed ')
 
@@ -1264,16 +1263,16 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
 
             if align_fwhm:
-                log.debug(f"""align_fwhm: {align_focus['prodname']}
-                                   [{align_focus['prod_pos'][1]},
-                                   {align_focus['prod_pos'][0]}]
-                                   ={align_fwhm:0.4f}pix""")
+                log.debug(f"align_fwhm: {align_focus['prodname']} "+
+                          f"[{align_focus['prod_pos'][1]},"+
+                          f"{align_focus['prod_pos'][0]}] "+
+                          f"= {align_fwhm:0.4f} pix")
 
             # Interpret the overlap differences computed for this alignment
             dkeys = [k for k in diff_dicts.keys()]
             diff_verification, max_diff = amutils.evaluate_overlap_diffs(diff_dicts[dkeys[-1]])
-            log.debug(f"""Fraction of sources matched: {fraction_matched} 
-                               out of {num_sources} sources""")
+            log.debug(f"Fraction of sources matched: {fraction_matched} "+
+                      f"out of {num_sources} sources")
 
             # For any borderline situation with alignment, perform an extra check on alignment
             if fraction_matched < 0.1 or -1 < num_sources < 10:
@@ -1285,12 +1284,12 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 alignment_quality = 0 if diff_verification else 3
 
             if alignment_verified:
-                log.debug(f"""Focus verification indicated that {tmpmode} 
-                                   alignment SUCCEEDED.""")
+                log.debug(f"Focus verification indicated that {tmpmode} "+
+                          f"alignment SUCCEEDED.")
             else:
-                log.debug(f"""Focus verification indicated that {tmpmode} 
-                                   alignment FAILED.""")
-                log.debug(f"  Reverting to previously determined WCS alignment.")
+                log.debug(f"Focus verification indicated that {tmpmode} "+
+                          f"alignment FAILED.")
+                log.debug(f"Reverting to previously determined WCS alignment.")
 
             prodname = align_focus['prodname']
         else:
@@ -1379,8 +1378,8 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                 if fdate > gdate and '-' not in wcsname:
                     wcsname = "{}-{}".format(wcsname, catalog_name)
                     fhdu['sci', sciext + 1].header['wcsname'] = wcsname
-                    log.debug(f"""Updating WCSNAME of {f}[sci,{sciext + 1}] 
-                                       for use of {catalog_name} catalog.""")
+                    log.debug(f"Updating WCSNAME of {f}[sci,{sciext + 1}] "+
+                              f"for use of {catalog_name} catalog.")
                     continue
                 # Check to see whether it is an aposteriori solution
                 # If so, replace it with an apriori solution instead
@@ -1631,7 +1630,6 @@ def collect_wcs_names(exp_list, image_type):
         a list of *all* WCS solution names in the file
 
     """
-    update_msg = ""
     image_wcs_set = set()
     skip_image_list = []
     exist_image_set = False
@@ -1665,10 +1663,10 @@ def collect_wcs_names(exp_list, image_type):
 
             # Oops...no common wcsnames
             if not image_wcs_set:
-                msg = """ERROR: There are no common WCS solutions with this image 
-                {filename} and previously processed images. There is a problem with 
-                this image/visit. Make sure the input data are not *_raw.fits files."""
-                log.error(msg)
+                log.error("ERROR: There are no common WCS solutions with this "+ 
+                f"image {filename} and previously processed images. There is a "+
+                "problem with this image/visit. Make sure the input data are "+ 
+                "not *_raw.fits files.")
                 sys.exit(1)
         # If there are no WCS solutions, the image could be bad (e.g., EXPTIME=0 or EXPFLAG="TDF-DOWN...")
         else:
@@ -1710,7 +1708,6 @@ def update_active_wcs(filename, wcsname):
     None
 
     """
-    update_msg = ""
     # For exposures with multiple science extensions (multiple chips),
     # generate a combined WCS
     num_sci_ext, extname = util.count_sci_extensions(filename)
@@ -1801,34 +1798,32 @@ def update_active_wcs(filename, wcsname):
                 if found_string:
                     wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
                 else:
-                    log.debug(f"""WARNING: Could not restore the common WCS, 
-                                 {wcsname}, as the active WCS in this file {filename}.""")
+                    log.debug(f"Could not restore the common WCS, {wcsname}, as "+
+                              f"the active WCS in this file {filename}.")
 
             except AssertionError:
                 _, _, tb = sys.exc_info()
                 tb_info = traceback.extract_tb(tb)
                 _, _, _, text = tb_info[-1]
-                msg = f"""WARNING: Trapped AssertionError: {text}. Could not restore 
-                the common WCS, {wcsname}, as the active WCS in this file {filename}."""
-                log.warning(msg)
+                log.warning(f"WARNING: Trapped AssertionError: {text}. Could "+ 
+                            f"not restore the common WCS, {wcsname}, as the "+
+                            f"active WCS in this file {filename}.")
         else:
             found_string = [i for i in keyword_wcs_list if wcsname == i]
             if found_string:
                 wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
             else:
-                msg = f"""WARNING: Could not restore the common WCS from alternate 
-                WCS solutions, {wcsname}, as the active WCS in this file {filename}."""
-                log.warning(msg)
+                log.warning("Could not restore the common WCS from alternate "+ 
+                f"WCS solutions, {wcsname}, as the active WCS in this file "+
+                f"{filename}.")
     else:
-        msg = f"""No need to update active WCS solution of {wcsname} for {filename} 
-        as it is already the active solution."""
+        log.debug(f"No need to update active WCS solution of {wcsname} for "+
+                  f"{filename} as it is already the active solution.")
         log.debug(msg)
-        update_msg += msg
 
 
 def confirm_aposteriori_hdrlets(filename):
     """Confirm that all the a posteriori headerlets are valid, and remove any that are invalid."""
-    update_msg = ""
     num_sci_ext, extname = util.count_sci_extensions(filename)
     extname_list = [(extname, x + 1) for x in range(num_sci_ext)]
 
@@ -1997,13 +1992,13 @@ def rmtree2(path, n=3):
             ok = True
             break
         except OSError as err:
-            log.warning(f"""Failed to remove path {path} with 
-                                 shutil.rmtree at attempt {n}: {err}""")
+            log.warning(f"Failed to remove path {path} with "+
+                        f"shutil.rmtree at attempt {n}: {err}")
         time.sleep(3)
 
     if not ok:
-        log.error(f"""Failed to remove path {path} with shutil.rmtree, 
-                             even after {n} attempts.""")
+        log.error(f"Failed to remove path {path} with shutil.rmtree, even "+
+                  f"after {n} attempts.")
         raise OSError
     else:
         log.debug(f"Path {path} successfully removed.")
