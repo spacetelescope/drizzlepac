@@ -1662,7 +1662,7 @@ def collect_wcs_names(exp_list, image_type):
 
             # Oops...no common wcsnames
             if not image_wcs_set:
-                log.error("ERROR: There are no common WCS solutions with this "+ 
+                log.error("There are no common WCS solutions with this "+ 
                 f"image {filename} and previously processed images. There is a "+
                 "problem with this image/visit. Make sure the input data are "+ 
                 "not *_raw.fits files.")
@@ -2136,7 +2136,7 @@ def main():
             do_verify_guiding = True
         if opt == '-n':
             if not value.isdigit():
-                log.error('ERROR: num_cores value must be an integer!')
+                log.error('num_cores value must be an integer!')
                 raise ValueError
             num_cores = int(value)
         if opt == '-b':
