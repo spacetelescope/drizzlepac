@@ -828,11 +828,11 @@ class baseImageObject:
                 # final drizzle step.
 
                 log.warning("""
-                    No ERR weighting will be applied to the mask\n
-                    used in the final drizzle step!  Weighting will be only\n
-                    by exposure time.\n\nThe data provided as input does not\n
+                    No ERR weighting will be applied to the mask
+                    used in the final drizzle step! Weighting will be only
+                    by exposure time. The data provided as input does not
                     contain an ERR extension""")
-                log.debug('\n Continue with final drizzle step...')
+                log.debug('Continue with final drizzle step...')
         else:
             # If we were unable to find an 'ERR' extension to apply, one
             # possible reason was that the input was a 'standard' WFPC2 data
@@ -843,12 +843,12 @@ class baseImageObject:
             log.warning("""
                 No ERR weighting will be applied to the mask used
                 in the final drizzle step!  Weighting will be only by
-                exposure time.\n\nThe WFPC2 data provided as input does not
+                exposure time.The WFPC2 data provided as input does not
                 contain ERR arrays.  WFPC2 data is not supported by this
-                weighting type.\n\nA workaround would be to create inverse
+                weighting type.A workaround would be to create inverse
                 variance maps and use 'IVM' as the final_wht_type.  See the
                 HELP file for more details on using inverse variance maps.""")
-            log.debug("\n Continue with final drizzle step...")
+            log.debug("Continue with final drizzle step...")
 
         return errmask.astype(np.float32)
 
@@ -928,7 +928,9 @@ class baseImageObject:
             value = None
 
         if value and (keyword is not None and keyword.strip() != ''):
-            exceptionMessage = "ERROR: Your input is ambiguous!  Please specify either a value or a keyword.\n  You specifed both " + str(value) + " and " + str(keyword)
+            exceptionMessage = """ERROR: Your input is ambiguous!  Please specify
+            either a value or a keyword. You specifed both ' + str(value) + ' 
+            and ' + str(keyword)"""
             raise ValueError(exceptionMessage)
 
         elif value is not None and value != '':
