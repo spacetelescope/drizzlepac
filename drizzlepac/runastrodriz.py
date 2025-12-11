@@ -925,8 +925,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         qa.run_all(inFile, calfiles, catalogs=aposteriori_table)
 
     # remove previous file and stream handlers
-    log.handlers.clear()
-    log.parent.handlers.clear()
+    package_level_logger.handlers.clear()
 
 
 def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
