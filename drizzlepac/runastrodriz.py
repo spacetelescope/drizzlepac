@@ -227,6 +227,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     """
 
+    # suppress dependency logs if no handler is added. 
+    logging.getLogger().addHandler(logging.NullHandler())
+
     # determine log name
     # on input name for single exposures
     if '_raw' in inFile:

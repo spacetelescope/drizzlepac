@@ -15,10 +15,6 @@ cosmic-ray cleaned, and combined image as a FITS file.
 
 """
 import logging
-
-# suppress dependency logs if no handler is added. 
-logging.getLogger().addHandler(logging.NullHandler())
-
 import os
 import re
 import sys
