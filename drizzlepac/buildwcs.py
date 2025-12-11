@@ -7,6 +7,7 @@ Provides function for manipulating WCS in images.
 
 """
 import os
+import logging
 from . import util
 import numpy as np
 from astropy.io import fits
@@ -17,6 +18,8 @@ import stwcs
 from stwcs import wcsutil
 from stwcs.wcsutil import headerlet
 from . import __version__
+
+log = logging.getLogger(__name__)
 
 __taskname__ = 'buildwcs'
 
@@ -201,7 +204,7 @@ def build(outname, wcsname, refimage, undistort=False,
 
     # create default WCSNAME if None was given
     wcsname = create_WCSname(wcsname)
-    log.debug('Creating final headerlet with name ',wcsname,' using template ',template)
+    log.debug(f'Creating final headerlet with name {wcsname} using template {template}')
     outhdr = generate_headerlet(outwcs,template,wcsname,outname=outname)
 
     # synchronize this new WCS with the rest of the chips in the image
