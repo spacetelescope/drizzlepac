@@ -449,7 +449,7 @@ def apply_tweak(drz_file, orig_wcs_name, output_wcs_name=None, input_files=None,
                         )
                     else:
                         raise ValueError(
-                            "Provided value of 'output_wcs_name' - '{tweaked_wcs_name}' - "
+                            f"Provided value of 'output_wcs_name' - '{tweaked_wcs_name}' - "
                             f"was already used in {fname:s}[{ext2str(ext)}]. "
                             "Please re-run 'apply_tweak' again and explicitly "
                             "provide a unique value for the output WCS name."
