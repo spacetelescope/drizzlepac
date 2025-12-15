@@ -179,7 +179,7 @@ def end_logging(filename=None):
         else:
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...
-            print('No trailer file saved...')
+            log.info('No trailer file saved...')
 
         logutil.teardown_global_logging()
     else:

@@ -7,6 +7,7 @@ This module manages the creation of the output image FITS file.
 
 """
 import time
+import logging
 from astropy.io import fits
 from stsci.tools import fileutil, logutil
 
@@ -56,7 +57,7 @@ DRIZ_KEYWORDS = {
                 'WKEY': {'value': "", 'comment': 'Input image WCS Version used'}
                 }
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 class OutputImage:
@@ -345,7 +346,7 @@ class OutputImage:
         # Now, build the output file
         ##########
         if self.build:
-            print('-Generating multi-extension output file: ', self.output)
+            log.info(f'-Generating multi-extension output file: {self.output}')
             fo = fits.HDUList()
 
             # Add primary header to output file...
