@@ -478,7 +478,7 @@ def run_blot(imageObjectList, output_wcs, paramDict, wcsmap=wcs_functions.WCSMap
     for img in imageObjectList:
 
         for chip in img.returnAllChips(extname=img.scienceExt):
-            log.debug('    Blot: creating blotted image: ',chip.outputNames['data'])
+            log.debug(f'Blot: creating blotted image: {chip.outputNames["data"]}')
 
             #### Check to see what names need to be included here for use in _hdrlist
             chip.outputNames["driz_version"] = _versions["AstroDrizzle"]

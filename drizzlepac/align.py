@@ -9,6 +9,7 @@ import glob
 import math
 import os
 import pickle
+import logging
 from collections import OrderedDict
 import traceback
 
@@ -30,7 +31,7 @@ __taskname__ = "align"
 MSG_DATEFMT = "%Y%j%H%M%S"
 SPLUNK_MSG_FORMAT = "%(asctime)s %(levelname)s src=%(name)s- %(message)s"
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def perform_align(

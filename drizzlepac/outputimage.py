@@ -413,7 +413,7 @@ class OutputImage:
                 fo.append(newtab)
 
             if not virtual:
-                print('Writing out to disk:', self.output)
+                log.info(f'Writing out to disk: {self.output}')
                 # write out file to disk
                 fo.writeto(self.output)
                 fo.close()
@@ -423,7 +423,7 @@ class OutputImage:
             outputFITS[self.output] = fo
 
         else:
-            print('-Generating simple FITS output: %s' % self.outdata)
+            log.info(f'-Generating simple FITS output: {self.outdata}')
 
             fo = fits.HDUList()
             hdu_header = prihdu.header.copy()

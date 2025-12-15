@@ -32,7 +32,7 @@ from . import __version__
 __fits_version__ = astropy.__version__
 __numpy_version__ = np.__version__
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 _cpu_count = 1
 can_parallel = False
@@ -175,7 +175,7 @@ def end_logging(filename=None):
 
     if logutil.global_logging_started:
         if filename:
-            print('Trailer file written to: ', filename)
+            log.info(f'Trailer file written to: {filename}')
         else:
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...

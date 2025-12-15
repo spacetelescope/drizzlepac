@@ -598,7 +598,7 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
 
     nimg = len(imageList)
     if nimg == 0:
-        log.debug("Skymatch needs at least one image to perform sky matching. "+
+        log.debug("Skymatch needs at least one image to perform sky matching. "
                   "Nothing to be done.")
         return
 

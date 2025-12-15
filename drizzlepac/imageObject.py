@@ -827,9 +827,9 @@ class baseImageObject:
                 # Print a generic warning message and continue on with the
                 # final drizzle step.
 
-                log.warning("No ERR weighting will be applied to the mask "+
-                    "used in the final drizzle step! Weighting will be only "+
-                    "by exposure time. The data provided as input does not "+
+                log.warning("No ERR weighting will be applied to the mask "
+                    "used in the final drizzle step! Weighting will be only "
+                    "by exposure time. The data provided as input does not "
                     "contain an ERR extension")
                 log.debug('Continue with final drizzle step...')
         else:
@@ -839,12 +839,12 @@ class baseImageObject:
             # this condition and issue a Warning to the user and continue on to
             # the final drizzle.
 
-            log.warning("No ERR weighting will be applied to the mask used "+
-                "in the final drizzle step!  Weighting will be only by "+
-                "exposure time.The WFPC2 data provided as input does not "+
-                "contain ERR arrays.  WFPC2 data is not supported by this "+
-                "weighting type.A workaround would be to create inverse "+
-                "variance maps and use 'IVM' as the final_wht_type.  See the "+
+            log.warning("No ERR weighting will be applied to the mask used "
+                "in the final drizzle step!  Weighting will be only by "
+                "exposure time.The WFPC2 data provided as input does not "
+                "contain ERR arrays.  WFPC2 data is not supported by this "
+                "weighting type.A workaround would be to create inverse "
+                "variance maps and use 'IVM' as the final_wht_type.  See the "
                 "HELP file for more details on using inverse variance maps.")
             log.debug("Continue with final drizzle step...")
 
@@ -926,9 +926,9 @@ class baseImageObject:
             value = None
 
         if value and (keyword is not None and keyword.strip() != ''):
-            exceptionMessage = """ERROR: Your input is ambiguous!  Please specify
-            either a value or a keyword. You specifed both ' + str(value) + ' 
-            and ' + str(keyword)"""
+            exceptionMessage = "ERROR: Your input is ambiguous!  Please specify"
+            f"either a value or a keyword. You specifed both {str(value)}"
+            f"and  {str(keyword)}."
             raise ValueError(exceptionMessage)
 
         elif value is not None and value != '':

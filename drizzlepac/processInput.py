@@ -298,10 +298,10 @@ def reportResourceUsage(imageObjectList, outwcs, num_cores,
                 chip_mem = cmem
     max_mem = (input_mem + output_mem*pool_size + chip_mem*2)//(1024*1024)
 
-    log.debug(f""" Estimated memory usage:  up to {max_mem:d} Mb.
-              Output image size:       {pixel_shape[0]:d} X {pixel_shape[1]:d} pixels.
-              Output image file:       ~ {output_mem // (1024 * 1024):d} Mb.
-              Cores available:         {pool_size:d}""")
+    log.debug(f"Estimated memory usage: up to {max_mem:d} Mb.")
+    log.debug(f"Output image size: {pixel_shape[0]:d} X {pixel_shape[1]:d} pixels.")
+    log.debug(f"Output image file: ~ {output_mem // (1024 * 1024):d} Mb.")
+    log.debug(f"Cores available: {pool_size:d}")
 
     if interactive:
         log.debug('Continue with processing?')
