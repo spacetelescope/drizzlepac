@@ -912,8 +912,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     end_time = _getTime()
     _delta_time = time.time() - init_time
-    log.debug(f"{end_time}: Finished processing {inFilename} in {_delta_time:.2f} seconds \n")
-    log.debug("astrodrizzle completed")
+    log.info(f"{end_time}: Finished processing {inFilename} in {_delta_time:.2f} seconds \n")
+    log.info("astrodrizzle completed")
 
     # Look to see whether we have products which can be evaluated
     # wcsname = fits.getval(drz_products[0], 'wcsname', ext=1)
