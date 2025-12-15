@@ -389,7 +389,7 @@ class ProcSteps:
 
     def flush(self):
         if self.delayed_msg is not None:
-            print(self.delayed_msg, flush=True)
+            log.info(self.delayed_msg)
             self.delayed_msg = None
 
 
