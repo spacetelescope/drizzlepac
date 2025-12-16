@@ -328,7 +328,7 @@ def getMdriztabPars(input):
     try:
         mdrizdict = mdzhandler.getMdriztabParameters(filelist)
     except KeyError:
-        log.warning('No MDRIZTAB found for "%s". Parameters remain unchanged.'%(filelist[0]))
+        log.warning(f'No MDRIZTAB found for "{filelist[0]}". Parameters remain unchanged.')
         mdrizdict = {}
 
     return mdrizdict
@@ -576,7 +576,7 @@ def process_input(input, output=None, updatewcs=True,
             output = fileutil.buildNewRootname(output, extn=drz_extn)
 
 
-    log.debug('Setting up output name: %s' % output)
+    log.debug(f'Setting up output name: {output}')
 
     return asndict, ivmlist, output
 
@@ -603,10 +603,10 @@ def _process_input_wcs(infiles, wcskey, updatewcs):
         if updatewcs:
             log.debug('Updating input WCS using "updatewcs"')
     else:
-        log.debug('Resetting input WCS to be based on WCS key = %s' % wcskey)
+        log.debug(f'Resetting input WCS to be based on WCS key = {wcskey}')
 
     if pool_size > 1:
-        log.debug('Executing %d parallel workers' % pool_size)
+        log.debug(f'Executing {pool_size:d} parallel workers')
         subprocs = []
         mp_ctx = multiprocessing.get_context('fork')
 
@@ -995,12 +995,12 @@ def buildEmptyDRZ(input, output):
         if '_drz' not in output:
             output = fileutil.buildNewRootname(output, extn='_drz.fits')
 
-    log.debug('Building empty DRZ file with output name: %s' % output)
+    log.debug(f'Building empty DRZ file with output name: {output}')
 
     # Open the first image (of the excludedFileList?) to use as a template to build
     # the DRZ file.
     try :
-        log.debug('Building empty DRZ file from %s' % inputfile[0])
+        log.debug(f'Building empty DRZ file from {inputfile[0]}')
         img = fits.open(inputfile[0], memmap=False)
     except:
         raise IOError('Unable to open file %s \n' % inputfile)
@@ -1057,7 +1057,7 @@ def buildEmptyDRZ(input, output):
     dirfiles = os.listdir(os.curdir)
     if dirfiles.count(output) > 0:
         os.remove(output)
-        log.debug("       Replacing %s..." % output)
+        log.debug(f"Replacing {output}...")
 
     # Write out the empty DRZ file
     fitsobj.writeto(output)

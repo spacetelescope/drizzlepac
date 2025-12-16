@@ -137,7 +137,7 @@ class baseImageObject:
                         'outMedian','dqmask','tmpmask',
                         'skyMatchMask']
 
-        log.debug('Removing intermediate files for %s' % self._filename)
+        log.debug(f'Removing intermediate files for {self._filename}')
         # We need to remove the combined products first; namely, median image
         util.removeFileSafely(self.outputNames['outMedian'])
         # Now remove chip-specific intermediate files, if any were created.
@@ -474,8 +474,7 @@ class baseImageObject:
         """
         self.createContext = contextpar
         if not contextpar:
-            log.debug('No context image will be created for %s' %
-                     self._filename)
+            log.debug(f'No context image will be created for {self._filename}')
             self.outputNames['outContext'] = None
 
     def find_DQ_extension(self):
@@ -723,7 +722,7 @@ class baseImageObject:
         if write:
             phdu = fits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
             dqmask_name = self._image[self.scienceExt,chip].dqrootname+'_dqmask.fits'
-            log.debug('Writing out DQ/weight mask: %s' % dqmask_name)
+            log.debug(f'Writing out DQ/weight mask: {dqmask_name}')
             if os.path.exists(dqmask_name): os.remove(dqmask_name)
             phdu.writeto(dqmask_name)
             del phdu
@@ -738,8 +737,7 @@ class baseImageObject:
         """ Builds a weight mask from an input DQ array and the exposure time
         per pixel for this chip.
         """
-        log.debug("Applying EXPTIME weighting to DQ mask for chip %s" %
-                 chip)
+        log.debug(f"Applying EXPTIME weighting to DQ mask for chip {chip}")
         #exparr = self.getexptimeimg(chip)
         exparr = self._image[self.scienceExt,chip]._exptime
         expmask = exparr*dqarr
@@ -755,7 +753,7 @@ class baseImageObject:
         ivmname = self.outputNames['ivmFile']
 
         if ivmname is not None:
-            log.debug("Applying user supplied IVM files for chip %s" % chip)
+            log.debug(f"Applying user supplied IVM files for chip {chip}")
             #Parse the input file name to get the extension we are working on
             extn = "IVM,{}".format(chip)
 
@@ -769,7 +767,7 @@ class baseImageObject:
             ivm.close()
 
         else:
-            log.debug("Automatically creating IVM files for chip %s" % chip)
+            log.debug(f"Automatically creating IVM files for chip {chip}")
             # If no IVM files were provided by the user we will
             # need to automatically generate them based upon
             # instrument specific information.
@@ -808,8 +806,7 @@ class baseImageObject:
                 # Attempt to open the ERR image.
                 err = self.getData(exten=self.errExt+','+str(chip))
 
-                log.debug("Applying ERR weighting to DQ mask for chip %s" %
-                         chip)
+                log.debug(f"Applying ERR weighting to DQ mask for chip {chip}")
 
                 # Multiply the scaled ERR file by the input mask in place.
                 #exptime = self.getexptimeimg(chip)
@@ -1108,7 +1105,7 @@ class imageObject(baseImageObject):
                 #
                 if "MDRIZSKY" in sci_chip.header:
                     subsky = sci_chip.header['MDRIZSKY']
-                    log.debug('Reading in MDRIZSKY of %s' % subsky)
+                    log.debug(f'Reading in MDRIZSKY of {subsky}')
                     sci_chip.subtractedSky = subsky
                     sci_chip.computedSky = subsky
                 else:

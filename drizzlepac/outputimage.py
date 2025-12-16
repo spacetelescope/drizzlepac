@@ -194,12 +194,12 @@ class OutputImage:
 
         if fileutil.findFile(self.output):
             if overwrite:
-                log.info('Deleting previous output product: %s' % self.output)
+                log.info(f'Deleting previous output product: {self.output}')
                 fileutil.removeFile(self.output)
 
             else:
-                log.warning('Output file %s already exists and overwrite not '
-                            'specified!' % self.output)
+                log.warning(f'Output file {self.output} already exists and '
+                            'overwrite not specified!')
                 log.error('Quitting... Please remove before resuming '
                           'operations.')
                 raise IOError
@@ -213,12 +213,12 @@ class OutputImage:
             if self.outweight:
                 if overwrite:
                     if fileutil.findFile(self.outweight):
-                        log.info('Deleting previous output WHT product: %s' %
-                                 self.outweight)
+                        log.info('Deleting previous output WHT product: '
+                                 f'{self.outweight}')
                     fileutil.removeFile(self.outweight)
                 else:
-                    log.warning('Output file %s already exists and overwrite '
-                                'not specified!' % self.outweight)
+                    log.warning(f'Output file {self.outweight} already exists '
+                                'and overwrite not specified!')
                     log.error('Quitting... Please remove before resuming '
                               'operations.')
                     raise IOError
@@ -227,12 +227,12 @@ class OutputImage:
             if self.outcontext:
                 if overwrite:
                     if fileutil.findFile(self.outcontext):
-                        log.info('Deleting previous output CTX product: %s' %
-                                 self.outcontext)
+                        log.info('Deleting previous output CTX product: '
+                                 f'{self.outcontext}')
                     fileutil.removeFile(self.outcontext)
                 else:
-                    log.warning('Output file %s already exists and overwrite '
-                                'not specified!' % self.outcontext)
+                    log.warning(f'Output file {self.outcontext} already exists '
+                                'and overwrite not specified!')
                     log.error('Quitting... Please remove before resuming '
                               'operations.')
                     raise IOError
@@ -791,12 +791,12 @@ def writeSingleFITS(data, wcs, output, template, clobber=True, verbose=True,
 
     if fileutil.findFile(outname):
         if clobber:
-            log.info('Deleting previous output product: %s' % outname)
+            log.info(f'Deleting previous output product: {outname}')
             fileutil.removeFile(outname)
 
         else:
-            log.warning('Output file %s already exists and overwrite not '
-                        'specified!' % outname)
+            log.warning(f'Output file {outname} already exists and overwrite '
+                        'not specified!')
             log.error('Quitting... Please remove before resuming operations.')
             raise IOError
 

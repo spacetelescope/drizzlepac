@@ -530,8 +530,8 @@ def run_blot(imageObjectList, output_wcs, paramDict, wcsmap=wcs_functions.WCSMap
             _outsci /= chip._conversionFactor
             if skyval is not None:
                 _outsci += skyval
-                log.debug('Applying sky value of %0.6f to blotted image %s'%
-                            (skyval,chip.outputNames['data']))
+                log.debug(f"Applying sky value of {skyval:0.6f} to blotted "
+                          f"image {chip.outputNames['data']}")
 
             # Write output Numpy objects to a PyFITS file
             # Blotting only occurs from a drizzled SCI extension

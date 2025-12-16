@@ -384,10 +384,10 @@ def generate_headerlet(outwcs,template,wcsname,outname=None):
         if outname.find('_hdr.fits') < 0:
             outname += '_hdr.fits'
         if os.path.exists(outname):
-            log.debug('Overwrite existing file "%s"'%outname)
+            log.debug(f'Overwrite existing file "{outname}"')
             os.remove(outname)
         hdrlet.writeto(outname)
-        log.debug('Wrote out headerlet : %s',outname)
+        log.debug(f'Wrote out headerlet : {outname}')
 
 
 util._def_help_functions(

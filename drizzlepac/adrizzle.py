@@ -906,10 +906,8 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
 
     # Set sub-sampling rate for drizzling
     # stepsize = 2.0
-    log.info(
-        "  **Using sub-sampling value of %s for kernel %s"
-        % (paramDict["stepsize"], paramDict["kernel"])
-    )
+    log.info(f"**Using sub-sampling value of {paramDict['stepsize']} for kernel "
+             f"{paramDict['kernel']}")
 
     maskval = interpret_maskval(paramDict)
 
@@ -1222,7 +1220,7 @@ def run_driz_chip(
     else:
         # If sky-subtracted product does not exist, use regular input
         _expname = chip.outputNames["data"]
-    log.info("-Drizzle input: %s" % _expname)
+    log.info(f"-Drizzle input: {_expname}")
 
     # Open the SCI image
     _handle = fileutil.openImage(_expname, mode="readonly", memmap=False)
@@ -1232,7 +1230,7 @@ def run_driz_chip(
     if chip.computedSky is None:
         _insci = _sciext.data
     else:
-        log.info("Applying sky value of %0.6f to %s" % (chip.computedSky, _expname))
+        log.info(f"Applying sky value of {chip.computedSky:0.6f} to {_expname}")
         _insci = _sciext.data - chip.computedSky
     # If input SCI image is still integer format (RAW files)
     # transform it to float32 for all subsequent operations
@@ -1324,7 +1322,7 @@ def run_driz_chip(
             if dqarr.sum() == 0:
                 log.warning(
                     "WARNING: All pixels masked out when applying "
-                    "cosmic ray mask to %s" % _expname
+                    f"cosmic ray mask to {_expname}"
                 )
         updateInputDQArray(
             chip.dqfile, chip.dq_extn, chip._chip, crMaskName, paramDict["crbit"]
@@ -1363,7 +1361,7 @@ def run_driz_chip(
         if not img.inmemory:
             pimg.writeto(_outmaskname)
             del pimg
-            log.info("Writing out mask file: %s" % _outmaskname)
+            log.info(f"Writing out mask file: {_outmaskname}")
 
     time_pre = time.time() - epoch
     epoch = time.time()
@@ -1481,10 +1479,10 @@ def run_driz_chip(
         time_post_all.append(time_post)
         time_write_all.append(time_write)
 
-        log.info("chip time pre-drizzling:  %6.3f" % time_pre)
-        log.info("chip time drizzling:      %6.3f" % time_driz)
-        log.info("chip time post-drizzling: %6.3f" % time_post)
-        log.info("chip time writing output: %6.3f" % time_write)
+        log.info(f"chip time pre-drizzling:  {time_pre:6.3f}")
+        log.info(f"chip time drizzling:      {time_driz:6.3f}")
+        log.info(f"chip time post-drizzling: {time_post:6.3f}")
+        log.info(f"chip time writing output: {time_write:6.3f}")
 
         if doWrite:
             tot_pre = sum(time_pre_all)
@@ -1493,21 +1491,17 @@ def run_driz_chip(
             tot_write = sum(time_write_all)
             tot = tot_pre + tot_driz + tot_post + tot_write
             log.info(
-                "chip total pre-drizzling:  %6.3f (%4.1f%%)"
-                % (tot_pre, (100.0 * tot_pre / tot))
-            )
+                f"chip total pre-drizzling: {tot_pre:6.3f} "
+                f"({100.0 * tot_pre / tot:4.1f}%)")
             log.info(
-                "chip total drizzling:      %6.3f (%4.1f%%)"
-                % (tot_driz, (100.0 * tot_driz / tot))
-            )
+                f"chip total drizzling: {tot_driz:6.3f} "
+                f"({100.0 * tot_driz / tot:4.1f}%)")
             log.info(
-                "chip total post-drizzling: %6.3f (%4.1f%%)"
-                % (tot_post, (100.0 * tot_post / tot))
-            )
+                f"chip total post-drizzling: {tot_post:6.3f} "
+                f"({100.0 * tot_post / tot:4.1f}%)")
             log.info(
-                "chip total writing output: %6.3f (%4.1f%%)"
-                % (tot_write, (100.0 * tot_write / tot))
-            )
+                f"chip total writing output: {tot_write:6.3f} "
+                f"({100.0 * tot_write / tot:4.1f}%)")
 
 
 def do_driz(
@@ -1572,7 +1566,7 @@ def do_driz(
 
     if wcsmap is None and cdriz is not None:
         log.info("Using WCSLIB-based coordinate transformation...")
-        log.info("stepsize = %s" % stepsize)
+        log.info(f"stepsize = {stepsize}")
         mapping = cdriz.DefaultWCSMapping(
             input_wcs,
             output_wcs,
@@ -1633,9 +1627,9 @@ def do_driz(
     )
 
     if nmiss > 0:
-        log.warning("! %s points were outside the output image." % nmiss)
+        log.warning(f"! {nmiss} points were outside the output image.")
     if nskip > 0:
-        log.debug("! Note, %s input lines were skipped completely." % nskip)
+        log.debug(f"! Note, {nskip} input lines were skipped completely.")
 
     return _vers
 
@@ -1672,12 +1666,11 @@ def create_output(filename, arr):
             ehdu.header["EXTNAME"] = extname[0]
             ehdu.header["EXTVER"] = extname[1]
             pimg.append(ehdu)
-        log.info("Creating new output file: %s" % fileroot)
+        log.info(f"Creating new output file: {fileroot}")
         pimg.writeto(fileroot)
         del pimg
     else:
-        log.info("Updating existing output file: %s" % fileroot)
-
+        log.info(f"Updating existing output file: {fileroot}")
     handle = fits.open(fileroot, mode="update", memmap=False)
 
     return handle, extname
