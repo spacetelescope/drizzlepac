@@ -541,7 +541,6 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
                 log.debug("Retrieving user computed sky values from image "
                          "headers ")
                 log.debug(f"recorded in the '{paramDict['skyuser']}' header keywords.")
-                         .format(paramDict['skyuser']))
                 for image in imageObjList:
                     log.debug(f'Working on sky for: {image._filename}')
                     _skyUserFromHeaderKwd(image, paramDict)
