@@ -540,10 +540,10 @@ def subtractSky(imageObjList,configObj,saveFile=False,procSteps=None):
                 # user's sky values are stored in a header keyword:
                 log.debug("Retrieving user computed sky values from image "
                          "headers ")
-                log.debug("recorded in the '{:s}' header keywords."
+                log.debug(f"recorded in the '{paramDict['skyuser']}' header keywords.")
                          .format(paramDict['skyuser']))
                 for image in imageObjList:
-                    log.debug('Working on sky for: %s' % image._filename)
+                    log.debug(f'Working on sky for: {image._filename}')
                     _skyUserFromHeaderKwd(image, paramDict)
         else:
             # reset "computedSky" chip's attribute:
@@ -1071,7 +1071,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
         _skyValue = min(minSky)
 
         _reportedSky = _skyValue*(minpscale[minSky.index(_skyValue)]**2)
-        log.debug("Minimum sky value for all chips %s" % _reportedSky)
+        log.debug(f'Minimum sky value for all chips {_reportedSky}')
 
         #now subtract that value from all the chips in the exposure
         #and update the chips header keyword with the sub
@@ -1085,7 +1085,7 @@ def _skySub(imageSet,paramDict,saveFile=False):
             _scaledSky=_skyValue * (idcscale**2)
             image.subtractedSky = _scaledSky
             image.computedSky = _scaledSky
-            log.debug("Using sky from chip %d: %f\n" % (chip,_scaledSky))
+            log.debug(f'Using sky from chip {chip}: {_scaledSky:f}\n')
             ###_subtractSky(image,(_scaledSky))
             # Update the header so that the keyword in the image is
             #the sky value which should be subtracted from the image
@@ -1118,8 +1118,7 @@ def _computeSky(image, skypars, memmap=False):
             )
 
     _skyValue = _extractSkyValue(_tmp,skypars['skystat'].lower())
-    log.debug("    Computed sky value/pixel for %s: %s "%
-             (image.rootname, _skyValue))
+    log.debug(f"Computed sky value/pixel for {image.rootname}: {_skyValue} ")
 
     del _tmp
 
@@ -1161,7 +1160,7 @@ def _updateKW(image, filename, exten, skyKW, Value):
         strexten = '[%s,%s]'%(exten[0],str(exten[1]))
     else:
         strexten = '[%s]'%(exten)
-    log.debug('Updating keyword %s in %s' % (skyKW, filename + strexten))
+    log.debug(f'Updating keyword {skyKW} in {filename + strexten}')
     fobj = fileutil.openImage(filename, mode='update', memmap=False)
     fobj[exten].header[skyKW] = (Value, 'Sky value computed by AstroDrizzle')
     fobj.close()
@@ -1184,9 +1183,8 @@ def _addDefaultSkyKW(imageObjList):
                 continue
             if skyKW not in fobj[ext].header:
                 fobj[ext].header[skyKW] = (Value, 'Sky value computed by AstroDrizzle')
-                log.debug("MDRIZSKY keyword not found in the %s[%s,%d] header."%(
-                            fname,sciExt,chip))
-                log.debug("    Adding MDRIZSKY to header with default value of 0.")
+                log.debug(f'MDRIZSKY keyword not found in the {fname}[{sciExt},{chip}] header.')
+                log.debug("Adding MDRIZSKY to header with default value of 0.")
         fobj.close()
 
 #this is really related to each individual chip
