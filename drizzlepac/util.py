@@ -378,7 +378,7 @@ class ProcSteps:
         self.end = ptime
 
         if reason == "ended":
-            msg = f"==== Processing Step '{key}'' finished at {ptime[0]}"
+            msg = f"==== Processing Step '{key}' finished at {ptime[0]}"
         else:
             msg = f"==== Step '{key}' was {msg} at {ptime[0]}"
         if delay_msg:
