@@ -57,7 +57,7 @@ __all__ = ["AstroDrizzle", "run"]
 # Pointer to the included Python class for WCS-based coordinate transformations
 PYTHON_WCSMAP = wcs_functions.WCSMap
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def AstroDrizzle(

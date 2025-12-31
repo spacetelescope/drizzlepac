@@ -9,6 +9,7 @@ image and the derivative of the model image.
 """
 import os
 import re
+import logging
 
 import numpy as np
 from scipy import signal
@@ -32,7 +33,7 @@ STEP_NUM = 6  # this relates directly to the syntax in the cfg file
 PROCSTEPS_NAME = "Driz_CR"
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def drizCR(input=None, configObj=None, editpars=False, **inputDict):

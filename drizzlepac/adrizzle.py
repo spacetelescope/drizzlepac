@@ -37,6 +37,7 @@ and orientation, if any have been specified at all.
 import os
 import copy
 import time
+import logging
 from . import util
 import numpy as np
 from astropy.io import fits
@@ -74,7 +75,7 @@ STEP_NUM_FINAL = 7
 PROCSTEPS_NAME_SINGLE = "Separate Drizzle"
 PROCSTEPS_NAME_FINAL = "Final Drizzle"
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 time_pre_all = []
 time_driz_all = []

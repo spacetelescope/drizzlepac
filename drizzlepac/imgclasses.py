@@ -10,6 +10,7 @@ Used by ``TweakReg``.
 import os
 import sys
 import copy
+import logging
 import numpy as np
 
 from astropy import wcs as pywcs
@@ -42,7 +43,7 @@ IMGCLASSES_DEBUG = False
 # use convex hull for images? (this is tighter than chip's bounding box)
 IMAGE_USE_CONVEX_HULL = True
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 sortKeys = ['minflux', 'maxflux', 'nbright', 'fluxunits']
 

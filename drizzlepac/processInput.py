@@ -29,6 +29,7 @@ steps either as stand-alone tasks or internally to MultiDrizzle itself.
 
 """
 import os
+import logging
 import shutil
 import string
 import sys
@@ -49,7 +50,7 @@ from . import util
 from . import resetbits
 from . import mdzhandler
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 # list parameters which correspond to steps where multiprocessing can be used
 parallel_steps = [(3,'driz_separate'),(6,'driz_cr')]

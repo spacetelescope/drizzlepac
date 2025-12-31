@@ -5,6 +5,7 @@
 """
 import os, sys
 import copy
+import logging
 
 import numpy as np
 from astropy import wcs as pywcs
@@ -30,7 +31,7 @@ REFCAT_ARGS = ['rmaxflux','rminflux','rfluxunits','refnbright']+REFCOL_PARS
 sortKeys = ['minflux','maxflux','nbright','fluxunits']
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def generateCatalog(wcs, mode='automatic', catalog=None,

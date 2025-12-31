@@ -68,11 +68,12 @@ from stsci.tools.bitmask import interpret_bit_flags
 
 from . import util
 from . import __version__
+import logging
 
 __taskname__ = "resetbits"
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def reset_dq_bits(input,bits,extver=None,extname='dq'):

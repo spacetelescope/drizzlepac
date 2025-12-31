@@ -16,6 +16,7 @@ the "aligned" (to the new drizzled WCS) image coordinates.
 """
 import os
 import string
+import logging
 from datetime import date
 
 import numpy as np
@@ -38,7 +39,7 @@ from . import __version__
 __taskname__ = 'tweakback'
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 if hasattr(np, 'float128'):
     ndfloat128 = np.float128

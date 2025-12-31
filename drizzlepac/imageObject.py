@@ -7,6 +7,7 @@ A class which makes image objects for each input filename.
 
 """
 import copy, os, re, sys
+import logging
 
 import numpy as np
 from stwcs import distortion
@@ -21,7 +22,7 @@ from . import __version__
 __all__ = ['baseImageObject', 'imageObject', 'WCSObject']
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 _NUMPY_TO_IRAF_DTYPES = {'float64': -64, 'float32': -32, 'uint8': 8,

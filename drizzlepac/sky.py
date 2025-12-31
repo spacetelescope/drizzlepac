@@ -9,7 +9,9 @@ input image while recording the subtracted value in the image header.
 :License: :doc:`/LICENSE`
 
 """
-import os, sys
+import os
+import sys 
+import logging
 
 import numpy as np
 
@@ -34,7 +36,7 @@ STEP_NUM = 2  #this relates directly to the syntax in the cfg file
 PROCSTEPS_NAME = "Subtract Sky"
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 #this is the user access function
