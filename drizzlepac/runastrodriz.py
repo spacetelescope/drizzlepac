@@ -132,7 +132,8 @@ from drizzlepac import photeq
 from drizzlepac import __version__
 
 
-__taskname__ = "runastrodriz"
+package_level_logger = logging.getLogger('drizzlepac')
+log = logging.getLogger(f'drizzlepac.runastrodriz')
 
 # Local variables
 
@@ -175,9 +176,7 @@ FILTER_NAMES = {'WFPC2': ['FILTNAM1', 'FILTNAM2'],
                 'ACS': ['FILTER1', 'FILTER2'],
                 'WFC3': ['FILTER']}
 
-
-# default marker for trailer files
-__trlmarker__ = '*** astrodrizzle Processing Version ' + __version__ + '***\n'
+__trlmarker__ = '*** Drizzlepac Processing Version ' + drizzlepac.__version__ + '***'
 
 envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
 # ASTROMETRY_APPLY_APRIORI supersedes a previously existing environment variable
@@ -192,16 +191,13 @@ wcs_preference = ['IDC_?????????-FIT_REL_GAIA*3', 'IDC_?????????-FIT_IMG_GAIA*3'
                   'IDC_?????????-FIT_IMG_GAIADR2', 'IDC_?????????-FIT_REL_GAIADR1', 'IDC_?????????-FIT_IMG_GAIADR1',
                   'IDC_?????????-GSC240', 'IDC_?????????']
 
-# History:
-# Version 1.0.0 - Derived from v1.2.0 of wfc3.runwf3driz to run astrodrizzle
-
-
 # Primary user interface
 def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             headerlets=True, align_to_gaia=True, force_alignment=False,
             do_verify_guiding=False, debug=False, make_manifest=False):
     """
-    Run astrodrizzle on input file/ASN table using default values for astrodrizzle parameters.
+    Run astrodrizzle on input file/ASN table 
+    using default values for astrodrizzle parameters.
 
     Parameters
     ----------
@@ -230,15 +226,51 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         Whether to generate a MANIFEST file.
 
     """
-    init_time = time.time()
-    trlmsg = "{}: Calibration pipeline processing of {} started.\n".format(init_time, inFile)
-    trlmsg += __trlmarker__
-    trlmsg += "    drizzlepac version {}\n".format(drizzlepac.__version__)
-    trlmsg += "    tweakwcs version {}\n".format(tweakwcs.__version__)
-    trlmsg += "    stwcs version {}\n".format(stwcs.__version__)
-    trlmsg += "    numpy version {}\n".format(np.__version__)
-    trlmsg += "    photutils version {}\n".format(photutils.__version__)
 
+    # suppress dependency logs if no handler is added. 
+    logging.getLogger().addHandler(logging.NullHandler())
+
+    # determine log name
+    # on input name for single exposures
+    if '_raw' in inFile:
+        # Output trailer file to RAW file's trailer
+        _trlroot = inFile[:inFile.find('_raw')]
+    elif '_asn' in inFile:
+        # Output trailer file to ASN file's trailer, not product's trailer
+        _trlroot = inFile[:inFile.find('_asn')]
+    else:
+        # Default: trim off last suffix of input filename
+        # and replacing with .tra
+        _indx = inFile.rfind('_')
+        if _indx > 0:
+            _trlroot = inFile[:_indx]
+        else:
+            _trlroot = inFile
+
+    _trlfile = _trlroot + '.tra'
+    _alignlog = _trlroot + '_align.log'
+    _manifest_filename = _trlroot + '_manifest.txt'
+    _calfiles_flc = []
+
+    if debug:
+        default_log_level = logging.DEBUG
+        formatter = logging.Formatter('[%(levelname)s:%(name)s] %(message)s')
+    else:
+        default_log_level = logging.INFO
+        formatter = logging.Formatter('[%(levelname)-8s] %(message)s')
+
+    file_handler = logging.FileHandler(f'{_trlfile}')
+    stream_handler = logging.StreamHandler(sys.stdout)
+
+    file_handler.setLevel(default_log_level)
+    stream_handler.setLevel(default_log_level)
+    file_handler.setFormatter(formatter)
+    stream_handler.setFormatter(formatter)
+    package_level_logger.addHandler(file_handler)
+    package_level_logger.addHandler(stream_handler)
+    package_level_logger.setLevel(default_log_level)
+
+    init_time = time.time()
     pipeline_pars = PIPELINE_PARS.copy()
     _verify = True  # Switch to control whether to verify alignment or not
     manifest_list = []
@@ -262,6 +294,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         description="'reset idctab in flt if different from raw'",
     )
 
+    # interpret envvar variable, if specified
+    qa_switch = util.get_envvar_switch(
+        envvar_qa_stats_name, description="'QA statistics'", default=False
+    )
+
     if headerlets or align_to_gaia:
         from stwcs.wcsutil import headerlet
 
@@ -270,10 +307,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # Make sure given filename is complete and exists...
         inFilename = fileutil.buildRootname(inFile, ext=['.fits'])
         if not os.path.exists(inFilename):
-            print("ERROR: Input file - %s - does not exist." % inFilename)
+            log.error(f"Input file - {inFilename} - does not exist.")
             return
     except TypeError:
-        print("ERROR: Appropriate input file could not be found.")
+        log.error("Appropriate input file could not be found.")
         return
 
     # If newpath was specified, move all files to that directory for processing
@@ -307,20 +344,20 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         if _analyze_exposure(inFilename):
             # Update header of WFPC2 data to use latest reference
             # files from CRDS
-            print(f"Updating distortion reference files for: {inFilename}")
+            log.debug(f"Updating distortion reference files for: {inFilename}")
             wfpc2Data.apply_bestrefs(inFilename)
             try:
                 photeq.photeq(files=inFilename, ref_phot_ext=3, readonly=False)
             except Exception as err:
-                print(err)
-                print(f"WARNING: PHOTEQ was unable to run on {inFilename}")
+                log.error(err)
+                log.warning(f"PHOTEQ was unable to run on {inFilename}")
 
             raw_suffix = '_d0m.fits'
             goodpix_name = 'GPIXELS'
         else:
             # Remove FLT file created here, since the calibration file can NOT be aligned or drizzled
             os.remove(inFilename)
-            print("ERROR: Inappropriate input file.  Deleting converted WFPC2 FLT file.")
+            log.error("Inappropriate input file.  Deleting converted WFPC2 FLT file.")
 
             # write out manifest file, if requested
             mani_filename = inFile[:inFile.find('_d0m')] + '_manifest.txt'
@@ -329,7 +366,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     os.remove(mani_filename)
                 with open(mani_filename, 'w') as fout:
                     _ = [fout.write(f"{fname}\n") for fname in manifest_list]
-                print(f"Created manifest file: {mani_filename}")
+                log.debug(f"Created manifest file: {mani_filename}")
             sys.exit(analyze.Ret_code.NO_VIABLE_DATA.value)
 
     infile_det = fits.getval(inFilename, 'detector')
@@ -370,31 +407,6 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         if _mname is None:
             errorMsg = 'Could not find calibrated product!'
             raise Exception(errorMsg)
-
-    # Create trailer filenames based on ASN output filename or
-    # on input name for single exposures
-    if '_raw' in inFile:
-        # Output trailer file to RAW file's trailer
-        _trlroot = inFile[:inFile.find('_raw')]
-    elif '_asn' in inFile:
-        # Output trailer file to ASN file's trailer, not product's trailer
-        _trlroot = inFile[:inFile.find('_asn')]
-    else:
-        # Default: trim off last suffix of input filename
-        # and replacing with .tra
-        _indx = inFile.rfind('_')
-        if _indx > 0:
-            _trlroot = inFile[:_indx]
-        else:
-            _trlroot = inFile
-
-    _trlfile = _trlroot + '.tra'
-    _alignlog = _trlroot + '_align.log'
-    _manifest_filename = _trlroot + '_manifest.txt'
-    _calfiles_flc = []
-
-    # Write message out to temp file and append it to full trailer file
-    _updateTrlFile(_trlfile, trlmsg)
 
     # Open product and read keyword value
     # Check to see if product already exists...
@@ -462,7 +474,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # If specified, insure that IDCTAB in FLT/FLC files are the same
     # as the IDCTAB found in the RAW files
     if reset_idctab_switch:
-        reset_idctab_kw(_calfiles, _calfiles_flc, logfile=_trlfile)
+        reset_idctab_kw(_calfiles, _calfiles_flc)
 
     # Add S_REGION keyword to input files regardless of whether DRIZCORR is turned on
     for f in _calfiles+_calfiles_flc:
@@ -551,12 +563,12 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     - copy updated input exposures to parent directory
             5. Remove all processing sub-directories
         """
-        inst_mode = "{}/{}".format(infile_inst, infile_det)
+        inst_mode = f"{infile_inst}/{infile_det}"
         _good_images = [f for f in _calfiles if fits.getval(f, 'exptime') > 0.]
         _good_images = [f for f in _good_images if fits.getval(f, goodpix_name, ext=("SCI", 1)) > 0.]
         if len(_good_images) == 0:
             if len(_calfiles)==0:
-                print("ERROR: No valid data found in input exposures.")
+                log.error("No valid data found in input exposures.")
                 sys.exit(analyze.Ret_code.NO_VIABLE_DATA.value)
             else:
                 _good_images = _calfiles
@@ -583,9 +595,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             adriz_pars['combine_nhigh'] = 0
 
         # Integrate user-specified drizzle parameters into pipeline_pars
-        _trlmsg = _timestamp('Starting alignment with bad-pixel identification')
-        _trlmsg += __trlmarker__
-        _updateTrlFile(_trlfile, _trlmsg)
+        log.info('Starting alignment with bad-pixel identification')
+        log.info(__trlmarker__)
 
         if align_with_apriori or force_alignment or align_to_gaia:
             # Generate initial default products and perform verification
@@ -595,10 +606,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                                                         tmpdir=None, debug=debug,
                                                         force_alignment=force_alignment,
                                                         find_crs=True, **adriz_pars)
-
         if align_with_apriori:
-            _trlmsg = _timestamp('Starting alignment with a priori solutions')
-            _trlmsg += __trlmarker__
+            log.info('Starting alignment with a priori solutions')
+            log.info(__trlmarker__)
             if align_dicts is not None:
                 find_crs = not align_dicts[0]['alignment_verified']
             else:
@@ -607,9 +617,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # run updatewcs with use_db=True to insure all products have
             # have a priori solutions as extensions
             # FIX: This should probably only be done in the apriori sub-directory!
-            updatewcs.updatewcs(_calfiles)
+            updatewcs.updatewcs(_calfiles, verbose=True)
             for _file in _calfiles:
-                confirm_aposteriori_hdrlets(_file, logfile=_trlfile)
+                confirm_aposteriori_hdrlets(_file)
 
                 # verify WCS solution (CRVALs) near target coordinates
                 warning_separation_threshold = 0.05*u.deg # value determine by Rick White from experience
@@ -619,22 +629,22 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 wcs_pos = SkyCoord(header_ex1['CRVAL1']*u.deg, header_ex1['CRVAL2']*u.deg)
                 sep = wcs_pos.separation(targ_pos)
                 if sep > warning_separation_threshold:
-                    print(f'WARNING: WCS reference pixel is {sep.value:.2f} degrees '+
+                    log.warning(f'WARNING: WCS reference pixel is {sep.value:.2f} degrees '+
                                    'from target position. The astrometry database solution is suspect!')
 
-            _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles)
-            _trlmsg += verify_gaia_wcsnames(_calfiles) + '\n'
+            log.debug(f"Adding apriori WCS solutions to {_calfiles}")
+            log.debug(verify_gaia_wcsnames(_calfiles))
             _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in _calfiles]
-            _trlmsg += "Verifying apriori WCSNAMEs:\n"
+            log.debug("Verifying apriori WCSNAMEs:")
             for (_cname, _wname) in _wnames_calfiles:
-                _trlmsg += "   {}: {}\n".format(_cname, _wname)
+                log.debug(f"   {_cname}: {_wname}")
             if _calfiles_flc:
-                _trlmsg += "Adding apriori WCS solutions to {}\n".format(_calfiles_flc)
+                log.debug(f"Adding apriori WCS solutions to {_calfiles_flc}")
                 updatewcs.updatewcs(_calfiles_flc)
                 for _file in _calfiles_flc:
-                    confirm_aposteriori_hdrlets(_file, logfile=_trlfile)
+                    confirm_aposteriori_hdrlets(_file)
 
-                _trlmsg += verify_gaia_wcsnames(_calfiles_flc) + '\n'
+                log.debug(verify_gaia_wcsnames(_calfiles_flc))
 
             try:
                 tmpname = "_".join([_trlroot, 'apriori'])
@@ -653,10 +663,9 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 # Reset to state prior to applying a priori solutions
                 traceback.print_exc()
                 align_apriori = None
-                _trlmsg += "ERROR in applying a priori solution.\n"
-
+                log.debug("ERROR in applying a priori solution.")
             if align_apriori is None or (not align_apriori[0]['alignment_verified']):
-                _trlmsg += "Resetting WCS to pipeline-default solutions..."
+                log.debug("Resetting WCS to pipeline-default solutions...")
                 # This operation replaces the PRIMARY WCS with one from the attached
                 # headerlet extensions that corresponds to the distortion-model
                 # solution created in the first place with 'updatewcs(use_db=False)'
@@ -670,18 +679,20 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
             else:
                 align_dicts = align_apriori
-                if align_dicts[0]['alignment_quality'] == 0:
-                    _trlmsg += 'A priori alignment SUCCESSFUL.\n'
-                if align_dicts[0]['alignment_quality'] == 1:
-                    _trlmsg += 'A priori alignment potentially compromised.  Please review final product!\n'
-                if align_dicts[0]['alignment_quality'] > 1:
-                    _trlmsg += 'A priori alignment FAILED! No a priori astrometry correction applied.\n'
-            _updateTrlFile(_trlfile, _trlmsg)
+                if align_dicts[0]["alignment_quality"] == 0:
+                    log.debug("A priori alignment SUCCESSFUL.")
+                if align_dicts[0]["alignment_quality"] == 1:
+                    log.debug("A priori alignment potentially compromised.")
+                    log.debug("Please review final product!")
+                if align_dicts[0]["alignment_quality"] > 1:
+                    log.debug(
+                        "A priori alignment FAILED! No a priori astrometry correction applied."
+                    )
 
         aposteriori_table=None
         if align_to_gaia:
-            _trlmsg = _timestamp('Starting a posteriori alignment')
-            _trlmsg += __trlmarker__
+            log.info("Starting a posteriori alignment")
+            log.info(__trlmarker__)
 
             #
             # Start by creating the 'default' product using a priori/pipeline WCS
@@ -707,22 +718,28 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                                              **adriz_pars)
             if align_aposteriori:
                 align_dicts = align_aposteriori
-                align_qual = align_dicts[0]['alignment_quality']
+                align_qual = align_dicts[0]["alignment_quality"]
                 if align_qual == 0:
-                    _trlmsg += 'A posteriori alignment SUCCESSFUL.\n'
+                    log.debug("A posteriori alignment SUCCESSFUL.")
                 elif align_qual == 1:
-                    _trlmsg += 'A posteriori alignment potentially COMPROMISED with bad focus.\n'
-                    _trlmsg += '  Please review final product for alignment!\n'
-                elif align_dicts[0]['alignment_quality'] == 2:
-                    _trlmsg += 'A posteriori alignment potentially COMPROMISED.\n'
-                    _trlmsg += 'Please review final product!\n'
+                    log.debug(
+                        "A posteriori alignment potentially COMPROMISED with bad focus."
+                    )
+                    log.debug("  Please review final product for alignment!")
+                elif align_dicts[0]["alignment_quality"] == 2:
+                    log.debug(
+                        "A posteriori alignment potentially COMPROMISED."
+                    )
+                    log.debug("Please review final product!")
                 else:
-                    _trlmsg += 'A posteriori alignment FAILED! No a posteriori astrometry correction applied.\n'
-            _updateTrlFile(_trlfile, _trlmsg)
+                    log.debug(
+                        "A posteriori alignment FAILED! No a posteriori astrometry correction applied."
+                    )
 
-        _trlmsg = _timestamp('Creating final combined,corrected product based on best alignment')
-        _trlmsg += __trlmarker__
-        _updateTrlFile(_trlfile, _trlmsg)
+        log.info(
+            "Creating final combined,corrected product based on best alignment"
+        )
+        log.info(__trlmarker__)
 
         # Generate final pipeline products based on 'best' alignment
         pipeline_pars['in_memory'] = inmemory
@@ -765,13 +782,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # run on a file.  This will typically apply only to BIAS,DARK
         # and other reference images.
         # Start by building up the message...
-        _trlmsg = _timestamp('astrodrizzle skipped ')
-        _trlmsg += __trlmarker__
-        _trlmsg += '%s: astrodrizzle processing not requested for %s.\n' % (_getTime(), inFile)
-        _trlmsg += '       astrodrizzle will not be run at this time.\n'
-
-        # Write message out to temp file and append it to full trailer file
-        _updateTrlFile(_trlfile, _trlmsg)
+        log.info("astrodrizzle skipped ")
+        log.info(__trlmarker__)
+        log.info(f"{_getTime()}: astrodrizzle processing not requested for {inFile}.")
+        log.info("       astrodrizzle will not be run at this time.")
 
     # If we created a new ASN table, we need to remove it
     if _new_asn is not None:
@@ -803,19 +817,19 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # do NOT write out this version of the headerlets
     if headerlets:
         # Generate headerlets for each updated FLT image
-        hlet_msg = _timestamp("Writing Headerlets started")
+        log.debug("Writing Headerlets started")
         for fname in _calfiles:
-            hlet_msg += "Creating new headerlet from {}".format(fname)
+            log.debug(f"Creating new headerlet from {fname}")
             frootname = fileutil.buildNewRootname(fname)
-            hname = "%s_flt_hlet.fits" % frootname
+            hname = f"{frootname}_flt_hlet.fits"
             # Write out headerlet file used by astrodrizzle, however,
             # do not overwrite any that was already written out by align
             if not os.path.exists(hname):
-                hlet_msg += "Created Headerlet file %s \n" % hname
+                log.debug(f"Created Headerlet file {hname} ")
                 try:
                     wcsname = fits.getval(fname, 'wcsname', ext=1)
                     wcstype = updatehdr.interpret_wcsname_type(wcsname)
-                    hdrname = "{}_hlet.fits".format(fname.replace('.fits', ''))
+                    hdrname = f"{fname.replace('.fits', '')}_hlet.fits"
                     headerlet.write_headerlet(fname, hdrname, output='flt',
                                               wcskey='PRIMARY',
                                               author="OPUS",
@@ -826,13 +840,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     # Keep track of headerlet files written out to disk
                     manifest_list.append(hdrname)
                 except ValueError:
-                    hlet_msg += _timestamp("SKIPPED: Headerlet not created for %s \n" % fname)
+                    log.debug(f"SKIPPED: Headerlet not created for {fname}")
                     # update trailer file to log creation of headerlet files
 
-        hlet_msg += _timestamp("Writing Headerlets completed")
-        ftrl = open(_trlfile, 'a')
-        ftrl.write(hlet_msg)
-        ftrl.close()
+        log.debug("Writing Headerlets completed")
 
     # Keep track of headerlet files written out to disk.
     # Those headerlets would have been written out by 'updatewcs.updatewcs()'
@@ -861,7 +872,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             os.remove(_manifest_filename)
         with open(_manifest_filename, 'w') as fout:
             _ = [fout.write(f"{fname}\n") for fname in manifest_list]
-        print(f"Created manifest file: {_manifest_filename}")
+        log.debug(f"Created manifest file: {_manifest_filename}")
 
     # delete log files generated by alignment code
     for _olog in [_alignlog]:
@@ -876,8 +887,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         _removeWorkingDir(new_processing_dir)
 
     if debug and Process is not None:
-        print("Files still open for this process include: ")
-        print([ofile.path for ofile in Process().open_files()])
+        log.debug("Files still open for this process include: ")
+        log.debug([ofile.path for ofile in Process().open_files()])
 
     if not debug:
         # clean up any temporary ref files created for WFPC2 data
@@ -893,34 +904,28 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         except Exception:
             # If we are unable to remove any of these sub-directories,
             # leave them for the user or calling routine/pipeline to clean up.
-            print("WARNING: Unable to remove any or all of these sub-directories: \n{}\n".format(sub_dirs))
+            log.warning(f"Unable to remove any or all of these sub-directories: \n{sub_dirs}")
             if Process is not None:
-                print("Files still open at this time include: ")
-                print([ofile.path for ofile in Process().open_files()])
+                log.debug("Files still open at this time include: ")
+                log.debug([ofile.path for ofile in Process().open_files()])
             pass
 
-    # Append final timestamp to trailer file...
     end_time = _getTime()
     _delta_time = time.time() - init_time
-    _final_msg = '%s: Finished processing %s in %.2f seconds \n' % (end_time, inFilename, _delta_time)
-    _final_msg += _timestamp('astrodrizzle completed ')
-
-    _updateTrlFile(_trlfile, _final_msg)
-
-    # Provide feedback to user
-    print(_final_msg)
+    log.info(f"{end_time}: Finished processing {inFilename} in {_delta_time:.2f} seconds \n")
+    log.info("astrodrizzle completed")
 
     # Look to see whether we have products which can be evaluated
     # wcsname = fits.getval(drz_products[0], 'wcsname', ext=1)
-
-    # interpret envvar variable, if specified
-    qa_switch = util.get_envvar_switch(envvar_qa_stats_name, description="'QA statistics'", default=False)
 
     if qa_switch and dcorr == 'PERFORM':
 
         # Generate quality statistics for astrometry if specified
         calfiles = _calfiles_flc if _calfiles_flc else _calfiles
         qa.run_all(inFile, calfiles, catalogs=aposteriori_table)
+
+    # remove previous file and stream handlers
+    package_level_logger.handlers.clear()
 
 
 def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignment=True,
@@ -968,13 +973,9 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
         drz_products.append(drz_product)
 
         # Create trailer marker message for start of astrodrizzle processing
-        _trlmsg = _timestamp('astrodrizzle started ')
-        _trlmsg += __trlmarker__
-        _trlmsg += '%s: Processing %s with astrodrizzle Version %s\n' % (_getTime(), infile, pyver)
-        print(_trlmsg)
-        _updateTrlFile(trlfile, _trlmsg)
-
-        _pyd_err = trlfile.replace('.tra', '_pydriz.stderr')
+        log.info('astrodrizzle started ')
+        log.info(f'{_getTime()}: Processing {infile} with astrodrizzle Version {pyver}')
+        log.info(__trlmarker__)
 
         try:
             drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
@@ -985,18 +986,11 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
             if os.path.exists(drz_product):
                 fits.setval(drz_product, 'DRIZPARS', value=trlfile)
 
-            util.end_logging(drizlog)
+            # util.end_logging(drizlog)
 
         except Exception as errorobj:
-            _appendTrlFile(trlfile, drizlog)
-            _appendTrlFile(trlfile, _pyd_err)
-            _ftrl = open(trlfile, 'a')
-            _ftrl.write('ERROR: Could not complete astrodrizzle processing of %s.\n' % infile)
-            _ftrl.write(str(sys.exc_info()[0]) + ': ')
-            _ftrl.writelines(str(errorobj))
-            _ftrl.write('\n')
-            _ftrl.close()
-            print('ERROR: Could not complete astrodrizzle processing of %s.' % infile)
+            log.error(f"Could not complete astrodrizzle processing of {infile}.")
+            log.error(str(errorobj))
             raise Exception(str(errorobj))
 
         # For singletons, there is no need to perform focus check since there is only 1 input exposure
@@ -1017,12 +1011,12 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
                 drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
                                                      **pipeline_pars)
 
-            instr_det = "{}/{}".format(fits.getval(sfile, 'instrume'), fits.getval(sfile, 'detector'))
+            instr_det = f"{fits.getval(sfile, 'instrume')}/{fits.getval(sfile, 'detector')}"
             focus_sigma = focus_pars[instr_det]['sigma']
-            print("Measuring similarity and focus for: \n{} \n    {}".format(single_files, drz_product))
+            log.debug(f"Measuring similarity and focus for: \n{single_files} \n    {drz_product}")
             focus_dicts.append(amutils.build_focus_dict(single_files, drz_product, sigma=focus_sigma))
             if debug:
-                json_name = drz_product.replace('.fits', '_{}_focus.json'.format(mode))
+                json_name = drz_product.replace('.fits', f'_{mode}_focus.json')
                 with open(json_name, mode='w') as json_file:
                     json.dump(focus_dicts, json_file)
 
@@ -1038,11 +1032,11 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
             focus_dicts = None
 
     # Now, append comments created by PyDrizzle to CALXXX trailer file
-    print('Updating trailer file %s with astrodrizzle comments.' % trlfile)
+    log.debug(f"Updating trailer file {trlfile} with astrodrizzle comments.")
     drizlog_copy = drizlog.replace('.log', '_copy.log')
     if os.path.exists(drizlog):
         shutil.copy(drizlog, drizlog_copy)
-    _appendTrlFile(trlfile, drizlog_copy)
+
     # clean up log files
     if RM_LOGFILES and os.path.exists(drizlog):
         os.remove(drizlog)
@@ -1118,7 +1112,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             tmpmode = mode
             break
     if tmpmode is None:
-        print("Invalid alignment mode {} requested.".format(tmpdir))
+        log.error(f"Invalid alignment mode {tmpdir} requested.")
         raise ValueError
 
     full_table = None
@@ -1157,10 +1151,10 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             det = hdr0.get('detector').lower()
 
         if find_crs:
-            trlmsg = _timestamp("Resetting CRs ")
+            log.debug("Resetting CRs ")
             # reset all DQ flags associated with CRs assuming previous attempts were inaccurate
             for f in alignfiles:
-                trlmsg += "Resetting CR DQ bits for {}\n".format(f)
+                log.debug(f"Resetting CR DQ bits for {f}")
                 resetbits.reset_dq_bits(f, "4096,8192")
                 sat_flags = 256 + 2048
         else:
@@ -1169,26 +1163,24 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
         # Perform any requested alignment here...
         if alignment_mode == 'aposteriori':
             # Create trailer marker message for start of align_to_GAIA processing
-            trlmsg = _timestamp("Align_to_GAIA started ")
-            _updateTrlFile(trlfile, trlmsg)
+            log.debug("Align_to_GAIA started ")
             # Evaluate all input exposures and, if necessary, reset WCSs to a common WCS
             # This is necessary in order to avoid imprinting zero point differences between
             # coordinate systems into the final fit which would result in mis-alignment of the
             # sources in the final combined output images.
 
             if len(alignfiles) > 1:
-                update_wcs_in_list(alignfiles, logfile=trlfile)
+                update_wcs_in_list(alignfiles)
 
             instdet_pars = align.get_default_pars(inst, det)
 
-            alignlog = trlfile.replace('.tra', '_align.log')
-            alignlog_copy = alignlog.replace('_align', '_align_copy')
+            # alignlog = trlfile.replace('.tra', '_align.log')
             try:
 
                 full_table = align.perform_align(alignfiles,
                                                  catalog_list=instdet_pars['run_align']['catalog_list'],
                                                  num_sources=instdet_pars['general']['MAX_SOURCES_PER_CHIP'],
-                                                 update_hdr_wcs=True, runfile=alignlog,
+                                                 update_hdr_wcs=True, runfile=trlfile,
                                                  clobber=False, output=debug,
                                                  debug=debug, sat_flags=sat_flags)
 
@@ -1203,37 +1195,26 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 for row in align_table:
                     if row['status'] == 0:
                         if row['compromised'] == 0:
-                            trlstr = "Successfully aligned {} to {} astrometric frame\n"
-                            trlmsg += trlstr.format(row['imageName'], row['catalog'])
+                            log.info(f"Successfully aligned {row['imageName']} "
+                                     f"to {row['catalog']} astrometric frame")
                         else:
-                            trlstr = "Alignment only partially successful for {}\n"
-                            trlmsg += trlstr.format(row['imageName'])
+                            log.info(f"Alignment only partially "
+                                     f"successful for {row['imageName']}")
                     else:
-                        trlstr = "Could not align {} to absolute astrometric frame\n"
-                        trlmsg += trlstr.format(row['imageName'])
-                        print(trlmsg)
-                        _updateTrlFile(trlfile, trlmsg)
+                        log.info(f"Could not align {row['imageName']} "
+                                 f"to absolute astrometric frame")
                         return None, None
             except Exception as err:
                 # Something went wrong with alignment to GAIA, so report this in
                 # trailer file
-                _trlmsg = "EXCEPTION encountered in align...\n"
-                _trlmsg += "   No correction to absolute astrometric frame applied!\n"
-                print(_trlmsg)
-                _updateTrlFile(trlfile, _trlmsg)
+                log.warning("EXCEPTION encountered in align...")
+                log.warning("No correction to absolute astrometric frame applied!")
                 if 'aposteriori' not in repr(err):
                     traceback.print_exc()
                 else:
-                    print("WARNING: {}".format(err))
+                    log.warning(f"{err}")
                 return None, None
 
-            _updateTrlFile(trlfile, trlmsg)
-            # Write the perform_align log to the trailer file...(this will delete the _alignlog)
-            if os.path.exists(alignlog):
-                shutil.copy(alignlog, alignlog_copy)
-                _appendTrlFile(trlfile, alignlog_copy)
-
-            _trlmsg = ""
             # Check to see whether there are any additional input files that need to
             # be aligned (namely, FLT images)
             if align_update_files and align_table:
@@ -1248,15 +1229,13 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                         # headerlet.apply_headerlet_as_primary(fltfile, headerlet_file,
                         #                                     attach=True, archive=True)
                         headerlet_files.append(headerlet_file)
-                        # append log file contents to _trlmsg for inclusion in trailer file
-                        _trlstr = "Applying headerlet {} as Primary WCS to {}\n"
-                        _trlmsg += _trlstr.format(headerlet_file, fltfile)
+                        log.debug(f"Applying headerlet {headerlet_file} "
+                                  f"as Primary WCS to {fltfile}")
                     else:
-                        _trlmsg += "No absolute astrometric headerlet applied to {}\n".format(fltfile)
-
+                        log.debug(f"No absolute astrometric headerlet "
+                                  f"applied to {fltfile}")
             # Finally, append any further messages associated with alignement from this calling routine
-            _trlmsg += _timestamp('Align_to_GAIA completed ')
-            _updateTrlFile(trlfile, _trlmsg)
+            log.debug('Align_to_GAIA completed ')
 
         if find_crs:
             drz, fdicts, ddicts = run_driz(inlist, trlfile, calfiles, mode=tmpmode,
@@ -1270,7 +1249,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                                                          **pipeline_pars)
 
         # Start verification of alignment using focus and similarity indices
-        _trlmsg = _timestamp('Verification of {} alignment started '.format(tmpmode))
+        log.info(f"Verification of {tmpmode} alignment started ")
 
         if focus_dicts is not None:
             # Only check focus on CTE corrected, when available
@@ -1283,15 +1262,16 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             align_fwhm = amutils.get_align_fwhm(align_focus, default_fwhm)
 
             if align_fwhm:
-                _trlmsg += "align_fwhm: {}[{},{}]={:0.4f}pix\n".format(align_focus['prodname'],
-                                                            align_focus['prod_pos'][1],
-                                                            align_focus['prod_pos'][0],
-                                                            align_fwhm)
+                log.debug(f"align_fwhm: {align_focus['prodname']} "
+                          f"[{align_focus['prod_pos'][1]}, "
+                          f"{align_focus['prod_pos'][0]}] "
+                          f"= {align_fwhm:0.4f} pix")
 
             # Interpret the overlap differences computed for this alignment
             dkeys = [k for k in diff_dicts.keys()]
             diff_verification, max_diff = amutils.evaluate_overlap_diffs(diff_dicts[dkeys[-1]])
-            _trlmsg += "Fraction of sources matched: {}  out of {} sources\n".format(fraction_matched, num_sources)
+            log.debug(f"Fraction of sources matched: {fraction_matched} "
+                      f"out of {num_sources} sources")
 
             # For any borderline situation with alignment, perform an extra check on alignment
             if fraction_matched < 0.1 or -1 < num_sources < 10:
@@ -1303,10 +1283,12 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 alignment_quality = 0 if diff_verification else 3
 
             if alignment_verified:
-                _trlmsg += "Focus verification indicated that {} alignment SUCCEEDED.\n".format(tmpmode)
+                log.debug(f"Focus verification indicated that {tmpmode} "
+                          f"alignment SUCCEEDED.")
             else:
-                _trlmsg += "Focus verification indicated that {} alignment FAILED.\n".format(tmpmode)
-                _trlmsg += "  Reverting to previously determined WCS alignment.\n"
+                log.debug(f"Focus verification indicated that {tmpmode} "
+                          f"alignment FAILED.")
+                log.debug(f"Reverting to previously determined WCS alignment.")
 
             prodname = align_focus['prodname']
         else:
@@ -1328,15 +1310,14 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             refname = os.path.abspath(os.path.join('..', prodname))
             align_ref = fits.getdata(refname, ext=1)
 
-            print("Computing sim_indx for: {} ".format(os.path.join(tmpdir, prodname)))
+            log.debug(f"Computing sim_indx for: {os.path.join(tmpdir, prodname)}")
             sim_indx = amutils.compute_similarity(alignprod, align_ref)
             align_sim_fail = sim_indx > 1
 
             if not align_sim_fail and alignment_verified:
-                _trlmsg += "Alignment appeared to SUCCEED based on similarity index of {:0.4f} \n".format(sim_indx)
+                log.debug(f"Alignment appeared to SUCCEED based on similarity index of {sim_indx:0.4f}")
             else:
-                _trlmsg += "Alignment appeared to FAIL based on similarity index of {:0.4f} \n".format(sim_indx)
-                # _trlmsg += "  Reverting to previously determined WCS alignment.\n"
+                log.debug(f"Alignment appeared to FAIL based on similarity index of {sim_indx:0.4f}")
                 # alignment_verified = False
                 alignment_quality += 3
 
@@ -1346,22 +1327,17 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
 
         # If CRs were identified, copy updated input files to main directory
         if tmpdir and alignment_verified:
-            _trlmsg += "Saving products with new alignment.\n"
+            log.debug("Saving products with new alignment.")
             _ = [shutil.copy(f, parent_dir) for f in calfiles]
             if calfiles_flc:
                 _ = [shutil.copy(f, parent_dir) for f in calfiles_flc]
             # Copy drizzle products to parent directory to replace 'less aligned' versions
             _ = [shutil.copy(f, parent_dir) for f in headerlet_files]
 
-        _trlmsg += _timestamp('Verification of alignment completed ')
-        _updateTrlFile(trlfile, _trlmsg)
-
+        log.info('Verification of alignment completed ')
     finally:
         if tmpdir:
-            _appendTrlFile(os.path.join(parent_dir, trlfile), trlfile)
-            # Return to main processing dir
             os.chdir(parent_dir)
-
     return focus_dicts, full_table
 
 
@@ -1401,8 +1377,8 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                 if fdate > gdate and '-' not in wcsname:
                     wcsname = "{}-{}".format(wcsname, catalog_name)
                     fhdu['sci', sciext + 1].header['wcsname'] = wcsname
-                    msg += "Updating WCSNAME of {}[sci,{}] for use of {} catalog \n".format(f,
-                            sciext + 1, catalog_name)
+                    log.debug(f"Updating WCSNAME of {f}[sci,{sciext + 1}] "
+                              f"for use of {catalog_name} catalog.")
                     continue
                 # Check to see whether it is an aposteriori solution
                 # If so, replace it with an apriori solution instead
@@ -1465,8 +1441,9 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                         for wname, hname, wdate in zip(wcsnames, hdrnames, wcsdates):
                             # Look for apriori_type (HSC, GSC,...) based on newest IDCTAB
                             if apriori_type in wname:
-                                if (most_recent_wcs and wdate > most_recent_wcs[0]) \
-                                    or most_recent_wcs is None:
+                                if (
+                                    most_recent_wcs and wdate > most_recent_wcs[0]
+                                ) or most_recent_wcs is None:
                                     most_recent_wcs = (wdate, hname)
 
                         if most_recent_wcs:
@@ -1474,7 +1451,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
 
                     if most_recent_wcs:
                         # restore this WCS
-                        msg += 'Restoring apriori WCS {} as primary WCS in {}\n'.format(wname, f)
+                        log.info(f"Restoring apriori WCS {wname} as primary WCS in {f}")
                         headerlet.restore_from_headerlet(fhdu,
                                                          force=True,
                                                          hdrname=most_recent_wcs[1],
@@ -1488,7 +1465,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
 
 def restore_pipeline_default(files):
     """Restore pipeline-default IDC_* WCS as PRIMARY WCS in all input files"""
-    print("Restoring pipeline-default WCS as PRIMARY WCS... using updatewcs.")
+    log.debug("Restoring pipeline-default WCS as PRIMARY WCS... using updatewcs.")
     updatewcs.updatewcs(files, use_db=False)
     # Remove HDRNAME, if added by some other code.
     #  This keyword only needs to be included in the headerlet file itself.
@@ -1500,21 +1477,16 @@ def restore_pipeline_default(files):
                     del fhdu[('sci', sciext + 1)].header['hdrname']
 
 
-def reset_idctab_kw(files, files_flc, logfile=None):
+def reset_idctab_kw(files, files_flc):
     """Insure IDCTAB in files are the same as those in RAW files"""
-    trlmsg = "Insuring IDCTAB keywords are up-to-date\n"
 
     raw_files = [f.replace('_flt', '_raw') for f in files]
     # determine what IDCTAB should be in FLT files
     raw_idctab = fits.getval(raw_files[0], 'idctab')
     raw_wcsname = 'IDC_{}'.format(raw_idctab.split('_')[0].split('$')[1])
-    trlmsg += "IDCTAB from RAW file: {}\n".format(raw_idctab)
+    log.debug(f"IDCTAB from RAW file: {raw_idctab}")
 
-    if logfile:
-        # Write message out to temp file and append it to full trailer file
-        _updateTrlFile(logfile, trlmsg)
-    else:
-        print(trlmsg)
+    log.debug("Insuring IDCTAB keywords are up-to-date")
 
     # Now, restore headerlet with this WCSNAME as primary WCS
     for flt in files+files_flc:
@@ -1522,12 +1494,7 @@ def reset_idctab_kw(files, files_flc, logfile=None):
         if flt_idctab == raw_idctab:
             # We don't need to update anything
             continue
-        newmsg = "Updating IDCTAB {} in {}\n".format(flt_idctab, flt)
-        if logfile:
-            # Write message out to temp file and append it to full trailer file
-            _updateTrlFile(logfile, newmsg)
-        else:
-            print(newmsg)
+        log.debug(f"Updating IDCTAB {flt_idctab} in {flt}")
 
         # Get info from all hdrlet extensions in file
         wnames = headerlet.get_headerlet_kw_names(flt, 'wcsname')
@@ -1543,7 +1510,7 @@ def reset_idctab_kw(files, files_flc, logfile=None):
 # ------------------------------------------------------------------------------
 
 
-def update_wcs_in_list(exp_list, logfile=None):
+def update_wcs_in_list(exp_list):
     """Examine entries in the exposure list for inconsistent WCS solutions
 
     Note: The direct exposure image active WCS solutions will be modified in-place.
@@ -1553,27 +1520,16 @@ def update_wcs_in_list(exp_list, logfile=None):
     exp_list : list
         List of filenames for exposures to be evaluated.
 
-    logfile : str, optional
-        Name of file to write out processing messages generated by this function.
-
     Returns
     -------
     Nothing.
 
     """
 
-    msg = "\n***** Processing List for Consistent WCS's *****"
-    print(msg)
-    update_msg = msg
+    log.debug("\n***** Processing List for Consistent WCS's *****")
     primary_wcsnames = set([fits.getval(fname, 'wcsname', ext=('SCI',1)) for fname in exp_list])
     if len(primary_wcsnames) == 1:
-        msg = "\nAll Primary WCS's confirmed as consistent as {}.".format(primary_wcsnames)
-        print(msg)
-        update_msg += msg
-        # Update trailer file with log messages
-        if logfile:
-            _updateTrlFile(logfile, update_msg)
-        return
+        log.debug(f"\nAll Primary WCS's confirmed as consistent as {primary_wcsnames}.")
 
     # We have detected inconsistent WCSs...
     # Loop over all the direct images for this detector in the visit to update the WCS
@@ -1596,10 +1552,9 @@ def update_wcs_in_list(exp_list, logfile=None):
         # Insure HDRNAME keywords are properly populated in SCI extensions.
         wcs_functions.verify_sci_hdrname(filename)
 
-    final_wcs_set, skip_direct_list, d_keyword_wcs_names_dict, direct_dict = collect_wcs_names(exp_list, 'DIRECT', logfile=logfile)
-    msg = "WCS solutions common to all viable direct images: {}\n".format(final_wcs_set)
-    print(msg)
-    update_msg += msg
+    final_wcs_set, skip_direct_list, d_keyword_wcs_names_dict, direct_dict = collect_wcs_names(exp_list, 'DIRECT')
+    log.debug(f"WCS solutions common to all viable direct images: {final_wcs_set}")
+
 
     # At this point, the IDCTAB points to the most current reference file
     # for these exposures.
@@ -1614,13 +1569,8 @@ def update_wcs_in_list(exp_list, logfile=None):
     # Should never need this logic, but just to be safe...
     if len(primary_wcs_set) == 0:
         # Simply rely on WCS solutions already in the headers
-        msg = "NO Common WCS solutions for images: {}\n".format(final_wcs_set)
-        msg += "  for the latest calibration IDCTAB: {}\n".format(primary_idctabs)
-        print(msg)
-        update_msg += msg
-        if logfile:
-            _updateTrlFile(logfile, update_msg)
-        return
+        log.debug(f"NO Common WCS solutions for images: {final_wcs_set}")
+        log.debug(f" for the latest calibration IDCTAB: {primary_idctabs}")
     final_wcs_set = set(primary_wcs_set)
 
     # There is a preference for the active WCS for the viable images in the visit
@@ -1631,31 +1581,23 @@ def update_wcs_in_list(exp_list, logfile=None):
         match_list = fnmatch.filter(final_wcs_set, wcs_item)
         if match_list:
             final_wcsname = match_list[0]
-            msg = "Final WCS solution to use for all images: {}\n".format(final_wcsname)
-            print(msg)
-            update_msg += msg
+            log.debug(f"Final WCS solution to use for all images: {final_wcsname}")
             break
 
     if final_wcsname:
         # Finally, if the image is not in a skip list, reset the primary WCS in all the images
         for filename in exp_list:
             if filename not in skip_direct_list:
-                msg = "\nSetting the primary WCS for direct image {} to {}.".format(filename, final_wcsname)
-                print(msg)
-                update_msg += msg
-                update_active_wcs(filename, final_wcsname, logfile=logfile)
+                log.debug(f"Setting the primary WCS for direct image {filename} to {final_wcsname}.")
+                update_active_wcs(filename, final_wcsname)
     else:
         # Do nothing
         pass
-    # Update trailer file with log messages
-
-    if logfile:
-        _updateTrlFile(logfile, update_msg)
 
 # ------------------------------------------------------------------------------
 
 
-def collect_wcs_names(exp_list, image_type, logfile=None):
+def collect_wcs_names(exp_list, image_type):
     """
     Utility to collect all the WCS solution names common to the input image list
 
@@ -1687,7 +1629,6 @@ def collect_wcs_names(exp_list, image_type, logfile=None):
         a list of *all* WCS solution names in the file
 
     """
-    update_msg = ""
     image_wcs_set = set()
     skip_image_list = []
     exist_image_set = False
@@ -1708,9 +1649,7 @@ def collect_wcs_names(exp_list, image_type, logfile=None):
         keyword_wcs_names_dict[filename] = keyword_wcs_names
         image_dict[filename] = all_wcs_names
         if all_wcs_names:
-            msg = "WCS solutions for file {} are {}.".format(filename, all_wcs_names)
-            print(msg)
-            update_msg += msg
+            log.debug(f"WCS solutions for file {filename} are {all_wcs_names}.")
 
             # Initialize a set with wcsnames
             if not exist_image_set:
@@ -1723,43 +1662,32 @@ def collect_wcs_names(exp_list, image_type, logfile=None):
 
             # Oops...no common wcsnames
             if not image_wcs_set:
-                msg = "ERROR: There are no common WCS solutions with this image {} and previously processed images\n".format(filename)
-                msg += "       There is a problem with this image/visit.\n"
-                msg += "       Make sure the input data are not *_raw.fits files.\n"
-                print(msg)
+                log.error("There are no common WCS solutions with this " 
+                f"image {filename} and previously processed images. There is a "
+                "problem with this image/visit. Make sure the input data are " 
+                "not *_raw.fits files.")
                 sys.exit(1)
         # If there are no WCS solutions, the image could be bad (e.g., EXPTIME=0 or EXPFLAG="TDF-DOWN...")
         else:
-            msg = "WARNING: There are no WCS solutions in the image {} in this visit.".format(filename)
-            print(msg)
-            update_msg += msg
+            log.warning(f"There are no WCS solutions in the image {filename} in this visit.")
             skip_image_list.append(filename)
             if image_type == 'GRISM':
-                msg = "WARNING:    Skip and delete this image."
-                print(msg)
-                update_msg += msg
+                log.warning("Skip and delete this image.")
                 # Delete the SVM FLT/FlC image as it has no updated WCS
                 try:
                     os.remove(filename)
-                    msg = "WARNING: Deleted image {}.".format(filename)
-                    print(msg)
-                    update_msg += msg
+                    log.warning(f"Deleted image {filename}.")
                 except OSError:
                     pass
             else:
-                msg = "WARNING:    Skip this image."
-                print(msg)
-                update_msg += msg
-
-    if logfile:
-        _updateTrlFile(logfile, update_msg)
+                log.warning(f"Skip this image.")
 
     return image_wcs_set, skip_image_list, keyword_wcs_names_dict, image_dict
 
 # ------------------------------------------------------------------------------
 
 
-def update_active_wcs(filename, wcsname, logfile=None):
+def update_active_wcs(filename, wcsname):
     """
     Utility to update the active/primary WCS solution
 
@@ -1779,7 +1707,6 @@ def update_active_wcs(filename, wcsname, logfile=None):
     None
 
     """
-    update_msg = ""
     # For exposures with multiple science extensions (multiple chips),
     # generate a combined WCS
     num_sci_ext, extname = util.count_sci_extensions(filename)
@@ -1821,9 +1748,7 @@ def update_active_wcs(filename, wcsname, logfile=None):
 
                 # No match so solution will be copied to a headerlet automatically when the new primary is set
                 if index == -1 and wkey.upper() != 'O':
-                    msg = "Archiving alternate WCS solution as a headerlet as necessary: {}\n".format(wname)
-                    print(msg)
-                    update_msg += msg
+                    log.debug(f"Archiving alternate WCS solution as a headerlet as necessary: {wname}")
 
                     # Now check if the HDRNAME between this solution and a headerlet already exists
                     hdr_keyword = fits.getval(filename, 'HDRNAME{}'.format(wkey.upper()), ext=1)
@@ -1846,12 +1771,10 @@ def update_active_wcs(filename, wcsname, logfile=None):
             msg = ''
             for ext in reversed(extensions[1:]):
                 wcsutil.headerlet.delete_headerlet(filename, hdrext=ext)
-                msg += "Delete duplicate headerlet extension {} in filename {}.\n".format(ext, filename)
+                log.debug(f"Delete duplicate headerlet extension {ext} in filename {filename}.")
 
-            msg += "Desired active WCS solution {} has an HDRNAME of {}.\n".format(wcsname, hdrname)
-            print(msg)
-            update_msg += msg
-
+            log.debug(f"Desired active WCS solution {wcsname} has an HDRNAME of {hdrname}.")
+            
             # Finally, install the desired WCS as the active WCS solution
             # Is the source of the wcsname for this image from a headerlet extension
             # or from the alternate solutions in the header as the source dictates how
@@ -1868,53 +1791,38 @@ def update_active_wcs(filename, wcsname, logfile=None):
                 del fhdu
 
             except ValueError as err:
-                msg = "WARNING: Trapped ValueError - attempting recovery: {}\n".format(str(err))
-                print(msg)
-                update_msg += msg
+                log.warning(f"Trapped ValueError - attempting recovery: {str(err)}")
 
                 found_string = [i for i in keyword_wcs_list if wcsname == i]
                 if found_string:
                     wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
                 else:
-                    msg = "WARNING: Could not restore the common WCS, {}, as the active WCS in this file {}.\n".format(wcsname, filename)
-                    print(msg)
-                    update_msg += msg
+                    log.debug(f"Could not restore the common WCS, {wcsname}, as "
+                              f"the active WCS in this file {filename}.")
+
             except AssertionError:
                 _, _, tb = sys.exc_info()
                 tb_info = traceback.extract_tb(tb)
                 _, _, _, text = tb_info[-1]
-                msg = "WARNING: Trapped AssertionError: {}.\n".format(text)
-                msg += "         Could not restore the common WCS, {}, as the active WCS in this file {}.\n".format(wcsname, filename)
-                print(msg)
-                update_msg += msg
+                log.warning(f"WARNING: Trapped AssertionError: {text}. Could " 
+                            f"not restore the common WCS, {wcsname}, as the "
+                            f"active WCS in this file {filename}.")
         else:
             found_string = [i for i in keyword_wcs_list if wcsname == i]
             if found_string:
                 wcsutil.altwcs.restoreWCS(filename, ext=extname_list, wcsname=found_string[0])
             else:
-                msg = "WARNING: Could not restore the common WCS from alternate WCS solutions, {},\n".format(wcsname)
-                msg += "as the active WCS in this file {}.\n".format(filename)
-                print(msg)
-                update_msg += msg
+                log.warning("Could not restore the common WCS from alternate " 
+                f"WCS solutions, {wcsname}, as the active WCS in this file "
+                f"{filename}.")
     else:
-        msg = "No need to update active WCS solution of {} for {} as it is already the active solution.\n".format(wcsname, filename)
-        print(msg)
-        update_msg += msg
-    try:
-        idcscale = fits.getval(filename, ext=1, keyword='IDCSCALE')
-    except KeyError:
-        msg += "Headerlet {} was missing IDCSCALE keyword".format(wcsname)
-        print(msg)
-        update_msg += msg
-        _update_idcscale(filename)
-    print(msg)
-    if logfile:
-        _updateTrlFile(logfile, update_msg)
+        log.debug(f"No need to update active WCS solution of {wcsname} for "
+                  f"{filename} as it is already the active solution.")
+        log.debug(msg)
 
 
-def confirm_aposteriori_hdrlets(filename, logfile=None):
+def confirm_aposteriori_hdrlets(filename):
     """Confirm that all the a posteriori headerlets are valid, and remove any that are invalid."""
-    update_msg = ""
     num_sci_ext, extname = util.count_sci_extensions(filename)
     extname_list = [(extname, x + 1) for x in range(num_sci_ext)]
 
@@ -1944,10 +1852,7 @@ def confirm_aposteriori_hdrlets(filename, logfile=None):
             # also remove this solution from SCI headers
             if extn['key']:
                 wcsutil.altwcs.deleteWCS(filename, extname_list, wcskey=extn['key'])
-            update_msg += "Delete duplicate headerlet extension {} in filename {}.\n".format(extn, filename)
-
-    if logfile:
-        _updateTrlFile(logfile, update_msg)
+            log.debug(f"Delete duplicate headerlet extension {extn} in filename {filename}.")
 
 
 def _update_wcs_fit_keywords(fltfile, flcfile):
@@ -2015,45 +1920,6 @@ def _lowerAsn(asnfile):
     return _new_asn
 
 
-def _updateTrlFile(trlfile, trl_lines):
-    tmptrl = trlfile.replace('.tra', '_tmp.tra')
-
-    print(trl_lines)
-
-    # Write message out to temp file and append it to full trailer file
-    ftmp = open(tmptrl, 'w')
-    ftmp.writelines(trl_lines)
-    ftmp.close()
-    _appendTrlFile(trlfile, tmptrl)
-
-
-def _appendTrlFile(trlfile, drizfile):
-    """ Append drizfile to already existing trlfile from CALXXX.
-    """
-    if not os.path.exists(drizfile):
-        return
-    # Open already existing CALWF3 trailer file for appending
-    ftrl = open(trlfile, 'a')
-    # Open astrodrizzle trailer file
-    fdriz = open(drizfile)
-
-    # Read in drizzle comments
-    _dlines = fdriz.readlines()
-
-    # Append them to CALWF3 trailer file
-    ftrl.writelines(_dlines)
-
-    # Close all files
-    ftrl.close()
-    fdriz.close()
-
-    try:
-        # Now, clean up astrodrizzle trailer file
-        os.remove(drizfile)
-    except Exception:
-        pass
-
-
 def _timestamp(_process_name):
     """Create formatted time string recognizable by OPUS."""
     _prefix = time.strftime("%Y%j%H%M%S-I-----", time.localtime())
@@ -2103,7 +1969,6 @@ def _copyToNewWorkingDir(newdir, input):
             shutil.copy(fname, os.path.join(newdir, fname))
 
 
-
 def _restoreResults(newdir, origdir):
     """ Move (not copy) all files from newdir back to the original directory
     """
@@ -2126,14 +1991,16 @@ def rmtree2(path, n=3):
             ok = True
             break
         except OSError as err:
-            print("Failed to remove path %s with shutil.rmtree at attempt %d: %s" % (path, n, err))
+            log.warning(f"Failed to remove path {path} with "
+                        f"shutil.rmtree at attempt {n}: {err}")
         time.sleep(3)
 
     if not ok:
-        print("Failed to remove path %s with shutil.rmtree, even after %d attempts.".format(path, n))
+        log.error(f"Failed to remove path {path} with shutil.rmtree, even "
+                  f"after {n} attempts.")
         raise OSError
     else:
-        print("Path %s successfully removed." % path)
+        log.debug(f"Path {path} successfully removed.")
 
 
 def handle_remove_readonly(func, path, exc):
@@ -2162,8 +2029,8 @@ def _analyze_exposure(filename):
     # Using .get() insures that this check gets done even if keyword is missing.
     gs_quality = fhdu.get('quality', default="")
     if 'gsfail' in gs_quality.lower() or 'tdf-down' in gs_quality.lower():
-        print(f"ERROR: Image {filename}'s QUALITY keywords: '{gs_quality}'")
-        print("        GUIDING == BAD.  Skipping processing ")
+        log.error(f"Image {filename}'s QUALITY keywords: '{gs_quality}'")
+        log.error("        GUIDING == BAD.  Skipping processing ")
         process_exposure = False  # Yes, there was bad guiding...
 
     badtab, _ = analyze.analyze_data([filename])
@@ -2172,7 +2039,7 @@ def _analyze_exposure(filename):
 
     # Also check to see whether this observation was taken with a blank filter name.
     if all(filter == '' for filter in filters):
-        print(f"ERROR: Inappropriate filter for exposure of {filters}")
+        log.error(f"Inappropriate filter for exposure of {filters}")
         process_exposure = False
 
     return process_exposure
@@ -2216,8 +2083,7 @@ def _update_idcscale(filename):
         for extn in range(num_sci):
             msg =  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, hdul.filename(), extn + 1)
             hdul[('sci', extn + 1)].header['idcscale'] = fhdu_idscale
-            print(msg)
-            update_msg = msg
+            log.info(msg)
     # No need to keep this file handle open anymore
     if isinstance(filename, str):
         hdul.close()
@@ -2232,9 +2098,9 @@ def main():
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'bdahfgimn:v:')
     except getopt.error as e:
-        print(str(e))
-        print(__doc__)
-        print("\t", __version__)
+        log.error(str(e))
+        log.error(__doc__)
+        log.error("\t", drizzlepac.__version__)
 
     # initialize default values
     help = 0
@@ -2270,20 +2136,20 @@ def main():
             do_verify_guiding = True
         if opt == '-n':
             if not value.isdigit():
-                print('ERROR: num_cores value must be an integer!')
+                log.error('num_cores value must be an integer!')
                 raise ValueError
             num_cores = int(value)
         if opt == '-b':
             # turn off writing headerlets
             headerlets = False
     if len(args) < 1:
-        print("syntax: runastrodriz.py [-bdahfginv] inputFilename [newpath]")
+        log.error("syntax: runastrodriz.py [-bdahfginv] inputFilename [newpath]")
         sys.exit()
     if len(args) > 1:
         newdir = args[-1]
     if (help):
-        print(__doc__)
-        print("\t", __version__)
+        log.debug(__doc__)
+        log.debug("\t", drizzlepac.__version__)
     else:
         try:
             process(args[0], force=force, newpath=newdir, num_cores=num_cores,
@@ -2293,14 +2159,14 @@ def main():
                     make_manifest=make_manifest)
 
         except Exception as errorobj:
-            print(str(errorobj))
-            print("ERROR: Cannot run astrodrizzle on %s." % " ".join(sys.argv))
+            log.error(str(errorobj))
+            log.error(f"Cannot run astrodrizzle on {' '.join(sys.argv)}.")
             raise Exception(str(errorobj))
 
         # This except handles sys.exit() which raises the SystemExit exception which inherits from BaseException.
         except BaseException:
             exc_type, exc_value, exc_tb = sys.exc_info()
-            print(f"Return Value: {exc_value}")
+            log.debug(f"Return Value: {exc_value}")
 
 if __name__ == "__main__":
     main()

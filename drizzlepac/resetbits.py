@@ -68,11 +68,12 @@ from stsci.tools.bitmask import interpret_bit_flags
 
 from . import util
 from . import __version__
+import logging
 
 __taskname__ = "resetbits"
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def reset_dq_bits(input,bits,extver=None,extname='dq'):
@@ -141,8 +142,8 @@ def reset_dq_bits(input,bits,extver=None,extname='dq'):
             dqdtype = dqarr.dtype
             # reset the desired bits
             p[extname,extn].data = (dqarr & ~bits).astype(dqdtype) # preserve original dtype
-            log.info('Reset bit values of %s to a value of 0 in %s[%s,%s]' %
-                     (bits, filename, extname, extn))
+            log.debug(f'Reset bit values of {bits} to a value of 0 in '
+                      f'{filename}[{extname},{extn}]')
         # close the file with the updated DQ array(s)
         p.close()
 

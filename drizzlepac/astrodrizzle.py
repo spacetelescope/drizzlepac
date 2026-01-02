@@ -57,7 +57,7 @@ __all__ = ["AstroDrizzle", "run"]
 # Pointer to the included Python class for WCS-based coordinate transformations
 PYTHON_WCSMAP = wcs_functions.WCSMap
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def AstroDrizzle(
@@ -1195,7 +1195,7 @@ def AstroDrizzle(
         util.applyUserPars_steps(configObj, input_dict, step="7a")
 
     except ValueError:
-        print("Problem with input parameters. Quitting...", file=sys.stderr)
+        log.error("Problem with input parameters. Quitting...")
         return
 
     # add flag to configObj to indicate whether or not to use mdriztab
@@ -1243,9 +1243,9 @@ def run(configobj, wcsmap=None, input_dict=None):
     elif len(input_list) > 0:
         def_logname = input_list[0]
     else:
-        print(textutil.textbox(
-            "ERROR:\nNo valid input files found!   Please restart the task "
-            "and check the value for the 'input' parameter."), file=sys.stderr)
+        log.error(textutil.textbox(
+            "No valid input files found!   Please restart the task "
+            "and check the value for the 'input' parameter."))
         def_logname = None
         return
 
@@ -1253,12 +1253,12 @@ def run(configobj, wcsmap=None, input_dict=None):
     logging_handlers = logging.getLogger().handlers
     log_name = [lh.name for lh in logging_handlers if lh.level > 0]
     logfile = log_name[0] if log_name else "{}.tra".format(def_logname)
-    print("AstroDrizzle log file: {}".format(logfile))
+    log.debug("AstroDrizzle log file: {}".format(logfile))
 
     clean = configobj["STATE OF INPUT FILES"]["clean"]
     procSteps = util.ProcSteps()
 
-    print("AstroDrizzle Version {:s} started at: {:s}\n"
+    log.debug("AstroDrizzle Version {:s} started at: {:s}\n"
           .format(__version__, util._ptime()[0]))
     util.print_pkg_versions(log=log)
 
@@ -1281,14 +1281,14 @@ def run(configobj, wcsmap=None, input_dict=None):
             errmsg = "No valid images found for processing!\n"
             errmsg += "Check log file for full details.\n"
             errmsg += "Exiting AstroDrizzle now..."
-            print(textutil.textbox(errmsg, width=65))
-            print(textutil.textbox(
-                'ERROR:\nAstroDrizzle Version {:s} encountered a problem!  '
+            log.error(textutil.textbox(errmsg, width=65))
+            log.error(textutil.textbox(
+                '\nAstroDrizzle Version {:s} encountered a problem!  '
                 'Processing terminated at {:s}.'
-                .format(__version__, util._ptime()[0])), file=sys.stderr)
+                .format(__version__, util._ptime()[0])))
             return
 
-        log.info("USER INPUT PARAMETERS common to all Processing Steps:")
+        log.debug("USER INPUT PARAMETERS common to all Processing Steps:")
         util.printParams(configobj, log=log)
 
         step_name_single = util.getSectionName(configobj, adrizzle.STEP_NUM_SINGLE)
@@ -1385,7 +1385,7 @@ def run(configobj, wcsmap=None, input_dict=None):
         except util.StepAbortedError as e:
             if str(e).startswith("Rejecting all pixels"):
                 log.warning("Create median step was aborted due the following error:")
-                log.warning(f"ERROR: {str(e)}")
+                log.error(f"{str(e)}")
 
                 if do_blot:
                     log.warning("Turning blot step off due to aborted median step.")
@@ -1427,15 +1427,15 @@ def run(configobj, wcsmap=None, input_dict=None):
             procSteps=procSteps,
         )
 
-        print("\nAstroDrizzle Version {:s} is finished processing at {:s}.\n\n"
+        log.debug("AstroDrizzle Version {:s} is finished processing at {:s}.\n"
               .format(__version__, util._ptime()[0]))
 
     except Exception:
         clean = False
-        print(textutil.textbox(
-            "ERROR:\nAstroDrizzle Version {:s} encountered a problem!  "
+        log.error(textutil.textbox(
+            "AstroDrizzle Version {:s} encountered a problem!  "
             "Processing terminated at {:s}."
-            .format(__version__, util._ptime()[0])), file=sys.stderr)
+            .format(__version__, util._ptime()[0])))
         procSteps.endStep(None, reason="aborted")
         raise
 
@@ -1456,39 +1456,39 @@ _fidx = 0
 def _dbg_dump_virtual_outputs(imgObjList):
     """dump some helpful information.  strictly for debugging"""
     global _fidx
-    tag = "virtual"
-    log.info((tag + "  ") * 7)
+    tag = 'virtual'
+    log.debug((tag+'  ')*7)
     for iii in imgObjList:
-        log.info("-" * 80)
-        log.info(tag + "  orig nm: " + iii._original_file_name)
-        log.info(tag + "  names.data: " + str(iii.outputNames["data"]))
-        log.info(tag + "  names.orig: " + str(iii.outputNames["origFilename"]))
-        log.info(tag + "  id: " + str(id(iii)))
-        log.info(tag + "  in.mem: " + str(iii.inmemory))
-        log.info(tag + "  vo items...")
+        log.debug('-'*80)
+        log.debug(tag+'  orig nm: '+iii._original_file_name)
+        log.debug(tag+'  names.data: '+str(iii.outputNames["data"]))
+        log.debug(tag+'  names.orig: '+str(iii.outputNames["origFilename"]))
+        log.debug(tag+'  id: '+str(id(iii)))
+        log.debug(tag+'  in.mem: '+str(iii.inmemory))
+        log.debug(tag+'  vo items...')
         for vok in sorted(iii.virtualOutputs.keys()):
             FITSOBJ = iii.virtualOutputs[vok]
-            log.info(tag + ": " + str(vok) + " = " + str(FITSOBJ))
-            if vok.endswith(".fits"):
-                if not hasattr(FITSOBJ, "data"):
-                    FITSOBJ = FITSOBJ[0]  # list of PrimaryHDU ?
-                if not hasattr(FITSOBJ, "data"):
-                    FITSOBJ = FITSOBJ[0]  # was list of HDUList ?
-                dbgname = "DEBUG_%02d_" % (_fidx,)
-                dbgname += os.path.basename(vok)
-                _fidx += 1
+            log.debug(tag+': '+str(vok)+' = '+str(FITSOBJ))
+            if vok.endswith('.fits'):
+                if not hasattr(FITSOBJ, 'data'):
+                    FITSOBJ = FITSOBJ[0] # list of PrimaryHDU ?
+                if not hasattr(FITSOBJ, 'data'):
+                    FITSOBJ = FITSOBJ[0] # was list of HDUList ?
+                dbgname = 'DEBUG_%02d_'%(_fidx,)
+                dbgname+=os.path.basename(vok)
+                _fidx+=1
                 FITSOBJ.writeto(dbgname)
-                log.info(tag + "  wrote: " + dbgname)
-                log.info("\n" + vok)
-                if hasattr(FITSOBJ, "data"):
-                    log.info(str(FITSOBJ._summary()))
-                    log.info('min and max are: '+str( (FITSOBJ.data.min(),
+                log.debug(tag+'  wrote: '+dbgname)
+                log.debug('\n'+vok)
+                if hasattr(FITSOBJ, 'data'):
+                    log.debug(str(FITSOBJ._summary()))
+                    log.debug('min and max are: '+str( (FITSOBJ.data.min(),
                                                        FITSOBJ.data.max()) ))
-                    log.info('avg and sum are: '+str( (FITSOBJ.data.mean(),
+                    log.debug('avg and sum are: '+str( (FITSOBJ.data.mean(),
                                                        FITSOBJ.data.sum()) ))
-#                    log.info(str(FITSOBJ.data)[:75])
+#                    log.debug(str(FITSOBJ.data)[:75])
                 else:
-                    log.info(vok + " has no .data attr")
-                    log.info(str(type(FITSOBJ)))
-                log.info(vok + "\n")
-    log.info("-" * 80)
+                    log.debug(vok+' has no .data attr')
+                    log.debug(str(type(FITSOBJ)))
+                log.debug(vok+'\n')
+    log.debug('-'*80)

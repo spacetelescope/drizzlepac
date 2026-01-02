@@ -1,5 +1,6 @@
 import os
 import shutil
+import logging
 from itertools import chain, combinations
 
 from matplotlib import path
@@ -39,7 +40,7 @@ SKYCELL_OVERLAP = 256
 
 SUPPORTED_SCALES = {'fine': 0.04, 'coarse': 0.12}  # arcseconds/pixel
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diagnostic_mode=False):
     """Return all sky cells that overlap the exposures in the input.

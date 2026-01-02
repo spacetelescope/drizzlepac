@@ -7,6 +7,7 @@
 import string
 import os
 import sys
+import logging
 
 import numpy as np
 from scipy import signal, ndimage
@@ -35,7 +36,7 @@ __all__ = [
 _ASCII_LETTERS = string.ascii_letters
 _NASCII = len(string.ascii_letters)
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def _is_str_none(s):
