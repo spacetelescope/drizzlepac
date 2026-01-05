@@ -60,7 +60,7 @@ class HapConfig(object):
         """
         log.setLevel(log_level)
         if input_custom_pars_file and input_custom_pars_file == output_custom_pars_file:
-            log.error("ERROR: Input and output parameter files must have unique names!")
+            log.error("Input and output parameter files must have unique names!")
             sys.exit(1)
         self.label = "hap_config"
         self.description = "A set of routines to generate appropriate set of configuration parameters"

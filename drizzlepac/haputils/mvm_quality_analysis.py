@@ -443,7 +443,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
                                                                                overlap_region_mask,
                                                                                log_level=log_level)
             if len(svm_sourcelist_list[setnum]) == 0:
-                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they were outside overlap region bounds.")
+                log.warning("Unable to continue with crossmatch. All sources were eliminated because they were outside overlap region bounds.")
                 error_flag = True
                 break
 
@@ -456,7 +456,7 @@ def overlap_crossmatch_analysis(total_obj_list, sourcelist_type="point", good_fl
             log.info("Removed {} sources from catalog with flag values other than those in user-defined list of good flag values ({})".format(len(rows_to_remove), good_flags_str))
             log.info("{} sources remain".format(len(svm_sourcelist_list[setnum])))
             if len(svm_sourcelist_list[setnum]) == 0:
-                log.warning("Warning: Unable to continue with crossmatch. All sources were eliminated because they had unsuitable flag values")
+                log.warning("Unable to continue with crossmatch. All sources were eliminated because they had unsuitable flag values")
                 error_flag = True
                 break
         if error_flag:
@@ -787,7 +787,7 @@ def crossmatch_sources(overlap_info, svm_sourcelist_list, log_level=logutil.logg
         matches = xyxymatch(comp_xy, ref_xy, tolerance=20.0, separation=1.0)
     except Exception:
         # If xyxymatch crashes, return with values that the calling code can easily use for error handling.
-        log.warning("Warning: Unable to continue with crossmatch. stsci.stimage.xyxymatch encountered a problem attempting to crossmatch the catalogs in this overlap region.")
+        log.warning("Unable to continue with crossmatch. stsci.stimage.xyxymatch encountered a problem attempting to crossmatch the catalogs in this overlap region.")
         return -1, -1, [], [], []
     # Report number and percentage of the total number of detected ref and comp sources that were matched
     log.info("Sourcelist Matching Results")

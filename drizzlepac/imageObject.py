@@ -7,6 +7,7 @@ A class which makes image objects for each input filename.
 
 """
 import copy, os, re, sys
+import logging
 
 import numpy as np
 from stwcs import distortion
@@ -21,7 +22,7 @@ from . import __version__
 __all__ = ['baseImageObject', 'imageObject', 'WCSObject']
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 _NUMPY_TO_IRAF_DTYPES = {'float64': -64, 'float32': -32, 'uint8': 8,
@@ -137,7 +138,7 @@ class baseImageObject:
                         'outMedian','dqmask','tmpmask',
                         'skyMatchMask']
 
-        log.info('Removing intermediate files for %s' % self._filename)
+        log.debug(f'Removing intermediate files for {self._filename}')
         # We need to remove the combined products first; namely, median image
         util.removeFileSafely(self.outputNames['outMedian'])
         # Now remove chip-specific intermediate files, if any were created.
@@ -327,7 +328,7 @@ class baseImageObject:
                     (ext.extname == extname) and (ext.extver == extver)):
                     extnum = ext.extnum
         else:
-            log.info("Image is simple fits")
+            log.debug("Image is simple fits")
 
         return extnum
 
@@ -474,8 +475,7 @@ class baseImageObject:
         """
         self.createContext = contextpar
         if not contextpar:
-            log.info('No context image will be created for %s' %
-                     self._filename)
+            log.debug(f'No context image will be created for {self._filename}')
             self.outputNames['outContext'] = None
 
     def find_DQ_extension(self):
@@ -723,7 +723,7 @@ class baseImageObject:
         if write:
             phdu = fits.PrimaryHDU(data=dqmask,header=self._image[self.maskExt,chip].header)
             dqmask_name = self._image[self.scienceExt,chip].dqrootname+'_dqmask.fits'
-            log.info('Writing out DQ/weight mask: %s' % dqmask_name)
+            log.debug(f'Writing out DQ/weight mask: {dqmask_name}')
             if os.path.exists(dqmask_name): os.remove(dqmask_name)
             phdu.writeto(dqmask_name)
             del phdu
@@ -738,8 +738,7 @@ class baseImageObject:
         """ Builds a weight mask from an input DQ array and the exposure time
         per pixel for this chip.
         """
-        log.info("Applying EXPTIME weighting to DQ mask for chip %s" %
-                 chip)
+        log.debug(f"Applying EXPTIME weighting to DQ mask for chip {chip}")
         #exparr = self.getexptimeimg(chip)
         exparr = self._image[self.scienceExt,chip]._exptime
         expmask = exparr*dqarr
@@ -755,7 +754,7 @@ class baseImageObject:
         ivmname = self.outputNames['ivmFile']
 
         if ivmname is not None:
-            log.info("Applying user supplied IVM files for chip %s" % chip)
+            log.debug(f"Applying user supplied IVM files for chip {chip}")
             #Parse the input file name to get the extension we are working on
             extn = "IVM,{}".format(chip)
 
@@ -769,7 +768,7 @@ class baseImageObject:
             ivm.close()
 
         else:
-            log.info("Automatically creating IVM files for chip %s" % chip)
+            log.debug(f"Automatically creating IVM files for chip {chip}")
             # If no IVM files were provided by the user we will
             # need to automatically generate them based upon
             # instrument specific information.
@@ -808,8 +807,7 @@ class baseImageObject:
                 # Attempt to open the ERR image.
                 err = self.getData(exten=self.errExt+','+str(chip))
 
-                log.info("Applying ERR weighting to DQ mask for chip %s" %
-                         chip)
+                log.debug(f"Applying ERR weighting to DQ mask for chip {chip}")
 
                 # Multiply the scaled ERR file by the input mask in place.
                 #exptime = self.getexptimeimg(chip)
@@ -827,12 +825,11 @@ class baseImageObject:
                 # Print a generic warning message and continue on with the
                 # final drizzle step.
 
-                print(textutil.textbox(
-                    'WARNING: No ERR weighting will be applied to the mask '
-                    'used in the final drizzle step!  Weighting will be only '
-                    'by exposure time.\n\nThe data provided as input does not '
-                    'contain an ERR extension'), file=sys.stderr)
-                print('\n Continue with final drizzle step...', sys.stderr)
+                log.warning("No ERR weighting will be applied to the mask "
+                    "used in the final drizzle step! Weighting will be only "
+                    "by exposure time. The data provided as input does not "
+                    "contain an ERR extension")
+                log.debug('Continue with final drizzle step...')
         else:
             # If we were unable to find an 'ERR' extension to apply, one
             # possible reason was that the input was a 'standard' WFPC2 data
@@ -840,16 +837,14 @@ class baseImageObject:
             # this condition and issue a Warning to the user and continue on to
             # the final drizzle.
 
-            print(textutil.textbox(
-                "WARNING: No ERR weighting will be applied to the mask used "
+            log.warning("No ERR weighting will be applied to the mask used "
                 "in the final drizzle step!  Weighting will be only by "
-                "exposure time.\n\nThe WFPC2 data provided as input does not "
+                "exposure time.The WFPC2 data provided as input does not "
                 "contain ERR arrays.  WFPC2 data is not supported by this "
-                "weighting type.\n\nA workaround would be to create inverse "
+                "weighting type.A workaround would be to create inverse "
                 "variance maps and use 'IVM' as the final_wht_type.  See the "
-                "HELP file for more details on using inverse variance maps."),
-                file=sys.stderr)
-            print("\n Continue with final drizzle step...", file=sys.stderr)
+                "HELP file for more details on using inverse variance maps.")
+            log.debug("Continue with final drizzle step...")
 
         return errmask.astype(np.float32)
 
@@ -929,7 +924,9 @@ class baseImageObject:
             value = None
 
         if value and (keyword is not None and keyword.strip() != ''):
-            exceptionMessage = "ERROR: Your input is ambiguous!  Please specify either a value or a keyword.\n  You specifed both " + str(value) + " and " + str(keyword)
+            exceptionMessage = "ERROR: Your input is ambiguous!  Please specify"
+            f"either a value or a keyword. You specifed both {str(value)}"
+            f"and  {str(keyword)}."
             raise ValueError(exceptionMessage)
 
         elif value is not None and value != '':
@@ -1109,7 +1106,7 @@ class imageObject(baseImageObject):
                 #
                 if "MDRIZSKY" in sci_chip.header:
                     subsky = sci_chip.header['MDRIZSKY']
-                    log.info('Reading in MDRIZSKY of %s' % subsky)
+                    log.debug(f'Reading in MDRIZSKY of {subsky}')
                     sci_chip.subtractedSky = subsky
                     sci_chip.computedSky = subsky
                 else:

@@ -16,6 +16,7 @@ the "aligned" (to the new drizzled WCS) image coordinates.
 """
 import os
 import string
+import logging
 from datetime import date
 
 import numpy as np
@@ -38,7 +39,7 @@ from . import __version__
 __taskname__ = 'tweakback'
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 if hasattr(np, 'float128'):
     ndfloat128 = np.float128
@@ -449,7 +450,7 @@ def apply_tweak(drz_file, orig_wcs_name, output_wcs_name=None, input_files=None,
                         )
                     else:
                         raise ValueError(
-                            "Provided value of 'output_wcs_name' - '{tweaked_wcs_name}' - "
+                            f"Provided value of 'output_wcs_name' - '{tweaked_wcs_name}' - "
                             f"was already used in {fname:s}[{ext2str(ext)}]. "
                             "Please re-run 'apply_tweak' again and explicitly "
                             "provide a unique value for the output WCS name."

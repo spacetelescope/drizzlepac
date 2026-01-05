@@ -9,6 +9,7 @@ import glob
 import math
 import os
 import pickle
+import logging
 from collections import OrderedDict
 import traceback
 
@@ -30,26 +31,7 @@ __taskname__ = "align"
 MSG_DATEFMT = "%Y%j%H%M%S"
 SPLUNK_MSG_FORMAT = "%(asctime)s %(levelname)s src=%(name)s- %(message)s"
 
-
-def _init_logger():
-    log = logutil.create_logger(
-        __name__,
-        level=logutil.logging.NOTSET,
-        stream=sys.stdout,
-        format=SPLUNK_MSG_FORMAT,
-        datefmt=MSG_DATEFMT,
-    )
-    return log
-
-
-log = _init_logger()
-
-# Initial values for the module log filename and the associated file handler used for the log
-module_fh = None
-module_logfile = ""
-
-
-# ------------------------------------------------------------------------------------------------------------
+log = logging.getLogger(__name__)
 
 
 def perform_align(
@@ -149,24 +131,11 @@ def perform_align(
     else:
         loglevel = logutil.logging.INFO
 
-    # Need to ensure the logging works properly for the PyTests where each test starts with a fresh handler
-    global module_fh
-    global module_logfile
-    if module_fh is not None:
-        print("Removing old file handler for logging.")
-        log.removeHandler(module_fh)
-
-    module_logfile = runfile.upper()
-    module_fh = logutil.logging.FileHandler(runfile)
-    module_fh.setLevel(loglevel)
-
-    log.addHandler(module_fh)
-    log.setLevel(loglevel)
-    log.info(f"{__taskname__} Version {__version__}\n")
+    log.debug(f"{__taskname__} Version {__version__}\n")
 
     # 0: print git info
     if print_git_info:
-        log.info("{} STEP 0: Display Git revision info  {}".format("-" * 20, "-" * 49))
+        log.debug("{} STEP 0: Display Git revision info  {}".format("-" * 20, "-" * 49))
         full_path = os.path.dirname(__file__)
         repo_path = None
         if "drizzlepac/drizzlepac" in full_path:
@@ -196,7 +165,7 @@ def perform_align(
     log.info("SUCCESS")
     log.info(f"Processing: {imglist}")
 
-    log.info(make_label("Processing time of [STEP 1]", starting_dt))
+    log.debug(make_label("Processing time of [STEP 1]", starting_dt))
     starting_dt = datetime.datetime.now()
 
     # Get default alignment parameters if not provided by the user...
@@ -235,14 +204,14 @@ def perform_align(
         if len(process_list) == 1:
             fit_algorithm_list.remove("relative")
 
-        log.info(make_label("Processing time of [STEP 2]", starting_dt))
+        log.debug(make_label("Processing time of [STEP 2]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 3: Build WCS for full set of input observations
         log.info("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
         # refwcs = amutils.build_reference_wcs(process_list)
-        log.info("SUCCESS")
+        log.debug("SUCCESS")
 
-        log.info(make_label("Processing time of [STEP 3]", starting_dt))
+        log.debug(make_label("Processing time of [STEP 3]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 4: Extract catalog of observable sources from each input image
         log.info("{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
@@ -251,7 +220,7 @@ def perform_align(
             if os.path.exists(pickle_filename):
                 pickle_in = open(pickle_filename, "rb")
                 alignment_table.extracted_sources = pickle.load(pickle_in)
-                log.info(
+                log.debug(
                     "Using sourcelist extracted from {} generated during the last run to save time.".format(
                         pickle_filename
                     )
@@ -262,7 +231,7 @@ def perform_align(
                 pickle_out = open(pickle_filename, "wb")
                 pickle.dump(alignment_table.extracted_sources, pickle_out)
                 pickle_out.close()
-                log.info("Wrote {}".format(pickle_filename))
+                log.debug("Wrote {}".format(pickle_filename))
         else:
             alignment_table.find_alignment_sources(output=output)
 
@@ -277,7 +246,7 @@ def perform_align(
                 log.warning("No sources found in image {}".format(imgname))
                 alignment_table.filtered_table[:]["status"] = 1
                 alignment_table.filtered_table[:]["processMsg"] = "No sources found"
-                log.info(make_label("Processing time of [STEP 4]", starting_dt))
+                log.debug(make_label("Processing time of [STEP 4]", starting_dt))
                 alignment_table.close()
                 return None
 
@@ -305,12 +274,12 @@ def perform_align(
                 alignment_table.filtered_table[:][
                     "processMsg"
                 ] = "Not enough sources found"
-                log.info(make_label("Processing time of [STEP 4]", starting_dt))
+                log.debug(make_label("Processing time of [STEP 4]", starting_dt))
                 alignment_table.close()
                 return None
 
-        log.info("SUCCESS")
-        log.info(make_label("Processing time of [STEP 4]", starting_dt))
+        log.debug("SUCCESS")
+        log.debug(make_label("Processing time of [STEP 4]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 5: Retrieve list of astrometric sources from database
 
@@ -336,7 +305,7 @@ def perform_align(
         best_fit_label = [None, None]
         fit_info_dict = OrderedDict()
         for algorithm_name in fit_algorithm_list:  # loop over fit algorithm type
-            log.info("Applying {} fit method".format(algorithm_name))
+            log.debug("Applying {} fit method".format(algorithm_name))
             for catalog_index, catalog_name in enumerate(
                 catalog_list
             ):  # loop over astrometric catalog
@@ -345,18 +314,18 @@ def perform_align(
                         "-" * 20, "-" * 48
                     )
                 )
-                log.info("Astrometric Catalog: {}".format(catalog_name))
+                log.debug("Astrometric Catalog: {}".format(catalog_name))
                 # store reference catalogs in a dictionary so that generate_astrometric_catalog() doesn't
                 #  execute unnecessarily after it's been run once for a given astrometric catalog.
                 if catalog_name in alignment_table.reference_catalogs:
-                    log.info(
+                    log.debug(
                         "Using {} reference catalog from earlier this run.".format(
                             catalog_name
                         )
                     )
                     reference_catalog = alignment_table.reference_catalogs[catalog_name]
                 else:
-                    log.info(
+                    log.debug(
                         "Generating new reference catalog for {};"
                         " Storing it for potential re-use later this run.".format(
                             catalog_name
@@ -366,7 +335,7 @@ def perform_align(
                         process_list, catalog=catalog_name, output=output
                     )
                     alignment_table.reference_catalogs[catalog_name] = reference_catalog
-                log.info(make_label("Processing time of [STEP 5]", starting_dt))
+                log.debug(make_label("Processing time of [STEP 5]", starting_dt))
                 starting_dt = datetime.datetime.now()
 
                 if (
@@ -378,7 +347,7 @@ def perform_align(
                     )
                     fit_quality = 5
                     if catalog_index < len(catalog_list) - 1:
-                        log.info("Try again with other catalog")
+                        log.debug("Try again with other catalog")
                     else:
                         # bail out if not enough sources can be found any of the astrometric catalogs
                         log.warning(
@@ -389,14 +358,14 @@ def perform_align(
                         alignment_table.filtered_table["fit_qual"][:] = fit_quality
                         current_dt = datetime.datetime.now()
                         delta_dt = (current_dt - starting_dt).total_seconds()
-                        log.info("Processing time of [STEP 5]: {} sec".format(delta_dt))
+                        log.debug("Processing time of [STEP 5]: {} sec".format(delta_dt))
                         alignment_table.close()
                         return alignment_table
                 else:
-                    log.info(
+                    log.debug(
                         "{} Cross matching and fitting {}".format("-" * 20, "-" * 47)
                     )
-                    log.info(
+                    log.debug(
                         "{} Catalog {} matched using {} {}".format(
                             "-" * 18, catalog_name, algorithm_name, "-" * 18
                         )
@@ -466,7 +435,7 @@ def perform_align(
                                 break  # break out of while loop
                             elif fit_quality < best_fit_qual:
                                 # better solution found. keep looping but with the better solution as "best" for now.
-                                log.info("Better solution found!")
+                                log.debug("Better solution found!")
                                 best_fit_rms = fit_rms
                                 best_num_matches = fit_num
                                 best_fit_label = (catalog_name, algorithm_name)
@@ -513,15 +482,15 @@ def perform_align(
                 best_fit_qual in [2, 3, 4] and "relative" in algorithm_name
             ):
                 break
-        log.info("best_fit found to be: {}".format(best_fit_label))
-        log.info("FIT_DICT: {}".format(alignment_table.fit_dict.keys()))
+        log.debug("best_fit found to be: {}".format(best_fit_label))
+        log.debug("FIT_DICT: {}".format(alignment_table.fit_dict.keys()))
         # Reset imglist to point to best solution...
         alignment_table.select_fit(best_fit_label[0], best_fit_label[1])
         imglist = alignment_table.selected_fit
         filtered_table = alignment_table.filtered_table
 
         # Report processing time for this step
-        log.info(make_label("Processing time of [STEP 5b]", starting_dt))
+        log.debug(make_label("Processing time of [STEP 5b]", starting_dt))
         starting_dt = datetime.datetime.now()
 
         # 6: Populate the filtered_table
@@ -530,12 +499,12 @@ def perform_align(
             "{}".format("-" * 20, "-" * 20)
         )
         if 0 < best_fit_rms < apars["determine_fit_quality"]["MAX_FIT_RMS"]:
-            log.info(
+            log.debug(
                 "The fitting process was successful with a best fit total "
                 "rms of {} mas".format(best_fit_rms)
             )
         else:
-            log.info(
+            log.debug(
                 "The fitting process was unsuccessful with a best fit total rms "
                 "of {} mas".format(best_fit_rms)
             )
@@ -567,7 +536,7 @@ def perform_align(
                 ]["reason"]
                 filtered_table["fit_qual"][index] = item.meta["fit quality"]
 
-        log.info(make_label("Processing time of [STEP 6]", starting_dt))
+        log.debug(make_label("Processing time of [STEP 6]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 7: Write new fit solution to input image headers
         log.info(
@@ -577,24 +546,24 @@ def perform_align(
         if (0 < best_fit_rms < 9999.0) and update_hdr_wcs:
             # determine the quality of the fit
             alignment_table.apply_fit(headerlet_filenames, fit_label=fit_label)
-            log.info("SUCCESS")
+            log.debug("SUCCESS")
         else:
-            log.info(" STEP SKIPPED")
+            log.debug(" STEP SKIPPED")
 
-        log.info(make_label("Processing time of [STEP 7]", starting_dt))
+        log.debug(make_label("Processing time of [STEP 7]", starting_dt))
         log.info(
             "TOTAL Processing time of {} sec".format(
                 (datetime.datetime.now() - zero_dt).total_seconds()
             )
         )
-        log.info(best_fit_status_dict)
-        log.info("-" * 104)
+        log.debug(best_fit_status_dict)
+        log.debug("-" * 104)
 
-        log.info("-" * 104)
-        log.info("                             SUMMARY OF ALL FIT ATTEMPTS")
+        log.debug("-" * 104)
+        log.debug("                             SUMMARY OF ALL FIT ATTEMPTS")
         for item in fit_info_dict.keys():
-            log.info("{} {}".format(item, fit_info_dict[item]))
-        log.info("-" * 104)
+            log.debug("{} {}".format(item, fit_info_dict[item]))
+        log.debug("-" * 104)
 
     except Exception:
         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -700,24 +669,6 @@ def determine_fit_quality(
             * fit compromised status (Boolean)
             * reason fit is considered 'compromised' (only populated if "compromised" field is "True")
     """
-
-    # Set up the log file handler and name of the log file
-    # If the log file handler were never set, the module_fh will be None.
-    # Only want to remove a file handler if there were one set in the first place.
-    global module_fh
-    global module_logfile
-    # if module_fh is not None and module_logfile != runfile.upper():
-    if module_fh is not None:
-        print("Removing old file handler for logging.")
-        log.removeHandler(module_fh)
-
-    module_logfile = runfile.upper()
-    module_fh = logutil.logging.FileHandler(runfile)
-    module_fh.setLevel(loglevel)
-
-    log.addHandler(module_fh)
-    log.setLevel(loglevel)
-    log.info("Log file: {}".format(module_logfile))
 
     max_rms_val = 1e9
     fit_status_dict = {}
@@ -1162,7 +1113,7 @@ def generate_astrometric_catalog(imglist, **pars):
         out_catalog.write(
             catalog_filename, format="ascii.fast_commented_header", overwrite=overwrite
         )
-        log.info("Wrote reference catalog {}.".format(catalog_filename))
+        log.debug("Wrote reference catalog {}.".format(catalog_filename))
 
     return out_catalog
 

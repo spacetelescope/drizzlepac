@@ -10,6 +10,7 @@ Create a median image from the singly drizzled images.
 import os
 import sys
 import math
+import logging
 import numpy as np
 from astropy.io import fits
 
@@ -33,7 +34,7 @@ PROCSTEPS_NAME = "Create Median"
 
 BUFSIZE = 1024 * 1024  # 1MB cache size
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 # this is the user access function

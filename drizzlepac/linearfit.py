@@ -12,11 +12,12 @@
 :License: :doc:`/LICENSE`
 
 """
+import logging
 import numpy as np
 from stsci.tools import logutil
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 if hasattr(np, 'float128'):
     ndfloat128 = np.float128
