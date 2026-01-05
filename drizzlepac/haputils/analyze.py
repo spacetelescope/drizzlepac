@@ -14,7 +14,6 @@ analyze_data, but it returns a list instead of an astropy table.
 import math
 import sys
 
-from copy import deepcopy
 from enum import Enum
 from astropy.io import fits
 from astropy.io.fits import getheader, getdata
@@ -87,7 +86,7 @@ BAD_DQ_FLAGS = [256,  # full-well saturated pixel
 ]
 
 MIN_LINES = 4  # Minimum number of detected lines for consideration of bad guiding
-
+MIN_LENGTH = 33  # Minimum length of detected lines for bad guiding
 
 # Return codes
 class Ret_code(Enum):
@@ -601,7 +600,7 @@ def generate_msg(filename, msg, key, value):
 #  Line detection functions
 # -----------------------------------------------------------------------------
 
-def verify_guiding(filename, min_length=33):
+def verify_guiding(filename, min_length=MIN_LENGTH, min_lines=MIN_LINES):
     """ Verify whether or not the input image was affected by guiding problems.
 
     This algorithm evaluates the data from (SCI,1) to try to determine whether
@@ -614,8 +613,13 @@ def verify_guiding(filename, min_length=33):
         Name of image to be evaluated
 
     min_length : int, optional
-        Minimum length of trails (in pixels) to be detected in image.
+        Minimum length of trails (in pixels) to be detected in image. Uses 
+        variable MIN_LENGTH (specified above) as default value.
 
+    min_lines : int, optional
+        Minimum number of trails (lines) to be detected in image. Uses variable
+        MIN_LINES (specified above) as default value.
+        
     Returns
     ========
     bad_guiding : bool
@@ -627,6 +631,10 @@ def verify_guiding(filename, min_length=33):
           type is "MVM".  It is deliberately False for other processing (e.g., SVM and
           pipeline).  However, this routine can be invoked directly for pipeline
           processing from runastrodriz.py with the appropriate parameter setting.
+          
+          Also, sources are required to have 17 or more pixels to be considered
+          as valid sources for this analysis.  This is to try to avoid counting
+          small sources which are either noise peaks or head-on cosmic rays.
     """
     log.info(f"Verifying that {filename} was not affected by guiding problems.")
 
@@ -641,7 +649,7 @@ def verify_guiding(filename, min_length=33):
         return True  # Yes, there was bad guiding...
 
     # No guide star problems indicated in header, so let's check the
-    # data.  There are many instances where the data is compromised
+    # data. There are many instances where the data is compromised
     # despite what values are found in the header.
     data = hdu[("SCI", 1)].data.copy()
     scale_data = hdu[("SCI",1)].header["bunit"].endswith('/S')
@@ -673,7 +681,7 @@ def verify_guiding(filename, min_length=33):
     hdu.close()
     del hdu
 
-    # apply mask now...
+    # apply mask
     imgarr *= dqmask
     del dqmask  # just to clean up a little
 
@@ -704,8 +712,8 @@ def verify_guiding(filename, min_length=33):
     trim_slice=(slice(2, -2), slice(2, -2))
 
     # Now determine whether this image was affected by guiding problems
-    bad_guiding = bad_lines_in_image(imgarr[trim_slice], num_sources,
-                                 min_length=min_length, min_lines=MIN_LINES)
+    bad_guiding = _bad_lines_in_image(imgarr[trim_slice], num_sources,
+                                 min_length=min_length, min_lines=min_lines)
     if bad_guiding:
         log.warning(f"Image {filename}'s GUIDING detected as: BAD.")
     else:
@@ -714,40 +722,7 @@ def verify_guiding(filename, min_length=33):
     return bad_guiding
 
 
-def detect_lines(image, mask=None, min_length=17):
-    """Detect lines in the input image and return list of line parameters """
-    lines = {'num': None,
-             'startarr': None,
-             'endarr': None,
-             'angles': None,
-             'lengths': None,
-             'slopes': None}
-
-    # extract edges from image for faster line detection
-    edges = canny(image, sigma=2.5, low_threshold=0, high_threshold=25, mask=mask)
-
-    # Classic straight-line Hough transform
-    plines = probabilistic_hough_line(edges, threshold=0,
-                                     line_gap=0,
-                                     line_length=min_length)
-    if len(plines) > 0:
-        plines = np.array(plines)
-        startarr = plines[:, 0]
-        endarr = plines[:, 1]
-        rise = endarr[:, 1] - startarr[:, 1]
-        run = endarr[:, 0]-startarr[:, 0]
-        angles = np.arctan2(rise, run)
-        lines['startarr'] = startarr
-        lines['endarr'] = endarr
-        lines['angles'] = np.rad2deg(angles)
-        lines['lengths'] = np.sqrt(rise**2 + run**2)
-        lines['slopes'] = np.tan(angles + np.pi/2)
-        lines['num'] = len(plines)
-
-    return lines
-
-
-def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4):
+def _bad_lines_in_image(image, num_sources, min_length, min_lines, mask=None):
     """Determine if image is dominated by linear features associated with bad 
     guiding using four different checks. 
 
@@ -759,14 +734,15 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     num_sources : int
         Number of plausible astronomical sources detected in the image.
 
+    min_length : int
+        Minimum length (in pixels) for a detected feature to be considered a line.
+        **Used by _detect_lines function called by this function.**
+
+    min_lines : int
+        Minimum number of detected lines required before flagging the exposure.
+        
     mask : ndarray, optional
         Boolean mask identifying pixels to ignore when detecting lines.
-
-    min_length : int, optional
-        Minimum length (in pixels) for a detected feature to be considered a line.
-
-    min_lines : int, optional
-        Minimum number of detected lines required before flagging the exposure.
 
     Returns
     -------
@@ -775,7 +751,7 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     """
     
     # Check 1: detect any lines in image, if none, good guiding
-    lines = detect_lines(image, mask=mask, min_length=min_length)
+    lines = _detect_lines(image, min_length=min_length, mask=mask)
     if lines['num'] is None:
         log.debug(f"No linear features detected.")
         return False
@@ -819,9 +795,6 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
         log.debug(f"Detected high fraction of linear features at a secondary "
                   f"angle ({sorted_angle_bins[1]} deg), Good guiding.")
         return False
-        
-        # TODO:  add check against length of lines detected as well
-        #        -- Not sure what stats to use for this check...
 
     # Check 4: Ensure that there isn't a dominant angle in detected lines. 
     # if >10% of the linear features (excluding linear features associated with
@@ -834,3 +807,36 @@ def bad_lines_in_image(image, num_sources, mask=None, min_length=17, min_lines=4
     else:
         log.debug("No dominant angle in detected linear features.")
         return False
+    
+
+def _detect_lines(image, min_length, mask=None):
+    """Detect lines in the input image and return list of line parameters """
+    lines = {'num': None,
+             'startarr': None,
+             'endarr': None,
+             'angles': None,
+             'lengths': None,
+             'slopes': None}
+
+    # extract edges from image for faster line detection
+    edges = canny(image, sigma=2.5, low_threshold=0, high_threshold=25, mask=mask)
+
+    # Classic straight-line Hough transform
+    plines = probabilistic_hough_line(edges, threshold=0,
+                                     line_gap=0,
+                                     line_length=min_length)
+    if len(plines) > 0:
+        plines = np.array(plines)
+        startarr = plines[:, 0]
+        endarr = plines[:, 1]
+        rise = endarr[:, 1] - startarr[:, 1]
+        run = endarr[:, 0]-startarr[:, 0]
+        angles = np.arctan2(rise, run)
+        lines['startarr'] = startarr
+        lines['endarr'] = endarr
+        lines['angles'] = np.rad2deg(angles)
+        lines['lengths'] = np.sqrt(rise**2 + run**2)
+        lines['slopes'] = np.tan(angles + np.pi/2)
+        lines['num'] = len(plines)
+
+    return lines
