@@ -5,6 +5,7 @@
 """
 import os, sys
 import copy
+import logging
 
 import numpy as np
 from astropy import wcs as pywcs
@@ -30,7 +31,7 @@ REFCAT_ARGS = ['rmaxflux','rminflux','rfluxunits','refnbright']+REFCOL_PARS
 sortKeys = ['minflux','maxflux','nbright','fluxunits']
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def generateCatalog(wcs, mode='automatic', catalog=None,
@@ -231,7 +232,7 @@ class Catalog:
             xypos_trimmed[-1] = np.arange(len(xypos_trimmed[0]))
             self.radec = radec_trimmed
             self.xypos = xypos_trimmed
-            log.info('Excluded %d sources from catalog.'%num_excluded)
+            log.info(f'Excluded {num_excluded} sources from catalog.')
 
     def apply_flux_limits(self):
         """ Apply any user-specified limits on source selection
@@ -689,7 +690,7 @@ class ImageCatalog(Catalog):
         else:
             sigma = self.pars['skysigma']
         skymode = sigma**2
-        log.info('   Finding sources using sky sigma = %f'%sigma)
+        log.info(f'Finding sources using sky sigma = {sigma}')
         if self.pars['threshold'] in [None,"INDEF",""," "]:
             hmin = skymode
         else:
@@ -760,7 +761,7 @@ class ImageCatalog(Catalog):
             else:
                 self.xypos = [x+1, y+1, flux, src_id+self.start_id]
 
-        log.info('###Source finding finished at: %s'%(util._ptime()[0]))
+        log.info(f'###Source finding finished at: {util._ptime()[0]}')
 
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
         self.sharp = sharp

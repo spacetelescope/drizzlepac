@@ -11,6 +11,7 @@ For ``staticMask``, the user interface function is :py:func:`createMask`.
 """
 import os
 import sys
+import logging
 
 import numpy as np
 from stsci.tools import fileutil, logutil
@@ -24,7 +25,7 @@ __all__ = ["createMask"]
 STEP_NUM = 1
 PROCSTEPS_NAME = "Static Mask"
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 # this is called by the user

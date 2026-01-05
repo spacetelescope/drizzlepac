@@ -7,6 +7,7 @@ This module manages the creation of the output image FITS file.
 
 """
 import time
+import logging
 from astropy.io import fits
 from stsci.tools import fileutil, logutil
 
@@ -56,7 +57,7 @@ DRIZ_KEYWORDS = {
                 'WKEY': {'value': "", 'comment': 'Input image WCS Version used'}
                 }
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 class OutputImage:
@@ -193,12 +194,12 @@ class OutputImage:
 
         if fileutil.findFile(self.output):
             if overwrite:
-                log.info('Deleting previous output product: %s' % self.output)
+                log.info(f'Deleting previous output product: {self.output}')
                 fileutil.removeFile(self.output)
 
             else:
-                log.warning('Output file %s already exists and overwrite not '
-                            'specified!' % self.output)
+                log.warning(f'Output file {self.output} already exists and '
+                            'overwrite not specified!')
                 log.error('Quitting... Please remove before resuming '
                           'operations.')
                 raise IOError
@@ -212,12 +213,12 @@ class OutputImage:
             if self.outweight:
                 if overwrite:
                     if fileutil.findFile(self.outweight):
-                        log.info('Deleting previous output WHT product: %s' %
-                                 self.outweight)
+                        log.info('Deleting previous output WHT product: '
+                                 f'{self.outweight}')
                     fileutil.removeFile(self.outweight)
                 else:
-                    log.warning('Output file %s already exists and overwrite '
-                                'not specified!' % self.outweight)
+                    log.warning(f'Output file {self.outweight} already exists '
+                                'and overwrite not specified!')
                     log.error('Quitting... Please remove before resuming '
                               'operations.')
                     raise IOError
@@ -226,12 +227,12 @@ class OutputImage:
             if self.outcontext:
                 if overwrite:
                     if fileutil.findFile(self.outcontext):
-                        log.info('Deleting previous output CTX product: %s' %
-                                 self.outcontext)
+                        log.info('Deleting previous output CTX product: '
+                                 f'{self.outcontext}')
                     fileutil.removeFile(self.outcontext)
                 else:
-                    log.warning('Output file %s already exists and overwrite '
-                                'not specified!' % self.outcontext)
+                    log.warning(f'Output file {self.outcontext} already exists '
+                                'and overwrite not specified!')
                     log.error('Quitting... Please remove before resuming '
                               'operations.')
                     raise IOError
@@ -345,7 +346,7 @@ class OutputImage:
         # Now, build the output file
         ##########
         if self.build:
-            print('-Generating multi-extension output file: ', self.output)
+            log.info(f'-Generating multi-extension output file: {self.output}')
             fo = fits.HDUList()
 
             # Add primary header to output file...
@@ -413,7 +414,7 @@ class OutputImage:
                 fo.append(newtab)
 
             if not virtual:
-                print('Writing out to disk:', self.output)
+                log.info(f'Writing out to disk: {self.output}')
                 # write out file to disk
                 fo.writeto(self.output)
                 fo.close()
@@ -423,7 +424,7 @@ class OutputImage:
             outputFITS[self.output] = fo
 
         else:
-            print('-Generating simple FITS output: %s' % self.outdata)
+            log.info(f'-Generating simple FITS output: {self.outdata}')
 
             fo = fits.HDUList()
             hdu_header = prihdu.header.copy()
@@ -790,12 +791,12 @@ def writeSingleFITS(data, wcs, output, template, clobber=True, verbose=True,
 
     if fileutil.findFile(outname):
         if clobber:
-            log.info('Deleting previous output product: %s' % outname)
+            log.info(f'Deleting previous output product: {outname}')
             fileutil.removeFile(outname)
 
         else:
-            log.warning('Output file %s already exists and overwrite not '
-                        'specified!' % outname)
+            log.warning(f'Output file {outname} already exists and overwrite '
+                        'not specified!')
             log.error('Quitting... Please remove before resuming operations.')
             raise IOError
 
