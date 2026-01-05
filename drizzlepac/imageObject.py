@@ -6,13 +6,13 @@ A class which makes image objects for each input filename.
 :License: :doc:`/LICENSE`
 
 """
-import copy, os, re, sys
+import copy, os, re
 import logging
 
 import numpy as np
 from stwcs import distortion
 
-from stsci.tools import fileutil, logutil, textutil
+from stsci.tools import fileutil
 from astropy.io import fits
 from . import util
 from . import wcs_functions

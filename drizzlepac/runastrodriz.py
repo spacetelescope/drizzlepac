@@ -99,16 +99,13 @@ import numpy as np
 import astropy.units as u
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
-import photutils
 
-import stwcs
 from stwcs import wcsutil
 from stwcs.wcsutil import HSTWCS
 from stwcs import updatewcs
 from stwcs.wcsutil import headerlet, altwcs
 
 from stsci.tools import fileutil, asnutil
-import tweakwcs
 
 import drizzlepac
 from drizzlepac import processInput  # used for creating new ASNs for _flc inputs
@@ -124,6 +121,7 @@ from drizzlepac import mdzhandler
 from drizzlepac import updatehdr
 from drizzlepac.haputils import quality_analysis as qa
 from drizzlepac import wcs_functions
+
 # for WFPC2 support
 from drizzlepac.haputils import config_utils
 from drizzlepac import wfpc2Data
