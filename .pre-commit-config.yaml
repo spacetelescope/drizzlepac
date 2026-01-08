@@ -1,0 +1,71 @@
+ci:
+  autofix_prs: false
+  autoupdate_schedule: monthly
+
+exclude: ".*\\.fits"
+
+repos:
+  # basic checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-yaml
+        args:
+          - --unsafe
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: debug-statements
+      - id: detect-private-key
+      # - id: end-of-file-fixer
+      # - id: trailing-whitespace
+  # simple text searches for common issues
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+      - id: text-unicode-replacement-char
+  # lint and format
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.10
+    hooks:
+      - id: ruff-check
+        args:
+          - --fix
+          - --show-fixes
+      - id: ruff-format
+  # C style
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v21.1.8
+    hooks:
+      - id: clang-format
+        types_or: [c]
+  # type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.1
+    hooks:
+      - id: mypy
+  # spell-checking
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        args:
+          - --write-changes
+          - --summary
+        additional_dependencies:
+          - tomli
+  # validate change log and fragments in `changes/`
+  - repo: https://github.com/twisted/towncrier
+    rev: 25.8.0
+    hooks:
+      - id: towncrier-check
+  # validate numpy-style docstrings
+  - repo: https://github.com/numpy/numpydoc
+    rev: v1.10.0
+    hooks:
+      - id: numpydoc-validation
