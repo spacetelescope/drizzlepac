@@ -191,11 +191,15 @@ Step 4: Making code changes
 
 Now that you've forked, cloned, made a new branch for your feature, and
 installed it in a new environment for development of ``drizzlepac``, you
-are ready to make changes to the code. As you make changes, make sure to
-``git commit -m <"some message">`` frequently (in case you need to undo
-something by reverting back to a previous commit - you cant do this if
-you commit everything at once!). After you've made your desired changes,
-and committed these changes, you will need to push them online to your
+are ready to make changes to the code. In order to commit changes, you must
+have `pre-commit <https://github.com/pre-commit/pre-commit>`__ installed in
+your development environment. This will lint and format any changed files and
+add warnings about any issues in your code. To ignore pre-commit suggestions,
+you can run ``git commit --no-verify -m "commit message"``. As you make
+changes, make sure to ``git commit -m <"some message">`` frequently (in case
+you need to undo something by reverting back to a previous commit - you cant do
+this if you commit everything at once!). After you've made your desired
+changes, and committed these changes, you will need to push them online to your
 'remote' fork of ``drizzlepac``:
 
 ::
