@@ -12,7 +12,7 @@
 
 ![STScI Logo](doc/source/_static/stsci_logo.png)
 
-DrizzlePac is a set of software tools maintained by the Space Telescope Science Institute (STScI) that is designed to align and combine astronomical images obtained with the Hubble Space Telescope. DrizzlePac includes core features such as AstroDrizzle, Tweakreg, and the Hubble Archival Program (HAP) data processing pipeline that creates Single-Visit and Multi-Visit Mosaics (SVMs and MVMs).
+Drizzlepac is a set of software tools maintained by the Space Telescope Science Institute (STScI) that is designed to align and combine astronomical images obtained with the Hubble Space Telescope. Drizzlepac includes core features such as AstroDrizzle, Tweakreg, and the Hubble Archival Program (HAP) data processing pipeline that creates Single-Visit and Multi-Visit Mosaics (SVMs and MVMs).
 
 Nightly regression test results are run using [github actions](https://github.com/spacetelescope/RegressionTests/actions/workflows/drizzlepac.yml).
 
@@ -63,7 +63,7 @@ $ cd doc/
 $ make html
 ```
 
-### Install DrizzlePac
+### Install Drizzlepac
 
 ```bash
 $ python setup.py install
