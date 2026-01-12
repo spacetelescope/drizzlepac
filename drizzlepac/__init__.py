@@ -14,6 +14,7 @@ supported by this package include:
 cosmic-ray cleaned, and combined image as a FITS file.
 
 """
+import logging
 import os
 import re
 import sys

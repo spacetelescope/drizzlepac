@@ -9,6 +9,7 @@ image and the derivative of the model image.
 """
 import os
 import re
+import logging
 
 import numpy as np
 from scipy import signal
@@ -32,7 +33,7 @@ STEP_NUM = 6  # this relates directly to the syntax in the cfg file
 PROCSTEPS_NAME = "Driz_CR"
 
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 def drizCR(input=None, configObj=None, editpars=False, **inputDict):
@@ -170,7 +171,7 @@ def rundrizCR(imgObjList, configObj, procSteps=None):
 
     step_name = util.getSectionName(configObj, STEP_NUM)
     if not configObj[step_name]['driz_cr']:
-        log.info('Cosmic-ray identification (driz_cr) step not performed.')
+        log.debug('Cosmic-ray identification (driz_cr) step not performed.')
         if procSteps is not None:
             procSteps.endStep(PROCSTEPS_NAME, reason="off", delay_msg=True)
         return
@@ -179,7 +180,7 @@ def rundrizCR(imgObjList, configObj, procSteps=None):
     paramDict['crbit'] = configObj['crbit']
     paramDict['inmemory'] = imgObjList[0].inmemory
 
-    log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
+    log.debug(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
     util.printParams(paramDict, log=log)
 
     # if we have the cpus and s/w, ok, but still allow user to set pool size
@@ -189,7 +190,7 @@ def rundrizCR(imgObjList, configObj, procSteps=None):
 
     subprocs = []
     if pool_size > 1:
-        log.info('Executing {:d} parallel workers'.format(pool_size))
+        log.debug('Executing {:d} parallel workers'.format(pool_size))
         mp_ctx = multiprocessing.get_context('fork')
         for image in imgObjList:
             manager = mp_ctx.Manager()
@@ -205,7 +206,7 @@ def rundrizCR(imgObjList, configObj, procSteps=None):
         mputil.launch_and_wait(subprocs, pool_size)  # blocks till all done
 
     else:
-        log.info('Executing serially')
+        log.debug('Executing serially')
         for image in imgObjList:
             _driz_cr(image, image.virtualOutputs, paramDict)
 
@@ -273,7 +274,7 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
             try:
                 blot_data = fits.getdata(blot_image_name, ext=0)
             except IOError:
-                print("Problem opening blot images")
+                log.warning("Problem opening blot images")
                 raise
         # Scale blot image, as needed, to match original input data units.
         blot_data *= sci_chip._conversionFactor
@@ -387,7 +388,7 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
         # Save the cosmic ray mask file to disk
         cr_mask_image = sci_chip.outputNames["crmaskImage"]
         if paramDict['inmemory']:
-            print('Creating in-memory(virtual) FITS file...')
+            log.debug('Creating in-memory(virtual) FITS file...')
             _pf = util.createFile(cr_mask.astype(np.uint8),
                                   outfile=None, header=None)
             cr_mask_dict[cr_mask_image] = _pf
@@ -401,9 +402,9 @@ def _driz_cr(sciImage, virtual_outputs, paramDict):
             # Remove the existing mask file if it exists
             if os.path.isfile(cr_mask_image):
                 os.remove(cr_mask_image)
-                print("Removed old cosmic ray mask file: '{:s}'"
+                log.debug("Removed old cosmic ray mask file: '{:s}'"
                       .format(cr_mask_image))
-            print("Creating output: {:s}".format(cr_mask_image))
+            log.debug("Creating output: {:s}".format(cr_mask_image))
             util.createFile(cr_mask.astype(np.uint8),
                             outfile=cr_mask_image, header=None)
 
@@ -422,7 +423,7 @@ def createCorrFile(outfile, arrlist, template):
     # Remove the existing cor file if it exists
     if os.path.isfile(outfile):
         os.remove(outfile)
-        print("Removing old corr file: '{:s}'".format(outfile))
+        log.debug("Removing old corr file: '{:s}'".format(outfile))
 
     with fits.open(template, memmap=False) as ftemplate:
         for arr in arrlist:
@@ -430,7 +431,7 @@ def createCorrFile(outfile, arrlist, template):
             if arr['dqext'][0] != arr['sciext'][0]:
                 ftemplate[arr['dqext']].data = arr['dqMask']
         ftemplate.writeto(outfile)
-        print("Created CR corrected file: '{:s}'".format(outfile))
+        log.debug("Created CR corrected file: '{:s}'".format(outfile))
 
 
 def setDefaults(configObj={}):

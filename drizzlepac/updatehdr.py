@@ -7,6 +7,7 @@
 """
 import re
 import sys
+import logging
 
 from astropy.io import fits
 import numpy as np
@@ -21,7 +22,7 @@ from stsci.skypac.utils import get_ext_list, ext2str
 from . import util
 from . import linearfit
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 wcs_keys = ['CRVAL1', 'CRVAL2', 'CD1_1', 'CD1_2', 'CD2_1', 'CD2_2',
             'CRPIX1', 'CRPIX2', 'ORIENTAT']

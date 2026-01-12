@@ -32,6 +32,7 @@ from . import __version__
 __fits_version__ = astropy.__version__
 __numpy_version__ = np.__version__
 
+log = logging.getLogger(__name__)
 
 _cpu_count = 1
 can_parallel = False
@@ -174,11 +175,11 @@ def end_logging(filename=None):
 
     if logutil.global_logging_started:
         if filename:
-            print('Trailer file written to: ', filename)
+            log.info(f'Trailer file written to: {filename}')
         else:
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...
-            print('No trailer file saved...')
+            log.info('No trailer file saved...')
 
         logutil.teardown_global_logging()
     else:
@@ -280,7 +281,7 @@ def print_pkg_versions(packages=None, git=False, svn=False, log=None):
         def output(msg):
             print(msg)
 
-    pkgs = ['numpy', 'astropy', 'stwcs', 'photutils']
+    pkgs = ['drizzlepac', 'tweakwcs', 'numpy', 'astropy', 'stwcs', 'photutils']
     if packages is not None:
         if not isinstance(packages, list):
             packages = [packages]
@@ -349,7 +350,7 @@ class ProcSteps:
         step.
         """
         ptime = _ptime()
-        print(f"\n==== Processing Step '{key}' started at {ptime[0]}", flush=True)
+        log.info(f"\n==== Processing Step '{key}' started at {ptime[0]}")
         self.steps[key] = {
             'start': ptime,
             'end': ptime,
@@ -377,18 +378,18 @@ class ProcSteps:
         self.end = ptime
 
         if reason == "ended":
-            msg = f"==== Processing Step '{key}'' finished at {ptime[0]}"
+            msg = f"==== Processing Step '{key}' finished at {ptime[0]}"
         else:
             msg = f"==== Step '{key}' was {msg} at {ptime[0]}"
         if delay_msg:
             self.delayed_msg = msg
         else:
             self.delayed_msg = None
-            print(msg, flush=True)
+            log.info(msg)
 
     def flush(self):
         if self.delayed_msg is not None:
-            print(self.delayed_msg, flush=True)
+            log.info(self.delayed_msg)
             self.delayed_msg = None
 
 
@@ -398,10 +399,10 @@ class ProcSteps:
         performed steps.
         """
         self.flush()  # print any delayed messages
+        log.info(ProcSteps.__report_header)
 
         self.end = _ptime()
         total_time = 0
-        print(ProcSteps.__report_header)
 
         for step in self.order:
             _time = self.steps[step]['elapsed']
@@ -415,11 +416,10 @@ class ProcSteps:
                 note = "(off)"
             else:
                 note = ''
-            print(f"   {step:20s}          {_time:0.4f} sec {note}")
-
-        print(f"   {'=' * 20:20s}          {'=' * 20:s}")
-        print(f"   {'Total':20s}          {total_time:0.4f} sec")
-        print("", flush=True)
+            log.info(f"   {step:20s}          {_time:0.4f} sec {note}")
+        log.info(f"   {'=' * 20:20s}          {'=' * 20:s}")
+        log.info(f"   {'Total':20s}          {total_time:0.4f} sec")
+        log.info("")
 
 
 def _ptime():
@@ -884,11 +884,10 @@ def printParams(paramDictionary, all=False, log=None):
             and key[0] != '_':
                 output('\t' + '\t'.join([str(key) + ' :',
                                          str(paramDictionary[key])]))
-        if log is None:
-            output('\n')
 
 
-def print_key(key, val, lev=0, logfn=print):
+
+def print_key(key, val, lev=0, logfn=log.info):
     if isinstance(val, dict):
         logfn('')
         logfn('{}{}:'.format(2 * lev * ' ', key))
@@ -901,7 +900,7 @@ def print_key(key, val, lev=0, logfn=print):
         logfn("{}{}: {}".format(2 * lev * ' ', key, val))
 
 
-def print_cfg(cfg, logfn=None):
+def print_cfg(cfg, logfn=log.info):
     if logfn is None:
         logfn = print
 
@@ -1472,9 +1471,9 @@ def get_envvar_switch(envvar_name, default, description=''):
             msg += f"Valid values: {', '.join(sorted(valid_values))}"
             raise ValueError(msg)
         result = envvar_bool_dict[val]
-        print(f"ENVVAR {envvar_name} found, setting {description_text}to {result}.")
+        log.info(f"ENVVAR {envvar_name} found, setting {description_text}to {result}.")
     else:
         result = envvar_bool_dict[default]
-        print(f"ENVVAR {envvar_name} not found, setting {description_text}to default of {result}.")
+        log.info(f"ENVVAR {envvar_name} not found, setting {description_text}to default of {result}.")
     
     return result

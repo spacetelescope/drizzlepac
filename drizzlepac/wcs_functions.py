@@ -7,6 +7,7 @@
 """
 from astropy.io import fits as pyfits
 import copy
+import logging
 import numpy as np
 from numpy import linalg
 
@@ -26,7 +27,7 @@ DEFAULT_WCS_PARS = {'ra': None, 'dec': None, 'scale': None, 'rot': None,
                     'outnx': None, 'outny': None,
                     'crpix1': None, 'crpix2': None}
 
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET)
+log = logging.getLogger(__name__)
 
 
 # Default mapping function based on astropy.wcs
