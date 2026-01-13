@@ -43,7 +43,7 @@ from stsci.tools.bitmask import interpret_bit_flags
 from stwcs import updatewcs as uw
 from stwcs.wcsutil import altwcs, wcscorr
 from stsci.tools import (cfgpars, parseinput, fileutil, asnutil, irafglob,
-                         check_files, logutil, mputil, textutil)
+                         check_files, mputil, textutil)
 
 from . import wcs_functions
 from . import util

@@ -63,7 +63,7 @@ EXAMPLES
 
 """
 from stsci.tools import stpyfits as fits
-from stsci.tools import parseinput, logutil
+from stsci.tools import parseinput
 from stsci.tools.bitmask import interpret_bit_flags
 
 from . import util

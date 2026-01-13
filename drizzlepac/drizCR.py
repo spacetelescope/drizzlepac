@@ -14,7 +14,7 @@ import logging
 import numpy as np
 from scipy import signal
 from astropy.io import fits
-from stsci.tools import fileutil, logutil, mputil
+from stsci.tools import fileutil, mputil
 
 
 from . import quickDeriv

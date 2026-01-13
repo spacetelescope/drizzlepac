@@ -5,22 +5,21 @@
 :License: :doc:`/LICENSE`
 
 """
-from astropy.io import fits as pyfits
 import copy
 import logging
 import numpy as np
 from numpy import linalg
 
-from stsci.tools import fileutil, logutil
-from . import util
-
 from astropy import wcs
+from astropy.io import fits as pyfits
 from stwcs import wcsutil
 from stwcs.distortion import coeff_converter, utils
 from stwcs.wcsutil import altwcs
 
+from stsci.tools import fileutil, logutil
 from stsci.tools.fileutil import countExtn
 
+from drizzlepac import util
 from drizzlepac.haputils import processing_utils as proc_utils
 
 DEFAULT_WCS_PARS = {'ra': None, 'dec': None, 'scale': None, 'rot': None,
