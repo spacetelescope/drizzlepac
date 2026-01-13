@@ -48,6 +48,7 @@ dependencies = [
     "pypdf",
     "scikit-image>=0.14.2",
     "numpy>2.0",
+    "regions",
 ]
 license-files = ["LICENSE.txt"]
 dynamic = [
