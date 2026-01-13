@@ -12,7 +12,7 @@ import logging
 import numpy as np
 from scipy import signal, ndimage
 
-from stsci.tools import asnutil, irafglob, parseinput, fileutil, logutil
+from stsci.tools import asnutil, irafglob, parseinput, fileutil
 from astropy.io import fits
 import astropy.coordinates as coords
 import astropy.units as u

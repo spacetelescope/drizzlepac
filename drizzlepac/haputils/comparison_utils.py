@@ -4,6 +4,7 @@
 # Standard library imports
 import os
 import sys
+import logging
 
 # Related third party imports
 from astropy.table import Table
@@ -12,17 +13,8 @@ from pypdf import PdfWriter
 
 # Local application imports
 from drizzlepac.haputils import starmatch_hist
-from stsci.tools import logutil
 
-__taskname__ = 'comparison_utils'
-
-MSG_DATEFMT = '%Y%j%H%M%S'
-SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
-log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
-                            format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
-
-
-# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+log = logging.getLogger(__name__)
 
 def deconstruct_flag(flagval):
     """Breaks down an integer flag value into individual component bit values.

@@ -48,7 +48,7 @@ from astropy.stats import sigma_clipped_stats
 
 # Local application imports
 from drizzlepac.haputils import cell_utils
-from drizzlepac import util, wcs_functions
+from drizzlepac import wcs_functions
 import drizzlepac.haputils.diagnostic_utils as du
 from stsci.tools import logutil
 from stsci.stimage import xyxymatch

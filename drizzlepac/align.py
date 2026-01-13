@@ -5,7 +5,6 @@
 """
 import datetime
 import sys
-import glob
 import math
 import os
 import pickle
@@ -14,13 +13,11 @@ from collections import OrderedDict
 import traceback
 
 import numpy as np
-from astropy.table import Table
 from astropy.io import fits
 
 from stsci.tools import logutil
 
 from .haputils import astrometric_utils as amutils
-from .haputils import astroquery_utils as aqutils
 from .haputils import get_git_rev_info
 from .haputils import align_utils
 from .haputils import config_utils

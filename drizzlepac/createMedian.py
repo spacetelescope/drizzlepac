@@ -16,7 +16,7 @@ from astropy.io import fits
 
 from stsci.imagestats import ImageStats
 from stsci.image import numcombine
-from stsci.tools import iterfile, logutil
+from stsci.tools import iterfile
 
 from . import util
 from .minmed import min_med
