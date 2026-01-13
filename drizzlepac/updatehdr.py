@@ -6,7 +6,6 @@
 
 """
 import re
-import sys
 import logging
 
 from astropy.io import fits
@@ -14,7 +13,7 @@ import numpy as np
 
 from astropy import wcs as pywcs
 
-from stsci.tools import fileutil, logutil
+from stsci.tools import fileutil
 from stwcs import wcsutil
 from stwcs.wcsutil import wcscorr, altwcs
 from stsci.skypac.utils import get_ext_list, ext2str
