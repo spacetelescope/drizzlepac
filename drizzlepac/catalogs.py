@@ -11,7 +11,7 @@ import numpy as np
 from astropy import wcs as pywcs
 import astropy.coordinates as coords
 from astropy import units as u
-from stsci.tools import logutil, textutil
+from stsci.tools import textutil
 from stsci.skypac.utils import basicFITScheck, get_extver_list
 
 from astropy.io import fits

@@ -14,7 +14,7 @@ import sys
 import logging
 
 import numpy as np
-from stsci.tools import fileutil, logutil
+from stsci.tools import fileutil
 from astropy.io import fits
 from stsci.imagestats import ImageStats
 from . import util

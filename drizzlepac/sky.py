@@ -15,7 +15,7 @@ import logging
 
 import numpy as np
 
-from stsci.tools import fileutil, logutil
+from stsci.tools import fileutil
 from stsci.tools.bitmask import interpret_bit_flags
 import stsci.imagestats as imagestats
 

@@ -14,8 +14,6 @@
 """
 import logging
 import numpy as np
-from stsci.tools import logutil
-
 
 log = logging.getLogger(__name__)
 

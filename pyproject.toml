@@ -70,7 +70,7 @@ docs = [
 test = [
     "ci_watson",
     "crds",
-    "pytest",
+    "pytest>=9",
     "pytest-remotedata",
 ]
 
@@ -151,18 +151,12 @@ builder = "html"
 configuration = "docs/source/conf.py"
 fail_on_warning = false
 
-[tool.pytest.ini_options]
-minversion = 5
-norecursedirs = [
-    ".eggs",
-    "build",
-    ".tox",
-    "doc/build",
-    "doc/exts",
-]
+[tool.pytest]
+minversion = "9"
+norecursedirs = [".eggs", "build", ".tox", "doc/build", "doc/exts"]
 junit_family = "xunit2"
-inputs_root = "drizzlepac"
-results_root = "drizzlepac-results"
+inputs_root = ["drizzlepac"]
+results_root = ["drizzlepac-results"]
 
 [tool.ruff]
 extend-exclude = [
