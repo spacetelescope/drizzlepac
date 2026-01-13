@@ -14,14 +14,10 @@ Drizzlepac is a set of software tools maintained by the Space Telescope Science 
 
 Nightly regression test results are available at [spacetelescope/RegressionTests](https://github.com/spacetelescope/RegressionTests/actions/workflows/drizzlepac.yml).
 
-The use of this software on HST data is described at:
-
-    https://drizzlepac.stsci.edu/
+The use of this software on HST data is described at: [https://drizzlepac.stsci.edu/](https://drizzlepac.stsci.edu/)
 
 A complete description of the documented interfaces in the code itself
-can be found at:
-
-    https://drizzlepac.readthedocs.io
+can be found at: [https://drizzlepac.readthedocs.io](https://drizzlepac.readthedocs.io)
 
 
 # Installation
