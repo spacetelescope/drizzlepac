@@ -2,9 +2,9 @@
 
 [![Build Status](https://github.com/spacetelescope/drizzlepac/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/drizzlepac/actions)
 [![codecov](https://codecov.io/gh/spacetelescope/drizzlepac/branch/main/graph/badge.svg)](https://codecov.io/gh/spacetelescope/drizzlepac)
-[![Documentation Status](https://readthedocs.org/projects/drizzlepac/badge/?version=latest)](http://drizzlepac.readthedocs.io/en/latest/?badge=latest)
-[![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
-[![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
+[![Documentation Status](https://readthedocs.org/projects/drizzlepac/badge/?version=latest)](https://drizzlepac.readthedocs.io/en/latest/?badge=latest)
+[![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](https://www.stsci.edu)
+[![Powered by Astropy Badge](https://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](https://www.astropy.org/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3743274.svg)](https://doi.org/10.5281/zenodo.3743274)
 [![Python Versions](https://img.shields.io/pypi/pyversions/drizzlepac)](https://pypi.org/project/drizzlepac/)
 
@@ -16,12 +16,12 @@ Nightly regression test results are available at [spacetelescope/RegressionTests
 
 The use of this software on HST data is described at:
 
-    http://drizzlepac.stsci.edu/
+    https://drizzlepac.stsci.edu/
 
 A complete description of the documented interfaces in the code itself
 can be found at:
 
-    http://drizzlepac.readthedocs.io
+    https://drizzlepac.readthedocs.io
 
 
 # Installation
