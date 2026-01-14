@@ -46,6 +46,12 @@ $ git clone https://github.com/spacetelescope/drizzlepac
 $ cd drizzlepac
 ```
 
+### Install Drizzlepac
+
+```bash
+$ pip install .
+```
+
 ### Build the documentation
 
 *Note:* If you intend to use `drizzlepac`'s embedded help feature from within
@@ -55,10 +61,4 @@ this step.
 ```bash
 $ cd doc/
 $ make html
-```
-
-### Install Drizzlepac
-
-```bash
-$ pip install .
 ```
