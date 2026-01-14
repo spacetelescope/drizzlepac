@@ -34,7 +34,6 @@ dependencies = [
     "stsci.stimage",
     "stwcs>=1.7.4",
     "tweakwcs>=0.8.7",
-    "stregion>=1.1.7",
     "requests",
     "scikit-learn>=0.20",
     "simplify-polyline",
