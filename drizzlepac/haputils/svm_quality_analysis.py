@@ -61,7 +61,7 @@ from drizzlepac.haputils import cell_utils
 import drizzlepac.haputils.comparison_utils as cu
 import drizzlepac.haputils.diagnostic_utils as du
 try:
-    import drizzlepac.devutils.comparison_tools.compare_sourcelists as csl
+    import drizzlepac.haputils.compare_sourcelists as csl
 except ImportError:
     print("Unable to import compare_sourcelists! HAP vs. HLA sourcelist comparisons will be skipped.")
 from drizzlepac.haputils import read_hla_catalog
