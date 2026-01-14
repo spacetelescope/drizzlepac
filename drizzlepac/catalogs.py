@@ -640,11 +640,15 @@ class ImageCatalog(Catalog):
                 raise IOError(f"Could not read region file: '{reg_file_name}'.")
             
             # combine individual masks from each region
-            regmask = np.ones((img_ny, img_nx), dtype=bool)
+            # if any inclusion regions, exclude the entire image first
+            if np.any(include_flags):
+                regmask = np.zeros((img_ny, img_nx), dtype=bool)
+            else:
+                regmask = np.ones((img_ny, img_nx), dtype=bool)
             for include, region in zip(include_flags, reglist):
                 indiv_mask = region.to_mask().to_image((img_ny, img_nx)).astype(bool)
                 regmask = regmask | indiv_mask if include else regmask & ~indiv_mask
-            
+
         if mask is not None and regmask is not None:
             mask = np.logical_and(regmask, mask)
         else:
