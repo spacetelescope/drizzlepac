@@ -60,5 +60,5 @@ $ make html
 ### Install Drizzlepac
 
 ```bash
-$ python setup.py install
+$ pip install .
 ```
