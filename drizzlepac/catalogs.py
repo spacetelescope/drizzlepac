@@ -624,24 +624,26 @@ class ImageCatalog(Catalog):
 
         else:
             # we are dealing with a region file:
-            # reglist = pyregion.open(reg_file_name)
-            from regions import Regions
             reglist = Regions.read(reg_file_name)
             shape_keywords = ("polygon", "box", "circle", "ellipse")
 
             include_flags = []
-            with open(reg_file_name) as fh:
-                for raw in fh:
-                    text = raw.strip()
-                    if not text or text.startswith("#"):
-                        continue
-                    if any(word in text.lower() for word in shape_keywords):
-                        include_flags.append(not text.lstrip().startswith("-"))
-
+            try:
+                with open(reg_file_name) as fh:
+                    for raw in fh:
+                        text = raw.strip()
+                        if not text or text.startswith("#"):
+                            continue
+                        if any(word in text.lower() for word in shape_keywords):
+                            include_flags.append(not text.lstrip().startswith("-"))
+            except:
+                raise IOError(f"Could not read region file: '{reg_file_name}'.")
+            
+            # combine individual masks from each region
             regmask = np.ones((img_ny, img_nx), dtype=bool)
             for include, region in zip(include_flags, reglist):
-                mask = region.to_mask().to_image((img_ny, img_nx)).astype(bool)
-                regmask = regmask | mask if include else regmask & ~mask
+                indiv_mask = region.to_mask().to_image((img_ny, img_nx)).astype(bool)
+                regmask = regmask | indiv_mask if include else regmask & ~indiv_mask
             
         if mask is not None and regmask is not None:
             mask = np.logical_and(regmask, mask)
@@ -649,10 +651,9 @@ class ImageCatalog(Catalog):
             mask = regmask
 
         # DEBUG:
-        if mask is not None:
+        if mask is not None and log.getEffectiveLevel() <= logging.DEBUG:
             fn = os.path.splitext(self.fname)[0] + '_srcfind_mask.fits'
             fits.writeto(fn, mask.astype(dtype=np.uint8), overwrite=True)
-
         return mask
 
     def generateXY(self, **kwargs):
