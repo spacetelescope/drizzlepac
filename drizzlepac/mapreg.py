@@ -33,6 +33,8 @@ __all__ = ['MapReg', 'map_region_files']
 __taskname__ = 'mapreg'
 __author__ = 'Mihai Cara'
 
+image_like_coordformats = ["image", "physical","detector","logical"]
+
 
 class _AuxSTWCS:
     def __init__(self, fobj=None, ext=None, minerr=0.0, wcskey=" "):
@@ -288,7 +290,7 @@ def MapReg(input_reg, images, img_wcs_ext='sci', refimg='', ref_wcs_ext='sci',
 
     catfname_par    =  check_blank(catfname)
 
-    map_region_files( input_reg, images=images_par, img_wcs_ext=img_wcs_ext_par,
+    map_region_files2( input_reg, images=images_par, img_wcs_ext=img_wcs_ext_par,
                       refimg=refimg_par, ref_wcs_ext=ref_wcs_ext_par,
                       chip_reg=chip_reg_par,
                       outpath=outpath_par, filter=filter_par,
@@ -338,7 +340,91 @@ def _simple_parse_teal_extn(extnstr):
             return extlst
     else:
         return None
+    
 
+def map_region_files2(input_reg, images, img_wcs_ext=None, refimg=None,
+                      outpath='./regions', filter='fast', catfname=None, iteractive=False,
+                     append=False, verbose=True):
+    
+    if outpath in [None, ""]:
+        outpath = os.path.curdir + os.path.sep
+    elif not os.path.isdir(outpath):
+        raise IOError("The output directory \'%s\' does not exist." % outpath)
+    
+    all_sky_regions = Regions.read(input_reg)
+    for image_fname in images:
+        # use science extesions by default
+        if img_wcs_ext is None or img_wcs_ext == 'sci':
+            from drizzlepac.util import count_sci_extensions
+            img_wcs_ext = count_sci_extensions(image_fname, return_ind=True)
+        
+        # if specified, make sure image wcs extension is a list
+        if not isinstance(img_wcs_ext, list):
+            img_wcs_ext = [img_wcs_ext]
+            
+        for ext in img_wcs_ext:
+            all_pix_region = []
+            hdu = fits.open(image_fname, memmap=False)
+            wcs = WCS(hdu[ext].header, hdu)
+            for region in all_sky_regions:
+                if filter:
+                    if not _region_in_image(region, wcs, hdu[ext].data.shape, mode=filter):
+                        continue
+                pix_reg = region.to_pixel(wcs)
+                all_pix_region.append(pix_reg)
+            full_pix_region = Regions(all_pix_region)
+        
+            # get output region file name
+            extsuffix = _ext2str_suffix(ext)
+            basefname, _ = os.path.splitext(os.path.basename(image_fname))
+            regfname = basefname + extsuffix + os.extsep + "reg"
+            fullregfname = os.path.join(outpath, regfname)
+        
+            full_pix_region.write(fullregfname, overwrite=True)
+
+def _region_in_image(region, wcs, shape, mode="fast"):
+    """
+    Check whether a region is within an image.
+
+    Parameters
+    ----------
+    region : regions.Region
+        SkyRegion or PixelRegion.
+    wcs : astropy.wcs.WCS
+        WCS for the image extension.
+    shape : tuple
+        Image shape as (ny, nx).
+    mode : {"fast", "precise"}
+        - "fast": bounding-box containment (approximate, very fast)
+        - "precise": pixel-mask containment (exact, slower)
+
+    Returns
+    -------
+    inside : bool
+        True if region is fully within the image.
+    """
+
+    # Convert to pixel coordinates if needed
+    pix = region.to_pixel(wcs) if hasattr(region, "to_pixel") else region
+
+    ny, nx = shape
+
+    if mode == "fast":
+        bb = pix.bounding_box
+        return (
+            bb.ixmin >= 0 and
+            bb.iymin >= 0 and
+            bb.ixmax <= nx and
+            bb.iymax <= ny
+        )
+
+    elif mode == "precise":
+        mask = pix.to_mask()
+        img = mask.to_image((ny, nx))
+        return img is not None and img.all()
+
+    else:
+        raise ValueError("mode must be 'fast' or 'precise'")
 
 def map_region_files(input_reg, images, img_wcs_ext='sci',
                      refimg=None, ref_wcs_ext='sci', chip_reg=None,
@@ -455,7 +541,6 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
             all_sky_regions += shapes_img2sky(p[0], p[1]) #TODO: implement shapes_img2sky
 
     all_sky_regions = pyregion.ShapeList(list(all_sky_regions))
-    test_all_skk_regions = Regions.read(input_reg)
     cattb = []
     # create a region file (with regions in image coordinates) for each
     # image extension from the input_reg and chip_reg regions
@@ -681,7 +766,6 @@ def _ext2str_suffix(ext):
 def shapes_img2sky(reglist, wcs):
     #TODO: implement shapes_img2sky to do something useful
     # (like real CS transformation)
-    from pyregion.wcs_helper import image_like_coordformats
     return [r for r in reglist
             if r.coord_format not in image_like_coordformats]
 
@@ -1035,7 +1119,6 @@ def _print_important(msg):
 def _needs_ref_WCS(reglist):
     """ Check if the region list contains shapes in image-like coordinates
     """
-    from stregion.wcs_helper import image_like_coordformats
 
     for r in reglist:
         if r.coord_format in image_like_coordformats:
@@ -1049,7 +1132,6 @@ def _split_sky_img_regions(reglist):
     # and regions defined in image coordinates.
     #
     # Return Value: a tuple of lists of regions (image, sky)
-    from pyregion.wcs_helper import image_like_coordformats
 
     img = []
     sky = []
