@@ -20,6 +20,8 @@ task for sources finding.
 
 from astropy.io import fits
 from astropy.utils.decorators import deprecated_renamed_argument
+from astropy.wcs import WCS
+from regions import Regions
 import stregion as pyregion
 import stwcs
 import os
@@ -453,7 +455,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
             all_sky_regions += shapes_img2sky(p[0], p[1]) #TODO: implement shapes_img2sky
 
     all_sky_regions = pyregion.ShapeList(list(all_sky_regions))
-
+    test_all_skk_regions = Regions.read(input_reg)
     cattb = []
     # create a region file (with regions in image coordinates) for each
     # image extension from the input_reg and chip_reg regions
@@ -485,6 +487,7 @@ def map_region_files(input_reg, images, img_wcs_ext='sci',
 
                 #                wcs = stwcs.wcsutil.HSTWCS(imghdu, ext=ext)
                 wcs    = _AuxSTWCS(imghdu, ext=ext)
+                wcs2 = WCS(imghdu[ext].header, imghdu)
                 extreg = all_sky_regions.as_imagecoord(wcs, rot_wrt_axis=2)
                 #######
 
@@ -1032,7 +1035,7 @@ def _print_important(msg):
 def _needs_ref_WCS(reglist):
     """ Check if the region list contains shapes in image-like coordinates
     """
-    from pyregion.wcs_helper import image_like_coordformats
+    from stregion.wcs_helper import image_like_coordformats
 
     for r in reglist:
         if r.coord_format in image_like_coordformats:
