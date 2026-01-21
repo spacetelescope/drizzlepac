@@ -16,29 +16,17 @@ task for sources finding.
 
 import glob
 import os
+import warnings
 from astropy.io import fits
 from astropy.wcs import WCS
+from astropy.utils.exceptions import AstropyDeprecationWarning
 from regions import Regions
-from astropy.utils import deprecated
 
 __all__ = ["MapReg", "map_region_files"]
 
 
-def _warn_unused_parameter(name, value, default, since, message=None):
-    if value == default:
-        return
-
-    note = message or "The '%s' parameter is deprecated and ignored." % name
-
-    @deprecated(since=since, name=name, message=note, obj_type="parameter")
-    def _deprecated_param():
-        return None
-
-    _deprecated_param()
-
-
-def MapReg(input_reg, images, img_wcs_ext="sci", refimg="", ref_wcs_ext="sci", 
-           chip_reg="", outpath="./regions", filter="", catfname="", 
+def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
+           refimg="", ref_wcs_ext="sci", chip_reg="", catfname="", 
            iteractive=False, append=False, verbose=True):
     """Primary interface to map DS9 region files given in sky coordinates.
 
@@ -50,7 +38,7 @@ def MapReg(input_reg, images, img_wcs_ext="sci", refimg="", ref_wcs_ext="sci",
         in this release. Regions specified in image-like coordinates (e.g., image,
         physical) will be ignored.
 
-        This paramater can be provided in any of several forms:
+        This parameter can be provided in any of several forms:
 
         * filename of a single image
         * comma-separated list of filenames
@@ -65,7 +53,7 @@ def MapReg(input_reg, images, img_wcs_ext="sci", refimg="", ref_wcs_ext="sci",
         image files must contain WCS information in their headers in order to
         convert ``input_reg`` from sky coordinates to correct image coordinates.
 
-        This paramater can be provided in any of several forms:
+        This parameter can be provided in any of several forms:
 
         * filename of a single image
         * filename of an association (ASN)table
@@ -78,25 +66,21 @@ def MapReg(input_reg, images, img_wcs_ext="sci", refimg="", ref_wcs_ext="sci",
         containing a list of filenames for all input images (to which ``input_reg``
         regions should be mapped) with one filename on each line of the file.
 
-    img_wcs_ext : string or list of strings (Default = ``SCI``)
-        Extension name, extension name and version, or extension number of FITS
-        extensions in the ``images`` to which the input regions ``input_reg`` should be
-        mapped. The header of each extension must contain WCS information that will
-        be used to convert ``input_reg`` from sky CS to image-like CS. Multiple
-        extensions must be separated by semicolon while extension name and version
-        (if present) must be separated by comma, e.g., ``'SCI;DQ,1;0'``.
-        When specifying the extension name only, internally it will be expanded
-        into a list of extension names and versions for each version of that
-        extension name present in the input ``images``. For example, if a FITS file
-        has four SCI and four DQ extensions, then ``'SCI;DQ,1;0'`` will be expanded into
-        ``'SCI,1;SCI,2;SCI,3;SCI,4;DQ,1;0'``.
+    img_wcs_ext : string or list of integers (Default = ``sci``)
+        Extension selection for mapping. A string specifies an EXTNAME to use for
+        every matching extension in each image (for example ``"SCI"``). A list of
+        integers specifies explicit extension numbers to process. The associated
+        headers must contain valid WCS information for the transformation.
+        
+        *Note:* Previously a tuple of strings was accepted to specify multiple EXTNAMEs;
+        this usage is no longer supported.
     
     outpath : string (Default = ``./regions``)
         The directory to which the transformed regions should be saved.
 
     filter : string {'None', 'fast', or 'precise' } (Default = 'None')
         Specify whether or not to remove the regions in the transformed region files
-        that are outside the image array. With the 'fast' mehod only intersection
+        that are outside the image array. With the 'fast' method only intersection
         of the bounding boxes is being checked.
 
     refimg : string (Default = '', deprecated)
@@ -114,7 +98,7 @@ def MapReg(input_reg, images, img_wcs_ext="sci", refimg="", ref_wcs_ext="sci",
         (e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
         images) from being used for source finding.
 
-        This paramater can be provided in one of the following forms:
+        This parameter can be provided in one of the following forms:
 
         * filename of a single image (if ``img_wcs_ext`` specifies a single FITS
           extension);
@@ -174,7 +158,7 @@ def MapReg(input_reg, images, img_wcs_ext="sci", refimg="", ref_wcs_ext="sci",
 
     **NOTE 2:** :py:func:`~drizzlepac.mapreg.MapReg` does not take into account pointing errors and thus the
     produced region files can be somewhat misaligned compared to their intended
-    position around the sources identified in the "reference" image. Threfore, it is
+    position around the sources identified in the "reference" image. Therefore, it is
     highly recommended that the produced region files be loaded into DS9 and their
     position be adjusted manually to include the sources of interest (or to avoid
     the regions that need to be avoided).
@@ -197,35 +181,64 @@ def MapReg(input_reg, images, img_wcs_ext="sci", refimg="", ref_wcs_ext="sci",
     this will be the only chip that needs "special" treatment).
 
     Finally, let's say we want to "replicate" the "master" region file to all SCI
-    extensions of the ``img*.fits`` images as well as to the 2nd DQ extension and to
-    the 8th extension of the ``img*.fits`` images.
+    extensions of the ``img*.fits`` images.
 
     To do this we run:
 
-        >>> mapreg(input_reg = 'master.reg', images='img*.fits',
-        ...        img_wcs_ext='sci;dq,2;8')
+        >>> mapreg(input_reg='master.reg', images='img*.fits', img_wcs_ext=[2,8])
 
-    This will produce six region files in the ./regions subdirectory for *each*
+    This will produce region files in the ``./regions`` subdirectory for *each*
     input image::
 
-        img1_sci1_twreg.reg,    img1_sci2_twreg.reg,    img1_sci3_twreg.reg,
-        img1_sci4_twreg.reg,    img1_dq2_twreg.reg,     img1_extn8_twreg.reg
-        ...
+        img1_sci2_twreg.reg,    img1_sci8_twreg.reg,
 
     ::
 
-        img2_sci1_twreg.reg,    img2_sci2_twreg.reg,    img2_sci3_twreg.reg,
-        img2_sci4_twreg.reg,    img2_dq2_twreg.reg,     img2_extn8_twreg.reg
-        ...
+        img2_sci2_twreg.reg,    img2_sci8_twreg.reg,
+        
     """
 
-    _warn_unused_parameter("refimg", refimg, "", "3.11.0")
-    _warn_unused_parameter("ref_wcs_ext", ref_wcs_ext, "sci", "3.11.0")
-    _warn_unused_parameter("chip_reg", chip_reg, "", "3.11.0")
-    _warn_unused_parameter("catfname", catfname, "", "3.11.0")
-    _warn_unused_parameter("iteractive", iteractive, False, "3.11.0")
-    _warn_unused_parameter("append", append, False, "3.11.0")
-    _warn_unused_parameter("verbose", verbose, True, "3.11.0")
+    if refimg not in ("", None):
+        warnings.warn(
+            "The 'refimg' parameter is deprecated and ignored.",
+            AstropyDeprecationWarning,
+        )
+
+    if ref_wcs_ext not in ("sci", "SCI", None, ""):
+        warnings.warn(
+            "The 'ref_wcs_ext' parameter is deprecated and ignored.",
+            AstropyDeprecationWarning,
+        )
+
+    if chip_reg not in ("", None):
+        warnings.warn(
+            "The 'chip_reg' parameter is deprecated and unsupported; make individual MapReg calls per extension.",
+            AstropyDeprecationWarning,
+        )
+
+    if catfname not in ("", None):
+        warnings.warn(
+            "The 'catfname' parameter is deprecated and ignored.",
+            AstropyDeprecationWarning,
+        )
+
+    if iteractive:
+        warnings.warn(
+            "The 'iteractive' parameter is deprecated and ignored.",
+            AstropyDeprecationWarning,
+        )
+
+    if append:
+        warnings.warn(
+            "The 'append' parameter is deprecated and ignored.",
+            AstropyDeprecationWarning,
+        )
+
+    if verbose is not True:
+        warnings.warn(
+            "The 'verbose' parameter is deprecated and ignored.",
+            AstropyDeprecationWarning,
+        )
 
     map_region_files(
         input_reg,
@@ -247,6 +260,10 @@ def _validate_input_reg(input_reg):
             raise ValueError("input_reg entries must not be empty")
 
         if value.startswith("@"):
+            warnings.warn(
+                "The '@' filelist specification is deprecated for 'input_reg' and will be removed in a future release.",
+                AstropyDeprecationWarning,
+            )
             list_path = value[1:].strip()
             if not list_path:
                 raise ValueError("input_reg list specifications must name a file")
@@ -420,42 +437,28 @@ def _validate_img_wcs_ext(img_wcs_ext):
         return None
 
     def _normalize_single(ext):
-        if isinstance(ext, str):
-            value = ext.strip()
-            if not value:
-                raise ValueError("img_wcs_ext entries must not be empty strings")
-            return value
+        if not isinstance(ext, int):
+            raise TypeError("img_wcs_ext sequences must contain integers")
+        if ext < 0:
+            raise ValueError("img_wcs_ext integers must be non-negative")
+        return ext
 
-        if isinstance(ext, int):
-            if ext < 0:
-                raise ValueError("img_wcs_ext integer entries must be non-negative")
-            return ext
-
-        if isinstance(ext, tuple):
-            if len(ext) != 2:
-                raise ValueError("img_wcs_ext tuple entries must be (extname, extver)")
-            name, ver = ext
-            if not isinstance(name, str) or not name.strip():
-                raise TypeError(
-                    "img_wcs_ext tuple entries must start with a non-empty string"
-                )
-            if ver is None or not isinstance(ver, int):
-                raise TypeError("img_wcs_ext tuple extver must be an integer")
-            if ver < 0:
-                raise ValueError("img_wcs_ext tuple extver must be non-negative")
-            return (name.strip(), ver)
-
-        raise TypeError(
-            "img_wcs_ext must contain strings, integers, or (str, int) tuples"
-        )
+    if isinstance(img_wcs_ext, str):
+        value = img_wcs_ext.strip()
+        if not value:
+            raise ValueError("img_wcs_ext string must not be empty")
+        if any(sep in value for sep in ";,"):
+            raise ValueError(
+                "img_wcs_ext string must name a single EXTNAME without separators"
+            )
+        return value
 
     if isinstance(img_wcs_ext, (list, tuple)):
-        normalized = [_normalize_single(ext) for ext in img_wcs_ext]
-        if not normalized:
+        if not img_wcs_ext:
             raise ValueError("img_wcs_ext sequences must not be empty")
-        return normalized
+        return [_normalize_single(ext) for ext in img_wcs_ext]
 
-    return _normalize_single(img_wcs_ext)
+    raise TypeError("img_wcs_ext must be a string or a sequence of integers")
 
 
 def _validate_outpath(outpath):
@@ -556,12 +559,11 @@ def map_region_files(input_reg, images, img_wcs_ext=None, outpath="./regions",
         FITS image specification(s) providing the WCS transformations. Strings
         may contain single filenames, comma-separated filenames, wildcard
         patterns, or ``@`` list files. Iterable inputs can mix these forms.
-    img_wcs_ext : str, int, tuple, or sequence, optional
-        Extension selector(s) identifying which HDUs receive mapped regions.
-        Strings reference EXTNAME values, integers reference extension
-        numbers, and ``(extname, extver)`` tuples point to specific versions.
-        The default ``'sci'`` expands to every science extension found in each
-        image.
+    img_wcs_ext : str or sequence of int, optional
+        Extension selector identifying which HDUs receive mapped regions. A
+        string references an EXTNAME (for example ``"SCI"``) and, when set to
+        ``"sci"``, expands to every science extension present in each image. A
+        sequence of integers targets explicit extension numbers.
     outpath : str, optional
         Destination directory for the generated region files. Defaults to
         ``./regions`` and must exist ahead of time.
@@ -595,7 +597,9 @@ def map_region_files(input_reg, images, img_wcs_ext=None, outpath="./regions",
     for image_fname in image_list:
         current_exts = ext_spec
 
-        if current_exts is None or current_exts == "sci":
+        if current_exts is None or (
+            isinstance(current_exts, str) and current_exts.lower() == "sci"
+        ):
             from drizzlepac.util import count_sci_extensions
 
             current_exts = count_sci_extensions(image_fname, return_ind=True)
