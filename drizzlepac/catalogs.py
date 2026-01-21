@@ -19,7 +19,6 @@ from astropy.io import fits
 import stsci.imagestats as imagestats
 
 from . import tweakutils, util
-from .mapreg import _AuxSTWCS
 
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
