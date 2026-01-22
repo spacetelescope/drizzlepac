@@ -40,7 +40,10 @@ def _create_mock_region(base_dir, name="mock_regions.reg"):
         "# Region file format: DS9 version 4.1\n"
         "fk5\n"
         "circle(150d, 2d, 30\")\n"
-        "circle(150.0003d, 2.0003d, 20\")\n"
+        "circle(177.4219814,22.2723991,1.405\")\n"
+        "box(177.4191036,22.2725963,6.188\",3.119\",302.78378)\n"
+        "polygon(177.4241323,22.2771491,177.4222819,22.2767891,177.4241703,22.2753066,177.4247268,22.2761007,177.4246434,22.2768395)\n"
+
     )
 
     region_path = base_dir / name
