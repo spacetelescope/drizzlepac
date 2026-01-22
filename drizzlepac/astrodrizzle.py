@@ -33,10 +33,9 @@ aspects of each of the processing steps.
 """
 
 import os
-import sys
 import logging
 
-from stsci.tools import teal, logutil, textutil
+from stsci.tools import teal, textutil
 
 from . import adrizzle
 from . import ablot

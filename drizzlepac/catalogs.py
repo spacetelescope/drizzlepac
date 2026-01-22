@@ -12,7 +12,7 @@ from astropy import wcs as pywcs
 import astropy.coordinates as coords
 from astropy import units as u
 from regions import Regions
-from stsci.tools import logutil, textutil
+from stsci.tools import textutil
 from stsci.skypac.utils import basicFITScheck, get_extver_list
 
 from astropy.io import fits

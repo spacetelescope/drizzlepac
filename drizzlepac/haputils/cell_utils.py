@@ -1,31 +1,30 @@
 import os
 import shutil
 import logging
-from itertools import chain, combinations
+import astropy
+import numpy as np
+
+from scipy import ndimage
+from scipy.spatial import distance
 
 from matplotlib import path
 from matplotlib import pyplot as plt
 from matplotlib.path import Path
-from skimage.feature import corner_peaks, corner_harris
-from scipy import ndimage
-from scipy.spatial import distance
-import numpy as np
-import astropy
+
 from astropy import units as u
 from astropy.io import fits
 from astropy.table import Table
 from astropy.coordinates import SkyCoord
+
+from itertools import chain, combinations
 from spherical_geometry.polygon import SphericalPolygon
-
 from PIL import Image, ImageDraw
-
-from simplify_polyline import simplify
-
 from stwcs.wcsutil import HSTWCS
-from stsci.tools import logutil
+from simplify_polyline import simplify
 
 from .. import wcs_functions
 
+log = logging.getLogger(__name__)
 
 # Default grid definition file
 _fpath = os.path.abspath(os.path.dirname(__file__))
@@ -39,8 +38,6 @@ SKYCELL_NXY = 50
 SKYCELL_OVERLAP = 256
 
 SUPPORTED_SCALES = {'fine': 0.04, 'coarse': 0.12}  # arcseconds/pixel
-
-log = logging.getLogger(__name__)
 
 def get_sky_cells(visit_input, input_path=None, scale=None, cell_size=None, diagnostic_mode=False):
     """Return all sky cells that overlap the exposures in the input.

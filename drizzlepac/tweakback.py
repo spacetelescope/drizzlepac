@@ -14,7 +14,6 @@ the "aligned" (to the new drizzled WCS) image coordinates.
 :License: :doc:`/LICENSE`
 
 """
-import os
 import string
 import logging
 from datetime import date
@@ -25,13 +24,12 @@ from astropy.utils.decorators import deprecated
 
 from stwcs import wcsutil
 from stwcs.wcsutil import altwcs
-from stsci.tools import parseinput, logutil
+from stsci.tools import parseinput
 from stsci.skypac.utils import get_ext_list, ext2str
 from stsci.skypac.parseat import parse_cs_line
 
 
 from . import updatehdr
-from . import linearfit
 from . import util
 from . import __version__
 
