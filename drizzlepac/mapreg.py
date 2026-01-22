@@ -32,8 +32,8 @@ log = logging.getLogger(f'drizzlepac.mapreg')
 
 
 def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
-           refimg="", chip_reg="", catfname="", ref_wcs_ext=None, 
-           iteractive=None, append=None, verbose=None):
+           refimg="", chip_reg="", catfname="", append=False, ref_wcs_ext=None, 
+           iteractive=None, verbose=None):
     """Primary interface to map DS9 region files given in sky coordinates.
 
     Parameters
@@ -120,6 +120,10 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
         The file name of the output exclusions catalog file to be created from the
         supplied image and region file names. This file can be passed as an input
         to TweakReg task. Verify that the created file is correct!
+    
+    append : bool (Default = False)
+        Specify whether or not to append the transformed regions to the existing
+        region files with the same name.
         
     verbose : bool (Default = False)
         Specify whether or not to print extra messages during processing.
@@ -138,10 +142,6 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
         in image-like CS. In this case, the number of regions in ``input_reg`` must
         agree with the number of extensions with name specified by ``ref_wcs_ext``
         present in the ``refimg`` FITS image.
-        
-    append : bool (Default = False, deprecated)
-        Specify whether or not to append the transformed regions to the existing
-        region files with the same name.
 
     iteractive : bool (Default = False, deprecated)
         **Reserved for future use.** (This switch controls whether the program stops
@@ -214,6 +214,7 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
         
     """
     
+    # add logging
     if verbose:
         default_log_level = logging.DEBUG
         formatter = logging.Formatter('[%(levelname)s:%(name)s] %(message)s')
@@ -232,6 +233,7 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
     package_level_logger.addHandler(stream_handler)
     package_level_logger.setLevel(default_log_level)
 
+    # deprecation warnings for removed parameters
     if refimg not in ("", None):
         warnings.warn(
             "The 'refimg' parameter is deprecated and ignored.",
@@ -256,12 +258,6 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
             AstropyDeprecationWarning,
         )
 
-    if append:
-        warnings.warn(
-            "The 'append' parameter is deprecated and ignored.",
-            AstropyDeprecationWarning,
-        )
-
     log.info("Starting MapReg...")
     log.info("Mapping region files to image coordinate systems...")
     log.info("Using drizzlepac version: %s", __version__)
@@ -271,6 +267,7 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
     log.debug('Output directory: %s', outpath)
     log.debug('Output exclusions catalog file: %s', catfname)
     log.debug('Region filtering method: %s', filter if filter else 'None')
+    log.debug('Append mode: %s', append)
     log.debug('Verbose mode: %s', verbose)
     
     map_region_files(
@@ -280,7 +277,13 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
         catfname=catfname,
         outpath=outpath,
         filter=filter,
+        append=append,
     )
+
+    package_level_logger.removeHandler(file_handler)
+    package_level_logger.removeHandler(stream_handler)
+    file_handler.close()
+    stream_handler.close()
 
 
 def _validate_input_reg(input_reg):
@@ -340,10 +343,20 @@ def _validate_input_reg(input_reg):
                 expanded.extend(_expand_string_spec(part, context_dir))
             return expanded
 
-        if context_dir and not os.path.isabs(value):
-            value = os.path.normpath(os.path.join(context_dir, value))
+        normalized = os.path.expanduser(value)
+        if context_dir and not os.path.isabs(normalized):
+            normalized = os.path.join(context_dir, normalized)
+        normalized = os.path.normpath(normalized)
 
-        return [value]
+        if any(char in normalized for char in "*?[]"):
+            matches = sorted(glob.glob(normalized))
+            if not matches:
+                raise IOError(
+                    "The input region wildcard '%s' did not match any files." % value
+                )
+            return matches
+
+        return [normalized]
 
     def _expand_entry(entry):
         if isinstance(entry, str):
@@ -511,7 +524,8 @@ def _validate_outpath(outpath):
         path = os.path.curdir + os.path.sep
 
     if not os.path.isdir(path):
-        raise IOError("The output directory '%s' does not exist." % path)
+        os.makedirs(path, exist_ok=True)
+        log.debug("Created output directory: %s", path)
 
     return path
 
@@ -599,16 +613,22 @@ def _ext2str_suffix(ext):
         return "_{}_twreg".format(ext)  # <- we should not get here...
 
 
-def _convert_region_file_to_exclusion_file(region, exclusion_file):
-    """Convert a DS9 region file to an exclusion catalog file. Essentially, adds
-    a '-' before each region shape type.
+def _save_region_file(region, filename, exclusion_file, append):
+    """Export a ds9 region file with the extra ability to append lines to an 
+    existing region file, or add the '-' prefix to region shapes required for
+    exclusion regions in tweakreg. For simple saving of region files, use the
+    built-in regions write() method.
 
     Parameters
     ----------
     region : regions.Regions
         The regions to be converted.
-    exclusion_file : str
+    filename : str
         The output exclusion catalog filename.
+    exclusion_file : bool
+        Essentially, adds a '-' before each region shape type if True.
+    append : bool
+        Whether to append to the output file if it exists.
     """
     
     allowable_ds9_region_types = ["polygon", "circle", "ellipse", "box"]
@@ -645,7 +665,7 @@ def _convert_region_file_to_exclusion_file(region, exclusion_file):
                     break
 
             if is_shape:
-                if not stripped.startswith("-"):
+                if exclusion_file and not stripped.startswith("-"):
                     stripped = "-" + stripped
                 shape_lines.append(stripped)
                 saw_shape = True
@@ -662,21 +682,24 @@ def _convert_region_file_to_exclusion_file(region, exclusion_file):
             header_lines = candidate_header
             header_captured = True
 
-    if exclusion_file:
+    if filename:
+        writing_mode = "a" if append else "w"
         write_header = True
-        if os.path.exists(exclusion_file):
-            write_header = os.path.getsize(exclusion_file) == 0
-        with open(exclusion_file, "a", encoding="utf-8") as handle:
+
+        if append and os.path.exists(filename):
+            write_header = os.path.getsize(filename) == 0
+
+        with open(filename, writing_mode, encoding="utf-8") as handle:
             if write_header and header_lines:
                 for header_line in header_lines:
                     handle.write(header_line + "\n")
             for entry in converted_lines:
                 handle.write(entry + "\n")
-        log.debug(f"Wrote exclusion catalog file: {exclusion_file}")
+        log.debug(f"Wrote exclusion catalog file: {filename}")
 
 
 def map_region_files(input_reg, images, img_wcs_ext=None, outpath="./regions", 
-                     catfname=None, filter="fast"):
+                     catfname=None, filter="fast", append=False):
     """Map DS9 sky-coordinate regions onto image coordinates.
 
     Parameters
@@ -764,13 +787,15 @@ def map_region_files(input_reg, images, img_wcs_ext=None, outpath="./regions",
                 basefname, _ = os.path.splitext(os.path.basename(image_fname))
                 regfname = basefname + extsuffix + os.extsep + "reg"
                 fullregfname = os.path.join(output_dir, regfname)
-
-                full_pix_region.write(fullregfname, overwrite=True)
+                if append:
+                    _save_region_file(full_pix_region, fullregfname, exclusion_file=False, append=append)
+                else:
+                    full_pix_region.write(fullregfname, format="ds9", overwrite=True)
                 log.debug(f"Wrote region file: {fullregfname}")
                 created_region_files.append(os.path.basename(fullregfname))
                 
                 # write exclusion catalog entry
-                _convert_region_file_to_exclusion_file(full_pix_region, catfname)
+                _save_region_file(full_pix_region, catfname, exclusion_file=True, append=append)
                 log.debug(f"Wrote exclusion region file: {fullregfname}")
     if created_region_files:
         log.info("Output region files: %s", ", ".join(created_region_files))

@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import numpy as np
 import pytest
 from astropy.io import fits
@@ -9,7 +7,7 @@ from drizzlepac.mapreg import map_region_files
 from drizzlepac.util import count_sci_extensions
 
 
-def _create_mock_fits(base_dir: Path, name: str = "mock_image.fits", n_sci: int = 3) -> Path:
+def _create_mock_fits(base_dir, name="mock_image.fits", n_sci=3):
     base_dir.mkdir(parents=True, exist_ok=True)
 
     wcs = WCS(naxis=2)
@@ -35,7 +33,7 @@ def _create_mock_fits(base_dir: Path, name: str = "mock_image.fits", n_sci: int 
     return image_path
 
 
-def _create_mock_region(base_dir: Path, name: str = "mock_regions.reg") -> Path:
+def _create_mock_region(base_dir, name="mock_regions.reg"):
     base_dir.mkdir(parents=True, exist_ok=True)
 
     region_content = (
@@ -49,60 +47,138 @@ def _create_mock_region(base_dir: Path, name: str = "mock_regions.reg") -> Path:
     region_path.write_text(region_content, encoding="utf-8")
     return region_path
 
+# test helpers -----------------------------------------------------------------
+def _single_region_input(data_dir):
+    return str(_create_mock_region(data_dir))
 
-def test_map_region_files_with_sci_string(tmp_path):
+
+def _list_region_input(data_dir):
+    return [
+        str(_create_mock_region(data_dir, name="mock_regions1.reg")),
+        str(_create_mock_region(data_dir, name="mock_regions2.reg")),
+    ]
+
+
+def _glob_region_input(data_dir):
+    _create_mock_region(data_dir, name="mock_regions1.reg")
+    _create_mock_region(data_dir, name="mock_regions2.reg")
+    return str(data_dir / "mock_regions*.reg")
+
+
+# test image inputs ------------------------------------------------------------
+@pytest.mark.parametrize("image_specs, expect_list", [pytest.param([("mock_image.fits", 3)], False, id="single-image"),
+        pytest.param(
+            [("mock_image1.fits", 3), ("mock_image2.fits", 2)],
+            True,
+            id="multiple-images",
+        ),
+    ],
+)
+def test_map_region_files_with_image_variants(tmp_path, image_specs, expect_list):
+    data_dir = tmp_path / "inputs"
+    input_reg = _create_mock_region(data_dir)
+    output_dir = tmp_path / "regions"
+    output_dir.mkdir()
+
+    images = [
+        _create_mock_fits(data_dir, name=name, n_sci=n_sci)
+        for name, n_sci in image_specs
+    ]
+    images_arg = [str(path) for path in images]
+    if not expect_list:
+        images_arg = images_arg[0]
+
+    # Disable filtering so partially off-chip regions still produce outputs.
+    map_region_files(
+        str(input_reg),
+        images=images_arg,
+        outpath=str(output_dir),
+    )
+
+    expected_files = {
+        f"{image.stem}_extn{ext}_twreg.reg"
+        for image, (_, n_sci) in zip(images, image_specs)
+        for ext in range(1, n_sci + 1)
+    }
+
+    generated = {path.name for path in output_dir.glob("*.reg")}
+    assert generated == expected_files
+    for filename in expected_files:
+        assert (output_dir / filename).stat().st_size > 0
+
+
+# test region file inputs -----------------------------------------------------
+@pytest.mark.parametrize(
+    "region_factory",
+    [
+        pytest.param(_single_region_input, id="single"),
+        pytest.param(_list_region_input, id="list"),
+        pytest.param(_glob_region_input, id="glob"),
+    ],
+)
+def test_map_region_files_with_region_variants(tmp_path, region_factory):
+    data_dir = tmp_path / "inputs"
+    image = _create_mock_fits(data_dir)
+    output_dir = tmp_path / "regions"
+    output_dir.mkdir()
+
+    region_input = region_factory(data_dir)
+
+    # Disable filtering so partially off-chip regions still produce outputs.
+    map_region_files(
+        region_input,
+        images=str(image),
+        outpath=str(output_dir),
+    )
+
+    expected_files = {
+        f"{image.stem}_extn1_twreg.reg",
+        f"{image.stem}_extn2_twreg.reg",
+        f"{image.stem}_extn3_twreg.reg",
+    }
+
+    generated = {path.name for path in output_dir.glob("*.reg")}
+    assert generated == expected_files
+    for filename in expected_files:
+        assert (output_dir / filename).stat().st_size > 0
+
+
+# test extension inputs -------------------------------------------------------
+@pytest.mark.parametrize(
+    "ext_variant",
+    [
+        pytest.param("sci-string", id="sci-string"),
+        pytest.param("subset-list", id="subset-list"),
+    ],
+)
+def test_map_region_files_with_extension_variants(tmp_path, ext_variant):
     data_dir = tmp_path / "inputs"
     input_reg = _create_mock_region(data_dir)
     image = _create_mock_fits(data_dir)
     output_dir = tmp_path / "regions"
     output_dir.mkdir()
-
-    # Disable filtering so partially off-chip regions still produce outputs.
-    map_region_files(
-        str(input_reg),
-        images=str(image),
-        img_wcs_ext="sci",
-        outpath=str(output_dir),
-        filter=None,
-    )
 
     sci_indices = count_sci_extensions(str(image), return_ind=True)
     assert sci_indices, "Expected at least one SCI extension in test image"
 
-    generated = {path.name for path in output_dir.glob("*.reg")}
-    expected = {
-        f"{image.stem}_extn{ext}_twreg.reg" for ext in sci_indices
-    }
-
-    assert generated == expected
-    for filename in expected:
-        assert (output_dir / filename).stat().st_size > 0
-
-
-def test_map_region_files_with_explicit_extensions(tmp_path):
-    data_dir = tmp_path / "inputs"
-    input_reg = _create_mock_region(data_dir)
-    image = _create_mock_fits(data_dir)
-    output_dir = tmp_path / "regions"
-    output_dir.mkdir()
-
-    sci_indices = count_sci_extensions(str(image), return_ind=True)
-    assert sci_indices
-
-    selected = sci_indices[:2] if len(sci_indices) > 1 else sci_indices
+    if ext_variant == "sci-string":
+        ext_arg = "sci"
+        expected_indices = sci_indices
+    else:
+        ext_arg = sci_indices[:2] if len(sci_indices) > 1 else sci_indices
+        expected_indices = ext_arg
 
     # Disable filtering so partially off-chip regions still produce outputs.
     map_region_files(
         str(input_reg),
         images=str(image),
-        img_wcs_ext=selected,
+        img_wcs_ext=ext_arg,
         outpath=str(output_dir),
-        filter=None,
     )
 
     generated = {path.name for path in output_dir.glob("*.reg")}
     expected = {
-        f"{image.stem}_extn{ext}_twreg.reg" for ext in selected
+        f"{image.stem}_extn{ext}_twreg.reg" for ext in expected_indices
     }
 
     assert generated == expected
@@ -110,15 +186,3 @@ def test_map_region_files_with_explicit_extensions(tmp_path):
         assert (output_dir / filename).stat().st_size > 0
 
 
-def test_map_region_files_rejects_compound_string(tmp_path):
-    data_dir = tmp_path / "inputs"
-    input_reg = _create_mock_region(data_dir)
-    image = _create_mock_fits(data_dir)
-
-    with pytest.raises(ValueError):
-        map_region_files(
-            str(input_reg),
-            images=str(image),
-            img_wcs_ext="SCI,1",
-            outpath=str(tmp_path),
-        )
