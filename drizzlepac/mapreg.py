@@ -1,16 +1,16 @@
 """
 This module provides functions for mapping DS9 region files given in sky
-coordinates to DS9 region files specified in image coordinates
-of multiple images using the WCS information from the images.
+coordinates to DS9 region files specified in image coordinates of multiple
+images using the WCS information from the images.
 
-:py:func:`~drizzlepac.mapreg.MapReg` provides an automated interface for converting
-a region file to the image coordinate system (CS) of multiple images (and
-their extensions) using WCS information from the image(s) header(s).
-This conversion does not take into account pointing errors and, therefore,
-an examination and adjustment (if required) of output region files is highly
-recommended. This task is designed to simplify the creation of the exclusions
-and/or inclusions region files used with :py:func:`~drizzlepac.tweakreg.TweakReg`
-task for sources finding.
+:py:func:`~drizzlepac.mapreg.MapReg` provides an automated interface for
+converting a region file to the image coordinate system (CS) of multiple
+images (and their extensions) using WCS information from the image(s)
+header(s). This conversion does not take into account pointing errors and,
+therefore, an examination and adjustment (if required) of output region
+files is highly recommended. This task is designed to simplify the creation
+of the exclusions and/or inclusions region files used with
+:py:func:`~drizzlepac.tweakreg.TweakReg` task for sources finding.
 
 """
 
@@ -26,23 +26,23 @@ from regions import Regions
 from drizzlepac import __version__
 from drizzlepac.util import count_sci_extensions
 
-__all__ = ["MapReg", "map_region_files"]
+__all__ = ["MapReg"]
 package_level_logger = logging.getLogger('drizzlepac')
 log = logging.getLogger(f'drizzlepac.mapreg')
 
 
-def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
-           refimg="", chip_reg="", catfname="", append=False, ref_wcs_ext=None, 
+def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter=None,
+           refimg="", chip_reg="", catfname="", append=False, ref_wcs_ext=None,
            iteractive=None, verbose=None):
     """Primary interface to map DS9 region files given in sky coordinates.
 
     Parameters
     ----------
     input_reg : string or list of strings (Default = '')
-        Input region files that need to be mapped to image CS using WCS information
-        from ``images`` (see below). Only region files saved in sky CS are allowed
-        in this release. Regions specified in image-like coordinates (e.g., image,
-        physical) will be ignored.
+        Input region files that need to be mapped to image CS using WCS
+        information from ``images`` (see below). Only region files saved in
+        sky CS are allowed in this release. Regions specified in image-like
+        coordinates (e.g., image, physical) will be ignored.
 
         This parameter can be provided in any of several forms:
 
@@ -55,149 +55,162 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
         filename on each line of the file.
 
     images : string or list of strings (Default = ``*.fits``)
-        FITS images onto which the region files ``input_reg`` will be mapped. These
-        image files must contain WCS information in their headers in order to
+        FITS images onto which the region files ``input_reg`` will be mapped.
+        These image files must contain WCS information in their headers to
         convert ``input_reg`` from sky coordinates to correct image coordinates.
 
         This parameter can be provided in any of several forms:
 
         * filename of a single image
-        * filename of an association (ASN)table
-        * wild-card specification for files in a directory (using ``*``, ``?`` etc.)
+        * filename of an association (ASN) table
+        * wild-card specification for files in a directory (using ``*``, ``?``
+            etc.)
         * comma-separated list of filenames
-        * ``@-file`` filelist containing list of desired input filenames
-          (and optional inverse variance map filenames)
+        * ``@-file`` filelist containing list of desired input filenames (and
+          optional inverse variance map filenames)
 
         The ``@-file`` filelist needs to be provided as an ASCII text file
-        containing a list of filenames for all input images (to which ``input_reg``
-        regions should be mapped) with one filename on each line of the file.
+        containing a list of filenames for all input images (to which
+        ``input_reg`` regions should be mapped) with one filename on each
+        line of the file.
 
     img_wcs_ext : string or list of integers (Default = ``sci``)
-        Extension selection for mapping. A string specifies an EXTNAME to use for
-        every matching extension in each image (for example ``"SCI"``). A list of
-        integers specifies explicit extension numbers to process. The associated
-        headers must contain valid WCS information for the transformation.
-        
-        *Note:* Previously a tuple of strings was accepted to specify multiple EXTNAMEs;
-        this usage is no longer supported.
-    
-    outpath : string (Default = ``./regions``)
-        The directory to which the transformed regions should be saved.
+        Extension selection for mapping. A string specifies an EXTNAME to use
+        for every matching extension in each image (for example ``"SCI"``). A
+        list of integers specifies explicit extension numbers to process. The
+        associated headers must contain valid WCS information for the
+        transformation.
 
-    filter : string {'None', 'fast', or 'precise' } (Default = 'None')
-        Specify whether or not to remove the regions in the transformed region files
-        that are outside the image array. With the 'fast' method only intersection
-        of the bounding boxes is being checked.
+        *Note:* Previously a tuple of strings was accepted to specify multiple
+        EXTNAMEs; this usage is no longer supported.
+
+    outpath : string (Default = ``./regions``)
+        The directory to which the transformed regions should be saved. If the
+        directory does not exist it will be created.
+
+    filter : string {None, 'fast', 'precise', 'none'} (Default = None)
+        Specify whether or not to remove the regions in the transformed region
+        files that are outside the image array. With the 'fast' method only
+        intersection of the bounding boxes is being checked.
 
     chip_reg : string or list of strings (Default = '', deprecated)
-        Input region files in image CS associated with each extension specified by
-        the ``img_wcs_ext`` parameter above. These regions will be added directly
-        (without any transformation) to the ``input_reg`` regions mapped to each
-        extension of the input ``images``. These regions must be specified in
-        image-like coordinates. Typically, these regions should contain "exclude"
-        regions to exclude parts of the image specific to the detector **chip**
-        (e.g., vignetted regions due to used filters, or occulting finger in ACS/HRC
-        images) from being used for source finding.
+        Input region files in image CS associated with each extension specified
+        by the ``img_wcs_ext`` parameter above. These regions will be added
+        directly (without any transformation) to the ``input_reg`` regions
+        mapped to each extension of the input ``images``. These regions must be
+        specified in image-like coordinates. Typically, these regions should
+        contain "exclude" regions to exclude parts of the image specific to the
+        detector **chip** (e.g., vignetted regions due to used filters, or
+        occulting finger in ACS/HRC images) from being used for source finding.
 
         This parameter can be provided in one of the following forms:
 
-        * filename of a single image (if ``img_wcs_ext`` specifies a single FITS
-          extension);
-        * comma-separated list of filenames (if ``img_wcs_ext`` specifies more than
-          one extension) or ``None`` for extensions that do not need any
-          chip-specific regions to be excluded/included;
-        * '' (empty string) or None if no chip-specific region files are provided.
+        * filename of a single image (if ``img_wcs_ext`` specifies a single
+            FITS extension)
+        * comma-separated list of filenames (if ``img_wcs_ext`` specifies more
+            than one extension) or ``None`` for extensions that do not need any
+            chip-specific regions to be excluded/included
+        * '' (empty string) or None if no chip-specific region files are
+            provided
 
-        The number of regions ideally must be equal to the number of extensions
-        specified by the ``img_wcs_ext`` parameter. If the number of chip-specific
-        regions is less than the number of ``img_wcs_ext`` extensions then 'chip_reg'
-        regions will be assigned to the first extensions from ``img_wcs_ext``
-        (after internal expansion described in help for the ``img_wcs_ext``
-        parameter above). If the number of 'chip_reg' is larger than the number of
-        ``img_wcs_ext`` extensions then extra regions will be ignored.
+        The number of regions ideally must be equal to the number of
+        extensions specified by the ``img_wcs_ext`` parameter. If the number
+        of chip-specific regions is less than the number of ``img_wcs_ext``
+        extensions then ``chip_reg`` regions will be assigned to the first
+        extensions from ``img_wcs_ext`` (after internal expansion described in
+        help for the ``img_wcs_ext`` parameter above). If the number of
+        ``chip_reg`` entries is larger than the number of ``img_wcs_ext``
+        extensions then extra regions will be ignored.
 
     catfname : string (Default = ``exclusions_cat.txt``)
-        The file name of the output exclusions catalog file to be created from the
-        supplied image and region file names. This file can be passed as an input
-        to TweakReg task. Verify that the created file is correct!
-    
+        The file name of the output exclusions catalog file to be created
+        from the supplied image and region file names. This file can be
+        passed as an input to TweakReg task. Verify that the created file is
+        correct!
+
     append : bool (Default = False)
-        Specify whether or not to append the transformed regions to the existing
-        region files with the same name.
-        
+        Specify whether or not to append the transformed regions to the
+        existing region files with the same name.
+
     verbose : bool (Default = False)
         Specify whether or not to print extra messages during processing.
 
     refimg : string (Default = '', deprecated)
-        **Reserved for future use.**
-        Filename of the reference image. May contain extension specifier:
-        [extname,extver], [extname], or [extnumber].
-    
+        **Reserved for future use.** Filename of the reference image. May
+        contain extension specifier: [extname,extver], [extname], or
+        [extnumber].
+
     ref_wcs_ext : string (Default = 'sci', deprecated)
-        **Reserved for future use.**
-        Extension name and/or version of FITS extensions
-        in the ``refimg`` that contain WCS information that will be used to convert
-        ``input_reg`` from image-like CS to sky CS. NOTE: Only extension name is
-        allowed when ``input_reg`` is a list of region files that contain regions
-        in image-like CS. In this case, the number of regions in ``input_reg`` must
-        agree with the number of extensions with name specified by ``ref_wcs_ext``
-        present in the ``refimg`` FITS image.
+        **Reserved for future use.** Extension name and/or version of FITS
+        extensions in the ``refimg`` that contain WCS information that will
+        be used to convert ``input_reg`` from image-like CS to sky CS. NOTE:
+        Only extension name is allowed when ``input_reg`` is a list of region
+        files that contain regions in image-like CS. In this case, the number
+        of regions in ``input_reg`` must agree with the number of extensions
+        with name specified by ``ref_wcs_ext`` present in the ``refimg`` FITS
+        image.
 
     iteractive : bool (Default = False, deprecated)
-        **Reserved for future use.** (This switch controls whether the program stops
-        and waits for the user to examine any generated region files before
-        continuing on to the next image.)
-
+        **Reserved for future use.** This switch controls whether the
+        program stops and waits for the user to examine any generated region
+        files before continuing on to the next image.
 
     Notes
     -----
-    **NOTE 1:** This task takes a region file (or multiple files) that describe(s)
-    what regions of sky should be used for source finding (*include* regions) and
-    what regions should be avoided (*exclude* regions) and transforms/maps
-    this region file onto a number of image files that need to be aligned.
+    **NOTE 1:** This task takes a region file (or multiple files) that
+    describe(s) what regions of sky should be used for source finding
+    (*include* regions) and what regions should be avoided (*exclude*
+    regions) and transforms/maps this region file onto a number of image
+    files that need to be aligned.
 
-    The idea behind this task is automate the creation of region files that then can
-    be passed to *exclusions* parameter of the ``TweakReg`` task.
+    The idea behind this task is automate the creation of region files that
+    then can be passed to *exclusions* parameter of the ``TweakReg`` task.
 
-    The same thing can be achieved manually using, for example, external FITS
-    viewers, e.g., SAO DS9. For example, based on some image ``refimg.fits`` we can
-    select a few small regions of sky that contain several good (bright, not
-    saturated) point-like sources that could be used for image alignment of other
-    images (say ``img1.fits``, ``img2.fits``, etc.). We can save this region file in
-    sky coordinates (e.g., ``fk5``), e.g., under the name ``input_reg.reg``. We can then
-    load a specific extension of each of the images ``img1.fits``, ``img2.fits``, etc.
-    one by one into DS9 and then load onto those images the previously created
-    include/exclude region file ``input_reg.reg``. Now we can save the regions using
-    *image* coordinates. To do conversion from the sky coordinates to image
-    coordinates, DS9 will use the WCS info from the image onto which the region file
-    was loaded. The :py:func:`~drizzlepac.mapreg.MapReg` task tries to automate this process.
+    The same thing can be achieved manually using, for example, external
+    FITS viewers, e.g., SAO DS9. For example, based on some image
+    ``refimg.fits`` we can select a few small regions of sky that contain
+    several good (bright, not saturated) point-like sources that could be
+    used for image alignment of other images (say ``img1.fits``,
+    ``img2.fits``, etc.). We can save this region file in sky coordinates
+    (e.g., ``fk5``) under the name ``input_reg.reg``. We can then load a
+    specific extension of each of the images ``img1.fits``, ``img2.fits``,
+    etc. one by one into DS9 and then load onto those images the previously
+    created include/exclude region file ``input_reg.reg``. Now we can save the
+    regions using *image* coordinates. To do conversion from the sky
+    coordinates to image coordinates, DS9 will use the WCS info from the
+    image onto which the region file was loaded. The
+    :py:func:`~drizzlepac.mapreg.MapReg` task tries to automate this process.
 
-    **NOTE 2:** :py:func:`~drizzlepac.mapreg.MapReg` does not take into account pointing errors and thus the
-    produced region files can be somewhat misaligned compared to their intended
-    position around the sources identified in the "reference" image. Therefore, it is
-    highly recommended that the produced region files be loaded into DS9 and their
-    position be adjusted manually to include the sources of interest (or to avoid
-    the regions that need to be avoided).
-    If possible, the *include* or *exclude* regions should be large enough as to
-    allow for most pointing errors.
+    **NOTE 2:** :py:func:`~drizzlepac.mapreg.MapReg` does not take into account
+    pointing errors and thus the produced region files can be somewhat
+    misaligned compared to their intended position around the sources
+    identified in the "reference" image. Therefore, it is highly
+    recommended that the produced region files be loaded into DS9 and their
+    position be adjusted manually to include the sources of interest (or to
+    avoid the regions that need to be avoided). If possible, the *include*
+    or *exclude* regions should be large enough as to allow for most pointing
+    errors.
 
     Examples
     --------
-    Let's say that based on some image ``refimg.fits`` we have produced a "master"
-    reference image (``master.reg``) that includes regions around sources that we want
-    to use for image alignment in task :py:func:`~drizzlepac.tweakreg.TweakReg` and excludes regions that we
-    want to avoid being used for image alignment (e.g, diffraction spikes, saturated
-    quasars, stars, etc.). We save the file ``master.reg`` in sky CS (e.g., ``fk5``).
+    Let's say that based on some image ``refimg.fits`` we have produced a
+    "master" reference image (``master.reg``) that includes regions around
+    sources that we want to use for image alignment in task
+    :py:func:`~drizzlepac.tweakreg.TweakReg` and excludes regions that we
+    want to avoid being used for image alignment (e.g, diffraction spikes,
+    saturated quasars, stars, etc.). We save the file ``master.reg`` in sky
+    CS (e.g., ``fk5``).
 
-    Also, let's assume that we have a set of images ``img1.fits``, ``img2.fits``, etc.
-    with four FITS extensions named 'SCI' and 'DQ'. For some of the extensions,
-    after analyzing the ``img*.fits`` images we have identified parts of the chips that
-    cannot be used for image alignment. We create region files for those extensions
-    and save the files in image CS as, e.g., ``img1_chip_sci2.reg`` (in our example
-    this will be the only chip that needs "special" treatment).
+    Also, let's assume that we have a set of images ``img1.fits``,
+    ``img2.fits``, etc. with four FITS extensions named 'SCI' and 'DQ'. For
+    some of the extensions, after analyzing the ``img*.fits`` images we have
+    identified parts of the chips that cannot be used for image alignment.
+    We create region files for those extensions and save the files in image
+    CS as, e.g., ``img1_chip_sci2.reg`` (in our example this will be the only
+    chip that needs "special" treatment).
 
-    Finally, let's say we want to "replicate" the "master" region file to all SCI
-    extensions of the ``img*.fits`` images.
+    Finally, let's say we want to "replicate" the "master" region file to all
+    SCI extensions of the ``img*.fits`` images.
 
     To do this we run:
 
@@ -211,7 +224,7 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
     ::
 
         img2_sci2_twreg.reg,    img2_sci8_twreg.reg,
-        
+
     """
     
     # add logging
@@ -235,51 +248,80 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
 
     # deprecation warnings for removed parameters
     if refimg not in ("", None):
-        warnings.warn(
-            "The 'refimg' parameter is deprecated and ignored.",
-            AstropyDeprecationWarning,
-        )
+        warnings.warn("The 'refimg' parameter is deprecated and ignored.",
+            AstropyDeprecationWarning)
 
     if ref_wcs_ext not in ("sci", "SCI", None, ""):
-        warnings.warn(
-            "The 'ref_wcs_ext' parameter is deprecated and ignored.",
-            AstropyDeprecationWarning,
-        )
+        warnings.warn("The 'ref_wcs_ext' parameter is deprecated and ignored.",
+            AstropyDeprecationWarning)
 
     if chip_reg not in ("", None):
-        warnings.warn(
-            "The 'chip_reg' parameter is deprecated and unsupported; make individual MapReg calls per extension.",
-            AstropyDeprecationWarning,
-        )
+        warnings.warn("The 'chip_reg' parameter is no longer supported; please"
+            "make individual MapReg calls for each image/extension pair.",
+            AstropyDeprecationWarning)
 
     if iteractive:
-        warnings.warn(
-            "The 'iteractive' parameter is deprecated and ignored.",
-            AstropyDeprecationWarning,
-        )
+        warnings.warn("The 'iteractive' parameter is deprecated and ignored.",
+            AstropyDeprecationWarning)
 
+    # log input parameters
     log.info("Starting MapReg...")
     log.info("Mapping region files to image coordinate systems...")
-    log.info("Using drizzlepac version: %s", __version__)
-    log.debug('Input region file(s): %s', input_reg)
-    log.debug('Input image file(s): %s', images)
-    log.debug('Image WCS extension(s): %s', img_wcs_ext)
-    log.debug('Output directory: %s', outpath)
-    log.debug('Output exclusions catalog file: %s', catfname)
-    log.debug('Region filtering method: %s', filter if filter else 'None')
-    log.debug('Append mode: %s', append)
-    log.debug('Verbose mode: %s', verbose)
+    log.info(f"Using drizzlepac version: {__version__}")
+    log.debug(f"Input region file(s): {input_reg}")
+    log.debug(f"Input image file(s): {images}")
+    log.debug(f"Image WCS extension(s): {img_wcs_ext}")
+    log.debug(f"Output directory: {outpath}")
+    log.debug(f"Output exclusions catalog file: {catfname}")
+    log.debug(f"Region filtering method: {filter if filter else 'None'}")
+    log.debug(f"Append mode: {append}")
+    log.debug(f"Verbose mode: {verbose}")
     
+    # validate and normalize inputs
+    region_paths = tuple(_validate_input_reg(input_reg))
+    image_list = tuple(_validate_images(images))
+    ext_spec = _validate_img_wcs_ext(img_wcs_ext)
+    normalized_catfname = _validate_catfname(catfname)
+    output_dir = _validate_outpath(outpath)
+    filter_mode = _validate_filter(filter)
+    append_flag = _validate_append(append)
+
+    # log updated parameters
+    log.debug(f"Expanded region paths: {region_paths}")
+    log.debug(f"Expanded image list: {image_list}")
+    log.debug(f"Normalized img_wcs_ext: {ext_spec}")
+    log.debug(f"Normalized outpath: {output_dir}")
+    log.debug(f"Normalized catfname: {normalized_catfname}")
+    log.debug(f"Normalized filter: {filter_mode}")
+    log.debug(f"Normalized append: {append_flag}")
+
+    # normalize extension specification
+    if isinstance(ext_spec, list):
+        normalized_ext_spec = ext_spec
+    elif isinstance(ext_spec, tuple):
+        normalized_ext_spec = tuple(ext_spec)
+    else:
+        normalized_ext_spec = ext_spec
+
+    # read all input region files and combine into a single Regions object
+    sky_regions = []
+    for region_path in region_paths:
+        sky_regions.extend(Regions.read(region_path))
+    all_sky_regions = Regions(sky_regions)
+    log.debug("Total number of sky regions: %d", len(all_sky_regions))
+
+    # perform the mapping
     map_region_files(
-        input_reg,
-        images=images,
-        img_wcs_ext=img_wcs_ext,
-        catfname=catfname,
-        outpath=outpath,
-        filter=filter,
-        append=append,
+        sky_regions=all_sky_regions,
+        images=image_list,
+        img_wcs_ext=normalized_ext_spec,
+        catfname=normalized_catfname,
+        outpath=output_dir,
+        filter=filter_mode,
+        append=append_flag,
     )
 
+    # remove logging handlers
     package_level_logger.removeHandler(file_handler)
     package_level_logger.removeHandler(stream_handler)
     file_handler.close()
@@ -288,7 +330,7 @@ def MapReg(input_reg, images, img_wcs_ext="sci", outpath="./regions", filter="",
 
 def _validate_input_reg(input_reg):
     """Normalize input region specifications into concrete file paths."""
-    log.debug("Validating input_reg: %s", input_reg)
+    log.debug(f"Validating input_reg: {input_reg}")
     seen_lists = set()
     
     def _expand_string_spec(spec, context_dir=None):
@@ -296,23 +338,19 @@ def _validate_input_reg(input_reg):
         if not value:
             raise ValueError("input_reg entries must not be empty")
 
-        if value.startswith("@"):
-            warnings.warn(
-                "The '@' filelist specification is deprecated for 'input_reg' and will be removed in a future release.",
-                AstropyDeprecationWarning,
-            )
-            list_path = value[1:].strip()
-            if not list_path:
+        if value.startswith("@-"):
+            list_name = value[2:].strip()
+            if not list_name:
                 raise ValueError("input_reg list specifications must name a file")
-            if context_dir and not os.path.isabs(list_path):
-                list_path = os.path.join(context_dir, list_path)
-            list_path = os.path.normpath(list_path)
+            if context_dir and not os.path.isabs(list_name):
+                list_name = os.path.join(context_dir, list_name)
+            list_path = os.path.normpath(os.path.expanduser(list_name))
             if not os.path.isfile(list_path):
-                raise IOError("The input region list '%s' does not exist." % list_path)
+                raise IOError(f"The input region list '{list_path}' does not exist.")
 
             key = os.path.abspath(list_path)
             if key in seen_lists:
-                raise ValueError("input_reg list '%s' references itself" % list_path)
+                raise ValueError(f"input_reg list '{list_path}' references itself")
 
             seen_lists.add(key)
             entries = []
@@ -328,9 +366,14 @@ def _validate_input_reg(input_reg):
 
             if not entries:
                 raise ValueError(
-                    "input_reg list '%s' did not yield any filenames" % list_path
+                    f"input_reg list '{list_path}' did not yield any filenames"
                 )
             return entries
+
+        if value.startswith("@"):
+            raise ValueError(
+                "input_reg list specifications must use the '@-' prefix"
+            )
 
         if "," in value:
             parts = [part.strip() for part in value.split(",") if part.strip()]
@@ -352,7 +395,7 @@ def _validate_input_reg(input_reg):
             matches = sorted(glob.glob(normalized))
             if not matches:
                 raise IOError(
-                    "The input region wildcard '%s' did not match any files." % value
+                    f"The input region wildcard '{value}' did not match any files."
                 )
             return matches
 
@@ -381,7 +424,7 @@ def _validate_input_reg(input_reg):
         if not path:
             raise ValueError("input_reg entries must not be empty")
         if not os.path.isfile(path):
-            raise IOError("The input region file '%s' does not exist." % path)
+            raise IOError(f"The input region file '{path}' does not exist.")
         normalized.append(path)
 
     return normalized
@@ -389,7 +432,7 @@ def _validate_input_reg(input_reg):
 
 def _validate_images(images):
     """Expand image specifications into a list of existing files."""
-    log.debug("Validating images: %s", images)
+    log.debug(f"Validating images: {images}")
     seen_lists = set()
 
     def _normalize_path(path, base_dir):
@@ -403,17 +446,17 @@ def _validate_images(images):
         if not value:
             raise ValueError("images entries must not be empty")
 
-        if value.startswith("@"):
-            list_name = value[1:].strip()
+        if value.startswith("@-"):
+            list_name = value[2:].strip()
             if not list_name:
                 raise ValueError("images list specifications must name a file")
             list_path = _normalize_path(list_name, base_dir)
             if not os.path.isfile(list_path):
-                raise IOError("The image list '%s' does not exist." % list_path)
+                raise IOError(f"The image list '{list_path}' does not exist.")
 
             key = os.path.abspath(list_path)
             if key in seen_lists:
-                raise ValueError("images list '%s' references itself" % list_path)
+                raise ValueError(f"images list '{list_path}' references itself")
 
             seen_lists.add(key)
             collected = []
@@ -429,9 +472,12 @@ def _validate_images(images):
 
             if not collected:
                 raise ValueError(
-                    "images list '%s' did not yield any filenames" % list_path
+                    f"images list '{list_path}' did not yield any filenames"
                 )
             return collected
+
+        if value.startswith("@"):
+            raise ValueError("images list specifications must use the '@-' prefix")
 
         if "," in value:
             parts = [part.strip() for part in value.split(",") if part.strip()]
@@ -450,12 +496,12 @@ def _validate_images(images):
             matches = sorted(glob.glob(normalized))
             if not matches:
                 raise IOError(
-                    "The image wildcard '%s' did not match any files." % value
+                    f"The image wildcard '{value}' did not match any files."
                 )
             return matches
 
         if not os.path.isfile(normalized):
-            raise IOError("The image file '%s' does not exist." % normalized)
+            raise IOError(f"The image file '{normalized}' does not exist.")
 
         return [normalized]
 
@@ -480,7 +526,7 @@ def _validate_images(images):
 
 
 def _validate_img_wcs_ext(img_wcs_ext):
-    log.debug("Validating img_wcs_ext: %s", img_wcs_ext)
+    log.debug(f"Validating img_wcs_ext: {img_wcs_ext}")
     
     if img_wcs_ext in (None, ""):
         return None
@@ -497,9 +543,8 @@ def _validate_img_wcs_ext(img_wcs_ext):
         if not value:
             raise ValueError("img_wcs_ext string must not be empty")
         if any(sep in value for sep in ";,"):
-            raise ValueError(
-                "img_wcs_ext string must name a single EXTNAME without separators"
-            )
+            raise ValueError("img_wcs_ext string must name a single"+
+                             " EXTNAME without separators")
         return value
 
     if isinstance(img_wcs_ext, (list, tuple)):
@@ -511,7 +556,7 @@ def _validate_img_wcs_ext(img_wcs_ext):
 
 
 def _validate_outpath(outpath):
-    log.debug("Validating outpath: %s", outpath)
+    log.debug(f"Validating outpath: {outpath}")
     
     if outpath in (None, ""):
         return os.path.curdir + os.path.sep
@@ -525,12 +570,12 @@ def _validate_outpath(outpath):
 
     if not os.path.isdir(path):
         os.makedirs(path, exist_ok=True)
-        log.debug("Created output directory: %s", path)
+        log.debug(f"Created output directory: {path}")
 
     return path
 
 def _validate_catfname(catfname):
-    log.debug("Validating catfname: %s", catfname)
+    log.debug(f"Validating catfname: {catfname}")
     
     if catfname in (None, ""):
         return "exclusions_cat.txt"
@@ -546,14 +591,14 @@ def _validate_catfname(catfname):
 
 
 def _validate_filter(filter_option):
-    log.debug("Validating filter_option: %s", filter_option)
+    log.debug(f"Validating filter_option: {filter_option}")
     
     if filter_option is None:
         return None
 
     if isinstance(filter_option, str):
         value = filter_option.strip().lower()
-        if not value or value == "none":
+        if not value or value == "none" or value == "":
             return None
         if value == "fast":
             return "fast"
@@ -562,6 +607,108 @@ def _validate_filter(filter_option):
         raise ValueError("filter must be None, 'fast', 'precise', or 'none'")
 
     raise TypeError("filter must be None or a string value")
+
+
+def _validate_append(append_option):
+    log.debug(f"Validating append_option: {append_option}")
+    if isinstance(append_option, bool):
+        return append_option
+    raise TypeError("append must be a boolean value")
+
+
+def map_region_files(sky_regions, images, img_wcs_ext=None, outpath="./regions",
+                     catfname="exclusions_cat.txt", filter=None, append=False):
+    """Map DS9 sky-coordinate regions onto image coordinates.
+
+    Parameters
+    ----------
+    sky_regions : regions.Regions
+        Regions defined in sky coordinates to project into each output image.
+        Callers must supply a populated :class:`regions.Regions` object.
+    images : tuple[str, ...]
+        Tuple of FITS image paths providing WCS transformations. Each file
+        must exist on disk prior to invocation.
+    img_wcs_ext : str | tuple[int, ...] | None, optional
+        Normalized extension selector from :func:`_validate_img_wcs_ext`.
+        ``"sci"`` expands to all science extensions, a tuple selects explicit
+        HDU indices, and ``None`` implies automatic SCI discovery.
+    outpath : str, optional
+        Destination directory for the generated region files. The directory
+        must already exist and should be provided by :func:`_validate_outpath`.
+    catfname : str, optional
+        Destination path for the exclusion catalog output. Supply the value
+        returned by :func:`_validate_catfname`.
+    filter : None | {'fast', 'precise'}, optional
+        Filtering mode produced by :func:`_validate_filter`. ``None`` disables
+        filtering.
+    append : bool, optional
+        Whether to append to existing outputs. Use the result from
+        :func:`_validate_append`.
+    """
+
+    created_region_files = []
+
+    # iterate of images and extensions
+    for image_fname in images:
+        image_label = os.path.basename(image_fname)
+        current_exts = img_wcs_ext
+
+        # expand "sci" to all science extensions
+        if current_exts is None or (isinstance(current_exts, str) and 
+                                    current_exts.lower() == "sci"):
+            current_exts = count_sci_extensions(image_fname, return_ind=True)
+            log.debug(f"Expanded 'sci' to extensions: {current_exts}")
+
+        # make sure that we are working with a list of extensions and not a single value
+        if not isinstance(current_exts, list):
+            current_exts = [current_exts]
+
+        with fits.open(image_fname, memmap=False) as hdu:
+            for ext in current_exts:
+                all_pix_region = []
+                data_hdu = hdu[ext]
+                wcs = WCS(data_hdu.header, hdu)
+                shape = data_hdu.data.shape if data_hdu.data is not None else None
+
+                # Project each sky region into pixel coordinates and filter if needed
+                for region in sky_regions:
+                    if filter and shape is not None:
+                        # skip regions outside the image
+                        if not _check_if_region_in_image(region, wcs, shape, mode=filter):
+                            log.debug(f"Skipping region outside image: {region}")
+                            continue
+                    pix_reg = region.to_pixel(wcs)
+                    all_pix_region.append(pix_reg)
+                full_pix_region = Regions(all_pix_region)
+
+                # do not create empty region files
+                if not full_pix_region:
+                    log.warning(f"No overlap between image '{image_label}' and "
+                        f"extension {ext}; skipping file creation.")
+                    continue
+                
+                # get output region file name
+                extsuffix = _ext2str_suffix(ext)
+                basefname, _ = os.path.splitext(os.path.basename(image_fname))
+                regfname = basefname + extsuffix + os.extsep + "reg"
+                fullregfname = os.path.join(outpath, regfname)
+                if append:
+                    _save_region_file(full_pix_region, fullregfname, 
+                                      exclusion_file=False, append=append)
+                else:
+                    full_pix_region.write(fullregfname, format="ds9", overwrite=True)
+                log.debug(f"Wrote region file: {fullregfname}")
+                created_region_files.append(os.path.basename(fullregfname))
+                
+                # write exclusion catalog entry
+                _save_region_file(full_pix_region, catfname, exclusion_file=True, 
+                                  append=append)
+                log.debug(f"Wrote exclusion catalog entry: {catfname}")
+    if created_region_files:
+        log.info(f"Output region files: {', '.join(created_region_files)}")
+    else:
+        log.info("Output region files: none")
+    log.info("MapReg processing complete.")
 
 
 def _check_if_region_in_image(region, wcs, shape, mode="fast"):
@@ -614,10 +761,12 @@ def _ext2str_suffix(ext):
 
 
 def _save_region_file(region, filename, exclusion_file, append):
-    """Export a ds9 region file with the extra ability to append lines to an 
-    existing region file, or add the '-' prefix to region shapes required for
-    exclusion regions in tweakreg. For simple saving of region files, use the
-    built-in regions write() method.
+    """Export a ds9 region file with optional appending and exclusion markers.
+
+    When ``append`` is True, new shapes append to an existing file; otherwise
+    the file is overwritten. When ``exclusion_file`` is True, each shape
+    gains the '-' prefix required for tweakreg exclusion regions. For simple
+    saves prefer the ``Regions.write`` method.
 
     Parameters
     ----------
@@ -697,109 +846,3 @@ def _save_region_file(region, filename, exclusion_file, append):
                 handle.write(entry + "\n")
         log.debug(f"Wrote exclusion catalog file: {filename}")
 
-
-def map_region_files(input_reg, images, img_wcs_ext=None, outpath="./regions", 
-                     catfname=None, filter="fast", append=False):
-    """Map DS9 sky-coordinate regions onto image coordinates.
-
-    Parameters
-    ----------
-    input_reg : str or sequence of str
-        Region file specification(s) written in a sky-based coordinate system.
-        Supports single filenames, comma-separated filenames, wildcard
-        patterns, and iterable collections of filenames.
-    images : str or sequence of str
-        FITS image specification(s) providing the WCS transformations. Strings
-        may contain single filenames, comma-separated filenames, wildcard
-        patterns, or ``@`` list files. Iterable inputs can mix these forms.
-    img_wcs_ext : str or sequence of int, optional
-        Extension selector identifying which HDUs receive mapped regions. A
-        string references an EXTNAME (for example ``"SCI"``) and, when set to
-        ``"sci"``, expands to every science extension present in each image. A
-        sequence of integers targets explicit extension numbers.
-    outpath : str, optional
-        Destination directory for the generated region files. Defaults to
-        ``./regions`` and must exist ahead of time.
-    catfname : str, optional
-        Name of the output exclusions catalog file to be created from the
-        supplied image and region file names. Defaults to ``exclusions_cat.txt``.
-    filter : {None, 'fast', 'precise', 'none'}, optional
-        Region filtering strategy. ``'fast'`` performs bounding-box checks,
-        ``'precise'`` is accepted but coerced to ``'fast'``, and ``None``/``'none'``
-        skips filtering entirely.
-    """
-    # make sure inputs are all valid
-    region_paths = _validate_input_reg(input_reg)
-    image_list = _validate_images(images)
-    ext_spec = _validate_img_wcs_ext(img_wcs_ext)
-    catfname = _validate_catfname(catfname)
-    output_dir = _validate_outpath(outpath)
-    filter_mode = _validate_filter(filter)
-
-    # combine regions from all input region files
-    sky_regions = []
-    for region_path in region_paths:
-        sky_regions.extend(Regions.read(region_path))
-    all_sky_regions = Regions(sky_regions)
-    log.debug("Total number of sky regions: %d", len(all_sky_regions))
-    created_region_files = []
-
-    # iterate of images and extensions
-    for image_fname in image_list:
-        image_label = os.path.basename(image_fname)
-        current_exts = ext_spec
-
-        # expand "sci" to all science extensions
-        if current_exts is None or (isinstance(current_exts, str) and 
-                                    current_exts.lower() == "sci"):
-            current_exts = count_sci_extensions(image_fname, return_ind=True)
-            log.debug("Expanded 'sci' to extensions: %s", current_exts)
-
-        # make sure that we are working with a list of extensions and not a single value
-        if not isinstance(current_exts, list):
-            current_exts = [current_exts]
-
-        with fits.open(image_fname, memmap=False) as hdu:
-            for ext in current_exts:
-                all_pix_region = []
-                data_hdu = hdu[ext]
-                wcs = WCS(data_hdu.header, hdu)
-                shape = data_hdu.data.shape if data_hdu.data is not None else None
-
-                for region in all_sky_regions:
-                    if filter_mode and shape is not None:
-                        # skip regions outside the image
-                        if not _check_if_region_in_image(region, wcs, shape, mode=filter_mode):
-                            log.debug("Skipping region outside image: %s", region)
-                            continue
-                    pix_reg = region.to_pixel(wcs)
-                    all_pix_region.append(pix_reg)
-                full_pix_region = Regions(all_pix_region)
-
-                # do not create empty region files
-                if not full_pix_region:
-                    log.warning(f"No overlap between image '{image_label}' and extension"+
-                             f" {ext}; skipping file creation.")
-                    continue
-                
-                # get output region file name
-                extsuffix = _ext2str_suffix(ext)
-                basefname, _ = os.path.splitext(os.path.basename(image_fname))
-                regfname = basefname + extsuffix + os.extsep + "reg"
-                fullregfname = os.path.join(output_dir, regfname)
-                if append:
-                    _save_region_file(full_pix_region, fullregfname, exclusion_file=False, append=append)
-                else:
-                    full_pix_region.write(fullregfname, format="ds9", overwrite=True)
-                log.debug(f"Wrote region file: {fullregfname}")
-                created_region_files.append(os.path.basename(fullregfname))
-                
-                # write exclusion catalog entry
-                _save_region_file(full_pix_region, catfname, exclusion_file=True, append=append)
-                log.debug(f"Wrote exclusion region file: {fullregfname}")
-    if created_region_files:
-        log.info("Output region files: %s", ", ".join(created_region_files))
-    else:
-        log.info("Output region files: none")
-    log.info("MapReg processing complete.")
-        
