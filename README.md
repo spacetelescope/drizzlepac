@@ -1,22 +1,23 @@
 # Drizzlepac
 
-[![build](https://github.com/spacetelescope/drizzlepac/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/drizzlepac/actions)
+[![Build Status](https://github.com/spacetelescope/drizzlepac/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/drizzlepac/actions)
 [![codecov](https://codecov.io/gh/spacetelescope/drizzlepac/branch/main/graph/badge.svg)](https://codecov.io/gh/spacetelescope/drizzlepac)
-[![docs](https://readthedocs.org/projects/drizzlepac/badge/?version=latest)](http://drizzlepac.readthedocs.io/en/latest/?badge=latest)
-[![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
-[![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
+[![Documentation Status](https://readthedocs.org/projects/drizzlepac/badge/?version=latest)](https://drizzlepac.readthedocs.io/en/latest/?badge=latest)
+[![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](https://www.stsci.edu)
+[![Powered by Astropy Badge](https://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](https://www.astropy.org/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3743274.svg)](https://doi.org/10.5281/zenodo.3743274)
+[![Python Versions](https://img.shields.io/pypi/pyversions/drizzlepac)](https://pypi.org/project/drizzlepac/)
 
-Nightly regression test results are run using [github actions](https://github.com/spacetelescope/RegressionTests/actions/workflows/drizzlepac.yml).
+![STScI Logo](doc/source/_static/stsci_logo.png)
 
-The use of this software on HST data is described at:
+Drizzlepac is a set of software tools maintained by the Space Telescope Science Institute (STScI) that is designed to align and combine astronomical images obtained with the Hubble Space Telescope. Drizzlepac includes core features such as AstroDrizzle, Tweakreg, and the Hubble Archival Program (HAP) data processing pipeline that creates Single-Visit and Multi-Visit Mosaics (SVMs and MVMs).
 
-    http://drizzlepac.stsci.edu/
+Nightly regression test results are available at [spacetelescope/RegressionTests](https://github.com/spacetelescope/RegressionTests/actions/workflows/drizzlepac.yml).
+
+The use of this software on HST data is described at: [https://drizzlepac.stsci.edu/](https://drizzlepac.stsci.edu/)
 
 A complete description of the documented interfaces in the code itself
-can be found at:
-
-    http://drizzlepac.readthedocs.io
+can be found at: [https://drizzlepac.readthedocs.io](https://drizzlepac.readthedocs.io)
 
 
 # Installation
@@ -45,6 +46,12 @@ $ git clone https://github.com/spacetelescope/drizzlepac
 $ cd drizzlepac
 ```
 
+### Install Drizzlepac
+
+```bash
+$ pip install .
+```
+
 ### Build the documentation
 
 *Note:* If you intend to use `drizzlepac`'s embedded help feature from within
@@ -54,10 +61,4 @@ this step.
 ```bash
 $ cd doc/
 $ make html
-```
-
-### Install DrizzlePac
-
-```bash
-$ python setup.py install
 ```
