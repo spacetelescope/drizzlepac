@@ -78,9 +78,26 @@ class BaseCal:
         # Update tree to point to correct environment
         self.tree = envopt
 
-        # Collect pytest configuration values specified in setup.cfg or pytest.ini
-        self.inputs_root = pytestconfig.getini('inputs_root')[0]
-        self.results_root = pytestconfig.getini('results_root')[0]
+        # Collect pytest configuration values; fall back to defaults when not provided
+        self.inputs_root = self._get_first_ini_value(pytestconfig, "inputs_root", "drizzlepac")
+        self.results_root = self._get_first_ini_value(pytestconfig, "results_root", "drizzlepac-results")
+
+    def _get_first_ini_value(self, pytestconfig, option, default):
+        """Return the first configured value for a pytest ini option or a default."""
+        try:
+            values = pytestconfig.getini(option)
+        except (AttributeError, ValueError):
+            values = []
+
+        if isinstance(values, str):
+            values = [values]
+
+        for raw in values:
+            candidate = (raw or "").strip()
+            if candidate:
+                return candidate
+
+        return default
 
     def teardown_class(self):
         """Reset path and variables."""

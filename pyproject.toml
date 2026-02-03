@@ -152,12 +152,14 @@ builder = "html"
 configuration = "docs/source/conf.py"
 fail_on_warning = false
 
-[tool.pytest.ini_options]
+[tool.pytest]
 minversion = "9"
-norecursedirs = ".eggs build .tox doc/build doc/exts"
+norecursedirs = [".eggs", "build", ".tox", "doc/build", "doc/exts"]
 junit_family = "xunit2"
-inputs_root = "drizzlepac"
-results_root = "drizzlepac-results"
+
+[tool.pytest.ini_options]
+inputs_root = ["drizzlepac"]
+results_root = ["drizzlepac-results"]
 
 [tool.ruff]
 extend-exclude = [
