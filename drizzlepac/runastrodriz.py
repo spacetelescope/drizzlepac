@@ -1816,7 +1816,6 @@ def update_active_wcs(filename, wcsname):
     else:
         log.debug(f"No need to update active WCS solution of {wcsname} for "
                   f"{filename} as it is already the active solution.")
-        log.debug(msg)
 
 
 def confirm_aposteriori_hdrlets(filename):
