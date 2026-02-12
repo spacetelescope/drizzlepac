@@ -11,15 +11,14 @@ import numpy as np
 from astropy import wcs as pywcs
 import astropy.coordinates as coords
 from astropy import units as u
+from regions import Regions
 from stsci.tools import textutil
 from stsci.skypac.utils import basicFITScheck, get_extver_list
 
 from astropy.io import fits
 import stsci.imagestats as imagestats
-import stregion as pyregion
 
 from . import tweakutils, util
-from .mapreg import _AuxSTWCS
 
 
 COLNAME_PARS = ['xcol','ycol','fluxcol']
@@ -624,46 +623,30 @@ class ImageCatalog(Catalog):
 
         else:
             # we are dealing with a region file:
-            reglist = pyregion.open(reg_file_name)
+            reglist = Regions.read(reg_file_name)
+            shape_keywords = ("polygon", "box", "circle", "ellipse")
 
-            ## check that regions are in image-like coordinates:
-            ##TODO: remove the code below once 'pyregion' package can correctly
-            ##      (DS9-like) convert sky coordinates to image coordinates for all
-            ##      supported shapes.
-            # if not all([ (x.coord_format == 'image' or \
-            #              x.coord_format == 'physical') for x in reglist]):
-            #    print("WARNING: Some exclusion regions are in sky coordinates.\n"
-            #          "         These regions will be ignored.")
-            #    # filter out regions in sky coordinates:
-            #    reglist = pyregion.ShapeList(
-            #        [x for x in reglist if x.coord_format == 'image' or \
-            #         x.coord_format == 'physical']
-            #    )
-
-            # TODO: comment out next lines if we do not support region files
-            #      in sky coordinates and uncomment previous block:
-            # Convert regions from sky coordinates to image coordinates:
-            auxwcs    = _AuxSTWCS(self.wcs)
-            reglist = reglist.as_imagecoord(auxwcs, rot_wrt_axis=2)
-
-            # if all regions are exclude regions, then assume that the entire image
-            # should be included and that exclude regions exclude from this
-            # rectangular region representing the entire image:
-            if all([x.exclude for x in reglist]):
-                # we slightly widen the box to make sure that
-                # the entire image is covered:
-                imreg = pyregion.parse("image;box({:.1f},{:.1f},{:d},{:d},0)"
-                                       .format((img_nx+1)/2.0, (img_ny+1)/2.0,
-                                               img_nx+1, img_ny+1)
-                                       )
-
-                reglist = pyregion.ShapeList(imreg + reglist)
-
-            # create a mask from regions:
-            regmask = np.asarray(
-                reglist.get_mask(shape=(img_ny, img_nx)),
-                dtype=bool
-            )
+            include_flags = []
+            try:
+                with open(reg_file_name) as fh:
+                    for raw in fh:
+                        text = raw.strip()
+                        if not text or text.startswith("#"):
+                            continue
+                        if any(word in text.lower() for word in shape_keywords):
+                            include_flags.append(not text.lstrip().startswith("-"))
+            except:
+                raise IOError(f"Could not read region file: '{reg_file_name}'.")
+            
+            # combine individual masks from each region
+            # if any inclusion regions, exclude the entire image first
+            if np.any(include_flags):
+                regmask = np.zeros((img_ny, img_nx), dtype=bool)
+            else:
+                regmask = np.ones((img_ny, img_nx), dtype=bool)
+            for include, region in zip(include_flags, reglist):
+                indiv_mask = region.to_mask().to_image((img_ny, img_nx)).astype(bool)
+                regmask = regmask | indiv_mask if include else regmask & ~indiv_mask
 
         if mask is not None and regmask is not None:
             mask = np.logical_and(regmask, mask)
@@ -671,10 +654,9 @@ class ImageCatalog(Catalog):
             mask = regmask
 
         # DEBUG:
-        if mask is not None:
+        if mask is not None and log.getEffectiveLevel() <= logging.DEBUG:
             fn = os.path.splitext(self.fname)[0] + '_srcfind_mask.fits'
             fits.writeto(fn, mask.astype(dtype=np.uint8), overwrite=True)
-
         return mask
 
     def generateXY(self, **kwargs):
