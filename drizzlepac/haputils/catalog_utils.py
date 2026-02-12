@@ -1610,7 +1610,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._nlevels = self.param_dict["sourcex"]["nlevels"]
         self._contrast = self.param_dict["sourcex"]["contrast"]
         self._border = self.param_dict["sourcex"]["border"]
-        self._nsigma = self.param_dict["sourcex"]["segm_nsigma"]
+        self._segm_nsigma = self.param_dict["sourcex"]["segm_nsigma"]
         self._rw2d_size = self.param_dict["sourcex"]["rw2d_size"]
         self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
         self._rw2d_biggest_source = self.param_dict["sourcex"]["rw2d_biggest_source"]
@@ -1679,7 +1679,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             log.info("Image: {}".format(self.imgname))
             log.info("Gaussian FWHM (Filter for source detection in arcseconds): {}".format(self.param_dict['TWEAK_FWHMPSF']))
             log.info("size_source_box (no. of connected pixels needed for a detection): {}".format(self._size_source_box))
-            log.info("Gaussian nsigma (threshold = nsigma * background_rms): {} (Round 1), {} (Round2 for Bkg2D)".format(self._nsigma, 2.0 * self._nsigma))
+            log.info("Gaussian nsigma (threshold = nsigma * background_rms): {} (Round 1), {} (Round2 for Bkg2D)".format(self._segm_nsigma, 2.0 * self._segm_nsigma))
             log.info("nlevels (no. of multi-thresholding levels for deblending): {}".format(self._nlevels))
             log.info("contrast (frac. flux for peak to be separate object, 0=max. deblend, 1=no deblend): {}".format(self._contrast))
             log.info("RickerWavelet nsigma (threshold = nsigma * background_rms): {} (Round 1), {} (Round 2 for Bkg2D)".format(self._rw2d_nsigma, 2.0 * self._rw2d_nsigma))
@@ -1724,7 +1724,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                                                      g2d_kernel,
                                                                                      ncount,
                                                                                      self._size_source_box,
-                                                                                     self._nsigma,
+                                                                                     self._segm_nsigma,
                                                                                      self.image.bkg_background_ra,
                                                                                      self.image.bkg_rms_ra,
                                                                                      check_big_island_only=False,
@@ -1821,13 +1821,13 @@ class HAPSegmentCatalog(HAPCatalogBase):
                     # Re-compute a background2D with a higher threshold by increasing the nsigma used
                     elif (self.image.bkg_type.lower().startswith('twod')):
                         log.info("Increasing the threshold by nsigma * 2.0 for improved source detection.")
-                        sigma_for_threshold = self._nsigma * 2.0
+                        sigma_for_threshold = self._segm_nsigma * 2.0
                         rw2d_sigma_for_threshold = self._rw2d_nsigma * 2.0
 
                     # Define thresholds for empty/zero background
                     else:
                         log.info("Defining the threshold image based on nsigma for source detection.")
-                        sigma_for_threshold = self._nsigma
+                        sigma_for_threshold = self._segm_nsigma
                         rw2d_sigma_for_threshold = self._rw2d_nsigma
 
                     # Detect segments and evaluate the detection in terms of big sources/islands or crowded fields
@@ -1946,7 +1946,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 self.kernel = g2d_kernel
                 segm_img = copy.deepcopy(g_segm_img)
                 del g_segm_img
-                self.final_nsigma = self._nsigma
+                self.final_nsigma = self._segm_nsigma
 
             # No segments were detected in the total data product - no further processing done for this TDP,
             # but processing of another TDP should proceed.
