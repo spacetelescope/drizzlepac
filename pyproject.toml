@@ -96,6 +96,7 @@ requires = [
     "numpy>=2",
     "astropy>=5.0.4",
     "markupsafe<=2.0.1",
+    "pytest>=9.0"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -152,7 +153,7 @@ builder = "html"
 configuration = "docs/source/conf.py"
 fail_on_warning = false
 
-[tool.pytest]
+[tool.pytest.ini_options]
 minversion = "9"
 norecursedirs = [".eggs", "build", ".tox", "doc/build", "doc/exts"]
 junit_family = "xunit2"
