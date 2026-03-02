@@ -188,7 +188,7 @@ def findstars(jdata, fwhm, threshold, skymode,
         tdata=np.where((convdata > threshold) & mask, convdata, 0)
 
     # segment image and find sources
-    s = ndimage.morphology.generate_binary_structure(2, 2)
+    s = ndimage.generate_binary_structure(2, 2)
     ldata, nobj = ndimage.label(tdata, structure=s)
     fobjects = ndimage.find_objects(ldata)
 

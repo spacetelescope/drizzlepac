@@ -8,9 +8,9 @@ on:
 
 jobs:
   crds_contexts:
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@8fe0f7e7d5e84cbf077093e28979b89558dec5b5  # 13.0.6
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@4dac0ba4d95ef313537345b12cf7d718a07c29ef  # 13.1.1
   test:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@9f1fedda61294df4c004c05519a3fbf3b8e1f32f  # v2.3.1
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@99401c364fa51c9c507d3cd6d272049278ac0b2c  # v2.4.0
     needs: [ crds_contexts ]
     with:
       setenv: |
