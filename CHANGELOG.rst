@@ -20,6 +20,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.11.0 (unreleased)
 ===================
 
+- Replaced stregion with astropy-regions in mapreg.py, a module for reading and 
+  parsing DS9 region files used for tweakreg. [#2125]
+
 - Deprecated the hapcut_utils module. [#2103]
 
 - Remove WFC3/UVIS Quadrant filter data from SVM total image and catalog creation. [#2093]
