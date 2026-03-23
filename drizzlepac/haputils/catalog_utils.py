@@ -1815,7 +1815,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
                                                            y_size=self._rw2d_size)
 
                         rw2d_kernel = rw2dk.array
-                        sigma_for_threshold = self._nsigma
+                        sigma_for_threshold = self._segm_nsigma
                         rw2d_sigma_for_threshold = self._rw2d_nsigma
 
                     # Re-compute a background2D with a higher threshold by increasing the nsigma used
