@@ -19,7 +19,9 @@ from stsci.tools.bitmask import bitfield_to_boolean_mask
 from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 from astropy.modeling import models, fitting
+from astropy.utils import minversion
 
+import photutils
 from photutils import background
 from photutils.background import Background2D
 from photutils.detection import DAOStarFinder
@@ -37,6 +39,7 @@ from .. import updatehdr
 from . import astrometric_utils as amutils
 from . import analyze
 from . import deconvolve_utils as decutils
+from .astrometric_utils import _translate_columns
 
 from tweakwcs.matchutils import XYXYMatch
 from tweakwcs.imalign import align_wcs
@@ -56,6 +59,15 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
+PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
+photutils.future_column_names = True
+if PHOTUTILS_GE_3:
+    X_CENTROID = 'x_centroid'
+    Y_CENTROID = 'y_centroid'
+else:
+    X_CENTROID = X_CENTROID
+    Y_CENTROID = Y_CENTROID
 
 
 class AlignmentTable:
@@ -262,10 +274,17 @@ class AlignmentTable:
                             regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
                             out_table = Table(chip_cat)
                             # To align with positions of sources in DS9/IRAF
-                            out_table['xcentroid'] += 1
-                            out_table['ycentroid'] += 1
+                            out_table[X_CENTROID] += 1
+                            out_table[Y_CENTROID] += 1
+
+                            # Preserve pre-photutils 3+ column names in
+                            # output table for backwards compatibility
+                            _translate_columns(out_table)
+
                             out_table.write(regfilename,
-                                            include_names=["xcentroid", "ycentroid", "mag"],
+                                            include_names=["xcentroid",
+                                                           "ycentroid",
+                                                           "mag"],
                                             format="ascii.fast_commented_header")
                             log.info("Wrote region file {}\n".format(regfilename))
 
@@ -602,10 +621,16 @@ class HAPImage:
 
             for percentile in exclude_percentiles:
                 try:
-                    bkg = Background2D(scidata, box_size, filter_size=win_size,
-                                       bkg_estimator=bkg_estimator(),
-                                       bkgrms_estimator=rms_estimator(),
-                                       exclude_percentile=percentile)
+                    if PHOTUTILS_GE_3:
+                        bkg = Background2D(scidata, box_size, filter_size=win_size,
+                                           bkg_estimator=bkg_estimator(),
+                                           bkg_rms_estimator=rms_estimator(),
+                                           exclude_percentile=percentile)
+                    else:
+                        bkg = Background2D(scidata, box_size, filter_size=win_size,
+                                           bkg_estimator=bkg_estimator(),
+                                           bkgrms_estimator=rms_estimator(),
+                                           exclude_percentile=percentile)
                 except Exception:
                     bkg = None
                     continue
@@ -805,11 +830,16 @@ class SBCHAPImage(HAPImage):
         tbl['cat_id'] = np.arange(1, len(tbl) + 1)
 
         if outroot:
-            tbl['xcentroid'].info.format = '.10f'  # optional format
-            tbl['ycentroid'].info.format = '.10f'
+            tbl[X_CENTROID].info.format = '.10f'  # optional format
+            tbl[Y_CENTROID].info.format = '.10f'
             tbl['flux'].info.format = '.10f'
             if not outroot.endswith('.cat'):
                 outroot += '.cat'
+
+            # Preserve pre-photutils 3+ column names in output table for
+            # backwards compatibility
+            _translate_columns(tbl)
+
             tbl.write(outroot, format='ascii.commented_header', overwrite=True)
             log.info("Wrote source catalog: {}".format(outroot))
 
