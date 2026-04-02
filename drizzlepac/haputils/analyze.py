@@ -19,8 +19,10 @@ from astropy.io import fits
 from astropy.io.fits import getheader, getdata
 from astropy.table import Table
 from astropy.stats import sigma_clipped_stats
+from astropy.utils import minversion
 import numpy as np
 
+import photutils
 from photutils.segmentation import SourceCatalog, detect_sources
 
 from scipy import ndimage
@@ -39,6 +41,9 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.INFO, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
+PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
+photutils.future_column_names = True
 
 __all__ = ['analyze_data', 'analyze_wrapper', 'mvm_analyze_wrapper']
 
@@ -91,11 +96,11 @@ MIN_LINES = 4  # Minimum number of detected lines for consideration of bad guidi
 # Return codes
 class Ret_code(Enum):
     """
-    Define return status codes for Operations 
+    Define return status codes for Operations
     """
     OK = 0
     KEYWORD_UPDATE_PROBLEM = 15
-    SBCHRC_DATA = 55 
+    SBCHRC_DATA = 55
     NO_VIABLE_DATA = 65
 
 # Annotates level to which image can be aligned according observational parameters
@@ -180,7 +185,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     =======
     viable_images_list : list
        List of images which can be used in the drizzle process.
-       
+
     good_index : list
         indices of the viable images in the input_file_list
 
@@ -193,7 +198,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     """
     # Set logging level to user-specified level
     log.setLevel(log_level)
- 
+
     # Analyze the input file list and get the full table assessment
     filtered_table, analyze_data_good_index = analyze_data(input_file_list, type=type)
 
@@ -214,7 +219,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
     return_value = Ret_code.OK.value
 
     # MVM processing, but excluding SBC/HRC data
-    if use_sbchrc == False and type.upper() == "MVM": 
+    if use_sbchrc == False and type.upper() == "MVM":
         # Check the table to determine presence of SBC/HRC data
         if filtered_table:
             for i, old_row in enumerate(filtered_table):
@@ -238,7 +243,7 @@ def analyze_wrapper(input_file_list, log_level=logutil.logging.DEBUG, use_sbchrc
         else:
             log.warning("No viable images in multi-visit table - no processing done.\n")
             return_value = Ret_code.NO_VIABLE_DATA.value
- 
+
     # SVM processing or MVM processing with SBC/HRC data included in the MVM processing
     else:
         if filtered_table:
@@ -279,7 +284,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
         Astropy Table object containing data pertaining to the associated dataset, including
         the do_process bool.  It is intended this table is updated by subsequent functions for
         bookkeeping purposes.
-    
+
     analyze_data_good_index : list
         indices of the viable images in the input_file_list
 
@@ -452,7 +457,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                     log.warning(
                         f"{input_file} (SCI, {sci_ext_ind}) is all zeros, but processing will continue with the other science extensions."
                     )
-    
+
         else:
             log.warning(f'No science extension in file: {input_file}')
 
@@ -531,7 +536,7 @@ def analyze_data(input_file_list, log_level=logutil.logging.DEBUG, type=""):
                 no_proc_value = None
                 log.info("The Grism/Prism data, {}, will be processed.".format(input_file))
             # Grism/Prism WILL NOT be processed primarily if MVM processing or with an exposure time of zero.
-            elif item.startswith(('G', 'PR')): 
+            elif item.startswith(('G', 'PR')):
                 if type.upper() == "MVM":
                     no_proc_value += ", Grism/Prism data and MVM processing"
                     log.warning("The Grism/Prism data {} with MVM processing will be ignored.".format(input_file))
@@ -679,11 +684,15 @@ def verify_guiding(filename, min_length=33):
     # Determine rough number of probable sources
     # Trying to ignore small sources (<= 4x4 pixels in size, or npixels < 17)
     #   which are either noise peaks or head-on CRs.
-    segm = detect_sources(imgarr, 0, npixels=17)
-    if segm is None or segm.nlabels < 2:
+    if PHOTUTILS_GE_3:
+        segm = detect_sources(imgarr, 0, n_pixels=17)
+    else:
+        segm = detect_sources(imgarr, 0, npixels=17)
+    if segm is None:
         log.debug(f'Did NOT detect enough raw sources in {filename} for guiding verification.')
         return False
-    log.debug(f'Detected {segm.nlabels} raw sources in {filename} for guiding verification.')
+    n_sources = segm.n_labels if PHOTUTILS_GE_3 else segm.nlabels
+    log.debug(f'Detected {n_sources} raw sources in {filename} for guiding verification.')
 
     src_cat = SourceCatalog(imgarr, segm)
     # Remove likely cosmic-rays based on central_moments classification

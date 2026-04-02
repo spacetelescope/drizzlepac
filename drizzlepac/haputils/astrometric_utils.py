@@ -45,6 +45,7 @@ from astropy.visualization import SqrtStretch
 from astropy.visualization.mpl_normalize import ImageNormalize
 from astropy.modeling.fitting import TRFLSQFitter
 from astropy.time import Time
+from astropy.utils import minversion
 from astropy.utils.decorators import deprecated
 
 import photutils
@@ -84,6 +85,17 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'
+
+PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
+photutils.future_column_names = True
+if PHOTUTILS_GE_3:
+    X_CENTROID = 'x_centroid'
+    Y_CENTROID = 'y_centroid'
+    FERR_COLNAME = 'segment_flux_err'
+else:
+    X_CENTROID = 'xcentroid'
+    Y_CENTROID = 'ycentroid'
+    FERR_COLNAME = 'segment_fluxerr'
 
 # Check if the environment variable is defined, and if so, use that value
 if ASTROMETRIC_CAT_ENVVAR in os.environ:
@@ -171,6 +183,26 @@ log.info(f'ASTROMETRIC_CATALOG_URL = {SERVICELOCATION}')
 
 # CRBIT definitions
 CRBIT = 4096
+
+
+def _translate_columns(tbl):
+    """
+    Translate photutils 3+ column names to pre-photutils 3+ column names
+    to preserve drizzlepac/haputils output table files.
+
+    The input table is modified in place.
+    """
+    if not PHOTUTILS_GE_3:
+        return tbl
+
+    rename_map = {
+        X_CENTROID: 'xcentroid',
+        Y_CENTROID: 'ycentroid',
+    }
+    tbl.rename_columns(rename_map.keys(), rename_map.values())
+    return tbl
+
+
 """
 
 Primary function for creating an astrometric reference catalog.
@@ -699,8 +731,14 @@ def compute_2d_background(imgarr, box_size, win_size,
         log.info("Background2D failure detected. Using alternative background calculation instead....")
 
         sigma_clip = SigmaClip(sigma=3.0, maxiters=9)
-        threshold = detect_threshold(imgarr, nsigma=2.0, sigma_clip=sigma_clip)
-        segment_img = detect_sources(imgarr, threshold, npixels=5)
+        if PHOTUTILS_GE_3:
+            threshold = detect_threshold(imgarr, n_sigma=2.0,
+                                         sigma_clip=sigma_clip)
+            segment_img = detect_sources(imgarr, threshold, n_pixels=5)
+        else:
+            threshold = detect_threshold(imgarr, nsigma=2.0,
+                                         sigma_clip=sigma_clip)
+            segment_img = detect_sources(imgarr, threshold, npixels=5)
         footprint = circular_footprint(radius=11)
         mask = segment_img.make_source_mask(footprint=footprint)
         sigcl_mean, sigcl_median, sigcl_std = sigma_clipped_stats(imgarr, sigma=3.0, mask=mask)
@@ -936,7 +974,8 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
                                                        fwhm, bkg[1],
                                                        nbright=nbright,
                                                        use_sharp_round=True)
-    srcs = Table([x, y, flux, src_id], names=['xcentroid', 'ycentroid', 'flux', 'id'])
+    names = [X_CENTROID, Y_CENTROID, 'flux', 'id']
+    srcs = Table([x, y, flux, src_id], names=names)
 
     """
     # Now, use IRAFStarFinder to identify sources across chip
@@ -1057,11 +1096,14 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         dao_threshold, bkg = sigma_clipped_bkg(imgarr, sigma=4.0, nsigma=dao_nsigma)
         segment_threshold = np.ones(imgarr.shape, imgarr.dtype) * dao_threshold
 
-    segm = detect_sources(convolve(imgarr, kernel), segment_threshold, npixels=source_box,
-                          connectivity=4)
+    if PHOTUTILS_GE_3:
+        segm = detect_sources(convolve(imgarr, kernel), segment_threshold,
+                              n_pixels=source_box, connectivity=4)
+    else:
+        segm = detect_sources(convolve(imgarr, kernel), segment_threshold,
+                              npixels=source_box, connectivity=4)
 
-    # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
-    if segm is None or segm.nlabels == 0:
+    if segm is None:
         log.info("No detected sources!")
         return None, None, None
 
@@ -1088,12 +1130,18 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                         kcenter - koffset: kcenter + koffset + 1].copy()
         kernel /= kernel.sum()  # normalize to total sum == 1
         log.info("Looking for crowded sources using smaller kernel with shape: {}".format(kernel.shape))
-        segm = detect_sources(convolve(imgarr, kernel), segment_threshold, npixels=source_box)
+        if PHOTUTILS_GE_3:
+            segm = detect_sources(convolve(imgarr, kernel), segment_threshold, n_pixels=source_box)
+    else:
+            segm = detect_sources(convolve(imgarr, kernel), segment_threshold, npixels=source_box)
 
     if deblend:
-        segm = deblend_sources(convolve(imgarr, kernel), segm, npixels=5,
-                               nlevels=32,
-                               contrast=0.01)
+        if PHOTUTILS_GE_3:
+            segm = deblend_sources(convolve(imgarr, kernel), segm, n_pixels=5,
+                                   n_levels=32, contrast=0.01)
+        else:
+            segm = deblend_sources(convolve(imgarr, kernel), segm, npixels=5,
+                                   nlevels=32, contrast=0.01)
 
     # If classify is turned on, it should modify the segmentation map
     dqmap = None
@@ -1110,7 +1158,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         segm.remove_labels(bad_srcs)
 
     flux_colname = 'segment_flux'
-    ferr_colname = 'segment_fluxerr'
 
     # convert segm to mask for daofind
     if centering_mode == 'starfind':
@@ -1134,9 +1181,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         for indx in src_brightest:
             segment = segm.segments[indx]
 
-        # for segment in segm.segments:
-            # check needed for photutils <= 0.6; it can be removed when
-            # the drizzlepac depends on photutils >= 0.7
             if segment is None:
                 continue
 
@@ -1181,18 +1225,18 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     sat_table = segment_properties.to_table()
                     seg_table['flux'][max_row] = sat_table[flux_colname][0]
                     seg_table['peak'][max_row] = sat_table['max_value'][0]
-                    xcentroid = sat_table['xcentroid'][0]
-                    ycentroid = sat_table['ycentroid'][0]
+                    xcentroid = sat_table[X_CENTROID][0]
+                    ycentroid = sat_table[Y_CENTROID][0]
                     sky = sat_table['local_background'][0]
-                    seg_table['xcentroid'][max_row] = xcentroid
-                    seg_table['ycentroid'][max_row] = ycentroid
+                    seg_table[X_CENTROID][max_row] = xcentroid
+                    seg_table[Y_CENTROID][max_row] = ycentroid
                     seg_table['npix'][max_row] = sat_table['area'][0].value
                     seg_table['mag'][max_row] = -2.5 * np.log10(sat_table[flux_colname][0])
 
                 # Add row for detected source to master catalog
                 # apply offset to slice to convert positions into full-frame coordinates
-                seg_table['xcentroid'] += seg_xoffset
-                seg_table['ycentroid'] += seg_yoffset
+                seg_table[X_CENTROID] += seg_xoffset
+                seg_table[Y_CENTROID] += seg_yoffset
                 src_table.add_row(seg_table[max_row])
 
             # If we have accumulated the desired number of sources, stop looking for more...
@@ -1204,7 +1248,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         src_table = cat.to_table()
         # Make column names consistent with IRAFStarFinder column names
         src_table.rename_column(flux_colname, 'flux')
-        src_table.rename_column(ferr_colname, 'flux_err')
+        src_table.rename_column(FERR_COLNAME, 'flux_err')
         src_table.rename_column('max_value', 'peak')
 
     if src_table is not None:
@@ -1221,11 +1265,16 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     tbl['cat_id'] = np.arange(1, len(tbl) + 1)
 
     if outroot:
-        tbl['xcentroid'].info.format = '.10f'  # optional format
-        tbl['ycentroid'].info.format = '.10f'
+        tbl[X_CENTROID].info.format = '.10f'  # optional format
+        tbl[Y_CENTROID].info.format = '.10f'
         tbl['flux'].info.format = '.10f'
         if not outroot.endswith('.cat'):
             outroot += '.cat'
+
+        # Preserve pre-photutils 3+ column names in output table for
+        # backwards compatibility
+        _translate_columns(tbl)
+
         tbl.write(outroot, format='ascii.commented_header', overwrite=True)
         log.info("Wrote source catalog: {}".format(outroot))
 
@@ -1252,19 +1301,26 @@ def crclean_image(imgarr, segment_threshold, kernel, fwhm,
         Input array with pixels flagged as CRs set to 0.0
     """
     # Perform basic image segmentation to look for sources in image
-    segm = detect_sources(convolve(imgarr, kernel), segment_threshold, npixels=source_box,
-                          connectivity=4)
+    if PHOTUTILS_GE_3:
+        segm = detect_sources(convolve(imgarr, kernel), segment_threshold,
+                              n_pixels=source_box, connectivity=4)
+    else:
+        segm = detect_sources(convolve(imgarr, kernel), segment_threshold,
+                              npixels=source_box, connectivity=4)
 
-    log.debug("Detected {} sources of all types ".format(segm.nlabels))
-    # photutils >= 0.7: segm=None; photutils < 0.7: segm.nlabels=0
-    if segm is None or segm.nlabels == 0:
+    n_sources = segm.n_labels if PHOTUTILS_GE_3 else segm.nlabels
+    log.debug("Detected {} sources of all types ".format(n_sources))
+    if segm is None:
         log.info("No sources to identify as cosmic-rays!")
         return imgarr
 
     if deblend:
-        segm = deblend_sources(convolve(imgarr, kernel), segm, npixels=5,
-                               nlevels=32,
-                               contrast=0.01)
+        if PHOTUTILS_GE_3:
+            segm = deblend_sources(convolve(imgarr, kernel), segm, n_pixels=5,
+                                   n_levels=32, contrast=0.01)
+        else:
+            segm = deblend_sources(convolve(imgarr, kernel), segm, npixels=5,
+                                   nlevels=32, contrast=0.01)
 
     # Measure segment sources to compute centralized moments for each source
     cat = SourceCatalog(imgarr, segm)
@@ -1317,7 +1373,10 @@ def classify_sources(catalog, fwhm, sources=None):
     """
     # All these return ndarray objects
     moments = catalog.moments_central  # (num_sources, 4, 4)
-    semiminor_axis = catalog.semiminor_sigma.to_value()  # (num_sources,)
+    if PHOTUTILS_GE_3:
+        semiminor_axis = catalog.semiminor_axis.to_value()  # (num_sources,)
+    else:
+        semiminor_axis = catalog.semiminor_sigma.to_value()  # (num_sources,)
     elon = catalog.elongation.to_value()  # (num_sources,)
     # Determine how many sources we have.
     if sources is None:
@@ -1338,8 +1397,12 @@ def classify_sources(catalog, fwhm, sources=None):
     mx = np.array([np.where(moments[src] == moments[src].max())[0][0] for src in range(num_sources)], np.int32)
     my = np.array([np.where(moments[src] == moments[src].max())[1][0] for src in range(num_sources)], np.int32)
     # Now avoid processing sources which had NaN as either/both of their X,Y positions (rare, but does happen)
-    src_x = catalog.xcentroid  # (num_sources, )
-    src_y = catalog.ycentroid  # (num_sources, )
+    if PHOTUTILS_GE_3:
+        src_x = catalog.x_centroid  # (num_sources, )
+        src_y = catalog.y_centroid  # (num_sources, )
+    else:
+        src_x = catalog.xcentroid  # (num_sources, )
+        src_y = catalog.ycentroid  # (num_sources, )
     valid_xy = ~np.bitwise_or(np.isnan(src_x), np.isnan(src_y))
 
     # Define descriptors of CRs
@@ -1543,11 +1606,11 @@ def generate_sky_catalog(image, refwcs, dqname="DQ", output=False):
             continue
         # Convert pixel coordinates from this chip to sky coordinates
         chip_wcs = wcsutil.HSTWCS(image, ext=('sci', chip))
-        seg_ra, seg_dec = chip_wcs.all_pix2world(seg_tab_phot['xcentroid'], seg_tab_phot['ycentroid'], 1)
+        seg_ra, seg_dec = chip_wcs.all_pix2world(seg_tab_phot[X_CENTROID], seg_tab_phot[Y_CENTROID], 1)
         # Convert sky positions to pixel positions in the reference WCS frame
         seg_xy_out = refwcs.all_world2pix(seg_ra, seg_dec, 1)
-        seg_tab_phot['xcentroid'] = seg_xy_out[0]
-        seg_tab_phot['ycentroid'] = seg_xy_out[1]
+        seg_tab_phot[X_CENTROID] = seg_xy_out[0]
+        seg_tab_phot[Y_CENTROID] = seg_xy_out[1]
         if master_cat is None:
             master_cat = seg_tab_phot
         else:
@@ -1858,11 +1921,16 @@ def find_hist2d_offset(filename, reference, refwcs=None, refnames=['ra', 'dec'],
 
     # Build source catalog for entire image
     img_cat = generate_source_catalog(image, refwcs, output=chip_catalog, classify=classify)
+
+    # Preserve pre-photutils 3+ column names in output table for
+    # backwards compatibility
+    _translate_columns(img_cat)
+
     img_cat.write(filename.replace(".fits", "_xy.cat"), format='ascii.no_header',
                   overwrite=True)
 
     # Retrieve source XY positions in reference frame
-    seg_xy = np.column_stack((img_cat['xcentroid'], img_cat['ycentroid']))
+    seg_xy = np.column_stack((img_cat[X_CENTROID], img_cat[Y_CENTROID]))
     seg_xy = seg_xy[~np.isnan(seg_xy[:, 0])]
 
     # Translate reference catalog positions into input image coordinate frame
@@ -1954,16 +2022,16 @@ def build_wcscat(image, group_id, source_catalog):
 
         # rename xcentroid/ycentroid columns, if necessary, to be consistent with tweakwcs
         if imcat is None:
-            imcat = Table(names=['xcentroid', 'ycentroid', 'mag'])
+            imcat = Table(names=[X_CENTROID, Y_CENTROID, 'mag'])
         if isinstance(imcat, str):
             imcat = Table.read(imcat, format='ascii.fast_commented_header',
                                 names=['x', 'y'])
             if 'mag' not in imcat.colnames:
                 imcat['mag'] = [-999.9] * len(imcat['x'])
 
-        if 'xcentroid' in imcat.colnames:
-            imcat.rename_column('xcentroid', 'x')
-            imcat.rename_column('ycentroid', 'y')
+        if X_CENTROID in imcat.colnames:
+            imcat.rename_column(X_CENTROID, 'x')
+            imcat.rename_column(Y_CENTROID, 'y')
 
         wcscat = FITSWCSCorrector(
             w,
