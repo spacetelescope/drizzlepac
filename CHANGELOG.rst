@@ -17,7 +17,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 
     https://github.com/spacetelescope/drizzlepac/pulls
 
-3.11.0 (05-Feb-2026)
+3.11.0 (28-Apr-2026)
 ====================
 
 - Deprecated the hapcut_utils module. [#2103]
