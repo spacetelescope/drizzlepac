@@ -2010,8 +2010,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             enforce_icrs_compatibility(self.source_cat)
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
-            zzzzzz
-
             total_measurements_table = Table(self.source_cat.to_table(columns=['label', 'xcentroid', 'ycentroid', 'sky_centroid_icrs']))
 
             # Filter the table to eliminate nans or inf based on the coordinates, then remove these segments from
