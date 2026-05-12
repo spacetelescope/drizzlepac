@@ -1132,7 +1132,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         log.info("Looking for crowded sources using smaller kernel with shape: {}".format(kernel.shape))
         if PHOTUTILS_GE_3:
             segm = detect_sources(convolve(imgarr, kernel), segment_threshold, n_pixels=source_box)
-    else:
+        else:
             segm = detect_sources(convolve(imgarr, kernel), segment_threshold, npixels=source_box)
 
     if deblend:
