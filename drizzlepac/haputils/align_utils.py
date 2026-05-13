@@ -66,9 +66,8 @@ if PHOTUTILS_GE_3:
     X_CENTROID = 'x_centroid'
     Y_CENTROID = 'y_centroid'
 else:
-    # X_CENTROID = X_CENTROID
-    # Y_CENTROID = Y_CENTROID
-    pass
+    X_CENTROID = 'xcentroid'
+    Y_CENTROID = 'ycentroid'
 
 
 class AlignmentTable:
