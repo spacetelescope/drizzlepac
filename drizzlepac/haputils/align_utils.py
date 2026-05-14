@@ -274,8 +274,8 @@ class AlignmentTable:
                             regfilename = "{}_sci{}_src.reg".format(imgroot, chip)
                             out_table = Table(chip_cat)
                             # To align with positions of sources in DS9/IRAF
-                            out_table[X_CENTROID] += 1
-                            out_table[Y_CENTROID] += 1
+                            out_table['xcentroid'] += 1
+                            out_table['ycentroid'] += 1
 
                             # Preserve pre-photutils 3+ column names in
                             # output table for backwards compatibility
