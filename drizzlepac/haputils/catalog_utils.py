@@ -2402,19 +2402,19 @@ class HAPSegmentCatalog(HAPCatalogBase):
         if PHOTUTILS_GE_3:
             include_filter_cols = [
                 'area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax',
-                'bbox_ymin', 'covar_sigx2', 'covar_sigxy', 'covar_sigy2',
-                'cxx', 'cxy', 'cyy', 'ellipticity', 'elongation', id_colname,
-                'kron_radius', 'orientation', 'sky_centroid_icrs',
-                flux_colname, FERR_COLNAME, 'xcentroid', 'ycentroid',
-            ]
-        else:
-            include_filter_cols = [
-                'area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax',
                 'bbox_ymin', 'covariance_xx', 'covariance_xy', 'covariance_yy',
                 'ellipse_cxx', 'ellipse_cxy', 'ellipse_cyy', 'ellipticity',
                 'elongation', id_colname, 'kron_radius', 'orientation',
                 'sky_centroid_icrs', flux_colname, FERR_COLNAME,
                 X_CENTROID, Y_CENTROID,
+            ]
+        else:
+            include_filter_cols = [
+                'area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax',
+                'bbox_ymin', 'covar_sigx2', 'covar_sigxy', 'covar_sigy2',
+                'cxx', 'cxy', 'cyy', 'ellipticity', 'elongation', id_colname,
+                'kron_radius', 'orientation', 'sky_centroid_icrs',
+                flux_colname, FERR_COLNAME, X_CENTROID, Y_CENTROID,
             ]
 
         # Compute source properties...
