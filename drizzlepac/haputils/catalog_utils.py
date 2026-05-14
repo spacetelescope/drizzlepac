@@ -2852,9 +2852,17 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # more columns are appended to this table from the filter results.
         # Actually, the filter columns are in a table which is "database joined"
         # to the total table.  During the combine process, the new columns are renamed,
-        # formatted, and described (as necessary). For now this table only has id, xcentroid,
-        # ycentroid, RA, and DEC.
-        table = updated_table["label", X_CENTROID, Y_CENTROID]
+        # formatted, and described (as necessary). For now this table only has id, centroid,
+        # RA, and DEC.
+        x_col = next(
+            colname for colname in (X_CENTROID, "xcentroid", "x_centroid")
+            if colname in updated_table.colnames
+        )
+        y_col = next(
+            colname for colname in (Y_CENTROID, "ycentroid", "y_centroid")
+            if colname in updated_table.colnames
+        )
+        table = updated_table["label", x_col, y_col]
         # table.rename_column(X_CENTROID, "x_centroid")
         # table.rename_column(Y_CENTROID, "y_centroid")
 
@@ -2869,7 +2877,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Rename columns to names to those used when HLA Classic catalog distributed by MAST
         # and/or to distinguish Point and Segment catalogs
         # The columns that are appended will be renamed during the combine process
-        final_col_names = {"label": "ID", X_CENTROID: "X-Centroid", Y_CENTROID: "Y-Centroid"}
+        final_col_names = {"label": "ID", x_col: "X-Centroid", y_col: "Y-Centroid"}
         for old_col_title in final_col_names:
             if old_col_title in table.colnames:
                 table.rename_column(old_col_title, final_col_names[old_col_title])

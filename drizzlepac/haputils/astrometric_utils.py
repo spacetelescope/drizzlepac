@@ -2020,7 +2020,7 @@ def build_wcscat(image, group_id, source_catalog):
         if source_catalog:
             imcat = source_catalog[chip]
 
-        # rename xcentroid/ycentroid columns, if necessary, to be consistent with tweakwcs
+        # Rename centroid columns, if necessary, to be consistent with tweakwcs.
         if imcat is None:
             imcat = Table(names=[X_CENTROID, Y_CENTROID, 'mag'])
         if isinstance(imcat, str):
@@ -2029,9 +2029,13 @@ def build_wcscat(image, group_id, source_catalog):
             if 'mag' not in imcat.colnames:
                 imcat['mag'] = [-999.9] * len(imcat['x'])
 
-        if X_CENTROID in imcat.colnames:
-            imcat.rename_column(X_CENTROID, 'x')
-            imcat.rename_column(Y_CENTROID, 'y')
+        for x_name, y_name in ((X_CENTROID, Y_CENTROID), ('xcentroid', 'ycentroid'), ('x', 'y')):
+            if x_name in imcat.colnames and y_name in imcat.colnames:
+                if x_name != 'x' or y_name != 'y':
+                    imcat.rename_columns([x_name, y_name], ['x', 'y'])
+                break
+        else:
+            raise KeyError('No centroid columns found in source catalog for tweakwcs')
 
         wcscat = FITSWCSCorrector(
             w,
