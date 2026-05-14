@@ -114,7 +114,7 @@ class BaseWFC3Pipeline:
 
 
 class TestSVMCI(BaseWFC3Pipeline):
-    @pytest.mark.serial
+
     def test_svm_ci(self):
         """ Tests pipeline-style processing of a ASN using runastrodriz.
         """
