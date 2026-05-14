@@ -2855,8 +2855,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # formatted, and described (as necessary). For now this table only has id, xcentroid,
         # ycentroid, RA, and DEC.
         table = updated_table["label", X_CENTROID, Y_CENTROID]
-        table.rename_column(X_CENTROID, "x_centroid")
-        table.rename_column(Y_CENTROID, "y_centroid")
+        # table.rename_column(X_CENTROID, "x_centroid")
+        # table.rename_column(Y_CENTROID, "y_centroid")
 
         # Convert the RA/Dec SkyCoord into separate columns
         radec_data = SkyCoord(updated_table["sky_centroid_icrs"])
@@ -2869,7 +2869,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Rename columns to names to those used when HLA Classic catalog distributed by MAST
         # and/or to distinguish Point and Segment catalogs
         # The columns that are appended will be renamed during the combine process
-        final_col_names = {"label": "ID", "x_centroid": "X-Centroid", "y_centroid": "Y-Centroid"}
+        final_col_names = {"label": "ID", X_CENTROID: "X-Centroid", Y_CENTROID: "Y-Centroid"}
         for old_col_title in final_col_names:
             if old_col_title in table.colnames:
                 table.rename_column(old_col_title, final_col_names[old_col_title])
