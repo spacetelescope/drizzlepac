@@ -92,10 +92,12 @@ if PHOTUTILS_GE_3:
     X_CENTROID = 'x_centroid'
     Y_CENTROID = 'y_centroid'
     FERR_COLNAME = 'segment_flux_err'
+    NPIX_COLNAME = 'n_pixels'
 else:
     X_CENTROID = 'xcentroid'
     Y_CENTROID = 'ycentroid'
     FERR_COLNAME = 'segment_fluxerr'
+    NPIX_COLNAME = 'npix'
 
 # Check if the environment variable is defined, and if so, use that value
 if ASTROMETRIC_CAT_ENVVAR in os.environ:
@@ -199,7 +201,13 @@ def _translate_columns(tbl):
         X_CENTROID: 'xcentroid',
         Y_CENTROID: 'ycentroid',
     }
-    tbl.rename_columns(rename_map.keys(), rename_map.values())
+
+    # Astropy expects concrete sequences (list/tuple), not dict view objects.
+    # Rename only columns that are present to avoid KeyError on partial tables.
+    old_names = [old for old in rename_map if old in tbl.colnames]
+    new_names = [rename_map[old] for old in old_names]
+    if old_names:
+        tbl.rename_columns(old_names, new_names)
     return tbl
 
 
@@ -1227,10 +1235,10 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     seg_table['peak'][max_row] = sat_table['max_value'][0]
                     xcentroid = sat_table[X_CENTROID][0]
                     ycentroid = sat_table[Y_CENTROID][0]
-                    sky = sat_table['local_background'][0]
+                    # sky = sat_table['local_background'][0]
                     seg_table[X_CENTROID][max_row] = xcentroid
                     seg_table[Y_CENTROID][max_row] = ycentroid
-                    seg_table['npix'][max_row] = sat_table['area'][0].value
+                    seg_table[NPIX_COLNAME][max_row] = sat_table['area'][0].value
                     seg_table['mag'][max_row] = -2.5 * np.log10(sat_table[flux_colname][0])
 
                 # Add row for detected source to master catalog
