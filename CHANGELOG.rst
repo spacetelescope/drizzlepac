@@ -25,7 +25,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 
 3.11.0 (28-Apr-2026)
-===================
+====================
+
 - Deprecated the hapcut_utils module. [#2103]
 
 - Remove WFC3/UVIS Quadrant filter data from SVM total image and catalog creation. [#2093]
