@@ -2873,6 +2873,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Rename columns to names to those used when HLA Classic catalog distributed by MAST
         # and/or to distinguish Point and Segment catalogs
         # The columns that are appended will be renamed during the combine process
+        log.info(f'Table column names before renaming: {table.colnames}')
         final_col_names = {"label": "ID", x_col: "X-Centroid", y_col: "Y-Centroid"}
         for old_col_title in final_col_names:
             if old_col_title in table.colnames:
