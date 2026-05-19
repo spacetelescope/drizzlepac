@@ -1,10 +1,12 @@
 import os
 import shutil
-import pytest
+import numpy as np
+from astropy.io import fits
 
 from stsci.tools import teal
 from stwcs import updatewcs
-from drizzlepac import astrodrizzle, tweakreg
+from stwcs.wcsutil import HSTWCS, altwcs
+from drizzlepac import astrodrizzle, tweakback, tweakreg
 from drizzlepac import pixtopix, pixtosky, skytopix
 
 from ..resources import BaseACS
@@ -12,7 +14,6 @@ from ..resources import BaseACS
 
 class TestAcsTweak(BaseACS):
 
-    #@pytest.mark.xfail
     def test_tweak(self):
         """ This test confirms that image alignment performed by tweakreg
         works to find the correct alignment solution and that the solution
@@ -78,8 +79,79 @@ class TestAcsTweak(BaseACS):
         for i in range(1,5):
             self.ignore_keywords += ['D00{}DATA'.format(i), 'D00{}MASK'.format(i)]
         self.compare_outputs(outputs)
+        
 
-    #@pytest.mark.xfail
+    def test_tweakback(self):
+        """Verify tweakback propagates WCS shifts back to the FLT inputs."""
+
+        # Prepare input files and track their original WCS coordinates.
+        input_files = [
+            self.get_input_file('input', 'j94f05bgq_flt.fits'),
+            self.get_input_file('input', 'j9irw1rqq_flt.fits')
+        ]
+        tracked_pixels = {}
+        original_world = {}
+        original_primary_names = {}
+        for fname in input_files:
+            tracked_pixels[fname] = {}
+            original_world[fname] = {}
+            original_primary_names[fname] = {}
+            for chip in (1, 2):
+                wcs_obj = HSTWCS(fname, ext=('SCI', chip))
+                pixel = np.array([[wcs_obj.naxis1 / 2.0, wcs_obj.naxis2 / 2.0]])
+                tracked_pixels[fname][chip] = pixel
+                original_world[fname][chip] = wcs_obj.all_pix2world(pixel, 1)[0]
+                original_primary_names[fname][chip] = wcs_obj.wcs.name.strip().upper()
+
+        # Set up a drizzled image containing both the original and tweaked WCS.
+        drz_source = self.get_data('truth', 'reference_tweak.fits')
+        drz_file = 'tweakback_input_drz.fits'
+        shutil.copyfile(drz_source, drz_file)
+        altwcs.archive_wcs(drz_file, ('SCI', 1), wcskey='A', wcsname='ORIG_WCS')
+        with fits.open(drz_file, mode='update') as hdul:
+            hdr = hdul[('SCI', 1)].header
+            hdr['CRVAL1'] += 2.5e-5
+            hdr['CRVAL2'] -= 1.7e-5
+            hdr['WCSNAME'] = 'TWBK_TWEAK'
+            hdul.flush()
+
+        # Measure the sky shift encoded between the archived and tweaked WCS.
+        drz_original_wcs = HSTWCS(drz_file, ext=('SCI', 1), wcskey='A')
+        drz_updated_wcs = HSTWCS(drz_file, ext=('SCI', 1))
+        drz_pixel = np.array([[drz_updated_wcs.naxis1 / 2.0, drz_updated_wcs.naxis2 / 2.0]])
+        original_world_coord = drz_original_wcs.all_pix2world(drz_pixel, 1)[0]
+        updated_world_coord = drz_updated_wcs.all_pix2world(drz_pixel, 1)[0]
+        expected_shift = np.asarray(updated_world_coord) - np.asarray(original_world_coord)
+        assert np.linalg.norm(expected_shift) > 0.0 # shift is not nothing
+
+        # Apply tweakback to transfer the computed shift back onto the FLT files.
+        tweakback.apply_tweak(
+            f"{drz_file}[sci,1]",
+            orig_wcs_name='ORIG_WCS',
+            input_files=','.join(input_files),
+            output_wcs_name='TWBK_APPLIED'
+        )
+
+        # Confirm the propagated solution updates each chip consistently.
+        for fname in input_files:
+            with fits.open(fname) as hdul:
+                for chip in (1, 2):
+                    wcs_new = HSTWCS(hdul, ext=('SCI', chip))
+                    world_new = wcs_new.all_pix2world(tracked_pixels[fname][chip], 1)[0]
+                    world_old = original_world[fname][chip]
+                    applied_shift = np.asarray(world_new) - np.asarray(world_old)
+                    assert np.allclose(applied_shift, expected_shift, atol=5e-6)
+                    assert wcs_new.wcs.name.strip().upper() == 'TWBK_APPLIED'
+                    alt_names = [
+                        name.strip().upper()
+                        for name in altwcs.wcsnames(hdul, ext=('SCI', chip), include_primary=False).values()
+                    ]
+                    assert any(
+                        stored.startswith(original_primary_names[fname][chip])
+                        for stored in alt_names
+                    )
+
+
     def test_pixsky1(self):
         """This test verifies that the coordinate transformation tasks
         'pixtopix', 'pixtosky', and 'skytopix' still work as expected.

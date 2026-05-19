@@ -8,7 +8,7 @@ on:
 
 jobs:
   crds_contexts:
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@4dac0ba4d95ef313537345b12cf7d718a07c29ef  # 13.1.1
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@80dc6304913d3f41f524aecd1aed73611e490507  # 13.1.6
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@99401c364fa51c9c507d3cd6d272049278ac0b2c  # v2.4.0
     needs: [ crds_contexts ]
