@@ -1174,9 +1174,9 @@ for the output segmentation catalog are denoted in Table 6.
     +------------------------+----------------+------------------------------------------------------+
     | source_sum_err         | FluxIsoErr     | Uncertainty of FluxIso, propagated from input array  |
     +------------------------+----------------+------------------------------------------------------+
-    | x_centroid              | X-Centroid     | X-coordinate of the centroid in the source segment   |
+    | x_centroid             | X-Centroid     | X-coordinate of the centroid in the source segment   |
     +------------------------+----------------+------------------------------------------------------+
-    | y_centroid              | Y-Centroid     | Y-coordinate of the centroid in the source segment   |
+    | y_centroid             | Y-Centroid     | Y-coordinate of the centroid in the source segment   |
     +------------------------+----------------+------------------------------------------------------
 
 .. note::
