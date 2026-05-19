@@ -1234,7 +1234,6 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     seg_table['peak'][max_row] = sat_table['max_value'][0]
                     xcentroid = sat_table[X_CENTROID][0]
                     ycentroid = sat_table[Y_CENTROID][0]
-                    # sky = sat_table['local_background'][0]
                     seg_table[X_CENTROID][max_row] = xcentroid
                     seg_table[Y_CENTROID][max_row] = ycentroid
                     seg_table[NPIX_COLNAME][max_row] = sat_table['area'][0].value

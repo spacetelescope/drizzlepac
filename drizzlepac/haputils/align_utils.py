@@ -282,9 +282,7 @@ class AlignmentTable:
                             _translate_columns(out_table)
 
                             out_table.write(regfilename,
-                                            include_names=["xcentroid",
-                                                           "ycentroid",
-                                                           "mag"],
+                                            include_names=["xcentroid","ycentroid","mag"],
                                             format="ascii.fast_commented_header")
                             log.info("Wrote region file {}\n".format(regfilename))
 
