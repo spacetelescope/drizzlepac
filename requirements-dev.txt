@@ -2,7 +2,9 @@ git+https://github.com/spacetelescope/stsci.tools.git
 git+https://github.com/spacetelescope/stwcs.git
 git+https://github.com/spacetelescope/stregion.git
 #git+https://github.com/astropy/astroquery.git
+--extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
 numpy>2.0.dev0
 scipy>=0.0.dev0
+--extra-index-url https://pypi.anaconda.org/astropy/simple
 astropy>=0.0.dev0
 photutils>=0.0.dev0

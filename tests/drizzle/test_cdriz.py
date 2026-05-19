@@ -14,7 +14,7 @@ def kernel_pars():
 
 # "square", "point", "turbo", "gaussian", "lanczos3"
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo"])
-def test_square_kernel(kernel_pars, kernel, return_png=True):
+def test_square_kernel(kernel_pars, kernel, return_png=False):
     """Function tests different c code point kernels (inputs already created on instantiation).
 
     Parameters
@@ -44,7 +44,7 @@ def test_square_kernel(kernel_pars, kernel, return_png=True):
     assert np.allclose(np.sum(kernel_pars.outsci), 10000, 1e-7)
 
 
-def test_gaussian_kernel(kernel_pars, return_png=True):
+def test_gaussian_kernel(kernel_pars, return_png=False):
     """Same as above test but with gaussian kernel."""
 
     output_name = "cdriz_gaussian.png"
@@ -58,7 +58,7 @@ def test_gaussian_kernel(kernel_pars, return_png=True):
     assert np.allclose(np.sum(kernel_pars.outsci), 10000, 1e-3)
 
 
-def test_lanczos3_kernel(kernel_pars, return_png=True):
+def test_lanczos3_kernel(kernel_pars, return_png=False):
     """Same as above test but with lanczos3 kernel."""
 
     output_name = "cdriz_lanczos3.png"
