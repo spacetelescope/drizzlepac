@@ -1235,9 +1235,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
             log.info("Measured {} sources in {}".format(len(sources), self.image.imgname))
             log.info("   colnames: {}".format(sources.colnames))
-            # insure centroid columns are not masked
-            sources['xcentroid'] = Column(sources[X_CENTROID])
-            sources['ycentroid'] = Column(sources[Y_CENTROID])
+
             # calculate and add RA and DEC columns to table
             ra, dec = self.transform_list_xy_to_ra_dec(sources["xcentroid"], sources["ycentroid"], self.imgname)
             ra_col = Column(name="RA", data=ra, dtype=np.float64)
@@ -2495,7 +2493,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         good_rows_index = []
         bad_rows_index = []
         for i, old_row in enumerate(filter_measurements_table):
-            if np.isfinite(old_row["xcentroid"]):
+            if np.isfinite(old_row[X_CENTROID]):
                 good_rows_index.append(i)
             else:
                 bad_rows_index.append(i)
@@ -2506,7 +2504,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Case: there are good/measurable sources in the input table
         if good_rows_index:
             # Obtain the X and Y positions to compute the circular annulus
-            positions = (filter_measurements_table["xcentroid"][good_rows_index], filter_measurements_table["ycentroid"][good_rows_index])
+            positions = (filter_measurements_table[X_CENTROID][good_rows_index], filter_measurements_table[Y_CENTROID][good_rows_index])
             pos_xy = np.vstack(positions).T
 
             # Define list of background annulii
@@ -2582,8 +2580,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # The bad rows have nan values for the xcentroid/ycentroid coordinates, as well as the RA/Dec values,
         # so recover these values from the total source catalog to make it easy for the user to map the filter
         # catalog rows back to the total detection catalog
-        filter_measurements_table['xcentroid'][bad_rows_index] = self.total_source_table['X-Centroid'][bad_rows_index]
-        filter_measurements_table['ycentroid'][bad_rows_index] = self.total_source_table['Y-Centroid'][bad_rows_index]
+        filter_measurements_table[X_CENTROID][bad_rows_index] = self.total_source_table['X-Centroid'][bad_rows_index]
+        filter_measurements_table[Y_CENTROID][bad_rows_index] = self.total_source_table['Y-Centroid'][bad_rows_index]
         filter_measurements_table['RA'][bad_rows_index] = self.total_source_table['RA'][bad_rows_index]
         filter_measurements_table['DEC'][bad_rows_index] = self.total_source_table['DEC'][bad_rows_index]
 
@@ -2863,8 +2861,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
             if colname in updated_table.colnames
         )
         table = updated_table["label", x_col, y_col]
-        # table.rename_column(X_CENTROID, "x_centroid")
-        # table.rename_column(Y_CENTROID, "y_centroid")
 
         # Convert the RA/Dec SkyCoord into separate columns
         radec_data = SkyCoord(updated_table["sky_centroid_icrs"])
