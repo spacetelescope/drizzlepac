@@ -982,8 +982,7 @@ def extract_point_sources(img, dqmask=None, fwhm=3.0, kernel=None,
                                                        fwhm, bkg[1],
                                                        nbright=nbright,
                                                        use_sharp_round=True)
-    names = [X_CENTROID, Y_CENTROID, 'flux', 'id']
-    srcs = Table([x, y, flux, src_id], names=names)
+    srcs = Table([x, y, flux, src_id], names = [X_CENTROID, Y_CENTROID, 'flux', 'id'])
 
     """
     # Now, use IRAFStarFinder to identify sources across chip

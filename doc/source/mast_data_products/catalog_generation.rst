@@ -1148,17 +1148,17 @@ for the output segmentation catalog are denoted in Table 6.
     +------------------------+----------------+------------------------------------------------------+
     | bbox_ymax              | Ymax           | Max Y pixel in the minimal bounding box segment      |
     +------------------------+----------------+------------------------------------------------------+
-    | covar_sigx2            | X2             | Variance of position along X (pixels^2)              |
+    | covariance_xx          | X2             | Variance of position along X (pixels^2)              |
     +------------------------+----------------+------------------------------------------------------+
-    | covar_sigxy            | XY             | Covariance of position between X and Y (pixels^2)    |
+    | covariance_xy          | XY             | Covariance of position between X and Y (pixels^2)    |
     +------------------------+----------------+------------------------------------------------------+
-    | covar_sigy2            | Y2             | Variance of position along Y (pixels^2)              |
+    | covariance_yy          | Y2             | Variance of position along Y (pixels^2)              |
     +------------------------+----------------+------------------------------------------------------+
-    | cxx                    | CXX            | SExtractor's CXX ellipse parameter (pixel^-2)        |
+    | ellipse_cxx            | CXX            | SExtractor's CXX ellipse parameter (pixel^-2)        |
     +------------------------+----------------+------------------------------------------------------+
-    | cxy                    | CXY            | SExtractor's CXY ellipse parameter (pixel^-2)        |
+    | ellipse_cxy            | CXY            | SExtractor's CXY ellipse parameter (pixel^-2)        |
     +------------------------+----------------+------------------------------------------------------+
-    | cyy                    | CYY            | SExtractor's CYY ellipse parameter (pixel^-2)        |
+    | ellipse_cyy            | CYY            | SExtractor's CYY ellipse parameter (pixel^-2)        |
     +------------------------+----------------+------------------------------------------------------+
     | elongation             | Elongation     | Ratio of the semi-major to the semi-minor length     |
     +------------------------+----------------+------------------------------------------------------+
@@ -1174,11 +1174,15 @@ for the output segmentation catalog are denoted in Table 6.
     +------------------------+----------------+------------------------------------------------------+
     | source_sum_err         | FluxIsoErr     | Uncertainty of FluxIso, propagated from input array  |
     +------------------------+----------------+------------------------------------------------------+
-    | xcentroid              | X-Centroid     | X-coordinate of the centroid in the source segment   |
+    | x_centroid              | X-Centroid     | X-coordinate of the centroid in the source segment   |
     +------------------------+----------------+------------------------------------------------------+
-    | ycentroid              | Y-Centroid     | Y-coordinate of the centroid in the source segment   |
-    +------------------------+----------------+------------------------------------------------------+
+    | y_centroid              | Y-Centroid     | Y-coordinate of the centroid in the source segment   |
+    +------------------------+----------------+------------------------------------------------------
 
+.. note::
+    These column names were updated with photutils version 3.0.0, and differ 
+    slightly from the previous versions. These former column names are still 
+    valid when using prior versions of phoutils. 
 
 4.3: Aperture Photometry Measurements
 -------------------------------------
