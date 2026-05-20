@@ -102,7 +102,7 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
     wcsmap : callable, optional
         Mapping factory that converts between input and output WCS frames.
         Defaults to ``None`` which triggers the package's standard mapping.
-    editpars : bool, (Default = False)
+    editpars : bool, optional
         When ``True``, launch the TEAL interface so users can review and edit
         parameter values before execution.
 
