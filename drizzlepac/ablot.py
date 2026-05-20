@@ -229,7 +229,7 @@ def blot(
         run(configObj, wcsmap=wcsmap)
 
 
-@deprecated(since='3.12.0', warning_type=Warning)
+@deprecated(since='3.12.0')
 def run(configObj, wcsmap=None):
     """
     Run the blot task based on parameters provided interactively by the user.
