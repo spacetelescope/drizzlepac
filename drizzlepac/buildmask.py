@@ -33,7 +33,7 @@ Functions to build mask files for PyDrizzle.
 #                   functions. WJH
 #
 import os
-
+from astropy.utils import deprecated
 from stsci.tools import fileutil
 from stsci.tools.bitmask import bitfield_to_boolean_mask
 
@@ -51,6 +51,7 @@ __taskname__ = 'buildmask'
 #
 
 
+@deprecated(since='3.12.0')
 def run(configObj=None, input_dict={}, loadOnly=False):
     """ Build DQ masks from all input images, then apply static mask(s).
     """
