@@ -38,7 +38,7 @@ PROCSTEPS_NAME = "Driz_CR"
 log = logging.getLogger(__name__)
 
 
-@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def drizCR(input=None, configObj=None, editpars=False, **inputDict):
     """ 
     The blotted median images that are now transformed back into the original

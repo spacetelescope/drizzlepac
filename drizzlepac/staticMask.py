@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 
 # this is called by the user
-@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def createMask(input=None, static_sig=4.0, group=None, editpars=False, 
                configObj=None, **inputDict):
     """ The user can input a list of images if they like to create static masks

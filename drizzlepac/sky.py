@@ -40,7 +40,7 @@ PROCSTEPS_NAME = "Subtract Sky"
 log = logging.getLogger(__name__)
 
 
-@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inputDict):
     """
     Function for computing and subtracting (or equalizing/matching) the backgroud

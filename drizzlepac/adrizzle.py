@@ -89,7 +89,7 @@ time_write_all = []
 #
 
 
-@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input_dict):
     """Run the high-level drizzle task for a single set of inputs.
 

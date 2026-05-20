@@ -39,7 +39,7 @@ __taskname__ = "ablot"
 STEP_NUM = 5
 PROCSTEPS_NAME = "Blot"
 
-@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def blot(
     data,
     reference,

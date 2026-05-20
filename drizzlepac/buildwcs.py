@@ -38,7 +38,7 @@ model_attrs = ['cpdis1','cpdis2','det2im','det2im1','det2im2',
                     'ocx10','ocx11','ocy10','ocy11','sip']
 
 
-@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def buildwcs(outwcs, configObj=None,editpars=False,**input_dict):
     if input_dict is None:
         input_dict = {}

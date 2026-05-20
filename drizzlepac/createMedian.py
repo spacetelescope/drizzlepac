@@ -39,7 +39,7 @@ BUFSIZE = 1024 * 1024  # 1MB cache size
 log = logging.getLogger(__name__)
 
 
-@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def median(input=None, configObj=None, editpars=False, **inputDict):
     """
     The singly drizzled science images are combined to create a single median

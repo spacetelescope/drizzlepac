@@ -749,7 +749,7 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
     return images.pop(0)
 
 
-@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
              refimagefindcfg=None, **input_dict):
     """
