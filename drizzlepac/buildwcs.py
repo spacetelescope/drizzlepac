@@ -11,6 +11,8 @@ import logging
 from . import util
 import numpy as np
 from astropy.io import fits
+from astropy.utils import deprecated
+from astropy.utils.decorators import deprecated_renamed_argument
 
 from stsci.tools import fileutil
 from . import wcs_functions, util
@@ -36,16 +38,13 @@ model_attrs = ['cpdis1','cpdis2','det2im','det2im1','det2im2',
                     'ocx10','ocx11','ocy10','ocy11','sip']
 
 
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def buildwcs(outwcs, configObj=None,editpars=False,**input_dict):
     if input_dict is None:
         input_dict = {}
     input_dict['outwcs'] = outwcs
 
-    # If called from interactive user-interface, configObj will not be
-    # defined yet, so get defaults using EPAR/TEAL.
-    #
-    # Also insure that the input_dict (user-specified values) are folded in
-    # with a fully populated configObj instance.
+    # get default configuration parameters using teal.load
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=(not editpars))
     if configObj is None:
         return
@@ -53,6 +52,7 @@ def buildwcs(outwcs, configObj=None,editpars=False,**input_dict):
     if not editpars:
         run(configObj,wcsmap=wcsmap)
 
+@deprecated(since='3.12.0')
 def run(configObj,wcsmap=None):
     """ Interpret parameters from TEAL/configObj interface as set interactively
         by the user and build the new WCS instance

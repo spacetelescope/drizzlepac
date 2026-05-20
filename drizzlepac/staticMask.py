@@ -16,6 +16,9 @@ import logging
 import numpy as np
 from stsci.tools import fileutil
 from astropy.io import fits
+from astropy.utils import deprecated
+from astropy.utils.decorators import deprecated_renamed_argument
+
 from stsci.imagestats import ImageStats
 from . import util
 from . import processInput
@@ -29,6 +32,7 @@ log = logging.getLogger(__name__)
 
 
 # this is called by the user
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def createMask(input=None, static_sig=4.0, group=None, editpars=False, 
                configObj=None, **inputDict):
     """ The user can input a list of images if they like to create static masks
@@ -90,10 +94,12 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False,
         The number of sigma below the RMS to use as the clipping limit for
         creating the static mask.
 
-    editpars : bool (Default = False)
+    editpars : bool, optional
         Set to `True` if you would like to edit the parameters using the GUI
         interface.
 
+        .. deprecated:: 3.12.0
+            This parameter is deprecated and will be removed in a future release.
 
     Examples
     --------
@@ -135,10 +141,7 @@ def createMask(input=None, static_sig=4.0, group=None, editpars=False,
     if not editpars:
         run(configObj)
 
-#--------------------------------
-# TEAL Interface functions
-# (these functions are deprecated)
-#---------------------------------
+@deprecated(since='3.12.0')
 def run(configObj):
 
     #now we really just need the imageObject list created for the dataset
