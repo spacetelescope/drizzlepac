@@ -36,6 +36,7 @@ import os
 import logging
 
 from stsci.tools import teal, textutil
+from astropy.utils import deprecated
 
 from . import adrizzle
 from . import ablot
@@ -59,6 +60,7 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 log = logging.getLogger(__name__)
 
 
+@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
 def AstroDrizzle(
     input=None,
     mdriztab=False,
@@ -94,12 +96,11 @@ def AstroDrizzle(
             exposure.
 
     mdriztab : bool (Default = False)
-        This button will immediately update the parameter values in the ``TEAL``
-        GUI based on those provided by the ``MDRIZTAB`` reference table referenced
-        in the first input image. This requires that the ``MDRIZTAB`` reference
-        file be available locally.
+        This button will immediately update the parameter values provided by 
+        the ``MDRIZTAB`` reference table referenced in the first input image. 
+        This requires that the ``MDRIZTAB`` reference file be available locally.
 
-    editpars : bool (Default = False)
+    editpars : bool (Default = False; deprecated)
         A parameter that allows user to edit input parameters by hand in the GUI.
         ``True`` to use the GUI to edit parameters.
 
@@ -109,10 +110,7 @@ def AstroDrizzle(
         settings. When ``configobj`` is ``defaults``, default parameter values are
         loaded from the user local configuration file usually located in
         ``~/.teal/astrodrizzle.cfg`` or a matching configuration file in the
-        current directory. This configuration file stores most recent
-        settings that an user used when running ``AstroDrizzle`` through the
-        `TEAL <https://stscitools.readthedocs.io/en/latest/teal_guide.html>`_
-        interface. When ``configobj`` is ``None``, ``AstroDrizzle``
+        current directory. When ``configobj`` is ``None``, ``AstroDrizzle``
         parameters not provided explicitly will be initialized with their
         default values as described in the "Other Parameters" section.
 
@@ -1071,15 +1069,6 @@ def AstroDrizzle(
         passed through to drizzle 'as is', otherwise those updates will be
         over-written by this update.
 
-        .. note::
-            This parameter was preserved in the API for compatibility purposes with
-            existing user processing pipe-lines. However, it has been removed from
-            the ``TEAL`` interface because it is easy to have it set to ``'Yes'``
-            (especially between consecutive runs of ``AstroDrizzle``) with
-            potentially disastrous effects on input image ``WCS`` (for example it
-            could wipe-out previously aligned ``WCS``).
-
-
     Something to keep in mind is that the full ``AstroDrizzle`` interface will
     make backup copies of your original files and place them in the
     ``'OrIg_files'`` directory of you current working directory.
@@ -1111,8 +1100,8 @@ def AstroDrizzle(
     Examples
     ---------
 
-    The ``AstroDrizzle`` task can be run from either the ``TEAL`` GUI or from Python. These examples illustrate the various
-    syntax options available.
+    The ``AstroDrizzle`` command can be run from the command line or from Python. 
+    These examples illustrate the various syntax options available.
 
     **Example 1:**  Drizzle a set of calibrated (``_flt.fits``) images using
     mostly default parameters. Select the desired 'World Coordinate System' (WCS)
@@ -1122,7 +1111,7 @@ def AstroDrizzle(
     images.  Align the final product such that North is
     up, and set the final pixel scale to 0.05 arcseconds/pixel.
 
-    Run the task from Python using the command line. ::
+    Run the task within Python ::
 
         >>> import drizzlepac
         >>> from drizzlepac import astrodrizzle
@@ -1130,20 +1119,17 @@ def AstroDrizzle(
         ...     wcskey='A', driz_sep_bits='64,32', final_wcs=True,
         ...     final_scale=0.05, final_rot=0)
 
-    Or, run the same task from the Python command line, but specify all
-    parameters in a config file named ``myparam.cfg``:
+    Or, run the same task specifying all parameters in a config file 
+    named ``myparam.cfg``:
 
         >>> astrodrizzle.AstroDrizzle('*flt.fits', configobj='myparam.cfg')
 
-    It can also be accessed from the Python command-line and saved
-    to a text file:
+    For more information about the parameters that can be specified in the 
+    config file, see the help file for ``AstroDrizzle``. To access this help 
+    file, run the following command from Python:
 
         >>> from drizzlepac import astrodrizzle
-        >>> astrodrizzle.help()
-
-    or
-
-        >>> astrodrizzle.help(file='help.txt')
+        >>> help(astrodrizzle)
 
     """
 
@@ -1175,11 +1161,7 @@ def AstroDrizzle(
         configobj["updatewcs"] = input_dict["updatewcs"]
         del input_dict["updatewcs"]
 
-    # If called from interactive user-interface, configObj will not be
-    # defined yet, so get defaults using EPAR/TEAL.
-    #
-    # Also insure that the input_dict (user-specified values) are folded in
-    # with a fully populated configObj instance.
+    # get default configuration parameters using teal.load
     try:
         configObj = util.getDefaultConfigObj(
             __taskname__, configobj, input_dict, loadOnly=(not editpars)
@@ -1202,36 +1184,10 @@ def AstroDrizzle(
 
     run(configObj, wcsmap=wcsmap, input_dict=input_dict)
 
-
-##############################
-#   Interfaces used by TEAL  #
-##############################
+@deprecated(since='3.12.0', warning_type=Warning)
 @util.with_logging
 def run(configobj, wcsmap=None, input_dict=None):
-    """
-    Initial example by Nadia ran MD with configobj EPAR using:
-    It can be run in one of two ways:
 
-        from stsci.tools import teal
-
-        1. Passing a config object to teal
-
-        teal.teal('drizzlepac/pars/astrodrizzle.cfg')
-
-
-        2. Passing a task  name:
-
-        teal.teal('astrodrizzle')
-
-        The example config files are in drizzlepac/pars
-
-    input_dict is a dictionary of user-specified parameters
-
-    """
-    # turn on logging, redirecting stdout/stderr messages to a log file
-    # while also printing them out to stdout as well
-    # also, initialize timing of processing steps
-    #
     # We need to define a default logfile name from the user's parameters
     input_list, output, ivmlist, odict = processInput.processFilenames(
         configobj["input"]

@@ -13,6 +13,7 @@ import os
 import logging
 import numpy as np
 from stsci.tools import fileutil
+from astropy.utils import deprecated
 from . import outputimage
 from . import wcs_functions
 from . import util
@@ -37,7 +38,7 @@ __taskname__ = "ablot"
 STEP_NUM = 5
 PROCSTEPS_NAME = "Blot"
 
-
+@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
 def blot(
     data,
     reference,
@@ -217,10 +218,7 @@ def blot(
     input_dict["reference"] = reference
     input_dict["outdata"] = outdata
 
-    # gets configObj defaults using EPAR/TEAL.
-    #
-    # Also insure that the input_dict (user-specified values) are folded in
-    # with a fully populated configObj instance.
+    # get default configuration parameters using teal.load
     configObj = util.getDefaultConfigObj(__taskname__, configObj,
                                          input_dict, loadOnly=(not editpars))
     if configObj is None:
@@ -230,6 +228,7 @@ def blot(
         run(configObj, wcsmap=wcsmap)
 
 
+@deprecated(since='3.12.0', warning_type=Warning)
 def run(configObj, wcsmap=None):
     """
     Run the blot task based on parameters provided interactively by the user.

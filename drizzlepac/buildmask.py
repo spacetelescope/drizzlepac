@@ -54,10 +54,7 @@ __taskname__ = 'buildmask'
 def run(configObj=None, input_dict={}, loadOnly=False):
     """ Build DQ masks from all input images, then apply static mask(s).
     """
-    # gets configObj defaults using EPAR/TEAL.
-    #
-    # Also insure that the input_dict (user-specified values) are folded in
-    # with a fully populated configObj instance.
+    # get default configuration parameters using teal.load
     configObj = util.getDefaultConfigObj(__taskname__,configObj,input_dict,loadOnly=loadOnly)
     if configObj is None:
         return

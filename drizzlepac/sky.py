@@ -14,6 +14,7 @@ import sys
 import logging
 
 import numpy as np
+from astropy.utils import deprecated
 
 from stsci.tools import fileutil
 from stsci.tools.bitmask import interpret_bit_flags
@@ -39,7 +40,7 @@ PROCSTEPS_NAME = "Subtract Sky"
 log = logging.getLogger(__name__)
 
 
-#this is the user access function
+@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
 def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inputDict):
     """
     Function for computing and subtracting (or equalizing/matching) the backgroud
@@ -91,7 +92,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     group : int (Default = None)
         The group of the input image.
 
-    editpars : bool (Default = False)
+    editpars : bool (Default = False; deprecated)
         A deprecated argument that previously allowed a user to edit input 
         parameters by hand in the TEAL GUI.
 
@@ -492,7 +493,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         run(configObj,outExt=outExt)
 
 
-#this is the function that will be called from TEAL
+@deprecated(since='3.12.0', warning_type=Warning)
 def run(configObj,outExt=None):
 
     #now we really just need the imageObject list created for the dataset

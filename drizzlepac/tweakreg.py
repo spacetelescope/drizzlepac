@@ -9,6 +9,7 @@ import os
 import logging
 import numpy as np
 from copy import copy
+from astropy.utils import deprecated
 
 from stsci.tools import teal
 from stsci.tools import textutil
@@ -748,9 +749,7 @@ def _max_overlap_image(refimage, images, expand_refcat, enforce_user_order):
     return images.pop(0)
 
 
-#
-# Primary interface for running this task from Python
-#
+@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
 def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
              refimagefindcfg=None, **input_dict):
     """
@@ -775,7 +774,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
             - comma-separated list of filenames
             - filelist containing desired input filenames with one filename on each line of the file.
 
-    editpars : bool (Default = False)
+    editpars : bool (Default = False; deprecated)
         A parameter that allows user to edit input parameters by hand in the GUI.
         True to use the GUI to edit parameters.
 
@@ -1445,11 +1444,7 @@ def TweakReg(files=None, editpars=False, configobj=None, imagefindcfg=None,
         del configobj[PSET_SECTION] # force run() to pull it again after GUI use
         del configobj[PSET_SECTION_REFIMG] # force run() to pull it again after GUI use
 
-    # If called from interactive user-interface, configObj will not be
-    # defined yet, so get defaults using EPAR/TEAL.
-    #
-    # Also insure that the input_dict (user-specified values) are folded in
-    # with a fully populated configObj instance.
+    # get default configuration parameters using teal.load
     try:
         configObj = util.getDefaultConfigObj(__taskname__, configobj,
                                              input_dict,

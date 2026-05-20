@@ -41,6 +41,7 @@ import logging
 from . import util
 import numpy as np
 from astropy.io import fits
+from astropy.utils import deprecated
 from stsci.tools import fileutil, mputil
 from . import outputimage, wcs_functions
 import stwcs
@@ -87,6 +88,7 @@ time_write_all = []
 #
 
 
+@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
 def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input_dict):
     """Run the high-level drizzle task for a single set of inputs.
 
@@ -99,7 +101,7 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
     wcsmap : callable, optional
         Mapping factory that converts between input and output WCS frames.
         Defaults to ``None`` which triggers the package's standard mapping.
-    editpars : bool, optional
+    editpars : bool, (Default = False; deprecated)
         When ``True``, launch the TEAL interface so users can review and edit
         parameter values before execution.
     configObj : configobj.Section, optional
@@ -295,9 +297,7 @@ def drizzle(input, outdata, wcsmap=None, editpars=False, configObj=None, **input
         run(configObj, wcsmap=wcsmap)
 
 
-#
-# ###  User level interface to run drizzle tasks from TEAL
-#
+@deprecated(since='3.12.0', warning_type=Warning)
 def run(configObj, wcsmap=None):
     """Interface for running ``drizzle`` Python or command-line.
 

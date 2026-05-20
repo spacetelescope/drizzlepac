@@ -21,6 +21,7 @@ __taskname__ = "updatenpol"
 import os,sys,shutil
 
 from astropy.io import fits
+from astropy.utils import deprecated
 from stsci.tools import fileutil as fu
 from stsci.tools import parseinput
 from stsci.tools import teal
@@ -228,10 +229,7 @@ def find_npolfile(flist,detector,filters):
                 npolfile = f
     return npolfile
 
-#--------------------------------
-# TEAL Interface functions
-# (these functions are deprecated)
-#---------------------------------
+@deprecated(since='3.12.0', warning_type=Warning)
 def run(configobj=None,editpars=False):
     """ Teal interface for running this code.
     """
