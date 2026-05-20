@@ -21,7 +21,7 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.12.0 (TBD)
 ============
 
-- Added code to handle deprecations in photutils v3.0.0. [#2089]
+- Added code to handle deprecations in photutils v3.0.0. [#2089, #2153]
 
 - Deprecated the TEAL helper "run" functions as well as the editpars 
   parameters in base drizzlepac functions. [#2152]
