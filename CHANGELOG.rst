@@ -23,6 +23,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Added code to handle deprecations in photutils v3.0.0. [#2089]
 
+- Deprecated the TEAL helper "run" functions as well as the editpars 
+  parameters in base drizzlepac functions. [#2152]
+
 
 3.11.0 (28-Apr-2026)
 ====================

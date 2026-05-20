@@ -21,15 +21,6 @@ Alternative Usage
     >>> runastrodriz.process(inputFilename,force=False,newpath=None,inmemory=False)
 
 
-GUI Usage under Python (no longer supported)
-============================================
-
-    >>> python
-    >>> from stsci.tools import teal
-    >>> import wfc3tools
-    >>> cfg = teal.teal('runastrodriz')
-
-
 Options
 =======
 

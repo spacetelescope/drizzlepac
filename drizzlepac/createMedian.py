@@ -13,6 +13,8 @@ import math
 import logging
 import numpy as np
 from astropy.io import fits
+from astropy.utils import deprecated
+from astropy.utils.decorators import deprecated_renamed_argument
 
 from stsci.imagestats import ImageStats
 from stsci.image import numcombine
@@ -37,7 +39,7 @@ BUFSIZE = 1024 * 1024  # 1MB cache size
 log = logging.getLogger(__name__)
 
 
-# this is the user access function
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def median(input=None, configObj=None, editpars=False, **inputDict):
     """
     The singly drizzled science images are combined to create a single median
@@ -65,9 +67,12 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
     configObj : configObject (Default = None)
         An instance of ``configObject`` which overrides default parameter settings.
 
-    editpars : bool (Default = False)
+    editpars : bool, optional
         A parameter that allows user to edit input parameters by hand in the GUI.
         True to use the GUI to edit parameters.
+        
+        .. deprecated:: 3.12.0
+            This parameter is deprecated and will be removed in a future release.
 
     inputDict : dict, optional
         An optional list of parameters specified by the user, which can also
@@ -189,7 +194,7 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
         run(configObj)
 
 
-# this is the function that will be called from TEAL
+@deprecated(since='3.12.0')
 def run(configObj):
     # outwcs is not needed here
     imgObjList, outwcs = processInput.setCommonInput(configObj, createOutwcs=False)

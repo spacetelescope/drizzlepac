@@ -125,10 +125,6 @@ def photeq(files='*_flt.fits', sciext='SCI', errext='ERR',
         Multiple keywords can be specified as a Python list of strings:
         ``['PHOTFNU', 'PHOTOHMY']``.
 
-        .. note::
-
-            If specifying multiple secondary photometric keywords in the TEAL
-            interface, use a comma-separated list of keywords.
 
     search_primary : bool (Default = True)
         Specifies whether to first search the primary header for the

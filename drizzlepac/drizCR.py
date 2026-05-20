@@ -14,6 +14,8 @@ import logging
 import numpy as np
 from scipy import signal
 from astropy.io import fits
+from astropy.utils import deprecated
+from astropy.utils.decorators import deprecated_renamed_argument
 from stsci.tools import fileutil, mputil
 
 
@@ -36,6 +38,7 @@ PROCSTEPS_NAME = "Driz_CR"
 log = logging.getLogger(__name__)
 
 
+@deprecated_renamed_argument('editpars', None, '3.12.0')
 def drizCR(input=None, configObj=None, editpars=False, **inputDict):
     """ 
     The blotted median images that are now transformed back into the original
@@ -58,9 +61,12 @@ def drizCR(input=None, configObj=None, editpars=False, **inputDict):
     configObj : configObject (Default = None)
         An instance of ``configObject`` which overrides default parameter settings.
 
-    editpars : bool (Default = False)
+    editpars : bool, optional
         A parameter that allows user to edit input parameters by hand in the GUI.
         True to use the GUI to edit parameters.
+        
+        .. deprecated:: 3.12.0
+            This parameter is deprecated and will be removed in a future release.
 
     inputDict : dict, optional
         An optional list of parameters specified by the user, which can also
@@ -137,10 +143,7 @@ def drizCR(input=None, configObj=None, editpars=False, **inputDict):
     if not editpars:
         run(configObj)
 
-#--------------------------------
-# TEAL Interface functions
-# (these functions are deprecated)
-#---------------------------------
+@deprecated(since='3.12.0')
 def run(configObj):
     # outwcs is not neaded here
     imgObjList, outwcs = processInput.setCommonInput(configObj,
