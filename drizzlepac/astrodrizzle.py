@@ -1104,7 +1104,7 @@ def AstroDrizzle(
     Examples
     ---------
 
-    The ``AstroDrizzle`` command can be run from the command line or from Python. 
+    The ``AstroDrizzle`` class can be run from Python. 
     These examples illustrate the various syntax options available.
 
     **Example 1:**  Drizzle a set of calibrated (``_flt.fits``) images using
