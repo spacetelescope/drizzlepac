@@ -64,6 +64,7 @@ from astropy.table import Table
 from drizzlepac.haputils import constants
 from drizzlepac.haputils.background_median import aperture_stats_tbl
 from photutils.aperture import aperture_photometry
+from photutils import use_future_column_names
 
 def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam, error_array=None,
                           bg_method='mode', epadu=1.0):
@@ -107,7 +108,8 @@ def iraf_style_photometry(phot_apertures, bg_apertures, data, photflam, photplam
     if bg_method not in ['mean', 'median', 'mode']:
         raise ValueError('Invalid background method, choose either \
                           mean, median, or mode')
-    phot = aperture_photometry(data, phot_apertures, error=error_array)
+    with use_future_column_names():
+        phot = aperture_photometry(data, phot_apertures, error=error_array)
     bg_phot = aperture_stats_tbl(data, bg_apertures, sigma_clip=True)
     names = ['X-Center', 'Y-Center', 'ID']
     x, y = phot_apertures[0].positions.T

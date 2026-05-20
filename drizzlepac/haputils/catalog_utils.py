@@ -23,6 +23,7 @@ from photutils.background import (Background2D, SExtractorBackground,
                                   StdBackgroundRMS)
 from photutils.detection import DAOStarFinder, IRAFStarFinder
 from photutils.utils import calc_total_error
+from photutils import use_future_column_names
 
 from stsci.tools import logutil
 from stwcs.wcsutil import HSTWCS
@@ -55,8 +56,7 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
-PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
-photutils.future_column_names = True
+PHOTUTILS_GE_3 = minversion(photutils, "3.0.0")
 if PHOTUTILS_GE_3:
     X_CENTROID = 'x_centroid'
     Y_CENTROID = 'y_centroid'
@@ -1125,12 +1125,14 @@ class HAPPointCatalog(HAPCatalogBase):
                                                                               reg_rms_median))
                     daofind = DAOStarFinder(fwhm=source_fwhm,
                                             threshold=self.param_dict['nsigma'] * reg_rms_median)
-                    reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
+                    with use_future_column_names():
+                        reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
                 elif self.param_dict["starfinder_algorithm"] == "iraf":
                     log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                                reg_rms_median))
                     isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * reg_rms_median)
-                    reg_sources = isf(region, mask=self.image.inv_footprint_mask)
+                    with use_future_column_names():
+                        reg_sources = isf(region, mask=self.image.inv_footprint_mask)
                 elif self.param_dict["starfinder_algorithm"] == "psf":
                     log.info("UserStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                               reg_rms_median))
@@ -1179,8 +1181,9 @@ class HAPPointCatalog(HAPCatalogBase):
                         if self.diagnostic_mode:
                             fits.PrimaryHDU(data=region).writeto(_region_name, overwrite=True)
 
-                        reg_sources = daofind(region,
-                                              mask=self.image.inv_footprint_mask)
+                        with use_future_column_names():
+                            reg_sources = daofind(region,
+                                                  mask=self.image.inv_footprint_mask)
 
                         _region_name = self.image.imgname.replace(reg_suffix, 'starfind_sources{}.ecsv'.format(masknum))
                         if self.diagnostic_mode:
@@ -1200,7 +1203,8 @@ class HAPPointCatalog(HAPCatalogBase):
                             daofind = DAOStarFinder(
                                 fwhm=source_fwhm,
                                 threshold=self.param_dict['nsigma'] * reg_rms_median)
-                        reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
+                        with use_future_column_names():
+                            reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
                     log.error(err_msg)
@@ -2008,7 +2012,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             enforce_icrs_compatibility(self.source_cat)
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
-            total_measurements_table = Table(self.source_cat.to_table(columns=['label', 'xcentroid', 'ycentroid', 'sky_centroid_icrs']))
+            with use_future_column_names():
+                total_measurements_table = Table(self.source_cat.to_table(columns=['label', 'xcentroid', 'ycentroid', 'sky_centroid_icrs']))
 
             # Filter the table to eliminate nans or inf based on the coordinates, then remove these segments from
             # the segmentation image too
@@ -2424,7 +2429,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         enforce_icrs_compatibility(self.source_cat)
 
-        filter_measurements_table = Table(self.source_cat.to_table(columns=include_filter_cols))
+        with use_future_column_names():
+            filter_measurements_table = Table(self.source_cat.to_table(columns=include_filter_cols))
 
         # Compute aperture photometry measurements and append the columns to the measurements table
         self.do_aperture_photometry(imgarr, filter_measurements_table, self.imgname, filter_name)

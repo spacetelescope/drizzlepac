@@ -17,6 +17,7 @@ from astropy.utils.exceptions import AstropyUserWarning
 import numpy as np
 from photutils.detection import find_peaks
 from photutils.utils.exceptions import NoDetectionsWarning
+from photutils import use_future_column_names
 
 
 def _filter_data(data, kernel, mode='constant', fill_value=0.0,
@@ -339,8 +340,9 @@ def _find_stars(data, kernel, threshold_eff, min_separation=None,
     with warnings.catch_warnings():
         # suppress any NoDetectionsWarning from find_peaks
         warnings.filterwarnings('ignore', category=NoDetectionsWarning)
-        tbl = find_peaks(convolved_data, threshold_eff, footprint=footprint,
-                         mask=mask)
+        with use_future_column_names():
+            tbl = find_peaks(convolved_data, threshold_eff, footprint=footprint,
+                             mask=mask)
 
     if tbl is None:
         return None
