@@ -37,6 +37,7 @@ import logging
 
 from stsci.tools import teal, textutil
 from astropy.utils import deprecated
+from astropy.utils.decorators import deprecated_renamed_argument
 
 from . import adrizzle
 from . import ablot
@@ -60,7 +61,7 @@ PYTHON_WCSMAP = wcs_functions.WCSMap
 log = logging.getLogger(__name__)
 
 
-@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
+@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
 def AstroDrizzle(
     input=None,
     mdriztab=False,
@@ -100,9 +101,12 @@ def AstroDrizzle(
         the ``MDRIZTAB`` reference table referenced in the first input image. 
         This requires that the ``MDRIZTAB`` reference file be available locally.
 
-    editpars : bool (Default = False; deprecated)
+    editpars : bool, optional
         A parameter that allows user to edit input parameters by hand in the GUI.
         ``True`` to use the GUI to edit parameters.
+        
+        .. deprecated:: 3.12.0
+            This parameter is deprecated and will be removed in a future release.
 
     configobj : ConfigObjPars, ConfigObj, dict (Default = None)
         An instance of ``stsci.tools.cfgpars.ConfigObjPars`` or
@@ -1184,7 +1188,7 @@ def AstroDrizzle(
 
     run(configObj, wcsmap=wcsmap, input_dict=input_dict)
 
-@deprecated(since='3.12.0', warning_type=Warning)
+@deprecated(since='3.12.0')
 @util.with_logging
 def run(configobj, wcsmap=None, input_dict=None):
 

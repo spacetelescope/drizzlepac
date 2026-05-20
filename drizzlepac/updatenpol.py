@@ -229,7 +229,7 @@ def find_npolfile(flist,detector,filters):
                 npolfile = f
     return npolfile
 
-@deprecated(since='3.12.0', warning_type=Warning)
+@deprecated(since='3.12.0')
 def run(configobj=None,editpars=False):
     """ Teal interface for running this code.
     """

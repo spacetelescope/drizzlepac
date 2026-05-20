@@ -12,6 +12,7 @@ from . import util
 import numpy as np
 from astropy.io import fits
 from astropy.utils import deprecated
+from astropy.utils.decorators import deprecated_renamed_argument
 
 from stsci.tools import fileutil
 from . import wcs_functions, util
@@ -37,7 +38,7 @@ model_attrs = ['cpdis1','cpdis2','det2im','det2im1','det2im2',
                     'ocx10','ocx11','ocy10','ocy11','sip']
 
 
-@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
+@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
 def buildwcs(outwcs, configObj=None,editpars=False,**input_dict):
     if input_dict is None:
         input_dict = {}
@@ -51,7 +52,7 @@ def buildwcs(outwcs, configObj=None,editpars=False,**input_dict):
     if not editpars:
         run(configObj,wcsmap=wcsmap)
 
-@deprecated(since='3.12.0', warning_type=Warning)
+@deprecated(since='3.12.0')
 def run(configObj,wcsmap=None):
     """ Interpret parameters from TEAL/configObj interface as set interactively
         by the user and build the new WCS instance

@@ -14,6 +14,7 @@ import logging
 import numpy as np
 from astropy.io import fits
 from astropy.utils import deprecated
+from astropy.utils.decorators import deprecated_renamed_argument
 
 from stsci.imagestats import ImageStats
 from stsci.image import numcombine
@@ -38,7 +39,7 @@ BUFSIZE = 1024 * 1024  # 1MB cache size
 log = logging.getLogger(__name__)
 
 
-@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
+@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
 def median(input=None, configObj=None, editpars=False, **inputDict):
     """
     The singly drizzled science images are combined to create a single median
@@ -66,9 +67,12 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
     configObj : configObject (Default = None)
         An instance of ``configObject`` which overrides default parameter settings.
 
-    editpars : bool (Default = False; deprecated)
+    editpars : bool, optional
         A parameter that allows user to edit input parameters by hand in the GUI.
         True to use the GUI to edit parameters.
+        
+        .. deprecated:: 3.12.0
+            This parameter is deprecated and will be removed in a future release.
 
     inputDict : dict, optional
         An optional list of parameters specified by the user, which can also
@@ -190,7 +194,7 @@ def median(input=None, configObj=None, editpars=False, **inputDict):
         run(configObj)
 
 
-@deprecated(since='3.12.0', warning_type=Warning)
+@deprecated(since='3.12.0')
 def run(configObj):
     # outwcs is not needed here
     imgObjList, outwcs = processInput.setCommonInput(configObj, createOutwcs=False)

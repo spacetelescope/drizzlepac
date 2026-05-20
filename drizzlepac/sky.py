@@ -10,11 +10,11 @@ input image while recording the subtracted value in the image header.
 
 """
 import os
-import sys 
 import logging
 
 import numpy as np
 from astropy.utils import deprecated
+from astropy.utils.decorators import deprecated_renamed_argument
 
 from stsci.tools import fileutil
 from stsci.tools.bitmask import interpret_bit_flags
@@ -40,7 +40,7 @@ PROCSTEPS_NAME = "Subtract Sky"
 log = logging.getLogger(__name__)
 
 
-@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
+@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
 def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inputDict):
     """
     Function for computing and subtracting (or equalizing/matching) the backgroud
@@ -92,9 +92,12 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
     group : int (Default = None)
         The group of the input image.
 
-    editpars : bool (Default = False; deprecated)
+    editpars : bool, optional
         A deprecated argument that previously allowed a user to edit input 
         parameters by hand in the TEAL GUI.
+        
+        .. deprecated:: 3.12.0
+            This parameter is deprecated and will be removed in a future release.
 
     inputDict : dict, optional
         An optional list of parameters specified by the user.
@@ -493,7 +496,7 @@ def sky(input=None,outExt=None,configObj=None, group=None, editpars=False, **inp
         run(configObj,outExt=outExt)
 
 
-@deprecated(since='3.12.0', warning_type=Warning)
+@deprecated(since='3.12.0')
 def run(configObj,outExt=None):
 
     #now we really just need the imageObject list created for the dataset

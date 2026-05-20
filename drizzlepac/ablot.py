@@ -14,6 +14,7 @@ import logging
 import numpy as np
 from stsci.tools import fileutil
 from astropy.utils import deprecated
+from astropy.utils.decorators import deprecated_renamed_argument
 from . import outputimage
 from . import wcs_functions
 from . import util
@@ -38,7 +39,7 @@ __taskname__ = "ablot"
 STEP_NUM = 5
 PROCSTEPS_NAME = "Blot"
 
-@deprecated(since='3.12.0', name='editpars', warning_type=Warning)
+@deprecated_renamed_argument(new_name='editpars', old_name='', since='3.12.0')
 def blot(
     data,
     reference,
