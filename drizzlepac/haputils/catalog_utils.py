@@ -9,11 +9,13 @@ from packaging.version import Version
 from astropy.io import fits as fits
 from astropy.stats import sigma_clipped_stats, gaussian_fwhm_to_sigma
 from astropy.table import Column, MaskedColumn, Table, join, vstack
+from astropy.utils import minversion
 from astropy.convolution import RickerWavelet2DKernel, convolve
 from astropy.coordinates import SkyCoord
 import numpy as np
 from scipy import ndimage, stats
 
+import photutils
 from photutils.segmentation import (detect_sources, SourceCatalog,
                                     deblend_sources)
 from photutils.aperture import CircularAperture, CircularAnnulus
@@ -44,7 +46,6 @@ RADESYS_OPTIONS = ['FK4', 'FK5', 'ICRS']
 
 id_colname = 'label'
 flux_colname = 'segment_flux'
-ferr_colname = 'segment_fluxerr'
 bac_colname = 'background_centroid'
 
 __taskname__ = 'catalog_utils'
@@ -53,6 +54,17 @@ MSG_DATEFMT = '%Y%j%H%M%S'
 SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
+
+PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
+photutils.future_column_names = True
+if PHOTUTILS_GE_3:
+    X_CENTROID = 'x_centroid'
+    Y_CENTROID = 'y_centroid'
+    FERR_COLNAME = 'segment_flux_err'
+else:
+    X_CENTROID = 'xcentroid'
+    Y_CENTROID = 'ycentroid'
+    FERR_COLNAME = 'segment_fluxerr'
 
 
 class CatalogImage:
@@ -140,7 +152,7 @@ class CatalogImage:
         # of the input image is no longer used here as it could be asymmetric and
         # lead to smeared segments (i.e., centroid coordinates offset from actual source).
         # The value of 11 for the Gaussian kernel is big enough for all detectors. This
-        # value is hard-coded here in contrast to being in the configuration files like 
+        # value is hard-coded here in contrast to being in the configuration files like
         # the RickerWavelet2DKernel.
         self.kernel_fwhm = fwhmpsf / self.imgwcs.pscale
         self.kernel = astrometric_utils.build_gaussian_kernel(self.kernel_fwhm, npixels=11)
@@ -260,7 +272,7 @@ class CatalogImage:
         # which contributed to the value of a pixel.
         #
         # Note that if there are large shifts between images, the pixels in the gaps between the
-        # images have values of 0.  The self.num_images_mask is the mask created by 
+        # images have values of 0.  The self.num_images_mask is the mask created by
         # generate_footprint_mask() in product.py.
         footprint_mask = self.num_images_mask > 0
         self.footprint_mask = ndimage.binary_erosion(footprint_mask, iterations=10)
@@ -364,7 +376,7 @@ class CatalogImage:
             # Create a version of the input image with zeros and NaN values masked
             masked_imgdata = np.ma.masked_array(imgdata, mask=(imgdata == 0) | np.isnan(imgdata))
             diffs = 2*masked_imgdata[:,2:-2] - masked_imgdata[:,:-4] - masked_imgdata[:,4:]
-           
+
             # Median for flattened array yields the rms estimate
             # Ref: Stoehr et al. 2007, See https://ui.adsabs.harvard.edu/abs/2008ASPC..394..505S
             #
@@ -372,8 +384,8 @@ class CatalogImage:
             # sqrt(6.0) = comes from the propagation of errors for the given pixel combination.
             #    Ref: Rick White - If you have a weighted sum of 3 random numbers, s = a*r1 + b*r2 + c*r3,
             #    then the noise in s is sqrt(a**2+b**2+c**2). In the DER_SNR equation (see reference
-            #    paper), the three coefficients are 2, 1 and 1, so the combination is 
-            #    sqrt(4 + 1 + 1) = sqrt(6). 
+            #    paper), the three coefficients are 2, 1 and 1, so the combination is
+            #    sqrt(4 + 1 + 1) = sqrt(6).
             mad_rms = np.ma.median(np.ma.abs(diffs)) * 1.482602 / np.sqrt(6.0)
             log.info("Computation 3 of RMS - median absolute algorithm")
             log.info(f"    MAD rms: {mad_rms:.6f}")
@@ -410,11 +422,22 @@ class CatalogImage:
                 for percentile in exclude_percentiles:
                     log.info("Percentile in use: {}".format(percentile))
                     try:
-                        bkg = Background2D(imgdata, (box_size, box_size), filter_size=(win_size, win_size),
-                                           bkg_estimator=bkg_estimator(),
-                                           bkgrms_estimator=rms_estimator(),
-                                           exclude_percentile=percentile,
-                                           coverage_mask=self.inv_footprint_mask)
+                        if PHOTUTILS_GE_3:
+                            bkg = Background2D(
+                                imgdata, (box_size, box_size),
+                                filter_size=(win_size, win_size),
+                                bkg_estimator=bkg_estimator(),
+                                bkg_rms_estimator=rms_estimator(),
+                                exclude_percentile=percentile,
+                                coverage_mask=self.inv_footprint_mask)
+                        else:
+                            bkg = Background2D(
+                                imgdata, (box_size, box_size),
+                                filter_size=(win_size, win_size),
+                                bkg_estimator=bkg_estimator(),
+                                bkgrms_estimator=rms_estimator(),
+                                exclude_percentile=percentile,
+                                coverage_mask=self.inv_footprint_mask)
 
                     except Exception:
                         bkg = None
@@ -889,7 +912,7 @@ class HAPCatalogBase:
         self.tp_masks = None
         if not self.image.blank:
             self.tp_masks = make_wht_masks(
-                self.image.wht_image, 
+                self.image.wht_image,
                 self.image.inv_footprint_mask,
                 scale=scale,
                 sensitivity=self.param_dict['sensitivity'],
@@ -1168,8 +1191,15 @@ class HAPPointCatalog(HAPCatalogBase):
                         # Try standard daofind instead
                         log.info("Reverting to DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                                   reg_rms_median))
-                        daofind = DAOStarFinder(fwhm=source_fwhm,
-                                                threshold=self.param_dict['nsigma'] * reg_rms_median)
+                        if PHOTUTILS_GE_3:
+                            daofind = DAOStarFinder(
+                                fwhm=source_fwhm,
+                                threshold=self.param_dict['nsigma'] * reg_rms_median,
+                                min_separation=0)
+                        else:
+                            daofind = DAOStarFinder(
+                                fwhm=source_fwhm,
+                                threshold=self.param_dict['nsigma'] * reg_rms_median)
                         reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
                 else:
                     err_msg = "'{}' is not a valid 'starfinder_algorithm' parameter input in the catalog_generation parameters json file. Valid options are 'dao' for photutils.detection.DAOStarFinder() or 'iraf' for photutils.detection.IRAFStarFinder().".format(self.param_dict["starfinder_algorithm"])
@@ -1205,9 +1235,7 @@ class HAPPointCatalog(HAPCatalogBase):
 
             log.info("Measured {} sources in {}".format(len(sources), self.image.imgname))
             log.info("   colnames: {}".format(sources.colnames))
-            # insure centroid columns are not masked
-            sources['xcentroid'] = Column(sources['xcentroid'])
-            sources['ycentroid'] = Column(sources['ycentroid'])
+
             # calculate and add RA and DEC columns to table
             ra, dec = self.transform_list_xy_to_ra_dec(sources["xcentroid"], sources["ycentroid"], self.imgname)
             ra_col = Column(name="RA", data=ra, dtype=np.float64)
@@ -1367,8 +1395,8 @@ class HAPPointCatalog(HAPCatalogBase):
         photometry_tbl.add_column(flag_col)
 
         # build final output table
-        final_col_order = ["X-Center", "Y-Center", "RA", "DEC", "ID", "MagAp1", "MagErrAp1", "FluxAp1", 
-                           "FluxErrAp1", "MagAp2", "MagErrAp2", "MSkyAp2", "StdevAp2", "FluxAp2", 
+        final_col_order = ["X-Center", "Y-Center", "RA", "DEC", "ID", "MagAp1", "MagErrAp1", "FluxAp1",
+                           "FluxErrAp1", "MagAp2", "MagErrAp2", "MSkyAp2", "StdevAp2", "FluxAp2",
                            "FluxErrAp2", "CI", "Flags"]
         output_photometry_table = photometry_tbl[final_col_order]
 
@@ -1405,7 +1433,7 @@ class HAPPointCatalog(HAPCatalogBase):
         final_col_units = {"X-Center": "pixel", "Y-Center": "pixel", "RA": "degree", "DEC": "degree",
                            "ID": "", "MagAp1": "mag(AB)", "MagErrAp1": "mag(AB)", "MagAp2": "mag(AB)",
                            "MagErrAp2": "mag(AB)", "MSkyAp2": "electron/(s pixel)", "StdevAp2": "electron/(s pixel)",
-                           "FluxAp1": "electron/s", "FluxErrAp1": "electron/s","FluxAp2": "electron/s", 
+                           "FluxAp1": "electron/s", "FluxErrAp1": "electron/s","FluxAp2": "electron/s",
                            "FluxErrAp2": "electron/s", "CI": "mag(AB)", "Flags": ""}
         for col_title in final_col_units:
             output_photometry_table[col_title].unit = final_col_units[col_title]
@@ -2070,8 +2098,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
             Factor to match the Gaussian core width
 
         kw : int
-            x_size : Size in the x-direction 
-            y_size : Size in the y-direction 
+            x_size : Size in the x-direction
+            y_size : Size in the y-direction
 
         Returns
         -------
@@ -2191,7 +2219,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
            background_img : float
                Computed 2D background for total detection image
-               
+
            ncount : int
                Invocation index for this method.  The index is used to create unique names
                for diagnostic output files.
@@ -2216,15 +2244,21 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Subtract the background image from the white light image and convolve
         #
         # Important to background subtract to get accurate positions for faint sources or
-        # positions will be shifted toward the geometrical center of the segment rather 
+        # positions will be shifted toward the geometrical center of the segment rather
         # than located at the flux-weighted centroid as desired.
         self.convolved_img = convolve(imgarr-background_img, filter_kernel, normalize_kernel=False)
 
         # The threshold should not include the background.
-        segm_img = detect_sources(self.convolved_img,
-                                  threshold,
-                                  npixels=source_box,
-                                  mask=mask)
+        if PHOTUTILS_GE_3:
+            segm_img = detect_sources(self.convolved_img,
+                                      threshold,
+                                      n_pixels=source_box,
+                                      mask=mask)
+        else:
+            segm_img = detect_sources(self.convolved_img,
+                                      threshold,
+                                      npixels=source_box,
+                                      mask=mask)
 
         # If no segments were found, there are no detectable sources in the total detection image.
         # Return as there is nothing more to do.
@@ -2281,12 +2315,20 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # segmentation. Sextractor uses a multi-thresholding technique.
             # npixels = minimum number of connected pixels in source
             # npixels and filter_kernel should match those used by detect_sources()
-            segm_deblended_img = deblend_sources(self.convolved_img,
-                                                 segm_img,
-                                                 npixels=source_box,
-                                                 nlevels=self._nlevels,
-                                                 contrast=self._contrast,
-                                                 labels=segm_img.big_segments)
+            if PHOTUTILS_GE_3:
+                segm_deblended_img = deblend_sources(self.convolved_img,
+                                                     segm_img,
+                                                     n_pixels=source_box,
+                                                     n_levels=self._nlevels,
+                                                     contrast=self._contrast,
+                                                     labels=segm_img.big_segments)
+            else:
+                segm_deblended_img = deblend_sources(self.convolved_img,
+                                                     segm_img,
+                                                     npixels=source_box,
+                                                     nlevels=self._nlevels,
+                                                     contrast=self._contrast,
+                                                     labels=segm_img.big_segments)
 
             if self.diagnostic_mode:
                 log.info("Deblended {} out of {} segments".format(len(segm_img.big_segments), segm_img.nlabels))
@@ -2355,10 +2397,23 @@ class HAPSegmentCatalog(HAPCatalogBase):
 
         # Columns to include from the computation of source properties to save
         # computation time from computing values which are not used
-        include_filter_cols = ['area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax', 'bbox_ymin',
-                               'covar_sigx2', 'covar_sigxy', 'covar_sigy2', 'cxx', 'cxy', 'cyy',
-                               'ellipticity', 'elongation', id_colname, 'kron_radius', 'orientation', 'sky_centroid_icrs',
-                               flux_colname, ferr_colname, 'xcentroid', 'ycentroid']
+        if PHOTUTILS_GE_3:
+            include_filter_cols = [
+                'area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax',
+                'bbox_ymin', 'covariance_xx', 'covariance_xy', 'covariance_yy',
+                'ellipse_cxx', 'ellipse_cxy', 'ellipse_cyy', 'ellipticity',
+                'elongation', id_colname, 'kron_radius', 'orientation',
+                'sky_centroid_icrs', flux_colname, FERR_COLNAME,
+                X_CENTROID, Y_CENTROID,
+            ]
+        else:
+            include_filter_cols = [
+                'area', bac_colname, 'bbox_xmax', 'bbox_xmin', 'bbox_ymax',
+                'bbox_ymin', 'covar_sigx2', 'covar_sigxy', 'covar_sigy2',
+                'cxx', 'cxy', 'cyy', 'ellipticity', 'elongation', id_colname,
+                'kron_radius', 'orientation', 'sky_centroid_icrs',
+                flux_colname, FERR_COLNAME, X_CENTROID, Y_CENTROID,
+            ]
 
         # Compute source properties...
         # No convolved image needed here since the detection_cat parameter is set.
@@ -2438,7 +2493,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         good_rows_index = []
         bad_rows_index = []
         for i, old_row in enumerate(filter_measurements_table):
-            if np.isfinite(old_row["xcentroid"]):
+            if np.isfinite(old_row[X_CENTROID]):
                 good_rows_index.append(i)
             else:
                 bad_rows_index.append(i)
@@ -2449,7 +2504,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Case: there are good/measurable sources in the input table
         if good_rows_index:
             # Obtain the X and Y positions to compute the circular annulus
-            positions = (filter_measurements_table["xcentroid"][good_rows_index], filter_measurements_table["ycentroid"][good_rows_index])
+            positions = (filter_measurements_table[X_CENTROID][good_rows_index], filter_measurements_table[Y_CENTROID][good_rows_index])
             pos_xy = np.vstack(positions).T
 
             # Define list of background annulii
@@ -2525,8 +2580,8 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # The bad rows have nan values for the xcentroid/ycentroid coordinates, as well as the RA/Dec values,
         # so recover these values from the total source catalog to make it easy for the user to map the filter
         # catalog rows back to the total detection catalog
-        filter_measurements_table['xcentroid'][bad_rows_index] = self.total_source_table['X-Centroid'][bad_rows_index]
-        filter_measurements_table['ycentroid'][bad_rows_index] = self.total_source_table['Y-Centroid'][bad_rows_index]
+        filter_measurements_table[X_CENTROID][bad_rows_index] = self.total_source_table['X-Centroid'][bad_rows_index]
+        filter_measurements_table[Y_CENTROID][bad_rows_index] = self.total_source_table['Y-Centroid'][bad_rows_index]
         filter_measurements_table['RA'][bad_rows_index] = self.total_source_table['RA'][bad_rows_index]
         filter_measurements_table['DEC'][bad_rows_index] = self.total_source_table['DEC'][bad_rows_index]
 
@@ -2609,16 +2664,30 @@ class HAPSegmentCatalog(HAPCatalogBase):
                 A modified version of the input table which has been reformatted in preparation
                 for catalog generation.
         """
+        if PHOTUTILS_GE_3:
+            # Rename photutils 3+ column names to match photutils 2
+            # column names for consistency with HLA Classic catalogs
+            rename_map = {
+                "ellipse_cxx": "cxx",
+                "ellipse_cxy": "cxy",
+                "ellipse_cyy": "cyy",
+                "covariance_xx": "covar_sigx2",
+                "covariance_xy": "covar_sigxy",
+                "covariance_yy": "covar_sigy2",
+            }
+            for new_colname in rename_map:
+                filter_table.rename_column(new_colname, rename_map[new_colname])
 
         # Rename columns to names used when HLA Classic catalog distributed by MAST
-        final_col_names = {id_colname: "ID", "xcentroid": "X-Centroid", "ycentroid": "Y-Centroid",
-                           bac_colname: "Bck", flux_colname: "FluxSegment", ferr_colname: "FluxSegmentErr",
+        final_col_names = {id_colname: "ID", X_CENTROID: "X-Centroid", Y_CENTROID: "Y-Centroid",
+                           bac_colname: "Bck", flux_colname: "FluxSegment", FERR_COLNAME: "FluxSegmentErr",
                            "bbox_xmin": "Xmin", "bbox_ymin": "Ymin", "bbox_xmax": "Xmax", "bbox_ymax": "Ymax",
-                           "cxx": "CXX", "cyy": "CYY", "cxy": "CXY",
+                            "cxx": "CXX", "cyy": "CYY", "cxy": "CXY",
                            "covar_sigx2": "X2", "covar_sigy2": "Y2", "covar_sigxy": "XY",
                            "orientation": "Theta",
                            "elongation": "Elongation", "ellipticity": "Ellipticity", "area": "Area",
                            "fwhm": "FWHM", "kron_radius": "KronRadius"}
+
         for old_col_title in final_col_names:
             filter_table.rename_column(old_col_title, final_col_names[old_col_title])
 
@@ -2781,9 +2850,17 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # more columns are appended to this table from the filter results.
         # Actually, the filter columns are in a table which is "database joined"
         # to the total table.  During the combine process, the new columns are renamed,
-        # formatted, and described (as necessary). For now this table only has id, xcentroid,
-        # ycentroid, RA, and DEC.
-        table = updated_table["label", "xcentroid", "ycentroid"]
+        # formatted, and described (as necessary). For now this table only has id, centroid,
+        # RA, and DEC.
+        x_col = next(
+            colname for colname in (X_CENTROID, "xcentroid", "x_centroid")
+            if colname in updated_table.colnames
+        )
+        y_col = next(
+            colname for colname in (Y_CENTROID, "ycentroid", "y_centroid")
+            if colname in updated_table.colnames
+        )
+        table = updated_table["label", x_col, y_col]
 
         # Convert the RA/Dec SkyCoord into separate columns
         radec_data = SkyCoord(updated_table["sky_centroid_icrs"])
@@ -2796,9 +2873,14 @@ class HAPSegmentCatalog(HAPCatalogBase):
         # Rename columns to names to those used when HLA Classic catalog distributed by MAST
         # and/or to distinguish Point and Segment catalogs
         # The columns that are appended will be renamed during the combine process
-        final_col_names = {"label": "ID", "xcentroid": "X-Centroid", "ycentroid": "Y-Centroid"}
+        log.info(f'Table column names before renaming: {table.colnames}')
+        final_col_names = {"label": "ID", x_col: "X-Centroid", y_col: "Y-Centroid"}
         for old_col_title in final_col_names:
-            table.rename_column(old_col_title, final_col_names[old_col_title])
+            if old_col_title in table.colnames:
+                table.rename_column(old_col_title, final_col_names[old_col_title])
+            else:
+                log.warning(f"Column {old_col_title} not found in the input table"+
+                            f"could not be renamed to {final_col_names[old_col_title]}")
 
         # Format the current columns
         final_col_format = {"ID": "7d", "X-Centroid": "10.3f", "Y-Centroid": "10.3f", "RA": "13.7f", "DEC": "13.7f"}
@@ -2889,7 +2971,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
         nbins = segm_img.max_label
         log.info("Number of sources from segmentation map: %d", nbins)
 
-        # Compute the biggest source identified 
+        # Compute the biggest source identified
         # The clip eliminates zero-divides when there are no good pixels in the image
         real_pixels = (np.isfinite(image_data) & (image_data != 0)).sum().clip(min=1)
         biggest_source_pixels = segm_img.areas.max()
@@ -3087,20 +3169,20 @@ def make_inv_mask(mask):
 
 def make_wht_masks(
     whtarr: np.ndarray, # image weight array (dtype=float32), zeros outside of footprint
-    maskarr: np.ndarray, # mask array (dtype=bool), typically inverse of footprint 
+    maskarr: np.ndarray, # mask array (dtype=bool), typically inverse of footprint
     scale: float = 1.5,
     sensitivity: float = 0.95,
     kernel: tuple = (11, 11) # kernel size for maximum filter window
-) -> list: # list containing a dictionary 
-    """ Uses scipy's maximum_filter to create the image weight masks of floats between 0 and 1. 
-    Function produces a list including a dictionary with the scale (float), wht_limit (float), 
-    mask (np.ndarray of bools, dtype=int16), and  relative weight (np.ndarray, dtype=float32). 
-    
+) -> list: # list containing a dictionary
+    """ Uses scipy's maximum_filter to create the image weight masks of floats between 0 and 1.
+    Function produces a list including a dictionary with the scale (float), wht_limit (float),
+    mask (np.ndarray of bools, dtype=int16), and  relative weight (np.ndarray, dtype=float32).
+
     """
-    # uses scipy maximum filter on image. Maximum filter selects the largest value within an ordered 
+    # uses scipy maximum filter on image. Maximum filter selects the largest value within an ordered
     # window of pixel values and replaces the central pixel with the largest value.
     maxwht = ndimage.maximum_filter(whtarr, size=kernel)
-    
+
     # normalized weight array
     rel_wht = maxwht / maxwht.max()
 
@@ -3116,7 +3198,7 @@ def make_wht_masks(
     # this is weird, trying to preserve the peculiar definition of similarity
     osum = master_mask.sum()
     pthresh = (1 - sensitivity) * osum
-    
+
     # loop through scale values until all pixels are used
     while master_mask.any():
 
@@ -3171,9 +3253,7 @@ def enforce_icrs_compatibility(catalog):
     # header keyword REFFRAME can be populated with anything specified by the user in the original
     # proposal.
     """
-    # We need to check whether or not the catalog was generated with photutils<1.6.0 or not
-    # since photutils=1.6.0 (apparently) renamed the 'catalog._wcs' to 'catalog.wcs'.
-    cat_wcs = catalog.wcs if hasattr(catalog, 'wcs') else catalog._wcs
+    cat_wcs = catalog.wcs
     if cat_wcs.wcs.radesys.upper() not in RADESYS_OPTIONS:
         cat_wcs.wcs.radesys = 'ICRS'
         log.warning(f"Assuming input coordinates are ICRS, instead of {cat_wcs.wcs.radesys}")
