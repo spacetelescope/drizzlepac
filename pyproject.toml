@@ -35,7 +35,6 @@ dependencies = [
     "stsci.stimage",
     "stwcs>=1.7.4",
     "tweakwcs>=0.8.7",
-    "stregion>=1.1.7",
     "requests",
     "scikit-learn>=0.20",
     "simplify-polyline",
@@ -44,11 +43,12 @@ dependencies = [
     "spherical_geometry>=1.2.22",
     "astroquery>=0.4",
     "astrocut",
-    "photutils<2.4.0",
+    "photutils",
     "lxml",
     "pypdf",
     "scikit-image>=0.14.2",
     "numpy>2.0",
+    "regions",
 ]
 license-files = ["LICENSE.txt"]
 dynamic = [
