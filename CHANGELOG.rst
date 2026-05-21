@@ -21,10 +21,13 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.12.0 (TBD)
 ============
 
-- Added code to handle deprecations in photutils v3.0.0. [#2089]
+- Replaced stregion with astropy-regions in mapreg.py, a module for reading and 
+  parsing DS9 region files used for tweakreg. [#2125]
 
 - Deprecated the TEAL helper "run" functions as well as the editpars 
   parameters in base drizzlepac functions. [#2152]
+  
+- Added code to handle deprecations in photutils v3.0.0. [#2089]
 
 
 3.11.0 (28-Apr-2026)
