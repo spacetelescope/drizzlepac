@@ -26,6 +26,7 @@ from photutils import background
 from photutils.background import Background2D
 from photutils.detection import DAOStarFinder
 from photutils.utils import NoDetectionsWarning
+from photutils import use_future_column_names
 
 import stwcs
 from stwcs.wcsutil import HSTWCS
@@ -60,8 +61,7 @@ SPLUNK_MSG_FORMAT = '%(asctime)s %(levelname)s src=%(name)s- %(message)s'
 log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.stdout,
                             format=SPLUNK_MSG_FORMAT, datefmt=MSG_DATEFMT)
 
-PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
-photutils.future_column_names = True
+PHOTUTILS_GE_3 = minversion(photutils, "3.0.0")
 if PHOTUTILS_GE_3:
     X_CENTROID = 'x_centroid'
     Y_CENTROID = 'y_centroid'
@@ -803,7 +803,8 @@ class SBCHAPImage(HAPImage):
         daofind = DAOStarFinder(fwhm=self.kernel_fwhm, threshold=1.0e-10)
 
         log.debug("Determining source properties as src_table...")
-        src_table = daofind(sciarr, mask=bkg_mask)
+        with use_future_column_names():
+            src_table = daofind(sciarr, mask=bkg_mask)
         del sci_bkgsub, bkg_mask, sci_gauss  # explicitly clean up memory
         if src_table is not None:
             log.info("Total Number of detected sources: {}".format(len(src_table)))
