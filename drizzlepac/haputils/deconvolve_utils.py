@@ -13,6 +13,7 @@ from astropy.io import fits as fits
 
 from photutils.detection import StarFinderBase, find_peaks
 from photutils.utils import NoDetectionsWarning
+from photutils import use_future_column_names
 
 from stsci.tools import fileutil as fu
 
@@ -965,8 +966,9 @@ def find_point_sources(drzname, data=None, mask=None,
             fits.PrimaryHDU(data=decmask.astype(np.uint16)).writeto(drzname.replace('.fits', '_deconv_mask.fits'),
                                                                 overwrite=True)
     # find sources in deconvolved image
-    dec_peaks = find_peaks(decdrz, threshold=0.0,
-                       mask=invmask, box_size=box_size)
+    with use_future_column_names():
+        dec_peaks = find_peaks(decdrz, threshold=0.0,
+                               mask=invmask, box_size=box_size)
 
     # Use these positions as an initial guess for the final position
     peak_mask = (drz * 0.).astype(np.uint8)
@@ -983,7 +985,8 @@ def find_point_sources(drzname, data=None, mask=None,
 
     # Use this new mask to find the actual peaks in the original input
     # but only to integer pixel precision.
-    peaks = find_peaks(drz, threshold=0., box_size=box_size // 2)
+    with use_future_column_names():
+        peaks = find_peaks(drz, threshold=0., box_size=box_size // 2)
     if len(peaks) == 0:
         peaks = None
 

@@ -49,6 +49,7 @@ from astropy.utils import minversion
 from astropy.utils.decorators import deprecated
 
 import photutils
+from photutils import use_future_column_names
 from photutils.segmentation import (detect_sources, SourceCatalog, detect_threshold,
                                     deblend_sources, SegmentationImage)
 
@@ -86,8 +87,7 @@ log = logutil.create_logger(__name__, level=logutil.logging.NOTSET, stream=sys.s
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'
 
-PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
-photutils.future_column_names = True
+PHOTUTILS_GE_3 = minversion(photutils, "3.0.0")
 if PHOTUTILS_GE_3:
     X_CENTROID = 'x_centroid'
     Y_CENTROID = 'y_centroid'
@@ -816,13 +816,15 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     kern_img[:, -edge:] = 0.0
     kernel_psf = False
 
-    peaks = find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
+    with use_future_column_names():
+        peaks = find_peaks(kern_img, threshold=threshold * 5, box_size=isolation_size)
     if peaks is None or (peaks is not None and len(peaks) == 0):
         tmean = threshold.mean() if isinstance(threshold, np.ndarray) else threshold
         if tmean > kern_img.mean():
             kern_stats = sigma_clipped_stats(kern_img)
             threshold = kern_stats[2]
-        peaks = find_peaks(kern_img, threshold=threshold, box_size=isolation_size)
+        with use_future_column_names():
+            peaks = find_peaks(kern_img, threshold=threshold, box_size=isolation_size)
 
     if peaks is not None:
         # Sort based on peak_value to identify brightest sources for use as a kernel
@@ -929,7 +931,8 @@ def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
                                               sub_shape=(11, 11),
                                               maxiters=2)
 
-        phot_results = itr_phot_obj(psf)
+        with use_future_column_names():
+            phot_results = itr_phot_obj(psf)
     except Exception as x_cept:
         log.warning(f"The find_fwhm() failed due to problem with fitting. Trying again. Exception: {x_cept}")
         return None
@@ -1206,7 +1209,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
             detection_img[segm.data[seg_slice] == 0] = 0
 
             # Detect sources in this specific segment
-            seg_table = daofind.find_stars(detection_img)
+            with use_future_column_names():
+                seg_table = daofind.find_stars(detection_img)
 
             # Pick out brightest source only
             if src_table is None and seg_table:
@@ -1229,7 +1233,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
                     segimg = SegmentationImage(segment.data)
                     segment_properties = SourceCatalog(detection_img, segimg)
 
-                    sat_table = segment_properties.to_table()
+                    with use_future_column_names():
+                        sat_table = segment_properties.to_table()
                     seg_table['flux'][max_row] = sat_table[flux_colname][0]
                     seg_table['peak'][max_row] = sat_table['max_value'][0]
                     xcentroid = sat_table[X_CENTROID][0]
@@ -1251,7 +1256,8 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
     else:
         log.debug("Determining source properties as src_table...")
         cat = SourceCatalog(img, segm)
-        src_table = cat.to_table()
+        with use_future_column_names():
+            src_table = cat.to_table()
         # Make column names consistent with IRAFStarFinder column names
         src_table.rename_column(flux_colname, 'flux')
         src_table.rename_column(FERR_COLNAME, 'flux_err')
