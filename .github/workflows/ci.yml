@@ -14,7 +14,14 @@ on:
 
 jobs:
   crds_contexts:
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@4eddea92b10b810d0471f7525f38f2921228b140  # 13.1.12
+    runs-on: ubuntu-latest
+    steps:
+      - id: context
+        uses: spacetelescope/crds/.github/actions/contexts@598b076b15ea9c381307d51688db2abb953c4f5e
+        with:
+          require_hst: true
+    outputs:
+      hst: ${{ steps.context.outputs.hst }}
   check:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e97344095b099e1d729fe97429078c9975921d8a  # v2.6.2
     with:
