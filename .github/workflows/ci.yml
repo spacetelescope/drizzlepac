@@ -14,14 +14,14 @@ on:
 
 jobs:
   crds_contexts:
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@4eddea92b10b810d0471f7525f38f2921228b140  # 13.1.12
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@f48c5094926a9f0555e8352838a73371c1c4ec10  # 13.2.3
   check:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e97344095b099e1d729fe97429078c9975921d8a  # v2.6.2
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@2835f0cacddf3f8de198db9afdb5354a5cebe0ef  # v2.6.3
     with:
       envs: |
         - linux: check-style
   test:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e97344095b099e1d729fe97429078c9975921d8a  # v2.6.2
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@2835f0cacddf3f8de198db9afdb5354a5cebe0ef  # v2.6.3
     needs: [ crds_contexts ]
     with:
       setenv: |
