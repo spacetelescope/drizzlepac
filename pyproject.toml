@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "astropy>=6.1",
+    "astropy @ git+https://github.com/astrofrog/astropy.git@wcs-public-c-api-deprecation",
     "fitsblender>=0.4.2",
     "scipy>=1.11",
     "matplotlib",
