@@ -11,6 +11,7 @@ on:
   schedule:
     # Weekly Monday 9AM build
     - cron: "2 20 * * 3"
+  workflow_dispatch:
 
 jobs:
   crds_contexts:
