@@ -7,14 +7,14 @@ import cdriz_setup
 @pytest.fixture
 def kernel_pars():
     # get cdriz.triz inputs from cdriz_setup.py
-    _params = cdriz_setup.Get_Grid(inx=10, iny=10, outx=13, outy=13)
+    _params = cdriz_setup.Get_Grid(inx=10, iny=10, outx=13, outy=13, offset=[1.234e-6, 1.234e-6])
     _params.zero_background()
     return _params
 
 
 # "square", "point", "turbo", "gaussian", "lanczos3"
 @pytest.mark.parametrize("kernel", ["square", "point", "turbo"])
-def test_square_kernel(kernel_pars, kernel, return_png=False):
+def test_spt_kernels(kernel_pars, kernel, return_png=False):
     """Function tests different c code point kernels (inputs already created on instantiation).
 
     Parameters

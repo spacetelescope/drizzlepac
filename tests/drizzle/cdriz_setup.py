@@ -30,7 +30,7 @@ class Get_Grid:
 
     """
 
-    def __init__(self, inx, iny, outx, outy):
+    def __init__(self, inx, iny, outx, outy, offset=None):
         np.random.seed(0)  # keep same random across each instance
         self.in_grid = (iny, inx)  # use numpy indexing order (y,x)
         self.out_grid = (outy, outx)  # use numpy indexing order (y,x)
@@ -42,6 +42,8 @@ class Get_Grid:
         self.outctx = np.zeros(self.out_grid, dtype=np.int32)
         self.w1 = get_wcs(self.in_grid)
         self.w2 = get_wcs(self.out_grid)
+        if offset is not None:
+            self.w2.wcs.crpix = np.add(self.w2.wcs.crpix, offset)
         self.mapping = cdriz.DefaultWCSMapping(
             self.w1, self.w2, self.in_grid[0], self.in_grid[1], 1
         )
@@ -91,20 +93,20 @@ def cdriz_call(_set_kernel_pars, kernel):
 
 
 def get_output_fullpath(relative_path, output_filename):
-    """Returns the final output path given a name and relative path. 
+    """Returns the final output path given a name and relative path.
 
     Parameters
     ----------
     relative_path : str
-        relative path from this file to desired path. 
+        relative path from this file to desired path.
     output_filename : str
-        desired name of output file (png or csv). 
+        desired name of output file (png or csv).
 
     Returns
     -------
     output_fullpath: str
         final output path
-    """    
+    """
     local_path = os.path.dirname(__file__)
     output_name = os.path.join(relative_path, output_filename)
     output_fullpath = os.path.join(local_path, output_name)
