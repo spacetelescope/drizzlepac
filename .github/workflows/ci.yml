@@ -34,7 +34,11 @@ jobs:
       coverage: ''
       envs: |
         - linux: py311-xdist
+        - linux: py312-xdist
+        - linux: py313-xdist
+        - macos: py311-xdist
         - macos: py312-xdist
+        - macos: py313-xdist
           libraries:
             brew:
               - hdf5
