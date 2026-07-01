@@ -774,7 +774,7 @@ def _bad_lines_in_image(image, num_sources, min_length, min_lines, mask=None):
     # Check 3: Check for high fraction of lines at multiple angles.
     # Start by looking for lines not associated with columns (90 +/- 2 deg) as they are 
     # nearly always caused by CTE or saturation bleeding along the columns,
-    # and lines aligned roughly with the rows (0 +/- 2 deg) as they are mostly 
+    # and lines not aligned roughly with the rows (0 +/- 2 deg) as they are mostly 
     # associated with the diffraction spikes from saturated stars. If the 
     # remaining lines have a dominant angle, bad guiding is detected.
     diff_lines90 = np.isclose(np.abs(lines['angles']), 90, atol=2.0)
