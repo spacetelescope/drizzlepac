@@ -795,7 +795,7 @@ def _bad_lines_in_image(image, num_sources, min_length, min_lines, mask=None):
     # the largest bins counts. This logic assumes that PSF diffraction spikes 
     # will be detected and there will be a roughly equal number of orthogonal
     # lines at right angles for every PSF. This should only be able to happen when 
-    # guiding in good, as cosmic-ray lines would have a random distribution of 
+    # guiding is good, as cosmic-ray lines would have a random distribution of 
     # angles (if detected on a bad-guiding exposure). The limit of 75% guards 
     # against small number statistics (4 at max, only 3 detected at 90 deg)
     max_angle_bin_counts = counts.max()
