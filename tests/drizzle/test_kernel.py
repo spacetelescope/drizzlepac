@@ -31,6 +31,19 @@ def test_point_kernel(kernel, kernel_pars, return_png=True):
     relative_path = "truth_files"
     output_fullpath = cdriz_setup.get_output_fullpath(relative_path, output_name)
 
+    if kernel == "point":
+        # The point (nearest-neighbour) kernel places each input pixel's flux in
+        # a single output pixel. With the default 50x60 input the input and
+        # output grids differ in parity along x (50 vs 51), so a half-pixel crpix
+        # offset maps the source exactly onto an output pixel boundary; which
+        # side it lands on is then decided by sub-ULP round-off in the WCS
+        # transform, which varies between WCSLIB versions. Match the input grid
+        # parity to the output (inx=51) so the source falls on output pixel
+        # centers and the result is stable. The output grid is left unchanged so
+        # the truth array keeps its shape.
+        kernel_pars = cdriz_setup.Get_Grid(inx=51, iny=60, outx=51, outy=66)
+        kernel_pars.zero_background()
+
     # add missing/flagged pixels in inwht
     kernel_pars.insci[20:22, 21:22] = 100
 
