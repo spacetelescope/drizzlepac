@@ -44,3 +44,5 @@ jobs:
         - linux: py3-cov-xdist
           coverage: codecov
       toxdeps: tox-uv
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
