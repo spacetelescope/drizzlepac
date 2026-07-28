@@ -2013,7 +2013,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             # Convert source_cat which is a SourceCatalog to an Astropy Table - need the data in tabular
             # form to filter out bad rows and correspondingly bad segments before the filter images are processed.
             with use_future_column_names():
-                total_measurements_table = Table(self.source_cat.to_table(columns=['label', 'xcentroid', 'ycentroid', 'sky_centroid_icrs']))
+                total_measurements_table = Table(self.source_cat.to_table(columns=['label', X_CENTROID, Y_CENTROID, 'sky_centroid_icrs']))
 
             # Filter the table to eliminate nans or inf based on the coordinates, then remove these segments from
             # the segmentation image too
@@ -2021,7 +2021,7 @@ class HAPSegmentCatalog(HAPCatalogBase):
             good_segm_rows_by_label = []
             updated_table = None
             for i, old_row in enumerate(total_measurements_table):
-                if np.isfinite(old_row["xcentroid"]):
+                if np.isfinite(old_row[X_CENTROID]):
                     good_rows.append(old_row)
                     good_segm_rows_by_label.append(total_measurements_table['label'][i])
 
