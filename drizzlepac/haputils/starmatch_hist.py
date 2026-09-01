@@ -21,8 +21,7 @@ Classes and Functions
 
 import os,sys,numpy
 import scipy.special, scipy.signal
-from scipy.ndimage.filters import maximum_filter
-from scipy.ndimage import generate_binary_structure
+from scipy.ndimage import maximum_filter, generate_binary_structure
 import astropy.io.fits as pyfits
 from astropy.table import Table
 

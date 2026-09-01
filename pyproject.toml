@@ -147,6 +147,7 @@ drizzlepac = [
 [tool.cibuildwheel]
 # Disable free-threading builds on all platforms
 skip = "cp3??t-*"
+test-command = 'python -c "from drizzlepac import cdriz"'
 
 [tool.build_sphinx]
 builder = "html"
