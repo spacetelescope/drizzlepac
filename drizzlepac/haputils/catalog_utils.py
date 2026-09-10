@@ -134,8 +134,7 @@ class CatalogImage:
                      zero_percent=25.0,
                      negative_percent=15.0,
                      nsigma_clip=3.0,
-                     maxiters=3,
-                     good_fwhm=[1.5, 3.5]):
+                     maxiters=3):
 
         if self.blank:
             return
@@ -693,8 +692,7 @@ class HAPCatalogs:
                                 self.param_dict['zero_percent'],
                                 self.param_dict['negative_percent'],
                                 self.param_dict['nsigma_clip'],
-                                self.param_dict['maxiters'],
-                                self.param_dict['good_fwhm'])
+                                self.param_dict['maxiters'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...

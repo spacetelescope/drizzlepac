@@ -233,9 +233,6 @@ GENERAL
     * bkg_filter_size: int (pixels)
         Window size of the 2D median filter to apply to the low resolution background map
 
-    * good_fwhm:
-        DEPRECATED
-
     * skyannulus_arcsec: float (arcseconds)
         Photometry measurement: inner radius of the circular annulus
 

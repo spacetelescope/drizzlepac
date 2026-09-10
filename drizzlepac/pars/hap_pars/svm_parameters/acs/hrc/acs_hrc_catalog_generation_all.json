@@ -1,7 +1,6 @@
 {
     "bkg_box_size": 13,
     "bkg_filter_size": 3,
-    "good_fwhm": [1.5, 3.5],
     "skyannulus_arcsec": 0.25,
     "dskyannulus_arcsec": 0.25,
     "aperture_1": 0.03,
