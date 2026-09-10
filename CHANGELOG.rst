@@ -21,6 +21,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.12.0 (TBD)
 ============
 
+- Removed deprecated/unused parameters in catalog configuration parameter files. [#2186]
+
 - Improved MVM guide star failure check to reintroduce exposures that
   were incorrectly excluded due to PSF spikes, saturation, and CTE issues. [#2101]
 
