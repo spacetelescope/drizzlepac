@@ -2,18 +2,15 @@
     "bkg_box_size": 27,
     "bkg_filter_size": 3,
     "good_fwhm": [1.5, 3.5],
-    "nsigma": 5,
     "skyannulus_arcsec": 0.25,
     "dskyannulus_arcsec": 0.25,
     "aperture_1": 0.05,
     "aperture_2": 0.15,
     "salgorithm": "mode",
-    "starfinder_algorithm": "psf",
     "scale": 1.5,
     "sensitivity": 0.95,
     "block_size": [1024, 1024],
     "cr_residual": 0.05,
-    "region_size": 11,
     "flag_trim_value": 5,
     "simple_bkg": false,
     "zero_percent": 25.0,
@@ -21,9 +18,11 @@
     "nsigma_clip": 3.0,
     "maxiters": 3,
     "bkg_skew_threshold": 0.5,
+    "TWEAK_FWHMPSF": 0.076,
     "dao": {
-        "TWEAK_FWHMPSF": 0.076,
-        "TWEAK_THRESHOLD": 3.0
+        "nsigma": 5,
+        "starfinder_algorithm": "psf",
+        "region_size": 11
     },
     "sourcex": {
         "fwhm": 0.076,

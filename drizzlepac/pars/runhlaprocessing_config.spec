@@ -13,7 +13,6 @@ ci_selower_limit = float(default=0.0)
 ci_seupper_limit = float(default=0.0)
 [dao]
 TWEAK_FWHMPSF = float(default=0.0)
-TWEAK_THRESHOLD = float(default=0.0)
 aperture_1 = float(default=0.0)
 aperture_2 = float(default=0.0)
 bthresh = float(default=0.0)
