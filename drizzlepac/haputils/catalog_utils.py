@@ -914,8 +914,8 @@ class HAPCatalogBase:
                 self.image.inv_footprint_mask,
                 scale=scale,
                 sensitivity=self.param_dict['sensitivity'],
-                kernel=(self.param_dict['dao']['region_size'],
-                self.param_dict['dao']['region_size'])
+                kernel=(self.param_dict['region_size'],
+                self.param_dict['region_size'])
                 )
 
     def identify_sources(self, **pars):
@@ -985,7 +985,7 @@ class HAPCatalogBase:
         if proc_type == "segment":
              data_table.meta["Threshold (sigma)"] = self.final_nsigma
         else:
-             data_table.meta["Threshold (sigma)"] = self.param_dict['dao']['nsigma']
+             data_table.meta["Threshold (sigma)"] = self.param_dict['nsigma']
 
         data_table.meta["Exposure Start"] = self.image.keyword_dict["expo_start"]
         data_table.meta["Total Exposure Time"] = self.image.keyword_dict["texpo_time"]
@@ -1095,11 +1095,11 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("INPUT PARAMETERS")
             log.info("image name: {}".format(self.imgname))
             log.info("{}: {}".format("self.param_dict['simple_bkg']", self.param_dict['simple_bkg']))
-            log.info("{}: {}".format("self.param_dict['dao']['nsigma']", self.param_dict['dao']['nsigma']))
+            log.info("{}: {}".format("self.param_dict['nsigma']", self.param_dict['nsigma']))
             log.info("{}: {}".format("self.image.bkg_rms_median", self.image.bkg_rms_median))
             log.info("DERIVED PARAMETERS")
             log.info("{}: {}".format("source_fwhm", source_fwhm))
-            log.info("{}: {}".format("threshold", self.param_dict['dao']['nsigma'] * self.image.bkg_rms_median))
+            log.info("{}: {}".format("threshold", self.param_dict['nsigma'] * self.image.bkg_rms_median))
             log.info("")
             log.info("{}".format("=" * 80))
 
@@ -1115,33 +1115,33 @@ class HAPPointCatalog(HAPCatalogBase):
                 log.info("Mask {}: rel = {}".format(mask['wht_limit'], mask['rel_weight'].max()))
 
                 # find ALL the sources!!!
-                if self.param_dict['dao']["starfinder_algorithm"] == "dao":
-                    log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['dao']['nsigma'],
+                if self.param_dict["starfinder_algorithm"] == "dao":
+                    log.info("DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                               reg_rms_median))
                     daofind = DAOStarFinder(fwhm=source_fwhm,
-                                            threshold=self.param_dict['dao']['nsigma'] * reg_rms_median)
+                                            threshold=self.param_dict['nsigma'] * reg_rms_median)
                     with use_future_column_names():
                         reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
-                elif self.param_dict['dao']["starfinder_algorithm"] == "iraf":
-                    log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['dao']['nsigma'],
+                elif self.param_dict["starfinder_algorithm"] == "iraf":
+                    log.info("IRAFStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                                reg_rms_median))
-                    isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['dao']['nsigma'] * reg_rms_median)
+                    isf = IRAFStarFinder(fwhm=source_fwhm, threshold=self.param_dict['nsigma'] * reg_rms_median)
                     with use_future_column_names():
                         reg_sources = isf(region, mask=self.image.inv_footprint_mask)
-                elif self.param_dict['dao']["starfinder_algorithm"] == "psf":
-                    log.info("UserStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['dao']['nsigma'],
+                elif self.param_dict["starfinder_algorithm"] == "psf":
+                    log.info("UserStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                               reg_rms_median))
                     # Perform manual detection of sources using theoretical PSFs
                     # Initial test data: ictj65
                     try:
                         # Subtract the detection threshold image so that detection is anything > 0
-                        region -= (reg_rms * self.param_dict['dao']['nsigma'])
+                        region -= (reg_rms * self.param_dict['nsigma'])
                         # insure no negative values for deconvolution
                         region = np.clip(region, 0., region.max())
                         user_peaks, source_fwhm = decutils.find_point_sources(self.image.imgname,
                                                                  data=region,
                                                                  def_fwhm=source_fwhm,
-                                                                 box_size=self.param_dict['dao']['region_size'],
+                                                                 box_size=self.param_dict['region_size'],
                                                                  mask=self.image.footprint_mask,
                                                                  block_size=self.param_dict['block_size'],
                                                                  diagnostic_mode=self.diagnostic_mode)
@@ -1187,17 +1187,17 @@ class HAPPointCatalog(HAPCatalogBase):
                     else:
                         # No sources found to match the PSF model, perhaps due to CTE.
                         # Try standard daofind instead
-                        log.info("Reverting to DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['dao']['nsigma'],
+                        log.info("Reverting to DAOStarFinder(fwhm={}, threshold={}*{})".format(source_fwhm, self.param_dict['nsigma'],
                                                                                   reg_rms_median))
                         if PHOTUTILS_GE_3:
                             daofind = DAOStarFinder(
                                 fwhm=source_fwhm,
-                                threshold=self.param_dict['dao']['nsigma'] * reg_rms_median,
+                                threshold=self.param_dict['nsigma'] * reg_rms_median,
                                 min_separation=0)
                         else:
                             daofind = DAOStarFinder(
                                 fwhm=source_fwhm,
-                                threshold=self.param_dict['dao']['nsigma'] * reg_rms_median)
+                                threshold=self.param_dict['nsigma'] * reg_rms_median)
                         with use_future_column_names():
                             reg_sources = daofind(region, mask=self.image.inv_footprint_mask)
                 else:
