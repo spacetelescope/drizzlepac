@@ -22,8 +22,6 @@
     "maxiters": 3,
     "bkg_skew_threshold": 0.5,
     "dao": {
-        "bkgsig_sf": 4.0,
-        "kernel_sd_aspect_ratio": 0.8,
         "TWEAK_FWHMPSF": 0.14,
         "TWEAK_THRESHOLD": 3.0
     },
@@ -33,7 +31,6 @@
         "segm_nsigma": 3.0,
         "nlevels": 64,
         "contrast": 0.001,
-        "border": 10,
         "rw2d_size": 11,
         "rw2d_nsigma": 10.0,
         "rw2d_biggest_source": 0.045,

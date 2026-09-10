@@ -291,12 +291,6 @@ GENERAL
         Gaussian FWHM for source detection
 
 DAO
-    * bigsig_sf: 
-        DEPRECATED
-
-    * kernel_sd_aspect_ratio: 
-        DEPRECATED
-
     * nsigma: float
         The "sigma" in threshold=(sigma * background_rms). Threshold is an image greater than the background which defines, on a pixel-by-pixel basis, the low signal limit above which sources are detected.  
 
@@ -318,9 +312,6 @@ SOURCEX
 
     * contrast: float
         Fraction of the total source flux that a local peak must have to be deblended as a separate object
-
-    * border: 
-        DEPRECATED
 
     * rw2d_size: int
         RickerWavelet kernel X- and Y-dimension in pixels

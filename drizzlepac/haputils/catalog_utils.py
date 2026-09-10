@@ -1096,9 +1096,6 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Total Detection Product - Input Parameters")
             log.info("INPUT PARAMETERS")
             log.info("image name: {}".format(self.imgname))
-            log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
-            log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']",
-                                     self.param_dict['dao']['kernel_sd_aspect_ratio']))
             log.info("{}: {}".format("self.param_dict['simple_bkg']", self.param_dict['simple_bkg']))
             log.info("{}: {}".format("self.param_dict['nsigma']", self.param_dict['nsigma']))
             log.info("{}: {}".format("self.image.bkg_rms_median", self.image.bkg_rms_median))
