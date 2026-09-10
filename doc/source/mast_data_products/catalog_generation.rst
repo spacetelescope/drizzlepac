@@ -233,6 +233,9 @@ GENERAL
     * bkg_filter_size: int (pixels)
         Window size of the 2D median filter to apply to the low resolution background map
 
+    * nsigma: float
+        The "sigma" in threshold=(sigma * background_rms). Threshold is an image greater than the background which defines, on a pixel-by-pixel basis, the low signal limit above which sources are detected.  
+
     * skyannulus_arcsec: float (arcseconds)
         Photometry measurement: inner radius of the circular annulus
 
@@ -248,6 +251,9 @@ GENERAL
     * salgorithm: string (default = "mode")
         Photometry measurement: Statistic to use to calculate the background ("mean", "median", "mode"). All measurements are sigma-clipped.
 
+    * starfinder_algorithm: string (default = "psf")
+        Algorithm to use for source detection: "dao" (DAOStarFinder), "iraf" (IRAFStarFinder), and "psf" (UserStarFinder).
+
     * scale: float
         Used as a scaling factor on a limit threshold for computation of weight masks
 
@@ -262,6 +268,9 @@ GENERAL
         filter single-image exposures are only used to compute total detection image when there are
         only single exposures for *all* of the input filters. Note the variable in the source
         code is ``n1_residual``.
+
+    * region_size: int
+        Size of the box used to recognize a point source. Also, the kernel size for the maximum filter window when computing weight masks. In the latter case of "kernel size", the variable applies to both algorithms.
 
     * flag_trim_value: int
         The value which is the high limit for good detected sources.  Sources with lower flag values are deemed good. Flags above the default limit represent:  multi-pixel saturation, faint magnitude, hot pixels, swarm detection, edge/chip gap, bleeding, and cosmic-rays.
@@ -287,15 +296,6 @@ GENERAL
     * TWEAK_FWHMPSF: float
         Gaussian FWHM for source detection
 
-DAO
-    * nsigma: float
-        The "sigma" in threshold=(sigma * background_rms). Threshold is an image greater than the background which defines, on a pixel-by-pixel basis, the low signal limit above which sources are detected.  
-
-    * starfinder_algorithm: string (default = "psf")
-        Algorithm to use for source detection: "dao" (DAOStarFinder), "iraf" (IRAFStarFinder), and "psf" (UserStarFinder).
-
-    * region_size: int
-        Size of the box used to recognize a point source. Also, the kernel size for the maximum filter window when computing weight masks. In the latter case of "kernel size", the variable applies to both algorithms.
 
 SOURCEX
     * source_box: int (pixels)
