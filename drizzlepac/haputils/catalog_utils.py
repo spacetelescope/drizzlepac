@@ -1638,7 +1638,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._size_source_box = self.param_dict["sourcex"]["source_box"]
         self._nlevels = self.param_dict["sourcex"]["nlevels"]
         self._contrast = self.param_dict["sourcex"]["contrast"]
-        self._border = self.param_dict["sourcex"]["border"]
         self._segm_nsigma = self.param_dict["sourcex"]["segm_nsigma"]
         self._rw2d_size = self.param_dict["sourcex"]["rw2d_size"]
         self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
