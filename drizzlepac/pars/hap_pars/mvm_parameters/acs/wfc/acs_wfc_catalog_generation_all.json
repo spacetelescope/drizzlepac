@@ -22,7 +22,6 @@
     "bkg_skew_threshold": 0.5,
     "TWEAK_FWHMPSF": 0.076,
     "sourcex": {
-        "fwhm": 0.13,
         "source_box": 15,
         "segm_nsigma": 3.0,
         "nlevels": 64,
