@@ -675,7 +675,7 @@ def compare_interfilter_crossmatches(total_obj_list, json_timestamp=None, json_t
 
             # write out ds9 region files if log level is 'debug'
             if log_level == logutil.logging.DEBUG:
-                out_reg_stuff = {"xyorig": ['xcentroid', 'ycentroid'],
+                out_reg_stuff = {"xyorig": ['x_centroid', 'y_centroid'],
                                  "rd": ['ra', 'dec'],
                                  "xyref": ['xcentroid_ref', 'ycentroid_ref']}
                 for reg_type in out_reg_stuff.keys():
@@ -922,9 +922,9 @@ def transform_coords(filtobj_subdict, xmatch_ref_imgname, log_level=logutil.logg
     # Initiate logging!
     log.setLevel(log_level)
 
-    # 1: stack up xcentroid and ycentorid columns from sources table
-    xy_centroid_values = np.stack((filtobj_subdict['sources']['xcentroid'],
-                                   filtobj_subdict['sources']['ycentroid']), axis=1)
+    # 1: stack up x_centroid and y_centroid columns from sources table
+    xy_centroid_values = np.stack((filtobj_subdict['sources']['x_centroid'],
+                                   filtobj_subdict['sources']['y_centroid']), axis=1)
 
     # 2: perform coordinate transforms.
     origin = 0
@@ -1092,11 +1092,7 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
     img_list = []
     log.debug("GAIA catalog will be created using the following input images:")
     # Create a list of the input flc.fits/flt.fits that were drizzled to create the final HAP product being
-    # processed here. edp_item.info and hap_obj.info are both structured as follows:
-    # <proposal id>_<visit #>_<instrument>_<detector>_<input filename>_<filter>_<drizzled product
-    # image filetype>
-    # Example: '10265_01_acs_wfc_j92c01b9q_flc.fits_f606w_drc'
-    # what is being extracted here is just the input filename, which in this case is 'j92c01b9q_flc.fits'.
+    # processed here.
     if hasattr(hap_obj, "edp_list"):  # for total and filter product objects
         if not os.path.exists(hap_obj.drizzle_filename) or len(hap_obj.edp_list) == 0:
             # No valid products to evaluate
@@ -1104,13 +1100,18 @@ def generate_gaia_catalog(hap_obj, columns_to_remove=None):
             return None
 
         for edp_item in hap_obj.edp_list:
-            parse_info = edp_item.info.split("_")
-            imgname = "{}_{}".format(parse_info[4], parse_info[5])
+            # Use full_filename attribute which contains the complete FLC/FLT filename
+            imgname = edp_item.full_filename
             log.debug(imgname)
             img_list.append(imgname)
     else:  # For single-exposure product objects
-        parse_info = hap_obj.info.split("_")
-        imgname = "{}_{}".format(parse_info[4], parse_info[5])
+        # For single-exposure products, use the hap_obj's full_filename if available
+        if hasattr(hap_obj, "full_filename"):
+            imgname = hap_obj.full_filename
+        else:
+            # Fallback to parsing info string if full_filename not available
+            parse_info = hap_obj.info.split("_")
+            imgname = "{}_{}".format(parse_info[4], parse_info[5])
         log.debug(imgname)
         img_list.append(imgname)
 
@@ -1357,7 +1358,7 @@ def report_wcs(total_product_list, json_timestamp=None, json_time_since_epoch=No
 
     # Generate a separate JSON file for each ExposureProduct object
     for total_product in total_product_list:
-        detector = total_product.detector
+        # detector = total_product.detector
 
         # Loop over all the individual exposures in the list which comprise the total product
         for edp_object in total_product.edp_list:

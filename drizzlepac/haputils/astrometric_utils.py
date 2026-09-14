@@ -441,7 +441,9 @@ def build_reference_wcs(inputs, sciname='sci'):
     # as the first chip in the list, which for WFPC2 data means the PC.
     # Fortunately, for alignment, this doesn't matter since no resampling of
     # data will be performed
-    if len(wcslist) == 1 and not wcslist[0].has_distortion and wcslist[0].idcscale is None:
+    if len(wcslist) == 0:
+        raise ValueError("No valid WCS found in input images")
+    elif len(wcslist) == 1 and not wcslist[0].has_distortion and wcslist[0].idcscale is None:
         outwcs = wcslist[0]
     else:
         outwcs = utils.output_wcs(wcslist)

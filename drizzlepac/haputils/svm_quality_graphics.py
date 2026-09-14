@@ -26,6 +26,25 @@ https://programminghistorian.org/en/lessons/visualizing-with-bokeh
 PUBLIC INTERFACE FOR THIS MODULE
  - build_svm_plots(HDF5_FILE, output_basename='', display_plot=False):
 
+
+To produce the figures, the use must first:
+
+ - compile the svm_poller_file
+ - run svm processing with log_level set to 10 or DEBUG to generate 
+   the total object pickle file (total_obj_list_full.pickle)
+   $ from drizzlepac.hapsequencer import run_hap_processing
+   $ run_hap_processing('svm_poller_file.txt', log_level=10)
+ - run svm_quality_analysis on a loaded pickle file
+   $ import pickle
+   $ from drizzlepac.haputils.svm_quality_analysis import run_quality_analysis
+   $ run_quality_analysis(pickle.load(open("total_obj_list_full.pickle", "rb")))
+ - harvest the json files into a single HDF5 file (svm_qa_dataframe.h5)
+   $ run drizzlepac/haputils/diagnostic_json_harvester.py
+ - run this module with the output file to generate the plots
+   $ run drizzlepac/haputils/svm_quality_graphics.py svm_qa_dataframe.h5
+   
+The output html figures, with names like svm_qa_cat_nsources.html,can be viewed 
+in a web browser.
 """
 
 # Standard library imports
@@ -179,12 +198,18 @@ def build_svm_plots(data_source, output_basename='', display_plot=False, log_lev
         # added by the pandas_utils
         if_xm_DF = get_pandas_data(data_source, intfilt_xm_col_names.keys())
 
+        # Check if dataframe is empty or has no data
+        if if_xm_DF is None or if_xm_DF.shape[0] == 0:
+            log.warning("No interfilter residual data to plot!")
+            return
+
         # Rename the columns to abbreviated text for ease of management
         for old_col_name, new_col_name in intfilt_xm_col_names.items():
             if_xm_DF.rename(columns={old_col_name: new_col_name}, inplace=True)
 
-        # remove rows that aren't relevant
-        if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
+        # remove rows that aren't relevant - check if column exists first
+        if 'ref_image_platescale' in if_xm_DF.columns:
+            if_xm_DF = if_xm_DF[np.isnan(if_xm_DF.ref_image_platescale) == False]
 
         # Create interfilter plots, or bail out if no rows remain
         if if_xm_DF.shape[0] > 0:
@@ -628,7 +653,7 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
 
     # 2: Non-clipped min: plot x vs y values for all filters
     div = Div(text="""<h2>Comparison - reference residual statistics</h2>
-    <p>Reference image platescale: {} arcseconds per pixel</p>""".format(xm_df.ref_image_platescale[0]))
+    <p>Reference image platescale: {} arcseconds per pixel</p>""".format(xm_df.ref_image_platescale.iloc[0]))
     plots.append(div)
     plot = make_scatter_plot(xm_cds,
                              'Comparison - reference non-clipped minimum separation',
@@ -729,18 +754,18 @@ def build_interfilter_crossmatch_plots(xm_df, display_plot, output_basename='svm
     line_ctr = 1
     for line_index in xm_df.index:
         xm_df2 = xm_df[xm_df['gen_info.dataframe_index'] == line_index]
-        resid_output = output.replace(".html", "_residuals_{}_{}_{}_{}.html".format(xm_df2['gen_info.dataset'][0].lower(),
-                                                                                    xm_df2['gen_info.instrument'][0].lower(),
-                                                                                    xm_df2['gen_info.detector'][0].lower(),
-                                                                                    xm_df2['gen_info.filter'][0].lower()))
+        resid_output = output.replace(".html", "_residuals_{}_{}_{}_{}.html".format(xm_df2['gen_info.dataset'].iloc[0].lower(),
+                                                                                    xm_df2['gen_info.instrument'].iloc[0].lower(),
+                                                                                    xm_df2['gen_info.detector'].iloc[0].lower(),
+                                                                                    xm_df2['gen_info.filter'].iloc[0].lower()))
         output_file(resid_output)
         plots = []
         div = Div(text="""
         <h1>Position vs. Crossmatched interfilter comparison - reference residual values</h1>
         <p>Comparison image: {}<br/>Reference image: {}<br/>
-        Reference image platescale: {} arcseconds per pixel</p>""".format(xm_df2['comp_imgname'][line_index],
-                                                                          xm_df2['ref_imgname'][line_index],
-                                                                          xm_df.ref_image_platescale[0]))
+        Reference image platescale: {} arcseconds per pixel</p>""".format(xm_df2['comp_imgname'].iloc[0],
+                                                                          xm_df2['ref_imgname'].iloc[0],
+                                                                          xm_df.ref_image_platescale.iloc[0]))
         plots.append(div)
         xm_cds = ColumnDataSource(xm_df2)
         cds2_dict = {"x": xm_cds.data["ref_catalog.xcentroid_ref"][0],
@@ -826,7 +851,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
         output_base_filename = 'svm_qa_photometry'
     else:
         output_base_filename = '{}_photometry'.format(output_base_filename)
-    output_file(output_base_filename + '_' + phot_dataDF['Dataset'][0] + '.html')
+    output_file(output_base_filename + '_' + phot_dataDF['Dataset'].iloc[0] + '.html')
 
     # Define some tooltips in addition to the tips which come for free
     # from the graph_utils module
@@ -904,7 +929,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
     stat_label = Label(x=20, y=20, x_units='screen', y_units='screen', text=stat_text)
     p3.fig.add_layout(stat_label)
 
-    grid = gridplot([[p0.fig, p1.fig], [p2.fig, p3.fig]], plot_width=500, plot_height=500)
+    grid = gridplot([[p0.fig, p1.fig], [p2.fig, p3.fig]], width=500, height=500)
 
     # Display and save
     if display_plot:
@@ -931,7 +956,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
             continue
 
         # Generate an output filename
-        mag_outfile = output_base_filename + '_' + row_DF['Dataset'][0] + '_' + row_DF['gen_info.filter'][0] + '.html'
+        mag_outfile = output_base_filename + '_' + row_DF['Dataset'].iloc[0] + '_' + row_DF['gen_info.filter'].iloc[0] + '.html'
         output_file(mag_outfile)
 
         # Create a new dataframe with only the columns of interest
@@ -961,7 +986,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
         mag_CDS = ColumnDataSource(expanded_mag_DF)
 
         # Generate the separation vs magnitude plots
-        p4 = HAPFigure(title='On-sky Separation vs Magnitude (Aperture 1)   Filter: ' + expanded_mag_DF['gen_info.filter'][0],
+        p4 = HAPFigure(title='On-sky Separation vs Magnitude (Aperture 1)   Filter: ' + expanded_mag_DF['gen_info.filter'].iloc[0],
                        x_label='Point Magnitude Aperture 1 (ABMag)',
                        y_label='Separation (arcseconds)',
                        hover_tips=mag1_tooltips)
@@ -972,7 +997,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
                        glyph_color='colormap',
                        name='sepvsmagap1')
 
-        p5 = HAPFigure(title='On-sky Separation vs Magnitude (Aperture 2)   Filter: ' + expanded_mag_DF['gen_info.filter'][0],
+        p5 = HAPFigure(title='On-sky Separation vs Magnitude (Aperture 2)   Filter: ' + expanded_mag_DF['gen_info.filter'].iloc[0],
                        x_label='Point Magnitude Aperture 2 (ABMag)',
                        y_label='Separation (arcseconds)',
                        hover_tips=mag2_tooltips)
@@ -983,7 +1008,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
                        glyph_color='colormap',
                        name='sepvsmagap2')
 
-        p6 = HAPFigure(title='Delta Magnitude vs Magnitude (Aperture 1)   Filter: ' + expanded_mag_DF['gen_info.filter'][0],
+        p6 = HAPFigure(title='Delta Magnitude vs Magnitude (Aperture 1)   Filter: ' + expanded_mag_DF['gen_info.filter'].iloc[0],
                        x_label='Point Magnitude Aperture 1 (ABMag)',
                        y_label='Delta Magnitude [Point - Segment] (ABMag)',
                        hover_tips=mag1_tooltips)
@@ -994,7 +1019,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
                        glyph_color='colormap',
                        name='deltamagvsmagap1')
 
-        p7 = HAPFigure(title='Delta Magnitude vs Magnitude (Aperture 2)   Filter: ' + expanded_mag_DF['gen_info.filter'][0],
+        p7 = HAPFigure(title='Delta Magnitude vs Magnitude (Aperture 2)   Filter: ' + expanded_mag_DF['gen_info.filter'].iloc[0],
                        x_label='Point Magnitude Aperture 2 (ABMag)',
                        y_label='Delta Magnitude [Point - Segment] (ABMag)',
                        hover_tips=mag2_tooltips)
@@ -1005,7 +1030,7 @@ def generate_photometry_graphic(phot_dataDF, output_base_filename='', display_pl
                        glyph_color='colormap',
                        name='deltamagvsmagap2')
 
-        grid = gridplot([[p4.fig, p5.fig], [p6.fig, p7.fig]], plot_width=500, plot_height=500)
+        grid = gridplot([[p4.fig, p5.fig], [p6.fig, p7.fig]], width=500, height=500)
         # Display and save
         if display_plot:
             show(grid)
@@ -1310,16 +1335,16 @@ def generate_wcs_graphic(wcs_dataDF, wcs_columns, output_base_filename='', displ
     flen = len(fig_list)
     if flen < 4:
         grid = gridplot([[fig_list[0].fig, fig_list[1].fig, fig_list[2].fig]],
-                        plot_width=500, plot_height=500)
+                        width=500, height=500)
     elif flen < 7:
         grid = gridplot([[fig_list[0].fig, fig_list[1].fig, fig_list[2].fig],
                         [fig_list[3].fig, fig_list[4].fig, fig_list[5].fig]],
-                        plot_width=500, plot_height=500)
+                        width=500, height=500)
     else:
         grid = gridplot([[fig_list[0].fig, fig_list[1].fig, fig_list[2].fig],
                         [fig_list[3].fig, fig_list[4].fig, fig_list[5].fig],
                         [fig_list[6].fig, fig_list[7].fig, fig_list[8].fig]],
-                        plot_width=500, plot_height=500)
+                        width=500, height=500)
     
     # Display and save
     if display_plot:

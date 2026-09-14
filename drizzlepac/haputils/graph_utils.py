@@ -250,9 +250,14 @@ class HAPFigure:
         self.glyph_color = data_dict.get('glyph_color', self.glyph_color)
         if self.glyph_color == 'colormap':
             try:
-                self.legend_group = data_dict.get('legend_group', self.legend_group)
+                legend_group_candidate = data_dict.get('legend_group', 'inst_det')
+                # Only set legend_group if the column exists in the data source
+                if legend_group_candidate in self.sourceCDS.data.keys():
+                    self.legend_group = legend_group_candidate
+                else:
+                    self.legend_group = ''
             except Exception:
-                self.legend_group = 'inst_det'
+                self.legend_group = ''
             self.color = 'colormap'
         else:
             self.color = self.glyph_color
@@ -286,29 +291,33 @@ class HAPFigure:
     def __build_circle_glyph(self):
 
         if self.glyph_color == 'colormap':
-            self.fig.circle(x=self.x,
-                            y=self.y,
-                            source=self.sourceCDS,
-                            size=self.size,
-                            color=self.color,
-                            legend_group=self.legend_group,
-                            view=self.view,
-                            fill_alpha=self.fill_alpha,
-                            line_alpha=self.line_alpha,
-                            hover_color='#2F4F4F',
-                            name=self.glyph_name)
+            kwargs = dict(x=self.x,
+                         y=self.y,
+                         source=self.sourceCDS,
+                         size=self.size,
+                         color=self.color,
+                         legend_group=self.legend_group,
+                         fill_alpha=self.fill_alpha,
+                         line_alpha=self.line_alpha,
+                         hover_color='#2F4F4F',
+                         name=self.glyph_name)
+            if self.view is not None:
+                kwargs['view'] = self.view
+            self.fig.circle(**kwargs)
         else:
-            self.fig.circle(x=self.x,
-                            y=self.y,
-                            source=self.sourceCDS,
-                            size=self.size,
-                            color=self.color,
-                            legend_label=self.legend_label,
-                            view=self.view,
-                            fill_alpha=self.fill_alpha,
-                            line_alpha=self.line_alpha,
-                            hover_color='#2F4F4F',
-                            name=self.glyph_name)
+            kwargs = dict(x=self.x,
+                         y=self.y,
+                         source=self.sourceCDS,
+                         size=self.size,
+                         color=self.color,
+                         legend_label=self.legend_label,
+                         fill_alpha=self.fill_alpha,
+                         line_alpha=self.line_alpha,
+                         hover_color='#2F4F4F',
+                         name=self.glyph_name)
+            if self.view is not None:
+                kwargs['view'] = self.view
+            self.fig.circle(**kwargs)
 
     def __build_square_glyph(self):
 
