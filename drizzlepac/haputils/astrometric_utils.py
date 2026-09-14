@@ -46,7 +46,7 @@ from astropy.visualization.mpl_normalize import ImageNormalize
 from astropy.modeling.fitting import TRFLSQFitter
 from astropy.time import Time
 from astropy.utils import minversion
-from astropy.utils.decorators import deprecated
+from astropy.utils.decorators import deprecated, deprecated_renamed_argument
 
 import photutils
 from photutils import use_future_column_names
@@ -887,7 +887,8 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     return (kernel, kernel_psf), kernel_fwhm
 
 
-def find_fwhm(psf, default_fwhm):
+@deprecated_renamed_argument('log_level', since='3.12.0')
+def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
     """Determine FWHM for auto-kernel PSF
 
     This function iteratively fits a Gaussian model to the extracted PSF
