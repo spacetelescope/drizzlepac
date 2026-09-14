@@ -887,7 +887,7 @@ def build_auto_kernel(imgarr, whtarr, fwhm=3.0, threshold=None, source_box=7,
     return (kernel, kernel_psf), kernel_fwhm
 
 
-@deprecated_renamed_argument('log_level', since='3.12.0')
+@deprecated_renamed_argument('log_level', None, since='3.12.0')
 def find_fwhm(psf, default_fwhm, log_level=logutil.logging.INFO):
     """Determine FWHM for auto-kernel PSF
 
