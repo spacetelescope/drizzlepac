@@ -21,6 +21,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.12.0 (TBD)
 ============
 
+- Silenced some warnings from astropy.wcs.wcs and astropy.io.fits when running 
+  runastrodriz.py. [#2184]
+
 - Improved MVM guide star failure check to reintroduce exposures that
   were incorrectly excluded due to PSF spikes, saturation, and CTE issues. [#2101]
 
