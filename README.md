@@ -1,6 +1,6 @@
 # Drizzlepac
 
-[![Build Status](https://github.com/spacetelescope/drizzlepac/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/drizzlepac/actions)
+[![Build Status](https://github.com/spacetelescope/RegressionTests/actions/workflows/drizzlepac.yml/badge.svg?event=schedule)](https://github.com/spacetelescope/RegressionTests/actions/workflows/drizzlepac.yml?query=event%3Aschedule)
 [![codecov](https://codecov.io/gh/spacetelescope/drizzlepac/branch/main/graph/badge.svg)](https://codecov.io/gh/spacetelescope/drizzlepac)
 [![Documentation Status](https://readthedocs.org/projects/drizzlepac/badge/?version=latest)](https://drizzlepac.readthedocs.io/en/latest/?badge=latest)
 [![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](https://www.stsci.edu)
