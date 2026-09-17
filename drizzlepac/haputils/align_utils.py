@@ -1014,6 +1014,10 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
 
     log.info("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
+    if fit_pars['use2dhist']==True:
+        log.debug("use2dhist=True; using 2D histogram matching as initial guess")
+    else:
+        log.debug("use2dhist=False; using offset values as initial guess")
     # Specify matching algorithm to use
     match = XYXYMatch(**fit_pars)
 
