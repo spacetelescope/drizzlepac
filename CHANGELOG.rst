@@ -21,6 +21,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.12.0 (TBD)
 ============
 
+- Deprecating match_2dhist_fit function in favor of identical match_default_fit
+  function. [#2189]
+
 - Re-enabled the svm_quality_graphics functionality to generate quality 
   assurance graphics for SVM products. [#2180]
 
