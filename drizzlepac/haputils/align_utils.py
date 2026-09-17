@@ -1032,68 +1032,14 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-
 def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
-    """Perform cross-matching and final fit using 2dHistogram matching
-
-    This function performs cross-matching of each separate input image to the
-    sources in the reference catalog by looking for common integer offsets between all
-    sources in the input list and all sources in the reference catalog.  This
-    offset is then used as the starting point for the final fit to the reference
-    catalog to align each input image SEPARATELY to the reference catalog.
-
-    Parameters
-    ----------
-    imglist : list
-        List of input image
-        `tweakwcs.correctors.FITSWCSCorrector
-        <https://tweakwcs.readthedocs.io/en/latest/source/correctors.html#tweakwcs.correctors.FITSWCSCorrector>`_
-        objects with metadata and source catalogs
-
-    reference_catalog : Table
-        Astropy Table of reference sources for this field
-
-    fit_pars : dict
-        Set of parameters and values to be used for the fit.  This should include
-        ``fitgeom`` as well as any `tweakwcs.XYXYMatch
-        <https://tweakwcs.readthedocs.io/en/latest/source/matchutils.html>`_
-        parameter which the user feels needs to be adjusted to work best with the input data.
-
-    Returns
-    --------
-    imglist : list
-        List of input image
-        `tweakwcs.correctors.FITSWCSCorrector
-        <https://tweakwcs.readthedocs.io/en/latest/source/correctors.html#tweakwcs.correctors.FITSWCSCorrector>`_
-        objects with metadata and source catalogs
-
-    """
-    if 'fitgeom' in fit_pars:
-        fitgeom = fit_pars['fitgeom']
-        del fit_pars['fitgeom']
-    else:
-        fitgeom = 'rscale'
-
-    common_pars = fit_pars['pars']
-    del fit_pars['pars']
-
-    nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
-
-    log.info("{} (match_2dhist_fit) Cross matching and fitting "
-             "{}".format("-" * 20, "-" * 28))
-    # Specify matching algorithm to use
-    match = XYXYMatch(**fit_pars)
-    # Align images and correct WCS
-    matched_cat = align_wcs(imglist, reference_catalog, match=match,
-                            minobj=common_pars['minobj'][fitgeom],
-                            expand_refcat=False, fitgeom=fitgeom, nclip=nclip)
-
-    # Interpret RMS values from tweakwcs
-    interpret_fit_rms(imglist, reference_catalog)
-
-    del matched_cat
-
-    return imglist
+    """Deprecated alias for match_default_fit."""
+    warnings.warn(
+        "match_2dhist_fit is deprecated and will be removed in version 3.13.0; use match_default_fit instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return match_default_fit(imglist, reference_catalog, **fit_pars)
 
 # ----------------------------------------------------------------------------------------------------------
 def check_consistency(imglist, rot_tolerance=0.1, shift_tolerance=1.0):
