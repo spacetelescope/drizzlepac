@@ -246,7 +246,7 @@ def main():
     """
     This task can be run from the operating system command line with::
 
-        updatenpol [options] input [refdir]
+            updatenpol [options] input [refdir]
 
     Parameters
     -----------
