@@ -408,7 +408,7 @@ class Image:
             for p in self.pars.keys():
                 pindx = p.find(k)
                 if pindx >= 0 and self.pars[p] is not None:
-                    log.info('found a match for %s to %s'%(
+                    log.debug('found a match for %s to %s'%(
                                 str(p),str(self.pars[p])))
                     # find prefix (if any)
                     clip_prefix = p[:pindx].strip()
@@ -504,7 +504,7 @@ class Image:
         if refname.strip() == self.name.strip():
             self.identityfit = True
             if not quiet_identity:
-                log.info('NO fit performed for reference image: %s\n'%self.name)
+                log.debug('NO fit performed for reference image: %s\n'%self.name)
         else:
             # convert tolerance from units of arcseconds to pixels, as needed
             radius = matchpars['searchrad']
@@ -845,7 +845,7 @@ class Image:
                 if verbose:
                     print(f"\n{logstr:s}\n")
                 else:
-                    log.info(logstr)
+                    log.debug(logstr)
                 chip_wcs = stwcs.wcsutil.HSTWCS(self._im.hdu, ext=ext)
 
                 # Update FITS file with newly updated WCS for this chip
@@ -855,7 +855,7 @@ class Image:
                                              after=self._im.hdu[ext].header.index('WCSNAME'))
 
         if self.perform_update:
-            log.info('Updating WCSCORR table with new WCS solution "%s"'%wcsname)
+            log.debug('Updating WCSCORR table with new WCS solution "%s"'%wcsname)
             wcscorr.update_wcscorr(self._im.hdu, wcs_id=wcsname,
                                    extname=self.ext_name)
 
@@ -917,7 +917,7 @@ class Image:
         """ Write out the catalog of all sources and resids used in the final fit.
         """
         if self.pars['writecat']:
-            log.info('Creating catalog for the fit: {:s}'.format(self.catalog_names['fitmatch']))
+            log.debug('Creating catalog for the fit: {:s}'.format(self.catalog_names['fitmatch']))
             f = open(self.catalog_names['fitmatch'],'w')
             f.write('# Input image: {:s}\n'.format(self.filename))
             f.write('# Coordinate mapping parameters: \n')
@@ -1017,13 +1017,13 @@ class Image:
         for f in self.catalog_names:
             if 'match' in f:
                 if os.path.exists(self.catalog_names[f]):
-                    log.info('Deleting intermediate match file: %s'%
+                    log.debug('Deleting intermediate match file: %s'%
                                 self.catalog_names[f])
                     os.remove(self.catalog_names[f])
             else:
                 for extn in f:
                     if os.path.exists(extn):
-                        log.info('Deleting intermediate catalog: %d'%extn)
+                        log.debug('Deleting intermediate catalog: %d'%extn)
                         os.remove(extn)
 
 
@@ -1307,13 +1307,13 @@ class RefImage:
         to reference tangent plane (self.wcs) to create output X,Y positions.
         """
         if 'refxyunits' in self.pars and self.pars['refxyunits'] == 'pixels':
-            log.info('Creating RA/Dec positions for reference sources...')
+            log.debug('Creating RA/Dec positions for reference sources...')
             self.outxy = np.column_stack([self.all_radec[0][:,np.newaxis],self.all_radec[1][:,np.newaxis]])
             skypos = self.wcs.wcs_pix2world(self.all_radec[0],self.all_radec[1],self.origin)
             self.all_radec[0] = skypos[0]
             self.all_radec[1] = skypos[1]
         else:
-            log.info('Converting RA/Dec positions of reference sources from "%s" to '%self.name+
+            log.debug('Converting RA/Dec positions of reference sources from "%s" to '%self.name+
                         'X,Y positions in reference WCS...')
             self.refWCS = self.wcs
             outxy = self.wcs.wcs_world2pix(self.all_radec[0],self.all_radec[1],self.origin)

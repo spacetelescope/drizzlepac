@@ -194,7 +194,7 @@ class OutputImage:
 
         if fileutil.findFile(self.output):
             if overwrite:
-                log.info(f'Deleting previous output product: {self.output}')
+                log.debug(f'Deleting previous output product: {self.output}')
                 fileutil.removeFile(self.output)
 
             else:
@@ -213,7 +213,7 @@ class OutputImage:
             if self.outweight:
                 if overwrite:
                     if fileutil.findFile(self.outweight):
-                        log.info('Deleting previous output WHT product: '
+                        log.debug('Deleting previous output WHT product: '
                                  f'{self.outweight}')
                     fileutil.removeFile(self.outweight)
                 else:
@@ -227,7 +227,7 @@ class OutputImage:
             if self.outcontext:
                 if overwrite:
                     if fileutil.findFile(self.outcontext):
-                        log.info('Deleting previous output CTX product: '
+                        log.debug('Deleting previous output CTX product: '
                                  f'{self.outcontext}')
                     fileutil.removeFile(self.outcontext)
                 else:
@@ -346,7 +346,7 @@ class OutputImage:
         # Now, build the output file
         ##########
         if self.build:
-            log.info(f'-Generating multi-extension output file: {self.output}')
+            log.debug(f'-Generating multi-extension output file: {self.output}')
             fo = fits.HDUList()
 
             # Add primary header to output file...
@@ -414,7 +414,7 @@ class OutputImage:
                 fo.append(newtab)
 
             if not virtual:
-                log.info(f'Writing out to disk: {self.output}')
+                log.debug(f'Writing out to disk: {self.output}')
                 # write out file to disk
                 fo.writeto(self.output)
                 fo.close()
@@ -424,7 +424,7 @@ class OutputImage:
             outputFITS[self.output] = fo
 
         else:
-            log.info(f'-Generating simple FITS output: {self.outdata}')
+            log.debug(f'-Generating simple FITS output: {self.outdata}')
 
             fo = fits.HDUList()
             hdu_header = prihdu.header.copy()
@@ -472,7 +472,7 @@ class OutputImage:
                 fo.append(newtab)
 
             if not virtual or "single_sci" in self.outdata:
-                print('Writing out image to disk:', self.outdata)
+                log.debug('Writing out image to disk: %s', self.outdata)
                 # write out file to disk
                 fo.writeto(self.outdata, overwrite=True)
                 del hdu
@@ -523,7 +523,7 @@ class OutputImage:
                 wcs_functions.removeAllAltWCS(fwht, wcs_ext)
 
                 if not virtual:
-                    print('Writing out image to disk:', self.outweight)
+                    log.debug('Writing out image to disk: %s', self.outweight)
                     fwht.writeto(self.outweight, overwrite=True)
                     del fwht, hdu
                     fwht = None
@@ -573,7 +573,7 @@ class OutputImage:
                 # remove all alternate WCS solutions from headers of this product
                 wcs_functions.removeAllAltWCS(fctx, wcs_ext)
                 if not virtual:
-                    print('Writing out image to disk:', self.outcontext)
+                    log.debug('Writing out image to disk: %s', self.outcontext)
                     fctx.writeto(self.outcontext, overwrite=True)
                     del fctx, hdu
                     fctx = None
@@ -791,7 +791,7 @@ def writeSingleFITS(data, wcs, output, template, clobber=True, verbose=True,
 
     if fileutil.findFile(outname):
         if clobber:
-            log.info(f'Deleting previous output product: {outname}')
+            log.debug(f'Deleting previous output product: {outname}')
             fileutil.removeFile(outname)
 
         else:
@@ -849,7 +849,7 @@ def writeSingleFITS(data, wcs, output, template, clobber=True, verbose=True,
     outhdu.writeto(outname)
 
     if verbose:
-        print('Created output image: %s' % outname)
+        log.debug('Created output image: %s', outname)
 
 def writeDrizKeywords(hdr, imgnum, drizdict):
     """ Write basic drizzle-related keywords out to image header as a record

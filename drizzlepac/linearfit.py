@@ -156,7 +156,7 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         if verbose:
             print(logstr)
         else:
-            log.info(logstr)
+            log.debug(logstr)
         result = fit_shifts(xy, uv)
 
     elif mode == 'general':
@@ -164,7 +164,7 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         if verbose:
             print(logstr)
         else:
-            log.info(logstr)
+            log.debug(logstr)
         result = fit_general(xy, uv)
 
     else:
@@ -172,7 +172,7 @@ def fit_all(xy,uv,mode='rscale',center=None,verbose=True):
         if verbose:
             print(logstr)
         else:
-            log.info(logstr)
+            log.debug(logstr)
         result = geomap_rscale(xy, uv, center=center)
 
     return result

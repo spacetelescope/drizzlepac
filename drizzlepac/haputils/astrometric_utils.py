@@ -494,7 +494,7 @@ def get_catalog(ra, dec, sr=0.1, epoch=None, catalog='GSC241'):
     spec = base_spec + epoch_str.format(epoch) if epoch else base_spec
 
     serviceUrl = '{}/{}?{}'.format(SERVICELOCATION, serviceType, spec)
-    log.info(f"Getting catalog using: \n    {serviceUrl}")
+    log.debug(f"Getting catalog using: \n    {serviceUrl}")
     rawcat = requests.get(serviceUrl, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
@@ -1142,7 +1142,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         kernel = kernel[kcenter - koffset: kcenter + koffset + 1,
                         kcenter - koffset: kcenter + koffset + 1].copy()
         kernel /= kernel.sum()  # normalize to total sum == 1
-        log.info("Looking for crowded sources using smaller kernel with shape: {}".format(kernel.shape))
+        log.debug("Looking for crowded sources using smaller kernel with shape: {}".format(kernel.shape))
         if PHOTUTILS_GE_3:
             segm = detect_sources(convolve(imgarr, kernel), segment_threshold, n_pixels=source_box)
         else:
@@ -1189,7 +1189,7 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         else:
             src_brightest = np.arange(len(segm.labels))
 
-        log.info("Looking for sources in {} segments".format(len(segm.labels)))
+        log.debug("Looking for sources in {} segments".format(len(segm.labels)))
 
         for indx in src_brightest:
             segment = segm.segments[indx]
@@ -1267,9 +1267,9 @@ def extract_sources(img, dqmask=None, fwhm=3.0, kernel=None, photmode=None,
         src_table.rename_column('max_value', 'peak')
 
     if src_table is not None:
-        log.info("Total Number of detected sources: {}".format(len(src_table)))
+        log.debug("Total Number of detected sources: {}".format(len(src_table)))
     else:
-        log.info("No detected sources!")
+        log.debug("No detected sources!")
         return None, None, None
 
     # Include magnitudes for each source for use in verification of alignment through
@@ -2297,8 +2297,8 @@ def build_focus_dict(singlefiles, prodfile, sigma=2.0):
     focus_dict['stats'] = {'mean': exparr.mean(), 'std': exparr.std(),
                            'min': exparr.min(), 'max': exparr.max()}
     log.debug("Focus results for {}: \n{}".format(prodfile, focus_dict))
-    log.info("Mean Focus computed for {}: {}".format(prodfile, focus_dict['stats']['mean']))
-    log.info("Focus for product: {}".format(focus_val))
+    log.debug("Mean Focus computed for {}: {}".format(prodfile, focus_dict['stats']['mean']))
+    log.debug("Focus for product: {}".format(focus_val))
 
     return focus_dict
 
@@ -2401,7 +2401,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
 
     exptimes = np.array([fits.getval(s, 'exptime') for s in singlefiles])
     exp_weights = exptimes / exptimes.max()
-    log.info("Computing diffs for: {}".format(singlefiles))
+    log.debug("Computing diffs for: {}".format(singlefiles))
 
     diff_dict = {}
     for sfile, exp_weight in zip(singlefiles, exp_weights):
@@ -2412,7 +2412,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         smask = sdata > 0
         if smask.sum() == 0:
             # In some error cases (e.g., jcx552010), blank images get to this point, so treat them as blank
-            log.info("Overlap difference for {}: (No valid data)".format(sfile))
+            log.debug("Overlap difference for {}: (No valid data)".format(sfile))
             diff_dict[sfile] = {"distance": -1, "xslice": None, "yslice": None}
             diff_dict[sfile]['product_num_sources'] = 0
             diff_dict[sfile]['num_sources'] = 0
@@ -2484,7 +2484,7 @@ def max_overlap_diff(total_mask, singlefiles, prodfile, sigma=2.0, scale=1, lsig
         # Record results for each exposure compared to the combined drizzle product
         # Number of sources in drz and sfile can include artifacts such as CRs
         # As a result, care must be taken in any comparisons using these values.
-        log.info("Overlap difference for {}: {:0.4f}".format(sfile, dist))
+        log.debug("Overlap difference for {}: {:0.4f}".format(sfile, dist))
         diff_dict[sfile] = {"distance": dist, "xslice": xslice, "yslice": yslice}
         diff_dict[sfile]['product_num_sources'] = drznum
         diff_dict[sfile]['num_sources'] = snum
@@ -2599,10 +2599,10 @@ def evaluate_overlap_diffs(diff_dict, limit=1.0):
 
     max_diff = max([d['distance'] for d in diff_dict.values()])
     verified = max_diff <= limit
-    log.info("Maximum overlap difference: {:0.4f}".format(max_diff))
+    log.debug("Maximum overlap difference: {:0.4f}".format(max_diff))
     if verified:
-        log.info("Alignment verified based on overlap...")
+        log.debug("Alignment verified based on overlap...")
     else:
-        log.info("Alignment NOT verified based on overlap...")
+        log.debug("Alignment NOT verified based on overlap...")
 
     return verified, max_diff

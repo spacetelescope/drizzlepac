@@ -628,7 +628,7 @@ def drizSeparate(imageObjectList, output_wcs, configObj,
             configObj["rules_file"] if configObj["rules_file"] != "" else None
         )
 
-        log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME_SINGLE} Step:")
+        log.debug(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME_SINGLE} Step:")
         util.printParams(paramDict, log=log)
 
         paramDict["logfile"] = logfile
@@ -645,7 +645,7 @@ def drizSeparate(imageObjectList, output_wcs, configObj,
             wcsmap=wcsmap,
         )
     else:
-        log.info("Single drizzle step not performed.")
+        log.debug("Single drizzle step not performed.")
 
     if procSteps is not None:
         procSteps.endStep(PROCSTEPS_NAME_SINGLE)
@@ -700,7 +700,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,
 
         paramDict["logfile"] = logfile
 
-        log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME_FINAL} Step:")
+        log.debug(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME_FINAL} Step:")
         util.printParams(paramDict, log=log)
 
         run_driz(
@@ -712,7 +712,7 @@ def drizFinal(imageObjectList, output_wcs, configObj,
             wcsmap=wcsmap,
         )
     else:
-        log.info("Final drizzle step not performed.")
+        log.debug("Final drizzle step not performed.")
 
     if procSteps is not None:
         procSteps.endStep(PROCSTEPS_NAME_FINAL)
@@ -744,7 +744,7 @@ def mergeDQarray(maskname, dqarr):
 
 def updateInputDQArray(dqfile, dq_extn, chip, crmaskname, cr_bits_value):
     if not isinstance(crmaskname, fits.HDUList) and not os.path.exists(crmaskname):
-        log.warning("No CR mask file found! Input DQ array not updated.")
+        log.debug("No CR mask file found! Input DQ array not updated.")
         return
     if cr_bits_value is None:
         log.warning("Input DQ array not updated!")
@@ -801,7 +801,7 @@ def buildDrizParamDict(configObj, single=True):
                 if par in cfunc_pars:
                     val = cfunc_pars[par](val)
                 paramDict[par] = val
-    log.info("Interpreted paramDict with single={} as:\n{}".format(single, paramDict))
+    log.debug("Interpreted paramDict with single={} as:\n{}".format(single, paramDict))
     return paramDict
 
 
@@ -911,7 +911,7 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
 
     # Set sub-sampling rate for drizzling
     # stepsize = 2.0
-    log.info(f"**Using sub-sampling value of {paramDict['stepsize']} for kernel "
+    log.debug(f"**Using sub-sampling value of {paramDict['stepsize']} for kernel "
              f"{paramDict['kernel']}")
 
     maskval = interpret_maskval(paramDict)
@@ -924,21 +924,22 @@ def run_driz(imageObjectList, output_wcs, paramDict, single, build, wcsmap=None)
         and build
         and fileutil.findFile(imageObjectList[0].outputNames["outFinal"])
     ):
-        log.info("Removing previous output product...")
+        log.debug("Removing previous output product...")
         os.remove(imageObjectList[0].outputNames["outFinal"])
 
     # print out parameters being used for drizzling
-    log.info("Running Drizzle to create output frame with WCS of: ")
-    output_wcs.printwcs()
+    log.debug("Running Drizzle to create output frame with WCS of: ")
+    if log.isEnabledFor(logging.DEBUG):
+        output_wcs.printwcs()
 
     # Will we be running in parallel?
     pool_size = util.get_pool_size(paramDict.get("num_cores"), len(imageObjectList))
     run_parallel = single and pool_size > 1
     if run_parallel:
-        log.info(f"Executing {pool_size:d} parallel workers")
+        log.debug(f"Executing {pool_size:d} parallel workers")
     else:
         if single:  # not yet an option for final drizzle, msg would confuse
-            log.info("Executing serially")
+            log.debug("Executing serially")
 
     # Set parameters for each input and run drizzle on it here.
     #
@@ -1225,7 +1226,7 @@ def run_driz_chip(
     else:
         # If sky-subtracted product does not exist, use regular input
         _expname = chip.outputNames["data"]
-    log.info(f"-Drizzle input: {_expname}")
+    log.debug(f"-Drizzle input: {_expname}")
 
     # Open the SCI image
     _handle = fileutil.openImage(_expname, mode="readonly", memmap=False)
@@ -1235,7 +1236,7 @@ def run_driz_chip(
     if chip.computedSky is None:
         _insci = _sciext.data
     else:
-        log.info(f"Applying sky value of {chip.computedSky:0.6f} to {_expname}")
+        log.debug(f"Applying sky value of {chip.computedSky:0.6f} to {_expname}")
         _insci = _sciext.data - chip.computedSky
     # If input SCI image is still integer format (RAW files)
     # transform it to float32 for all subsequent operations
@@ -1366,7 +1367,7 @@ def run_driz_chip(
         if not img.inmemory:
             pimg.writeto(_outmaskname)
             del pimg
-            log.info(f"Writing out mask file: {_outmaskname}")
+            log.debug(f"Writing out mask file: {_outmaskname}")
 
     time_pre = time.time() - epoch
     epoch = time.time()
@@ -1484,10 +1485,10 @@ def run_driz_chip(
         time_post_all.append(time_post)
         time_write_all.append(time_write)
 
-        log.info(f"chip time pre-drizzling:  {time_pre:6.3f}")
-        log.info(f"chip time drizzling:      {time_driz:6.3f}")
-        log.info(f"chip time post-drizzling: {time_post:6.3f}")
-        log.info(f"chip time writing output: {time_write:6.3f}")
+        log.debug(f"chip time pre-drizzling:  {time_pre:6.3f}")
+        log.debug(f"chip time drizzling:      {time_driz:6.3f}")
+        log.debug(f"chip time post-drizzling: {time_post:6.3f}")
+        log.debug(f"chip time writing output: {time_write:6.3f}")
 
         if doWrite:
             tot_pre = sum(time_pre_all)
@@ -1495,16 +1496,16 @@ def run_driz_chip(
             tot_post = sum(time_post_all)
             tot_write = sum(time_write_all)
             tot = tot_pre + tot_driz + tot_post + tot_write
-            log.info(
+            log.debug(
                 f"chip total pre-drizzling: {tot_pre:6.3f} "
                 f"({100.0 * tot_pre / tot:4.1f}%)")
-            log.info(
+            log.debug(
                 f"chip total drizzling: {tot_driz:6.3f} "
                 f"({100.0 * tot_driz / tot:4.1f}%)")
-            log.info(
+            log.debug(
                 f"chip total post-drizzling: {tot_post:6.3f} "
                 f"({100.0 * tot_post / tot:4.1f}%)")
-            log.info(
+            log.debug(
                 f"chip total writing output: {tot_write:6.3f} "
                 f"({100.0 * tot_write / tot:4.1f}%)")
 
@@ -1570,8 +1571,8 @@ def do_driz(
     pix_ratio = output_wcs.pscale / wcslin_pscale
 
     if wcsmap is None and cdriz is not None:
-        log.info("Using WCSLIB-based coordinate transformation...")
-        log.info(f"stepsize = {stepsize}")
+        log.debug("Using WCSLIB-based coordinate transformation...")
+        log.debug(f"stepsize = {stepsize}")
         mapping = cdriz.DefaultWCSMapping(
             input_wcs,
             output_wcs,
@@ -1584,7 +1585,7 @@ def do_driz(
         # # Using the Python class for the WCS-based transformation
         #
         # Use user provided mapping function
-        log.info("Using coordinate transformation defined by user...")
+        log.debug("Using coordinate transformation defined by user...")
         if wcsmap is None:
             wcsmap = wcs_functions.WCSMap
         wmap = wcsmap(input_wcs, output_wcs)
@@ -1671,11 +1672,11 @@ def create_output(filename, arr):
             ehdu.header["EXTNAME"] = extname[0]
             ehdu.header["EXTVER"] = extname[1]
             pimg.append(ehdu)
-        log.info(f"Creating new output file: {fileroot}")
+        log.debug(f"Creating new output file: {fileroot}")
         pimg.writeto(fileroot)
         del pimg
     else:
-        log.info(f"Updating existing output file: {fileroot}")
+        log.debug(f"Updating existing output file: {fileroot}")
     handle = fits.open(fileroot, mode="update", memmap=False)
 
     return handle, extname

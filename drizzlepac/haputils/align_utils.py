@@ -159,9 +159,9 @@ class AlignmentTable:
         self.process_list = None
 
         self.zero_dt = starting_dt = datetime.datetime.now()
-        log.info(str(starting_dt))
+        log.debug(str(starting_dt))
         # Apply filter to input observations to insure that they meet minimum criteria for being able to be aligned
-        log.info(
+        log.debug(
             "{} AlignmentTable: Filter STEP {}".format("-" * 20, "-" * 63))
         self.filtered_table, _ = analyze.analyze_data(input_list, type=process_type)
         log.debug("Input sorted as: \n{}".format(self.filtered_table))
@@ -170,20 +170,20 @@ class AlignmentTable:
             log.warning("No viable images in filtered table - no processing done.\n")
             current_dt = datetime.datetime.now()
             delta_dt = (current_dt - starting_dt).total_seconds()
-            log.info('Processing time of AlignmentTable Filter STEP: {} sec'.format(delta_dt))
+            log.debug('Processing time of AlignmentTable Filter STEP: {} sec'.format(delta_dt))
             return
 
         # Get the list of all "good" files to use for the alignment
         process_list = self.filtered_table['imageName'][np.where(self.filtered_table['doProcess'])]
         self.process_list = list(process_list)  # Convert process_list from numpy list to regular python list
-        log.info("SUCCESS")
+        log.debug("SUCCESS")
 
         fwhmpsf = self.alignment_pars.get('fwhmpsf')
         default_fwhm_set = False
 
         try:
             for img in self.process_list:
-                log.info("Adding {} to HAPImage list".format(img))
+                log.debug("Adding {} to HAPImage list".format(img))
                 hdr0 = fits.getheader(img)
                 instrume = hdr0.get('instrume')
                 if instrume.lower() == 'wfpc2' and 'detector' not in hdr0:
@@ -205,9 +205,9 @@ class AlignmentTable:
 
                 catimg.build_kernel(fwhmpsf)
                 catimg.crclean = self.alignment_pars['classify']
-                log.info("CATIMG.CRCLEAN: {}".format(catimg.crclean))
+                log.debug("CATIMG.CRCLEAN: {}".format(catimg.crclean))
                 if catimg.crclean:
-                    log.info("Recomputing BACKGROUND after applying single-image CR clean")
+                    log.debug("Recomputing BACKGROUND after applying single-image CR clean")
                     for chip in range(1, catimg.num_sci + 1):
                         sciarr = amutils.crclean_image(catimg.imghdu[("SCI", chip)].data, catimg.threshold[chip],
                                                        catimg.kernel, catimg.kernel_fwhm, background=catimg.bkg[chip])
@@ -219,9 +219,9 @@ class AlignmentTable:
                                               bkg_estimator=self.alignment_pars['bkg_estimator'],
                                               rms_estimator=self.alignment_pars['rms_estimator'],
                                               threshold_flag=self.alignment_pars['threshold'])
-                    log.info("Finished computing revised BACKROUND")
+                    log.debug("Finished computing revised BACKROUND")
                     catimg.build_kernel(fwhmpsf)
-                    log.info("Finished determining revised kernel")
+                    log.debug("Finished determining revised kernel")
 
                 # Use FWHM from first good exposure as default for remainder of exposures
                 if not default_fwhm_set and catimg.kernel is not None:
@@ -346,7 +346,7 @@ class AlignmentTable:
         """
         # Updated fits_pars with value for fitgeom
         self.fit_pars[method_name]['fitgeom'] = fitgeom
-        log.info("Setting 'fitgeom' parameter to {} for {} fit".format(fitgeom, method_name))
+        log.debug("Setting 'fitgeom' parameter to {} for {} fit".format(fitgeom, method_name))
 
         imglist = self.fit_methods[method_name](self.imglist, reference_catalog,
                                                 **self.fit_pars[method_name])
@@ -538,7 +538,7 @@ class HAPImage:
 
         threshold_rms = np.concatenate([rms for rms in self.threshold.values()])
         bkg = np.concatenate([background for background in self.bkg.values()])
-        log.info("Looking for sample PSF in {}".format(self.rootname))
+        log.debug("Looking for sample PSF in {}".format(self.rootname))
         log.debug("  based on RMS of {:9.4f}".format(threshold_rms.mean()))
         fwhm = fwhmpsf / self.pscale
 
@@ -561,7 +561,7 @@ class HAPImage:
                                                             fwhm=fwhm)
 
         self.kernel, self.kernel_psf = k
-        log.info("  Found PSF with FWHM = {:9.4f}".format(self.kernel_fwhm))
+        log.debug("  Found PSF with FWHM = {:9.4f}".format(self.kernel_fwhm))
 
         self.fwhmpsf = self.kernel_fwhm * self.pscale
 
@@ -807,9 +807,9 @@ class SBCHAPImage(HAPImage):
             src_table = daofind(sciarr, mask=bkg_mask)
         del sci_bkgsub, bkg_mask, sci_gauss  # explicitly clean up memory
         if src_table is not None:
-            log.info("Total Number of detected sources: {}".format(len(src_table)))
+            log.debug("Total Number of detected sources: {}".format(len(src_table)))
         else:
-            log.info("No detected sources!")
+            log.debug("No detected sources!")
             self.catalog_table[chip] = None
             if self.imghdu is not None:
                 self.imghdu.close()
@@ -887,7 +887,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         objects swith metadata and source catalogs
 
     """
-    log.info("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
+    log.debug("{} (match_relative_fit) Cross matching and fitting {}".format("-" * 20, "-" * 27))
     if 'fitgeom' in fit_pars:
         fitgeom = fit_pars['fitgeom']
         del fit_pars['fitgeom']
@@ -921,7 +921,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
     if not check_consistency(imglist):
             return imglist
 
-    log.info("Relative alignment found: ")
+    log.debug("Relative alignment found: ")
     for i in imglist:
         info = i.meta['fit_info']
         if 'shift' not in info:
@@ -938,7 +938,7 @@ def match_relative_fit(imglist, reference_catalog, **fit_pars):
         msg += "\n    SHIFT:({:9.4f},{:9.4f})  NMATCHES: {} ".format(off[0], off[1], nmatches)
         msg += "\n    ROT:{:9.4f}  SCALE:{:9.4f}".format(rot, scale)
         msg += "\n Using fitgeom = '{}'".format(rel_fitgeom)
-        log.info(msg)
+        log.debug(msg)
 
     # This logic enables performing only relative fitting and skipping fitting to GAIA
     if reference_catalog is not None:
@@ -1012,7 +1012,7 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
 
     nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
 
-    log.info("{} (match_default_fit) Cross matching and fitting "
+    log.debug("{} (match_default_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 27))
     # Specify matching algorithm to use
     match = XYXYMatch(**fit_pars)
@@ -1079,7 +1079,7 @@ def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
 
     nclip = 1 if fitgeom == 'rscale' else 0  # Only perform sigma-clipping for 'rscale'
 
-    log.info("{} (match_2dhist_fit) Cross matching and fitting "
+    log.debug("{} (match_2dhist_fit) Cross matching and fitting "
              "{}".format("-" * 20, "-" * 28))
     # Specify matching algorithm to use
     match = XYXYMatch(**fit_pars)
@@ -1136,14 +1136,14 @@ def check_consistency(imglist, rot_tolerance=0.1, shift_tolerance=1.0):
             img.meta['fit_info']['status'] = 'FAILED'
             img.meta['fit_info']['process_msg'] = msg
 
-        log.info('Relative fit solution is NOT consistent!')
+        log.debug('Relative fit solution is NOT consistent!')
         fitgeom = finfo['fitgeom'] if 'fitgeom' in finfo else 'Unknown'
         log.debug('DELTAS for "{}" fit:'.format(fitgeom))
         log.debug('  max rot={:.4f}\n '.format(delta_rots.max()))
         is_consistent = False
 
     else:
-        log.info('Relative fit solution is consistent')
+        log.debug('Relative fit solution is consistent')
 
     return is_consistent
 
@@ -1307,9 +1307,9 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
         upwcsver = stwcs.__version__
         pywcsver = astropy.__version__
 
-        log.info('Updating PRIMARY header with:')
-        log.info('    UPWCSVER = {}'.format(upwcsver))
-        log.info('    PYWCSVER = {}'.format(pywcsver))
+        log.debug('Updating PRIMARY header with:')
+        log.debug('    UPWCSVER = {}'.format(upwcsver))
+        log.debug('    PYWCSVER = {}'.format(pywcsver))
         if 'HISTORY' in hdulist[0].header:
             after_kw = None
             before_kw = 'HISTORY'
@@ -1399,7 +1399,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
 
             # save relative fit solution keywords to science header
             if "relative" in item.meta["fit method"]:
-                log.info("overwriting relative fit result keywords")
+                log.debug("overwriting relative fit result keywords")
                 hdulist[sci_extn].header["RELGEOM"] = fitgeom_val
                 hdulist[sci_extn].header["RELMATCH"] = nmatch_val
                 hdulist[sci_extn].header["RELRMS_D"] = rms_dec_val
@@ -1442,7 +1442,7 @@ def update_image_wcs_info(tweakwcs_output, headerlet_filenames=None, fit_label=N
             if image_name.endswith("flt.fits"):
                 headerlet_filename = image_name.replace("flt", "flt_hlet")
         out_headerlet.writeto(headerlet_filename, overwrite=True)
-        log.info("Wrote headerlet file {}.\n\n".format(headerlet_filename))
+        log.debug("Wrote headerlet file {}.\n\n".format(headerlet_filename))
         out_headerlet_dict[image_name] = headerlet_filename
 
         # Attach headerlet as HDRLET extension

@@ -151,9 +151,9 @@ def create_input_image_list(user_input):
         plural_string = ""
     else:
         plural_string = "s"
-    log.info("Found {} input image{} {}:".format(len(img_list), plural_string, search_method_string))
+    log.debug("Found {} input image{} {}:".format(len(img_list), plural_string, search_method_string))
     for item in img_list:
-        log.info("{}".format(item))
+        log.debug("{}".format(item))
     return img_list
 
 # ------------------------------------------------------------------------------------------------------------
@@ -302,11 +302,11 @@ def determine_projection_cell(img_list):
 
     # Determine which skycell's WCS information should be used as the basis for WCS of the output product(s)
     if len(proj_cell_dict.keys()) == 1:
-        log.info("Observations are present in only a single projection cell.")
+        log.debug("Observations are present in only a single projection cell.")
         best_pc = list(proj_cell_dict)[0]
     else:
-        log.info("Observations are present in multiple projection cells.")
-        log.info("Output WCS will be based on WCS from the projection cell whose center is closest to the "
+        log.debug("Observations are present in multiple projection cells.")
+        log.debug("Output WCS will be based on WCS from the projection cell whose center is closest to the "
                  "center of the input observations.")
         # Determine which projection cell's center is closest to the center of the observations
         pcell_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'pars', 'allsky_cells.fits')
@@ -323,7 +323,7 @@ def determine_projection_cell(img_list):
             if min_dist > dist_ra.mean():
                 min_dist = dist_ra.mean()
                 best_pc = pc
-    log.info("Output WCS will be based on WCS from projection cell {}".format(best_pc))
+    log.debug("Output WCS will be based on WCS from projection cell {}".format(best_pc))
 
     best_pc_dict = proj_cell_dict[best_pc]
     return best_pc_dict
@@ -400,7 +400,7 @@ def perform(input_image_source, log_level='info', output_file_prefix=None, skip_
         log.debug("Creating custom mosaic from the following {} input images".format(len(img_list)))
         for item in img_list:
             log.debug(" {}".format(item))
-        log.info("Mosaic bounding box limits")
+        log.debug("Mosaic bounding box limits")
         for limit_name, limit_value in zip(["X_min", "X_max", "Y_min", "Y_max"], custom_limits):
             log.debug("{}: {}".format(limit_name, int(np.rint(limit_value))))
         return_value = hapmultisequencer.run_mvm_processing(poller_filename,
@@ -418,11 +418,11 @@ def perform(input_image_source, log_level='info', output_file_prefix=None, skip_
     finally:
         # remove any temp files like the poller file and
         if temp_files_to_delete and log_level != "debug":
-            log.info("Time to delete some temporary files...")
+            log.debug("Time to delete some temporary files...")
             for filename in temp_files_to_delete:
                 if os.path.exists(filename):
                     os.remove(filename)
-                    log.info("Removed temporary file {}.".format(filename))
+                    log.debug("Removed temporary file {}.".format(filename))
     return return_value
 
 # ------------------------------------------------------------------------------------------------------------

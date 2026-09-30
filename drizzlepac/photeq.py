@@ -50,7 +50,7 @@ _log.addHandler(_sh_log)
 def _mlinfo(msg, *args, **kwargs):
     lines = msg.splitlines()
     for line in lines:
-        _log.info(line, *args, **kwargs)
+        _log.debug(line, *args, **kwargs)
 
 
 def _mlwarn(msg, *args, **kwargs):

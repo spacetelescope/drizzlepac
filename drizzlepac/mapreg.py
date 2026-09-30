@@ -284,9 +284,9 @@ def MapReg(
         )
 
     # log input parameters
-    log.info("Starting MapReg...")
-    log.info("Mapping region files to image coordinate systems...")
-    log.info(f"Using drizzlepac version: {__version__}")
+    log.debug("Starting MapReg...")
+    log.debug("Mapping region files to image coordinate systems...")
+    log.debug(f"Using drizzlepac version: {__version__}")
     log.debug(f"Input region file(s): {input_reg}")
     log.debug(f"Input image file(s): {images}")
     log.debug(f"Image WCS extension(s): {img_wcs_ext}")
@@ -739,10 +739,10 @@ def map_region_files(
                 )
                 log.debug(f"Wrote exclusion catalog entry: {catfname}")
     if created_region_files:
-        log.info(f"Output region files: {', '.join(created_region_files)}")
+        log.debug(f"Output region files: {', '.join(created_region_files)}")
     else:
-        log.info("Output region files: none")
-    log.info("MapReg processing complete.")
+        log.debug("Output region files: none")
+    log.debug("MapReg processing complete.")
 
 
 def _check_if_region_in_image(region, wcs, shape, mode="fast"):

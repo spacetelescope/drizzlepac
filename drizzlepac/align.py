@@ -156,11 +156,11 @@ def perform_align(
     filtered_table = None
 
     # 1: Interpret input data and optional parameters
-    log.info("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
+    log.debug("{} STEP 1: Get data {}".format("-" * 20, "-" * 66))
     zero_dt = starting_dt = datetime.datetime.now()
-    log.info(str(starting_dt))
-    log.info("SUCCESS")
-    log.info(f"Processing: {imglist}")
+    log.debug(str(starting_dt))
+    log.debug("SUCCESS")
+    log.debug(f"Processing: {imglist}")
 
     log.debug(make_label("Processing time of [STEP 1]", starting_dt))
     starting_dt = datetime.datetime.now()
@@ -204,14 +204,14 @@ def perform_align(
         log.debug(make_label("Processing time of [STEP 2]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 3: Build WCS for full set of input observations
-        log.info("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
+        log.debug("{} STEP 3: Build WCS {}".format("-" * 20, "-" * 65))
         # refwcs = amutils.build_reference_wcs(process_list)
         log.debug("SUCCESS")
 
         log.debug(make_label("Processing time of [STEP 3]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 4: Extract catalog of observable sources from each input image
-        log.info("{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
+        log.debug("{} STEP 4: Source finding {}".format("-" * 20, "-" * 60))
         if debug:
             pickle_filename = "{}.source_catalog.pickle".format(process_list[0])
             if os.path.exists(pickle_filename):
@@ -306,7 +306,7 @@ def perform_align(
             for catalog_index, catalog_name in enumerate(
                 catalog_list
             ):  # loop over astrometric catalog
-                log.info(
+                log.debug(
                     "{} STEP 5: Detect astrometric sources {}".format(
                         "-" * 20, "-" * 48
                     )
@@ -491,7 +491,7 @@ def perform_align(
         starting_dt = datetime.datetime.now()
 
         # 6: Populate the filtered_table
-        log.info(
+        log.debug(
             "{} STEP 6: Collect up information and populate the filtered table "
             "{}".format("-" * 20, "-" * 20)
         )
@@ -536,7 +536,7 @@ def perform_align(
         log.debug(make_label("Processing time of [STEP 6]", starting_dt))
         starting_dt = datetime.datetime.now()
         # 7: Write new fit solution to input image headers
-        log.info(
+        log.debug(
             "{} STEP 7: Update image headers with new WCS information "
             "{}".format("-" * 20, "-" * 29)
         )
@@ -548,7 +548,7 @@ def perform_align(
             log.debug(" STEP SKIPPED")
 
         log.debug(make_label("Processing time of [STEP 7]", starting_dt))
-        log.info(
+        log.debug(
             "TOTAL Processing time of {} sec".format(
                 (datetime.datetime.now() - zero_dt).total_seconds()
             )
@@ -575,7 +575,7 @@ def perform_align(
             result.meta = filtered_table.meta
             for col in filtered_table.colnames:
                 result.add_column(filtered_table[col], name=col)
-        if filtered_table is not None:
+        if filtered_table is not None and log.isEnabledFor(logging.DEBUG):
             filtered_table.pprint(max_width=-1)
     return alignment_table
 
@@ -753,14 +753,14 @@ def determine_fit_quality(
         # This check will only be performed when the fit may be uncertain
         # due to less than 100 matches.
         ref_cat_limit = min(1000, item.meta["num_ref_catalog"])
-        log.info(
+        log.debug(
             "MAG CHECK REF_CAT_LIMIT: {}    XMATCHES: {}".format(
                 ref_cat_limit, num_xmatches
             )
         )
         if num_xmatches < max(0.1 * ref_cat_limit, 10):
             cross_match_check = amutils.check_mag_corr([item])[0]
-            log.info(
+            log.debug(
                 "Cross-match check: {} on {} ref sources".format(
                     cross_match_check, item.meta["num_ref_catalog"]
                 )
@@ -847,7 +847,7 @@ def determine_fit_quality(
         if fit_status_dict[dict_key]["compromised"]:
             overall_comp = True
 
-        log.info(
+        log.debug(
             "RESULTS FOR {} Chip {}: FIT_RMS = {} mas, TOTAL_RMS = {}"
             " mas, NUM =  {}".format(
                 image_name, item.meta["chip"], fit_rms_val, max_rms_val, num_xmatches
@@ -877,16 +877,16 @@ def determine_fit_quality(
                 "RMS_DEC",
                 "catalog",
             ]
-            log.info("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
-            log.info("image: {}".format(image_name))
-            log.info("chip: {}".format(item.meta["chip"]))
-            log.info("group_id: {}".format(item.meta["group_id"]))
+            log.debug("{} FIT PARAMETERS {}".format("~" * 35, "~" * 34))
+            log.debug("image: {}".format(image_name))
+            log.debug("chip: {}".format(item.meta["chip"]))
+            log.debug("group_id: {}".format(item.meta["group_id"]))
             for tweakwcs_info_key in log_info_keys:
-                log.info(
+                log.debug(
                     "{} : {}".format(tweakwcs_info_key, fit_info[tweakwcs_info_key])
                 )
-            log.info("~" * 84)
-            log.info(
+            log.debug("~" * 84)
+            log.debug(
                 "nmatches_check: {} radial_offset_check: {}"
                 " large_rms_check: {},"
                 " consistency_check: {}".format(
@@ -900,7 +900,7 @@ def determine_fit_quality(
     # determine which fit quality category this latest fit falls into
     if overall_valid is False:
         fit_quality = 5
-        log.info("FIT SOLUTION REJECTED")
+        log.debug("FIT SOLUTION REJECTED")
         filtered_table["status"][:] = 1
         for ctr in range(0, len(filtered_table)):
             imgname = filtered_table[ctr]["imageName"] + ",1"
@@ -912,20 +912,20 @@ def determine_fit_quality(
         for ctr in range(0, len(filtered_table)):
             filtered_table[ctr]["processMsg"] = ""
         if overall_comp is False and max_rms_val < auto_good_rms:
-            log.info("Valid solution with RMS < {} mas found!".format(auto_good_rms))
+            log.debug("Valid solution with RMS < {} mas found!".format(auto_good_rms))
             fit_quality = 1
         elif overall_comp is True and max_rms_val < auto_good_rms:
-            log.info(
+            log.debug(
                 "Valid but compromised solution with RMS < {} mas found!".format(
                     auto_good_rms
                 )
             )
             fit_quality = 2
         elif overall_comp is False and 1000.0 >= max_rms_val >= auto_good_rms:
-            log.info("Valid solution with RMS >= {} mas found!".format(auto_good_rms))
+            log.debug("Valid solution with RMS >= {} mas found!".format(auto_good_rms))
             fit_quality = 3
         else:
-            log.info(
+            log.debug(
                 "Valid but compromised solution with RMS >= {} mas found!".format(
                     auto_good_rms
                 )
@@ -934,22 +934,22 @@ def determine_fit_quality(
 
     if print_fit_parameters:
         for item in imglist:
-            log.info(
+            log.debug(
                 fit_status_dict["{},{}".format(item.meta["name"], item.meta["chip"])]
             )
 
     if max_rms_val > auto_good_rms:
-        log.info(
+        log.debug(
             "Total fit RMS value = {} mas greater than the maximum threshold value {}.".format(
                 max_rms_val, auto_good_rms
             )
         )
     if not overall_valid:
-        log.info("The fit solution for some or all of the images is not valid.")
+        log.debug("The fit solution for some or all of the images is not valid.")
     if max_rms_val > auto_good_rms or not overall_valid:
-        log.info("Trying again with the next catalog, method, or geometry depending upon the current fitting cycle.")
+        log.debug("Trying again with the next catalog, method, or geometry depending upon the current fitting cycle.")
     else:
-        log.info("Fit calculations successful.")
+        log.debug("Fit calculations successful.")
 
     return max_rms_val, num_xmatches, fit_quality, filtered_table, fit_status_dict
 

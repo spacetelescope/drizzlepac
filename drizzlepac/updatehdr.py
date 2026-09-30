@@ -214,7 +214,7 @@ def updatewcs_with_shift(image, reference, wcsname='TWEAK', reusename=False,
     if verbose:
         print(f"\n{logstr:s}\n")
     else:
-        log.info(logstr)
+        log.debug(logstr)
 
     # reset header WCS keywords to original (OPUS generated) values
     extlist = get_ext_list(image, extname='SCI')
@@ -238,7 +238,7 @@ def updatewcs_with_shift(image, reference, wcsname='TWEAK', reusename=False,
         if verbose:
             print(f"\n{logstr:s}\n")
         else:
-            log.info(logstr)
+            log.debug(logstr)
 
         chip_wcs = wcsutil.HSTWCS(fimg, ext=ext)
 
@@ -463,12 +463,13 @@ def update_wcs(image, extnum, new_wcs, wcsname="", reusename=False, verbose=Fals
     try:
         logstr = f'Updating header for {image.filename()}[{extnum}]'
         if verbose:
-            print(logstr)
-            log.info('    with WCS of')
-            new_wcs.printwcs()
-            print("WCSNAME  : ", wcsname)
+            log.debug(logstr)
+            log.debug('    with WCS of')
+            if log.isEnabledFor(logging.DEBUG):
+                new_wcs.printwcs()
+            log.debug("WCSNAME  : %s", wcsname)
         else:
-            log.info(logstr)
+            log.debug(logstr)
 
         wcs_hdr = new_wcs.wcs2header(idc2hdr=new_wcs.idcscale is not None, relax=True)
         wcs_hdr.set('WCSNAME', wcsname, before=0)

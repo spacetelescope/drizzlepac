@@ -231,7 +231,7 @@ class Catalog:
             xypos_trimmed[-1] = np.arange(len(xypos_trimmed[0]))
             self.radec = radec_trimmed
             self.xypos = xypos_trimmed
-            log.info(f'Excluded {num_excluded} sources from catalog.')
+            log.debug(f'Excluded {num_excluded} sources from catalog.')
 
     def apply_flux_limits(self):
         """ Apply any user-specified limits on source selection
@@ -672,7 +672,7 @@ class ImageCatalog(Catalog):
         else:
             sigma = self.pars['skysigma']
         skymode = sigma**2
-        log.info(f'Finding sources using sky sigma = {sigma}')
+        log.debug(f'Finding sources using sky sigma = {sigma}')
         if self.pars['threshold'] in [None,"INDEF",""," "]:
             hmin = skymode
         else:
@@ -709,7 +709,7 @@ class ImageCatalog(Catalog):
             if  not self.pars['computesig']:
                 sigma = self._compute_sigma()
                 hmin = sigma * self.pars['threshold']
-                log.info('No sources found with original thresholds. Trying automatic settings.')
+                log.debug('No sources found with original thresholds. Trying automatic settings.')
                 x, y, flux, src_id, sharp, round1, round2 = tweakutils.ndfind(
                     self.source,
                     hmin,
@@ -743,7 +743,7 @@ class ImageCatalog(Catalog):
             else:
                 self.xypos = [x+1, y+1, flux, src_id+self.start_id]
 
-        log.info(f'###Source finding finished at: {util._ptime()[0]}')
+        log.debug(f'###Source finding finished at: {util._ptime()[0]}')
 
         self.in_units = 'pixels' # Not strictly necessary, but documents units when determined
         self.sharp = sharp

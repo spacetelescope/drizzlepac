@@ -33,7 +33,7 @@ def main():
     else:
         args.debug = False
 
-    log.info("python {} {} -d {} -m {}".format(os.path.realpath(__file__), args.input_file, args.debug, args.phot_mode))
+    log.debug("python {} {} -d {} -m {}".format(os.path.realpath(__file__), args.input_file, args.debug, args.phot_mode))
 
     obs_info_dict, total_list = poller_utils.interpret_obset_input(args.input_file)
     out_pars_file = 'pars.json'
@@ -45,11 +45,11 @@ def main():
             expo_item.configobj_pars = config_utils.HapConfig(expo_item, output_custom_pars_file=out_pars_file,use_defaults=True)
 
     starting_dt = datetime.datetime.now()
-    log.info("Run start time: {}".format(str(starting_dt)))
+    log.debug("Run start time: {}".format(str(starting_dt)))
 
     product_list = run_catalog_utils(total_list, args.debug, args.phot_mode)
 
-    log.info('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
+    log.debug('Total processing time: {} sec\a'.format((datetime.datetime.now() - starting_dt).total_seconds()))
 
     for item in product_list:
         print(item)

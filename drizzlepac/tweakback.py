@@ -717,7 +717,7 @@ def tweakback(drzfile, input=None,  origwcs = None,
         if verbose:
             print("\n{:s}\n".format(logstr))
         else:
-            log.info(logstr)
+            log.debug(logstr)
 
         # reset header WCS keywords to original (OPUS generated) values
         imhdulist = fits.open(fname, mode='update', memmap=False)
@@ -732,7 +732,7 @@ def tweakback(drzfile, input=None,  origwcs = None,
             if verbose:
                 print("\n{:s}\n".format(logstr))
             else:
-                log.info(logstr)
+                log.debug(logstr)
             chip_wcs = wcsutil.HSTWCS(imhdulist, ext=ext)
 
             update_chip_wcs(chip_wcs, orig_wcs, final_wcs,

@@ -767,7 +767,7 @@ void cdriz_log_func(const char *format, ...) {
       return;
   }
 
-  PyObject_CallMethod(logger, "info", "O", string);
+  PyObject_CallMethod(logger, "debug", "O", string);
 
   Py_XDECREF(logger);
   Py_XDECREF(string);

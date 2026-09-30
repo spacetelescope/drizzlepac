@@ -19,6 +19,7 @@ import platform
 
 import numpy as np
 import astropy
+import warnings
 
 from astropy.io import fits
 from stsci.tools import fileutil, teal, cfgpars, logutil
@@ -160,7 +161,7 @@ def init_logging(logfile=DEFAULT_LOGNAME, default=None, level=logging.INFO):
         root_logger.setLevel(level)
         root_logger.addHandler(_log_file_handler)
 
-        print('Setting up logfile : ', logname)
+        log.debug('Setting up logfile : %s', logname)
 
     else:
         print('No trailer file created...')
@@ -175,11 +176,11 @@ def end_logging(filename=None):
 
     if logutil.global_logging_started:
         if filename:
-            log.info(f'Trailer file written to: {filename}')
+            log.debug(f'Trailer file written to: {filename}')
         else:
             # This generally shouldn't happen if logging was started with
             # init_logging and a filename was given...
-            log.info('No trailer file saved...')
+            log.debug('No trailer file saved...')
 
         logutil.teardown_global_logging()
     else:
@@ -188,20 +189,33 @@ def end_logging(filename=None):
     root_logger.removeHandler(_log_file_handler)
 
 
-class SuppressNoisyAstropyWCS(logging.Filter):
-    """Filter known non-actionable Astropy WCS informational messages."""
+class SuppressNoisyMessages(logging.Filter):
+    """Filter known non-actionable informational messages."""
 
     _messages = (
         "Inconsistent SIP distortion information",
         "Some non-standard WCS keywords were excluded",
+        "The run function is deprecated and may be removed in a future version.",
+        "Card is too long, comment will be truncated.",
+        "Keyword name 'IDCSCALE",
+        "'wcsname' must be unique in image header.",
+        "-Drizzling using kernel =",
     )
 
     def filter(self, record):
         return not any(message in record.getMessage() for message in self._messages)
 
 
-logging.getLogger('astropy').addFilter(SuppressNoisyAstropyWCS())
+_suppress_noisy_messages = SuppressNoisyMessages()
+logging.getLogger('astropy').addFilter(_suppress_noisy_messages)
+logging.getLogger('drizzlepac.cdriz').addFilter(_suppress_noisy_messages)
 
+warnings.filterwarnings(
+    "ignore",
+    message="Card is too long, comment will be truncated.",
+    category=fits.verify.VerifyWarning,
+    module="astropy.io.fits.card",
+)
 
 class WithLogging:
     def __init__(self):
@@ -289,43 +303,65 @@ class WithLogging:
 with_logging = WithLogging()
 
 
-def print_pkg_versions(packages=None, git=False, svn=False, log=None):
-    if log is not None:
-        def output(msg):
-            log.info(msg)
-    else:
-        def output(msg):
-            print(msg)
+_pkg_versions_printed = False
+
+
+_pkg_version_labels = {
+    'drizzlepac': 'DrizzlePac',
+    'tweakwcs': 'TweakWCS',
+    'numpy': 'NumPy',
+    'astropy': 'Astropy',
+    'stwcs': 'STWCS',
+    'photutils': 'Photutils',
+}
+
+
+def print_pkg_versions(log=None, once=False):
+    """
+    Parameters
+    ----------
+    log : logging.Logger, optional
+        Logger to use for output. If not provided, output is printed to stdout.
+    once : bool, optional
+        If True, skip printing if this function has already been called
+        with ``once=True`` earlier in the process (DEFAULT = False).
+    """
+    global _pkg_versions_printed
+
+    if once and _pkg_versions_printed:
+        return
+    if once:
+        _pkg_versions_printed = True
+
+    output = log.info if log is not None else print
+
+    output('=' * 70)
+    output(' DrizzlePac')
+    output('=' * 70)
 
     pkgs = ['drizzlepac', 'tweakwcs', 'numpy', 'astropy', 'stwcs', 'photutils']
-    if packages is not None:
-        if not isinstance(packages, list):
-            packages = [packages]
-        pkgs.extend(packages)
 
-    output('Version Information')
-    output('-' * 20)
-    sysver = sys.version.split('\n')
-    output('Python Version %s' % sysver.pop())
-    for ver in sysver:
-        output(ver)
+    import datetime
+
+    labels = ['Date', 'Python']
+    values = [
+        datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        sys.version.split()[0],
+    ]
 
     for software in pkgs:
+        labels.append(_pkg_version_labels.get(software, software.capitalize()))
         try:
             package = __import__(software)
-            vstr = "%s " % (software)
-            try:
-                vstr += "Version -> " + package.__version__ + " "
-            except Exception:
-                vstr += "No version defined.  "
-            if git:
-                try:
-                    vstr += "\n    GIT version -> " + '-'.join([package.__version__, package.__version_post__, package.__version_commit]).rstrip()
-                except Exception:
-                    vstr += " "
+            version = getattr(package, '__version__', 'No version defined.')
         except Exception:
-            vstr = software + " not found in path..."
-        output(vstr)
+            version = 'not found in path...'
+
+        values.append(version)
+
+    width = max(len(label) for label in labels) + 1
+    for label, value in zip(labels, values):
+        output(f"{label + ':':<{width}} {value}")
 
 
 class ProcSteps:
@@ -366,7 +402,7 @@ class ProcSteps:
         step.
         """
         ptime = _ptime()
-        log.info(f"\n==== Processing Step '{key}' started at {ptime[0]}")
+        log.debug(f"\n==== Processing Step '{key}' started at {ptime[0]}")
         self.steps[key] = {
             'start': ptime,
             'end': ptime,
@@ -401,11 +437,11 @@ class ProcSteps:
             self.delayed_msg = msg
         else:
             self.delayed_msg = None
-            log.info(msg)
+            log.debug(msg)
 
     def flush(self):
         if self.delayed_msg is not None:
-            log.info(self.delayed_msg)
+            log.debug(self.delayed_msg)
             self.delayed_msg = None
 
 
@@ -415,7 +451,7 @@ class ProcSteps:
         performed steps.
         """
         self.flush()  # print any delayed messages
-        log.info(ProcSteps.__report_header)
+        log.debug(ProcSteps.__report_header)
 
         self.end = _ptime()
         total_time = 0
@@ -432,10 +468,10 @@ class ProcSteps:
                 note = "(off)"
             else:
                 note = ''
-            log.info(f"   {step:20s}          {_time:0.4f} sec {note}")
-        log.info(f"   {'=' * 20:20s}          {'=' * 20:s}")
-        log.info(f"   {'Total':20s}          {total_time:0.4f} sec")
-        log.info("")
+            log.debug(f"   {step:20s}          {_time:0.4f} sec {note}")
+        log.debug(f"   {'=' * 20:20s}          {'=' * 20:s}")
+        log.debug(f"   {'Total':20s}          {total_time:0.4f} sec")
+        log.debug("")
 
 
 def _ptime():
@@ -887,7 +923,7 @@ def printParams(paramDictionary, all=False, log=None):
 
     if log is not None:
         def output(msg):
-            log.info(msg)
+            log.debug(msg)
     else:
         def output(msg):
             print(msg, flush=True)
@@ -1487,9 +1523,9 @@ def get_envvar_switch(envvar_name, default, description=''):
             msg += f"Valid values: {', '.join(sorted(valid_values))}"
             raise ValueError(msg)
         result = envvar_bool_dict[val]
-        log.info(f"ENVVAR {envvar_name} found, setting {description_text}to {result}.")
+        log.debug(f"ENVVAR {envvar_name} found, setting {description_text}to {result}.")
     else:
         result = envvar_bool_dict[default]
-        log.info(f"ENVVAR {envvar_name} not found, setting {description_text}to default of {result}.")
+        log.debug(f"ENVVAR {envvar_name} not found, setting {description_text}to default of {result}.")
     
     return result

@@ -1217,10 +1217,6 @@ def run(configobj, wcsmap=None, input_dict=None):
     clean = configobj["STATE OF INPUT FILES"]["clean"]
     procSteps = util.ProcSteps()
 
-    log.debug("AstroDrizzle Version {:s} started at: {:s}\n"
-          .format(__version__, util._ptime()[0]))
-    util.print_pkg_versions(log=log)
-
     log.debug("")
     log.debug("==== AstroDrizzle was invoked with the following parameters: ====")
     log.debug("")

@@ -11,12 +11,15 @@ MDRIZTAB reference table.
 :License: :doc:`/LICENSE`
 
 """
+import logging
 import string, os
 
 from astropy.io import fits
 import numpy as np
 
 from stsci.tools import fileutil
+
+log = logging.getLogger(__name__)
 
 def getMdriztabParameters(files):
     """ Gets entry in MDRIZTAB where task parameters live.
@@ -67,7 +70,7 @@ def getMdriztabParameters(files):
         _numimages = _mdriztab[1].data.field('numimages')[i]
         if _nimages >= _numimages:
             _row = i
-    print('- MDRIZTAB: AstroDrizzle parameters read from row %s.'%(_row+1))
+    log.debug('- MDRIZTAB: AstroDrizzle parameters read from row %s.', _row + 1)
 
     mpars = _mdriztab[1].data[_row]
     _mdriztab.close()

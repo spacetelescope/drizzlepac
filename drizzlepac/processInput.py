@@ -245,7 +245,8 @@ def setCommonInput(configObj, createOutwcs=True, overwrite_dict={}):
         # Build output WCS and update imageObjectList with output WCS info
         outwcs = wcs_functions.make_outputwcs(imageObjectList, output,
                                               configObj=configObj, perfect=True)
-        outwcs.final_wcs.printwcs()
+        if log.isEnabledFor(logging.DEBUG):
+            outwcs.final_wcs.printwcs()
     else:
         outwcs = None
 

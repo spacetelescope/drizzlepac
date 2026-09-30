@@ -222,7 +222,7 @@ def createMedian(imgObjList, configObj, procSteps=None):
 
     step_name = util.getSectionName(configObj, STEP_NUM)
     if not configObj[step_name]["median"]:
-        log.info("Median combination step not performed.")
+        log.debug("Median combination step not performed.")
         if procSteps is not None:
             procSteps.endStep(PROCSTEPS_NAME, reason="off", delay_msg=True)
         return
@@ -235,7 +235,7 @@ def createMedian(imgObjList, configObj, procSteps=None):
     driz_sep_paramDict = configObj[driz_sep_name]
     paramDict["compress"] = driz_sep_paramDict["driz_sep_compress"]
 
-    log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
+    log.debug(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
     util.printParams(paramDict, log=log)
 
     try:
@@ -442,7 +442,7 @@ def _median(imageObjectList, paramDict):
             backgroundValueList.append(bsky)
             readnoiseList.append(rdnoise)
 
-            print("reference sky value for image '{}' is {}"
+            log.debug("reference sky value for image '{}' is {}"
                   .format(image._filename, backgroundValueList[-1]))
         #
         # END Loop over input image list

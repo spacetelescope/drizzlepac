@@ -159,7 +159,7 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
     step_name = util.getSectionName(configObj,STEP_NUM)
 
     if not configObj[step_name]['static']:
-        log.info(f"{PROCSTEPS_NAME} step not performed.")
+        log.debug(f"{PROCSTEPS_NAME} step not performed.")
         procSteps.endStep(PROCSTEPS_NAME)
         return
 
@@ -169,7 +169,7 @@ def createStaticMask(imageObjectList=[],configObj=None,procSteps=None):
         print(msg, file=sys.stderr)
         raise ValueError(msg)
 
-    log.info(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
+    log.debug(f"USER INPUT PARAMETERS for {PROCSTEPS_NAME} Step:")
     util.printParams(configObj[step_name], log=log)
 
     #create a static mask object
@@ -249,7 +249,7 @@ class staticMask:
 
         """
         numchips=imagePtr._numchips
-        log.info("Computing static mask:\n")
+        log.debug("Computing static mask:\n")
 
         chips = imagePtr.group
         if chips is None:
@@ -286,7 +286,7 @@ class staticMask:
             nbins = len(stats.histogram)
             del stats
 
-            log.info('  mode = %9f;   rms = %7f;   static_sig = %0.2f' %
+            log.debug('  mode = %9f;   rms = %7f;   static_sig = %0.2f' %
                      (mode, rms, self.static_sig))
 
             if nbins >= 2: # only combine data from new image if enough data to mask
@@ -366,7 +366,7 @@ class staticMask:
             else:
                 try:
                     newHDU.writeto(filename, overwrite=True)
-                    log.info("Saving static mask to disk: %s" % filename)
+                    log.debug("Saving static mask to disk: %s" % filename)
 
                 except IOError:
                     log.error("Problem saving static mask file: %s to "

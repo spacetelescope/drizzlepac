@@ -9,6 +9,7 @@ input image while recording the subtracted value in the image header.
 :License: :doc:`/LICENSE`
 
 """
+import io
 import os
 import logging
 
@@ -718,6 +719,8 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
 
         new_fi.append(fi)
 
+    skylog = io.StringIO()
+    flog = MultiFileLog(console=False, enableBold=False, flog=skylog)
     try:
         # Run skymatch algorithm:
         skymatch(new_fi,
@@ -737,14 +740,14 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
                  clobber     = True,
                  clean       = clean,
                  verbose     = True,
-                 flog        = MultiFileLog(console = True, enableBold = False),
+                 flog        = flog,
                  _taskname4history = 'AstroDrizzle')
     except Exception:
         if 'match' in paramDict['skymethod']:  # This catches 'match' and 'globalmin+match'
             new_method = 'globalmin' if 'globalmin' in paramDict['skymethod'] else 'localmin'
 
             # revert to simpler sky computation algorithm
-            log.warning('Reverting sky computation to "localmin" from "{}'.format(paramDict['skymethod']))
+            log.debug('Reverting sky computation to "localmin" from "{}"'.format(paramDict['skymethod']))
             skymatch(new_fi,
                      skymethod=new_method,
                      skystat=paramDict['skystat'],
@@ -762,11 +765,15 @@ def _skymatch(imageList, paramDict, in_memory, clean, logfile):
                      clobber=True,
                      clean=clean,
                      verbose=True,
-                     flog=MultiFileLog(console=True, enableBold=False),
+                     flog=flog,
                      _taskname4history='AstroDrizzle')
         else:
             raise
-
+    finally:
+        # 'drizzlepac' handlers echo to stdout; 'stsci.skypac' only reaches the root (run log) handler.
+        logger = log if log.isEnabledFor(logging.DEBUG) else logging.getLogger('stsci.skypac')
+        for line in filter(str.strip, skylog.getvalue().splitlines()):
+            logger.info(line)
     # Populate 'subtractedSky' and 'computedSky' of input image objects:
     for i in range(nimg):
         assert(not new_fi[i].fnamesOnly and not new_fi[i].image.closed)

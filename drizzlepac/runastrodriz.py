@@ -268,6 +268,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     package_level_logger.addHandler(stream_handler)
     package_level_logger.setLevel(default_log_level)
 
+    util.print_pkg_versions(log=log, once=True)
+    
     init_time = time.time()
     pipeline_pars = PIPELINE_PARS.copy()
     _verify = True  # Switch to control whether to verify alignment or not
@@ -593,8 +595,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             adriz_pars['combine_nhigh'] = 0
 
         # Integrate user-specified drizzle parameters into pipeline_pars
-        log.info('Starting alignment with bad-pixel identification')
-        log.info(__trlmarker__)
+        log.debug('Starting alignment with bad-pixel identification')
+        log.debug(__trlmarker__)
 
         if align_with_apriori or force_alignment or align_to_gaia:
             # Generate initial default products and perform verification
@@ -605,8 +607,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                                                         force_alignment=force_alignment,
                                                         find_crs=True, **adriz_pars)
         if align_with_apriori:
-            log.info('Starting alignment with a priori solutions')
-            log.info(__trlmarker__)
+            log.debug('Starting alignment with a priori solutions')
+            log.debug(__trlmarker__)
             if align_dicts is not None:
                 find_crs = not align_dicts[0]['alignment_verified']
             else:
@@ -615,7 +617,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             # run updatewcs with use_db=True to insure all products have
             # have a priori solutions as extensions
             # FIX: This should probably only be done in the apriori sub-directory!
-            updatewcs.updatewcs(_calfiles, verbose=True)
+            updatewcs.updatewcs(_calfiles)
             for _file in _calfiles:
                 confirm_aposteriori_hdrlets(_file)
 
@@ -689,8 +691,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
         aposteriori_table=None
         if align_to_gaia:
-            log.info("Starting a posteriori alignment")
-            log.info(__trlmarker__)
+            log.debug("Starting a posteriori alignment")
+            log.debug(__trlmarker__)
 
             #
             # Start by creating the 'default' product using a priori/pipeline WCS
@@ -734,10 +736,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                         "A posteriori alignment FAILED! No a posteriori astrometry correction applied."
                     )
 
-        log.info(
+        log.debug(
             "Creating final combined,corrected product based on best alignment"
         )
-        log.info(__trlmarker__)
+        log.debug(__trlmarker__)
 
         # Generate final pipeline products based on 'best' alignment
         pipeline_pars['in_memory'] = inmemory
@@ -780,10 +782,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
         # run on a file.  This will typically apply only to BIAS,DARK
         # and other reference images.
         # Start by building up the message...
-        log.info("astrodrizzle skipped ")
-        log.info(__trlmarker__)
-        log.info(f"{_getTime()}: astrodrizzle processing not requested for {inFile}.")
-        log.info("       astrodrizzle will not be run at this time.")
+        log.debug("astrodrizzle skipped ")
+        log.debug(__trlmarker__)
+        log.debug(f"{_getTime()}: astrodrizzle processing not requested for {inFile}.")
+        log.debug("       astrodrizzle will not be run at this time.")
 
     # If we created a new ASN table, we need to remove it
     if _new_asn is not None:
@@ -910,8 +912,8 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
     end_time = _getTime()
     _delta_time = time.time() - init_time
-    log.info(f"{end_time}: Finished processing {inFilename} in {_delta_time:.2f} seconds \n")
-    log.info("astrodrizzle completed")
+    log.debug(f"{end_time}: Finished processing {inFilename} in {_delta_time:.2f} seconds \n")
+    log.debug("astrodrizzle completed")
 
     # Look to see whether we have products which can be evaluated
     # wcsname = fits.getval(drz_products[0], 'wcsname', ext=1)
@@ -959,7 +961,7 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
     drizlog = pipeline_pars['runfile'] + ".log"  # the '.log' gets added automatically by astrodrizzle
     _trlmsg = "In run_driz"
     _trlmsg += "inlist is, %s\n" % (inlist,)
-    print(_trlmsg)
+    log.debug(_trlmsg)
     for infile in inlist:  # Run astrodrizzle for all inputs
 
         asndict, ivmlist, drz_product = processInput.process_input(infile, updatewcs=False,
@@ -971,9 +973,9 @@ def run_driz(inlist, trlfile, calfiles, mode='default-pipeline', verify_alignmen
         drz_products.append(drz_product)
 
         # Create trailer marker message for start of astrodrizzle processing
-        log.info('astrodrizzle started ')
-        log.info(f'{_getTime()}: Processing {infile} with astrodrizzle Version {pyver}')
-        log.info(__trlmarker__)
+        log.debug('astrodrizzle started ')
+        log.debug(f'{_getTime()}: Processing {infile} with astrodrizzle Version {pyver}')
+        log.debug(__trlmarker__)
 
         try:
             drizzlepac.astrodrizzle.AstroDrizzle(input=infile, configobj=None,
@@ -1193,13 +1195,13 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                 for row in align_table:
                     if row['status'] == 0:
                         if row['compromised'] == 0:
-                            log.info(f"Successfully aligned {row['imageName']} "
+                            log.debug(f"Successfully aligned {row['imageName']} "
                                      f"to {row['catalog']} astrometric frame")
                         else:
-                            log.info(f"Alignment only partially "
+                            log.debug(f"Alignment only partially "
                                      f"successful for {row['imageName']}")
                     else:
-                        log.info(f"Could not align {row['imageName']} "
+                        log.debug(f"Could not align {row['imageName']} "
                                  f"to absolute astrometric frame")
                         return None, None
             except Exception as err:
@@ -1247,7 +1249,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
                                                          **pipeline_pars)
 
         # Start verification of alignment using focus and similarity indices
-        log.info(f"Verification of {tmpmode} alignment started ")
+        log.debug(f"Verification of {tmpmode} alignment started ")
 
         if focus_dicts is not None:
             # Only check focus on CTE corrected, when available
@@ -1332,7 +1334,7 @@ def verify_alignment(inlist, calfiles, calfiles_flc, trlfile,
             # Copy drizzle products to parent directory to replace 'less aligned' versions
             _ = [shutil.copy(f, parent_dir) for f in headerlet_files]
 
-        log.info('Verification of alignment completed ')
+        log.debug('Verification of alignment completed ')
     finally:
         if tmpdir:
             os.chdir(parent_dir)
@@ -1449,7 +1451,7 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
 
                     if most_recent_wcs:
                         # restore this WCS
-                        log.info(f"Restoring apriori WCS {wname} as primary WCS in {f}")
+                        log.debug(f"Restoring apriori WCS {wname} as primary WCS in {f}")
                         headerlet.restore_from_headerlet(fhdu,
                                                          force=True,
                                                          hdrname=most_recent_wcs[1],
@@ -2080,7 +2082,7 @@ def _update_idcscale(filename):
         for extn in range(num_sci):
             msg =  'Adding IDCSCALE {} to {}[sci,{}]'.format(fhdu_idscale, hdul.filename(), extn + 1)
             hdul[('sci', extn + 1)].header['idcscale'] = fhdu_idscale
-            log.info(msg)
+            log.debug(msg)
     # No need to keep this file handle open anymore
     if isinstance(filename, str):
         hdul.close()
