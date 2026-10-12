@@ -23,12 +23,11 @@ import sys
 # Related third party imports
 import numpy as np
 import pandas as pd
-from astropy.io import fits
 from bokeh.layouts import row, column, gridplot
-from bokeh.plotting import figure, output_file, save, show
-from bokeh.models import ColumnDataSource, Label, CDSView, Div, LinearColorMapper, ColorBar
+from bokeh.plotting import figure, save, show
+from bokeh.io import output_file
+from bokeh.models import ColumnDataSource, Div, LinearColorMapper, ColorBar
 from PIL import Image, ImageDraw
-from spherical_geometry.polygon import SphericalPolygon
 
 # Local application imports
 import drizzlepac.haputils.astrometric_utils as au

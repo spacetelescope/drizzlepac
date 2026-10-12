@@ -49,41 +49,25 @@ in a web browser.
 
 # Standard library imports
 import argparse
-import collections
-from datetime import datetime
-import glob
-import json
 import logging
 import os
-import pdb
-import pickle
 import re
-import sys
-import time
 
 # Related third party imports
-from astropy.coordinates import SkyCoord
-from astropy.io import ascii, fits
-from astropy.stats import sigma_clipped_stats
-from astropy.table import Table
-from itertools import chain
 import numpy as np
 import pandas as pd
-from scipy.spatial import KDTree
 
 from bokeh.layouts import row, column, gridplot
-from bokeh.plotting import figure, output_file, save, show
-from bokeh.models import ColumnDataSource, Label, CDSView, Div
-from bokeh.models.tools import HoverTool
+from bokeh.plotting import save, show
+from bokeh.io import output_file
+from bokeh.models import ColumnDataSource, Label, Div
 
 # Local application imports
-from drizzlepac import util, wcs_functions
 from drizzlepac.haputils.graph_utils import HAPFigure, build_tooltips
 from drizzlepac.haputils.pandas_utils import PandasDFReader, get_pandas_data
 from drizzlepac.haputils.pipeline_graphics import build_vector_plot
 from stsci.tools import logutil
-from stwcs import wcsutil
-from stwcs.wcsutil import HSTWCS
+
 
 
 __taskname__ = 'svm_quality_graphics'

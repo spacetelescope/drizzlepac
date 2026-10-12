@@ -10,7 +10,8 @@ import os
 import sys
 
 # Related third party imports
-from bokeh.plotting import figure, output_file, show, save
+from bokeh.plotting import figure, show, save
+from bokeh.io import output_file
 import numpy as np
 
 # Local application imports
