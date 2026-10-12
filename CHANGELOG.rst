@@ -21,6 +21,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.12.0 (TBD)
 ============
 
+- Removed deprecated/unused parameters in catalog configuration parameter files. [#2186]
+
 - Re-enabled the svm_quality_graphics functionality to generate quality 
   assurance graphics for SVM products. [#2180]
 

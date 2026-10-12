@@ -134,8 +134,7 @@ class CatalogImage:
                      zero_percent=25.0,
                      negative_percent=15.0,
                      nsigma_clip=3.0,
-                     maxiters=3,
-                     good_fwhm=[1.5, 3.5]):
+                     maxiters=3):
 
         if self.blank:
             return
@@ -693,8 +692,7 @@ class HAPCatalogs:
                                 self.param_dict['zero_percent'],
                                 self.param_dict['negative_percent'],
                                 self.param_dict['nsigma_clip'],
-                                self.param_dict['maxiters'],
-                                self.param_dict['good_fwhm'])
+                                self.param_dict['maxiters'])
 
         # Initialize all catalog types here...
         # This does NOT identify or measure sources to create the catalogs at this point...
@@ -1096,9 +1094,6 @@ class HAPPointCatalog(HAPCatalogBase):
             log.info("Total Detection Product - Input Parameters")
             log.info("INPUT PARAMETERS")
             log.info("image name: {}".format(self.imgname))
-            log.info("{}: {}".format("self.param_dict['dao']['bkgsig_sf']", self.param_dict["dao"]["bkgsig_sf"]))
-            log.info("{}: {}".format("self.param_dict['dao']['kernel_sd_aspect_ratio']",
-                                     self.param_dict['dao']['kernel_sd_aspect_ratio']))
             log.info("{}: {}".format("self.param_dict['simple_bkg']", self.param_dict['simple_bkg']))
             log.info("{}: {}".format("self.param_dict['nsigma']", self.param_dict['nsigma']))
             log.info("{}: {}".format("self.image.bkg_rms_median", self.image.bkg_rms_median))
@@ -1641,7 +1636,6 @@ class HAPSegmentCatalog(HAPCatalogBase):
         self._size_source_box = self.param_dict["sourcex"]["source_box"]
         self._nlevels = self.param_dict["sourcex"]["nlevels"]
         self._contrast = self.param_dict["sourcex"]["contrast"]
-        self._border = self.param_dict["sourcex"]["border"]
         self._segm_nsigma = self.param_dict["sourcex"]["segm_nsigma"]
         self._rw2d_size = self.param_dict["sourcex"]["rw2d_size"]
         self._rw2d_nsigma = self.param_dict["sourcex"]["rw2d_nsigma"]
