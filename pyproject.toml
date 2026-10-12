@@ -38,7 +38,7 @@ dependencies = [
     "requests",
     "scikit-learn>=0.20",
     "simplify-polyline",
-    "bokeh>=4.0.0",
+    "bokeh>=3.10.0",
     "pandas",
     "spherical_geometry>=1.2.22",
     "astroquery>=0.4",
