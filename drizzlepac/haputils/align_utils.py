@@ -20,6 +20,7 @@ from astropy.coordinates import SkyCoord, Angle
 from astropy import units as u
 from astropy.modeling import models, fitting
 from astropy.utils import minversion
+from astropy.utils.decorators import deprecated
 
 import photutils
 from photutils import background
@@ -1036,13 +1037,12 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+@deprecated(since="3.13.0",
+            message="Use match_default_fit instead.",
+            name="match_2dhist_fit",
+            alternative="match_default_fit")
 def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
     """Deprecated alias for match_default_fit."""
-    warnings.warn(
-        "match_2dhist_fit is deprecated and will be removed in version 3.13.0; use match_default_fit instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return match_default_fit(imglist, reference_catalog, **fit_pars)
 
 # ----------------------------------------------------------------------------------------------------------
