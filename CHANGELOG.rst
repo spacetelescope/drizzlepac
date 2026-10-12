@@ -21,6 +21,8 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.12.0 (TBD)
 ============
 
+- API change to bokeh in 4.0.0 that requires updating import statements. [#2195]
+
 - Re-enabled the svm_quality_graphics functionality to generate quality 
   assurance graphics for SVM products. [#2180]
 
