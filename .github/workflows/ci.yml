@@ -34,8 +34,8 @@ jobs:
       cache-key: ${{ needs.crds_contexts.outputs.hst }}
       coverage: ''
       envs: |
-        - linux: py311-xdist
-        - macos: py312-xdist
+        - linux: py312-xdist
+        - macos: py313-xdist
           libraries:
             brew:
               - hdf5
