@@ -248,7 +248,7 @@ def main():
 
     .. code-block:: console
 
-            updatenpol [options] input [refdir]
+        updatenpol [options] input [refdir]
 
     Parameters
     -----------
