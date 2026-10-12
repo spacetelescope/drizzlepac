@@ -223,7 +223,7 @@ def json_harvester(json_search_path=os.getcwd(),
         if ingest_dict:
             if master_dataframe is not None:
                 log.debug("APPENDED DATAFRAME")
-                master_dataframe = master_dataframe.append(pd.DataFrame(ingest_dict["data"], index=[idx]))
+                master_dataframe = pd.concat([master_dataframe, pd.DataFrame(ingest_dict["data"], index=[idx])])
                 for key_item in ingest_dict['descriptions'].keys():
                     if key_item not in metadata['descriptions'].keys(): # only have to check descriptions dict because units dict has same keys
                         metadata['descriptions'][key_item] = ingest_dict['descriptions'][key_item]

@@ -187,6 +187,22 @@ def end_logging(filename=None):
     root_logger = logging.getLogger()
     root_logger.removeHandler(_log_file_handler)
 
+
+class SuppressNoisyAstropyWCS(logging.Filter):
+    """Filter known non-actionable Astropy WCS informational messages."""
+
+    _messages = (
+        "Inconsistent SIP distortion information",
+        "Some non-standard WCS keywords were excluded",
+    )
+
+    def filter(self, record):
+        return not any(message in record.getMessage() for message in self._messages)
+
+
+logging.getLogger('astropy').addFilter(SuppressNoisyAstropyWCS())
+
+
 class WithLogging:
     def __init__(self):
         self.depth = 0

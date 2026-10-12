@@ -85,7 +85,7 @@ def extractMatchedLines(col2get, refData, compData, refLines, compLines, bitmask
     if col2get in list(refData.keys()) and col2get in list(compData.keys()):
         matching_refData = refData[col2get][refLines].data
         matching_compData = compData[col2get][compLines].data
-        if bitmask != []:
+        if len(bitmask) > 0:
             bitmask = bitmask.astype(int)
             matching_refData = np.ma.array(matching_refData, mask=bitmask)
             matching_compData = np.ma.array(matching_compData, mask=bitmask)

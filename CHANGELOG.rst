@@ -23,6 +23,12 @@ number of the code change for that issue.  These PRs can be viewed at:
 
 - Removed deprecated/unused parameters in catalog configuration parameter files. [#2186]
 
+- Re-enabled the svm_quality_graphics functionality to generate quality 
+  assurance graphics for SVM products. [#2180]
+
+- Silenced some warnings from astropy.wcs.wcs and astropy.io.fits when running 
+  runastrodriz.py. [#2184]
+
 - Improved MVM guide star failure check to reintroduce exposures that
   were incorrectly excluded due to PSF spikes, saturation, and CTE issues. [#2101]
 
