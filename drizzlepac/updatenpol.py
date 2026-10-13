@@ -244,7 +244,9 @@ def run(configobj=None,editpars=False):
 
 def main():
     """
-    This task can be run from the operating system command line with::
+    This task can be run from the operating system command line with:
+
+    .. code-block:: console
 
         updatenpol [options] input [refdir]
 
