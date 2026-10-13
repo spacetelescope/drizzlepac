@@ -1038,7 +1038,6 @@ def match_default_fit(imglist, reference_catalog, **fit_pars):
 # ----------------------------------------------------------------------------------------------------------------------
 
 @deprecated(since="3.13.0",
-            message="Use match_default_fit instead.",
             name="match_2dhist_fit",
             alternative="match_default_fit")
 def match_2dhist_fit(imglist, reference_catalog, **fit_pars):
