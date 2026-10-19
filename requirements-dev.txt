@@ -7,3 +7,4 @@ scipy>=0.0.dev0
 --extra-index-url https://pypi.anaconda.org/astropy/simple
 astropy>=0.0.dev0
 photutils>=0.0.dev0
+bokeh<=3.10.1
