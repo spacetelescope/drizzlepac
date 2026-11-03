@@ -46,6 +46,9 @@ environment variables:
       solutions from the astrometry database should be applied to the data.
       If this is set, it will override any value set in the old variable.
       Values (case-insensitive) can be 'on','off','yes','no'.
+    
+    -SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT : Skip alignment for exposures that 
+      already have visit-level a posteriori WCS solutions.
 
 Additionally, the output products can be evaluated to determine the quality of
 the alignment and output data through the use of the environment variable:
@@ -181,6 +184,7 @@ envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
 envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
 envvar_qa_stats_name = "PIPELINE_QUALITY_TESTING"
 envvar_reset_idctab_name = "PIPELINE_RESET_IDCTAB"
+envvar_skip_visit_level_aposteriori_alignment = "SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT"
 
 # Order of preference for common WCS solutions - brute force choice of the GAIA catalog preference.
 # Enforce the chosen order for the WCS preferential solution for all exposures in a dataset.
@@ -295,6 +299,12 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # interpret envvar variable, if specified
     qa_switch = util.get_envvar_switch(
         envvar_qa_stats_name, description="'QA statistics'", default=False
+    )
+    
+    skip_visit_level_aposteriori = util.get_envvar_switch(
+        envvar_skip_visit_level_aposteriori_alignment, 
+        description="'Skip visit-level a posteriori alignment'", 
+        default=False
     )
 
     if headerlets or align_to_gaia:
@@ -639,7 +649,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                 
             # Skip alignment if all WCS solutions contains 'FIT_SVM'
             svm_wcsname = all('FIT_SVM' in _w for _c, _w in _wnames_calfiles)
-            if svm_wcsname:
+            if skip_visit_level_aposteriori and svm_wcsname:
                 log.warning("All input exposures have visit-level a posteriori "
                          "solutions; skipping a posteriori alignment.")
                 align_to_gaia = False
