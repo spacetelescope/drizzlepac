@@ -637,12 +637,11 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             for (_cname, _wname) in _wnames_calfiles:
                 log.debug(f"   {_cname}: {_wname}")
                 
-            # Skip alignment if all WCS solutions contains 'FIT_SVM_GAIADR2'
-            gaia_svm_wcsname = all('FIT_SVM_GAIADR2' in _w for _c, _w in _wnames_calfiles)
-            if gaia_svm_wcsname:
+            # Skip alignment if all WCS solutions contains 'FIT_SVM'
+            svm_wcsname = all('FIT_SVM' in _w for _c, _w in _wnames_calfiles)
+            if svm_wcsname:
                 log.warning("All input exposures have visit-level a posteriori "
-                         "solutions aligned to GAIA DR2; skipping a posteriori "
-                         "alignment.")
+                         "solutions; skipping a posteriori alignment.")
                 align_to_gaia = False
                 
             if _calfiles_flc:
@@ -653,7 +652,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
                 log.debug(verify_gaia_wcsnames(_calfiles_flc))
 
-            if not gaia_svm_wcsname:
+            if not svm_wcsname:
                 try:
                     tmpname = "_".join([_trlroot, 'apriori'])
                     sub_dirs.append(tmpname)
