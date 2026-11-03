@@ -47,8 +47,10 @@ environment variables:
       If this is set, it will override any value set in the old variable.
       Values (case-insensitive) can be 'on','off','yes','no'.
     
-    -SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT : Skip alignment for exposures that 
-      already have visit-level a posteriori WCS solutions.
+    - SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT : If every input exposure
+      already has a visit-level a posteriori WCS solution ('FIT_SVM') as its
+      primary WCS, keep those solutions and skip any further alignment.
+      Values (case-insensitive) can be 'on', 'off', 'yes', 'no'.
 
 Additionally, the output products can be evaluated to determine the quality of
 the alignment and output data through the use of the environment variable:
@@ -640,29 +642,39 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     log.warning(f'WARNING: WCS reference pixel is {sep.value:.2f} degrees '+
                                    'from target position. The astrometry database solution is suspect!')
 
-            log.debug(f"Adding apriori WCS solutions to {_calfiles}")
-            log.debug(verify_gaia_wcsnames(_calfiles))
+            # Check the primary WCS solutions applied by the astrometry
+            # database BEFORE verify_gaia_wcsnames() can replace any
+            # a posteriori solution with an a priori one.
             _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in _calfiles]
             log.debug("Verifying apriori WCSNAMEs:")
             for (_cname, _wname) in _wnames_calfiles:
                 log.debug(f"   {_cname}: {_wname}")
-                
-            # Skip alignment if all WCS solutions contains 'FIT_SVM'
+
+            # Keep the visit-level a posteriori solutions as the primary WCS
+            # and skip all further alignment if every exposure has a
+            # 'FIT_SVM' solution and the environment variable 
+            # SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT has been turned on.
             svm_wcsname = all('FIT_SVM' in _w for _c, _w in _wnames_calfiles)
-            if skip_visit_level_aposteriori and svm_wcsname:
+            skip_svm_alignment = skip_visit_level_aposteriori and svm_wcsname
+            if skip_svm_alignment:
                 log.warning("All input exposures have visit-level a posteriori "
-                         "solutions; skipping a posteriori alignment.")
+                            "solutions; keeping those solutions and skipping "
+                            "a posteriori alignment.")
                 align_to_gaia = False
-                
+            else:
+                log.debug(f"Adding apriori WCS solutions to {_calfiles}")
+                log.debug(verify_gaia_wcsnames(_calfiles))
+
             if _calfiles_flc:
                 log.debug(f"Adding apriori WCS solutions to {_calfiles_flc}")
                 updatewcs.updatewcs(_calfiles_flc)
                 for _file in _calfiles_flc:
                     confirm_aposteriori_hdrlets(_file)
 
-                log.debug(verify_gaia_wcsnames(_calfiles_flc))
+                if not skip_svm_alignment:
+                    log.debug(verify_gaia_wcsnames(_calfiles_flc))
 
-            if not svm_wcsname:
+            if not skip_svm_alignment:
                 try:
                     tmpname = "_".join([_trlroot, 'apriori'])
                     sub_dirs.append(tmpname)
