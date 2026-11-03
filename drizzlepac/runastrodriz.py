@@ -636,6 +636,15 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
             log.debug("Verifying apriori WCSNAMEs:")
             for (_cname, _wname) in _wnames_calfiles:
                 log.debug(f"   {_cname}: {_wname}")
+                
+            # Skip alignment if all WCS solutions contains 'FIT_SVM_GAIADR2'
+            gaia_svm_wcsname = all('FIT_SVM_GAIADR2' in _w for _c, _w in _wnames_calfiles)
+            if gaia_svm_wcsname:
+                log.warning("All input exposures have visit-level a posteriori "
+                         "solutions aligned to GAIA DR2; skipping a posteriori "
+                         "alignment.")
+                align_to_gaia = False
+                
             if _calfiles_flc:
                 log.debug(f"Adding apriori WCS solutions to {_calfiles_flc}")
                 updatewcs.updatewcs(_calfiles_flc)
@@ -644,48 +653,49 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
                 log.debug(verify_gaia_wcsnames(_calfiles_flc))
 
-            try:
-                tmpname = "_".join([_trlroot, 'apriori'])
-                sub_dirs.append(tmpname)
-                # Generate initial default products and perform verification
-                align_apriori, apriori_table = verify_alignment(_inlist,
-                                                 _calfiles, _calfiles_flc,
-                                                 _trlfile,
-                                                 tmpdir=tmpname, debug=debug,
-                                                 good_bits=focus_pars[inst_mode]['good_bits'],
-                                                 alignment_mode='apriori',
-                                                 force_alignment=force_alignment,
-                                                 find_crs=find_crs,
-                                                 **adriz_pars)
-            except Exception:
-                # Reset to state prior to applying a priori solutions
-                traceback.print_exc()
-                align_apriori = None
-                log.debug("ERROR in applying a priori solution.")
-            if align_apriori is None or (not align_apriori[0]['alignment_verified']):
-                log.debug("Resetting WCS to pipeline-default solutions...")
-                # This operation replaces the PRIMARY WCS with one from the attached
-                # headerlet extensions that corresponds to the distortion-model
-                # solution created in the first place with 'updatewcs(use_db=False)'
-                # Doing so, retains all solutions added from the astrometry database
-                # while resetting to use whatever solution was defined by the instrument
-                # calibration, since 'updatewcs' does not by default replace solutions
-                # it finds in the files.
-                restore_pipeline_default(_calfiles)
-                if _calfiles_flc:
-                    restore_pipeline_default(_calfiles_flc)
+            if not gaia_svm_wcsname:
+                try:
+                    tmpname = "_".join([_trlroot, 'apriori'])
+                    sub_dirs.append(tmpname)
+                    # Generate initial default products and perform verification
+                    align_apriori, apriori_table = verify_alignment(_inlist,
+                                                     _calfiles, _calfiles_flc,
+                                                     _trlfile,
+                                                     tmpdir=tmpname, debug=debug,
+                                                     good_bits=focus_pars[inst_mode]['good_bits'],
+                                                     alignment_mode='apriori',
+                                                     force_alignment=force_alignment,
+                                                     find_crs=find_crs,
+                                                     **adriz_pars)
+                except Exception:
+                    # Reset to state prior to applying a priori solutions
+                    traceback.print_exc()
+                    align_apriori = None
+                    log.debug("ERROR in applying a priori solution.")
+                if align_apriori is None or (not align_apriori[0]['alignment_verified']):
+                    log.debug("Resetting WCS to pipeline-default solutions...")
+                    # This operation replaces the PRIMARY WCS with one from the attached
+                    # headerlet extensions that corresponds to the distortion-model
+                    # solution created in the first place with 'updatewcs(use_db=False)'
+                    # Doing so, retains all solutions added from the astrometry database
+                    # while resetting to use whatever solution was defined by the instrument
+                    # calibration, since 'updatewcs' does not by default replace solutions
+                    # it finds in the files.
+                    restore_pipeline_default(_calfiles)
+                    if _calfiles_flc:
+                        restore_pipeline_default(_calfiles_flc)
 
-            else:
-                align_dicts = align_apriori
-                if align_dicts[0]["alignment_quality"] == 0:
-                    log.debug("A priori alignment SUCCESSFUL.")
-                if align_dicts[0]["alignment_quality"] == 1:
-                    log.debug("A priori alignment potentially compromised.")
-                    log.debug("Please review final product!")
-                if align_dicts[0]["alignment_quality"] > 1:
-                    log.debug(
-                        "A priori alignment FAILED! No a priori astrometry correction applied."
-                    )
+                else:
+                    align_dicts = align_apriori
+                    if align_dicts[0]["alignment_quality"] == 0:
+                        log.debug("A priori alignment SUCCESSFUL.")
+                    if align_dicts[0]["alignment_quality"] == 1:
+                        log.debug("A priori alignment potentially compromised.")
+                        log.debug("Please review final product!")
+                    if align_dicts[0]["alignment_quality"] > 1:
+                        log.debug(
+                            "A priori alignment FAILED! No a priori astrometry correction applied."
+                        )
 
         aposteriori_table=None
         if align_to_gaia:
