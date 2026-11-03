@@ -46,7 +46,7 @@ environment variables:
       solutions from the astrometry database should be applied to the data.
       If this is set, it will override any value set in the old variable.
       Values (case-insensitive) can be 'on','off','yes','no'.
-    
+
     - SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT : If every input exposure
       already has a visit-level a posteriori WCS solution ('FIT_SVM') as its
       primary WCS, keep those solutions and skip any further alignment.
@@ -302,10 +302,10 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     qa_switch = util.get_envvar_switch(
         envvar_qa_stats_name, description="'QA statistics'", default=False
     )
-    
+
     skip_visit_level_aposteriori = util.get_envvar_switch(
-        envvar_skip_visit_level_aposteriori_alignment, 
-        description="'Skip visit-level a posteriori alignment'", 
+        envvar_skip_visit_level_aposteriori_alignment,
+        description="'Skip visit-level a posteriori alignment'",
         default=False
     )
 
@@ -652,7 +652,7 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
 
             # Keep the visit-level a posteriori solutions as the primary WCS
             # and skip all further alignment if every exposure has a
-            # 'FIT_SVM' solution and the environment variable 
+            # 'FIT_SVM' solution and the environment variable
             # SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT has been turned on.
             svm_wcsname = all('FIT_SVM' in _w for _c, _w in _wnames_calfiles)
             skip_svm_alignment = skip_visit_level_aposteriori and svm_wcsname
@@ -1469,18 +1469,19 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                         # For each WCSNAME/HDRNAME in the file...
                         for wname, hname, wdate in zip(wcsnames, hdrnames, wcsdates):
                             # Look for apriori_type (HSC, GSC,...) based on newest IDCTAB
-                            if apriori_type in wname:
+                            # while ignoring a posteriori ('-FIT') solutions
+                            if apriori_type in wname and '-FIT' not in wname:
                                 if (
                                     most_recent_wcs and wdate > most_recent_wcs[0]
                                 ) or most_recent_wcs is None:
-                                    most_recent_wcs = (wdate, hname)
+                                    most_recent_wcs = (wdate, hname, wname)
 
                         if most_recent_wcs:
                             break
 
                     if most_recent_wcs:
                         # restore this WCS
-                        log.info(f"Restoring apriori WCS {wname} as primary WCS in {f}")
+                        log.info(f"Restoring apriori WCS {most_recent_wcs[2]} as primary WCS in {f}")
                         headerlet.restore_from_headerlet(fhdu,
                                                          force=True,
                                                          hdrname=most_recent_wcs[1],
