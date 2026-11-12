@@ -21,6 +21,9 @@ number of the code change for that issue.  These PRs can be viewed at:
 3.12.0 (TBD)
 ============
 
+- Added functionality for a SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT environment 
+  variable to control visit-level a posteriori alignment behavior. [#2203]
+
 - Deprecating match_2dhist_fit function in favor of identical match_default_fit
   function. [#2189]
 

@@ -47,6 +47,11 @@ environment variables:
       If this is set, it will override any value set in the old variable.
       Values (case-insensitive) can be 'on','off','yes','no'.
 
+    - SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT : If every input exposure
+      already has a visit-level a posteriori WCS solution ('FIT_SVM') as its
+      primary WCS, keep those solutions and skip any further alignment.
+      Values (case-insensitive) can be 'on', 'off', 'yes', 'no'.
+
 Additionally, the output products can be evaluated to determine the quality of
 the alignment and output data through the use of the environment variable:
 
@@ -181,6 +186,7 @@ envvar_compute_name = 'ASTROMETRY_COMPUTE_APOSTERIORI'
 envvar_new_apriori_name = "ASTROMETRY_APPLY_APRIORI"
 envvar_qa_stats_name = "PIPELINE_QUALITY_TESTING"
 envvar_reset_idctab_name = "PIPELINE_RESET_IDCTAB"
+envvar_skip_visit_level_aposteriori_alignment = "SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT"
 
 # Order of preference for common WCS solutions - brute force choice of the GAIA catalog preference.
 # Enforce the chosen order for the WCS preferential solution for all exposures in a dataset.
@@ -295,6 +301,12 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
     # interpret envvar variable, if specified
     qa_switch = util.get_envvar_switch(
         envvar_qa_stats_name, description="'QA statistics'", default=False
+    )
+
+    skip_visit_level_aposteriori = util.get_envvar_switch(
+        envvar_skip_visit_level_aposteriori_alignment,
+        description="'Skip visit-level a posteriori alignment'",
+        default=False
     )
 
     if headerlets or align_to_gaia:
@@ -630,62 +642,81 @@ def process(inFile, force=False, newpath=None, num_cores=None, inmemory=True,
                     log.warning(f'WARNING: WCS reference pixel is {sep.value:.2f} degrees '+
                                    'from target position. The astrometry database solution is suspect!')
 
-            log.debug(f"Adding apriori WCS solutions to {_calfiles}")
-            log.debug(verify_gaia_wcsnames(_calfiles))
+            # Check the primary WCS solutions applied by the astrometry
+            # database BEFORE verify_gaia_wcsnames() can replace any
+            # a posteriori solution with an a priori one.
             _wnames_calfiles = [(c, fits.getval(c, 'wcsname', ext=1)) for c in _calfiles]
             log.debug("Verifying apriori WCSNAMEs:")
             for (_cname, _wname) in _wnames_calfiles:
                 log.debug(f"   {_cname}: {_wname}")
+
+            # Keep the visit-level a posteriori solutions as the primary WCS
+            # and skip all further alignment if every exposure has a
+            # 'FIT_SVM' solution and the environment variable
+            # SKIP_APOSTERIORI_IF_VISIT_LEVEL_ALIGNMENT has been turned on.
+            svm_wcsname = all('FIT_SVM' in _w for _c, _w in _wnames_calfiles)
+            skip_svm_alignment = skip_visit_level_aposteriori and svm_wcsname
+            if skip_svm_alignment:
+                log.warning("All input exposures have visit-level a posteriori "
+                            "solutions; keeping those solutions and skipping "
+                            "a posteriori alignment.")
+                align_to_gaia = False
+            else:
+                log.debug(f"Adding apriori WCS solutions to {_calfiles}")
+                log.debug(verify_gaia_wcsnames(_calfiles))
+
             if _calfiles_flc:
                 log.debug(f"Adding apriori WCS solutions to {_calfiles_flc}")
                 updatewcs.updatewcs(_calfiles_flc)
                 for _file in _calfiles_flc:
                     confirm_aposteriori_hdrlets(_file)
 
-                log.debug(verify_gaia_wcsnames(_calfiles_flc))
+                if not skip_svm_alignment:
+                    log.debug(verify_gaia_wcsnames(_calfiles_flc))
 
-            try:
-                tmpname = "_".join([_trlroot, 'apriori'])
-                sub_dirs.append(tmpname)
-                # Generate initial default products and perform verification
-                align_apriori, apriori_table = verify_alignment(_inlist,
-                                                 _calfiles, _calfiles_flc,
-                                                 _trlfile,
-                                                 tmpdir=tmpname, debug=debug,
-                                                 good_bits=focus_pars[inst_mode]['good_bits'],
-                                                 alignment_mode='apriori',
-                                                 force_alignment=force_alignment,
-                                                 find_crs=find_crs,
-                                                 **adriz_pars)
-            except Exception:
-                # Reset to state prior to applying a priori solutions
-                traceback.print_exc()
-                align_apriori = None
-                log.debug("ERROR in applying a priori solution.")
-            if align_apriori is None or (not align_apriori[0]['alignment_verified']):
-                log.debug("Resetting WCS to pipeline-default solutions...")
-                # This operation replaces the PRIMARY WCS with one from the attached
-                # headerlet extensions that corresponds to the distortion-model
-                # solution created in the first place with 'updatewcs(use_db=False)'
-                # Doing so, retains all solutions added from the astrometry database
-                # while resetting to use whatever solution was defined by the instrument
-                # calibration, since 'updatewcs' does not by default replace solutions
-                # it finds in the files.
-                restore_pipeline_default(_calfiles)
-                if _calfiles_flc:
-                    restore_pipeline_default(_calfiles_flc)
+            if not skip_svm_alignment:
+                try:
+                    tmpname = "_".join([_trlroot, 'apriori'])
+                    sub_dirs.append(tmpname)
+                    # Generate initial default products and perform verification
+                    align_apriori, apriori_table = verify_alignment(_inlist,
+                                                     _calfiles, _calfiles_flc,
+                                                     _trlfile,
+                                                     tmpdir=tmpname, debug=debug,
+                                                     good_bits=focus_pars[inst_mode]['good_bits'],
+                                                     alignment_mode='apriori',
+                                                     force_alignment=force_alignment,
+                                                     find_crs=find_crs,
+                                                     **adriz_pars)
+                except Exception:
+                    # Reset to state prior to applying a priori solutions
+                    traceback.print_exc()
+                    align_apriori = None
+                    log.debug("ERROR in applying a priori solution.")
+                if align_apriori is None or (not align_apriori[0]['alignment_verified']):
+                    log.debug("Resetting WCS to pipeline-default solutions...")
+                    # This operation replaces the PRIMARY WCS with one from the attached
+                    # headerlet extensions that corresponds to the distortion-model
+                    # solution created in the first place with 'updatewcs(use_db=False)'
+                    # Doing so, retains all solutions added from the astrometry database
+                    # while resetting to use whatever solution was defined by the instrument
+                    # calibration, since 'updatewcs' does not by default replace solutions
+                    # it finds in the files.
+                    restore_pipeline_default(_calfiles)
+                    if _calfiles_flc:
+                        restore_pipeline_default(_calfiles_flc)
 
-            else:
-                align_dicts = align_apriori
-                if align_dicts[0]["alignment_quality"] == 0:
-                    log.debug("A priori alignment SUCCESSFUL.")
-                if align_dicts[0]["alignment_quality"] == 1:
-                    log.debug("A priori alignment potentially compromised.")
-                    log.debug("Please review final product!")
-                if align_dicts[0]["alignment_quality"] > 1:
-                    log.debug(
-                        "A priori alignment FAILED! No a priori astrometry correction applied."
-                    )
+                else:
+                    align_dicts = align_apriori
+                    if align_dicts[0]["alignment_quality"] == 0:
+                        log.debug("A priori alignment SUCCESSFUL.")
+                    if align_dicts[0]["alignment_quality"] == 1:
+                        log.debug("A priori alignment potentially compromised.")
+                        log.debug("Please review final product!")
+                    if align_dicts[0]["alignment_quality"] > 1:
+                        log.debug(
+                            "A priori alignment FAILED! No a priori astrometry correction applied."
+                        )
 
         aposteriori_table=None
         if align_to_gaia:
@@ -1438,18 +1469,19 @@ def verify_gaia_wcsnames(filenames, catalog_name='GSC240', catalog_date=gsc240_d
                         # For each WCSNAME/HDRNAME in the file...
                         for wname, hname, wdate in zip(wcsnames, hdrnames, wcsdates):
                             # Look for apriori_type (HSC, GSC,...) based on newest IDCTAB
-                            if apriori_type in wname:
+                            # while ignoring a posteriori ('-FIT') solutions
+                            if apriori_type in wname and '-FIT' not in wname:
                                 if (
                                     most_recent_wcs and wdate > most_recent_wcs[0]
                                 ) or most_recent_wcs is None:
-                                    most_recent_wcs = (wdate, hname)
+                                    most_recent_wcs = (wdate, hname, wname)
 
                         if most_recent_wcs:
                             break
 
                     if most_recent_wcs:
                         # restore this WCS
-                        log.info(f"Restoring apriori WCS {wname} as primary WCS in {f}")
+                        log.info(f"Restoring apriori WCS {most_recent_wcs[2]} as primary WCS in {f}")
                         headerlet.restore_from_headerlet(fhdu,
                                                          force=True,
                                                          hdrname=most_recent_wcs[1],
