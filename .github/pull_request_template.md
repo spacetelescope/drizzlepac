@@ -6,7 +6,7 @@ Resolves [HLA-nnnn](https://jira.stsci.edu/browse/HLA-nnnn)
 Closes #
 
 <!-- describe the changes comprising this PR here -->
-This PR addresses ...
+This PR 
 
 **Checklist for maintainers**
 - [ ] added entry in `CHANGELOG.rst` within the relevant release section
@@ -15,3 +15,6 @@ This PR addresses ...
 - [ ] added relevant label(s)
 
 Regression test: 
+
+
+Generative AI Usage Disclosure:
